@@ -260,10 +260,9 @@ information for other topics like _"books read"_ or _"unidentified
 aerial phenomena"_ or _"bird watching"_ which would undoubtedly
 require additional, different fields.
 
-This demonstrates why _PAM_ was organized around the notion of records
-that are composed of flexible, user defined fields. In my view, this
-file/record/field structure does a better job of representing this
-type of information than a spreadsheet or a text file editor.
+In my view, this file/record/field organization does a better job of
+representing this type of information than a spreadsheet or a text
+file editor.
 
 #### Reason 3: Searching
 _PAM_ allows you to search records by their title or their field

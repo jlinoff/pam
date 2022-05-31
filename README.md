@@ -1869,8 +1869,8 @@ name to say the least.
 | -------- | -------- |
 | Circa | 2020|
 | Project| [https://github.com/jlinoff/myvault](https://github.com/jlinoff/myvault)|
-| Webapp| [https://jlinoff.github.com/myvault](https://jlinoff.github.com/myvault/) |
-| Help| [https://jlinoff.github.com/myvault/help](https://jlinoff.github.com/myvault/help/) |
+| Webapp| [https://jlinoff.github.io/myvault](https://jlinoff.github.io/myvault/) |
+| Help| [https://jlinoff.github.io/myvault/help](https://jlinoff.github.io/myvault/help/) |
 
 This is the precursor to pam. It was implemented using Rust and
 javascript. I used it for a several of years.

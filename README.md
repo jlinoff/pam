@@ -202,7 +202,30 @@ example, each recipe would be a single record, a collection of recipes
 for, say, desserts would be a file of dessert recipe records where each
 record or recipe would have three parts: a title (the name of the
 recipe), the ingredients (a field) and the instructions (another
-field). This is what a simple dessert recipe record might look like in _PAM_.
+field). Further assume that you have a simple dessert recipe like this
+written on a card.
+
+```
+Ice Cream Sundae
+
+ingredients
+1. 3 scoops vanilla ice cream
+2. 1 banana (sliced up)
+3. chocolate sauce
+4. (optional) nuts
+5. (optional) Maraschino cherry
+6. whipped cream
+
+instructions
+1. put ice cream in bowl
+2. add slices of banana
+3. add nutes
+4. pour chocolate on top
+5. add whip cream
+6. put the cherry on top.
+```
+
+This is what it would look like in _PAM_.
 
 <img src="www/help/pam-ice-cream-sundae.png" alt="ice-cream-sundae-example">
 

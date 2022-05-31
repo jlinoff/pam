@@ -18,7 +18,7 @@ the on-line help is generated.
 | GitBranch | `__GIT_BRANCH__` |
 | project | [https://github.com/jlinoff/pam](https://github.com/jlinoff/pam) |
 | webapp | [https://jlinoff.github.io/pam/www/](https://jlinoff.github.io/pam/www/) |
-| help | [https://jlinoff.github.io/pam/www/help/index.html](https://jlinoff.github.io/pam/www/help) |
+| help | [https://jlinoff.github.io/pam/www/help/](https://jlinoff.github.io/pam/www/help) |
 
 </details>
 

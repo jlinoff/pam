@@ -464,7 +464,7 @@ Here is the annotated view
 
 <img src="www/help/pam-about-annotated.png" alt="about-annotated">
 
-Here is an about dialogue with custom message.
+Here is an about dialogue with a simple custom message.
 
 <img src="www/help/pam-about-custom.png" alt="about-custom">
 

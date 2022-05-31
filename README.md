@@ -287,7 +287,7 @@ it backed up.
 
 #### Reason 6: Secure Context Encryption
 Records are encrypted using an
-[_NIST certified_](#https://csrc.nist.gov/projects/cryptographic-algorithm-validation-program),
+[_NIST certified_](https://csrc.nist.gov/projects/cryptographic-algorithm-validation-program),
 symmetric encryption algorithm: `AES-256-CBC`. That is a strong
 security guarantee which means, that if an encrypted _PAM_
 file is stolen, the record data is safe, if it has been encrypted with
@@ -295,7 +295,7 @@ a strong password.
 
 As an added benefit, note that `AES-256-CBC` is thought to be reasonably
 resistant to quantum attacks as discussed in the literature.
-[Here](#https://crypto.stackexchange.com/questions/6712/is-aes-256-a-post-quantum-secure-cipher-or-not)
+[Here](https://crypto.stackexchange.com/questions/6712/is-aes-256-a-post-quantum-secure-cipher-or-not)
 is one relevant exchange from a `crypto.stackexchange.com` discussion.
 
 _PAM_ encryption and decryption operations are provided by and run
@@ -308,7 +308,7 @@ seriously by the internet standards organization and the organizations
 that develop the major browsers.
 
 You can read more about secure contexts
-[here](#https://developer.mozilla.org/en-US/docs/Web/Security/Secure_Contexts).
+[here](https://developer.mozilla.org/en-US/docs/Web/Security/Secure_Contexts).
 
 #### Reason 7: Hiding Passwords from Causal Observers
 
@@ -330,7 +330,7 @@ This is the view of a password when it is not hidden.
 
 The files can be accessed from mobile devices so the user has access to the
 records anywhere. In addition it uses
-[bootstrap-5](#https://getbootstrap.com/docs/5.0/getting-started/introduction/)
+[bootstrap-5](https://getbootstrap.com/docs/5.0/getting-started/introduction/)
 to make it work better in mobile browsers.
 
 #### Reason 9: FOSS
@@ -558,9 +558,9 @@ them. You can search the web for more details.
 
 > Remember that the types were not made up by me, they were
 > taken directly from input element description
-> [here](#https://developer.mozilla.org/en-US/docs/Web/HTML/Element/input),
+> [here](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/input),
 > the separate textarea element is described
-> [here](#https://developer.mozilla.org/en-US/docs/Web/API/HTMLTextAreaElement).
+> [here](https://developer.mozilla.org/en-US/docs/Web/API/HTMLTextAreaElement).
 
 It is oftentimes the case that all of the _available_ types are not
 needed for the records you are keeping. This is especially true in
@@ -1066,7 +1066,7 @@ To filter only those that start with `"g"` you
 would use this regular expression search term instead: `"^g"`.
 
 For more information about regular expression syntax see the documentation
-for [Javascript Regular Expressions](#https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_Expressions).
+for [Javascript Regular Expressions](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_Expressions).
 
 ### Get Help
 To get this help message, choose the `"Help"` option from the menu.
@@ -1457,7 +1457,7 @@ seriously by the internet standards organization and the organizations
 that develop the major browsers.
 
 You can read more about secure contexts
-[here](#https://developer.mozilla.org/en-US/docs/Web/Security/Secure_Contexts)
+[here](https://developer.mozilla.org/en-US/docs/Web/Security/Secure_Contexts)
 and in [Reason 6: Secure Context Encryption](#reason-6-secure-context-encryption).
 
 ### Site Reliability
@@ -1786,7 +1786,7 @@ It was built using pure javascript and relies on the browser secure
 context to provide encryption and decryption.
 
 It uses
-[bootstrap-5](#https://getbootstrap.com/docs/5.0/getting-started/introduction/)
+[bootstrap-5](https://getbootstrap.com/docs/5.0/getting-started/introduction/)
 to make it work better in mobile browsers.
 
 ### License
@@ -1796,7 +1796,7 @@ MIT Licensing terms.
 Although not required, I would appreciate attribution if you decide to
 copy and use the source code.
 
-[MIT License Terms](#https://en.wikipedia.org/wiki/MIT_License)
+[MIT License Terms](https://en.wikipedia.org/wiki/MIT_License)
 
 ### Build PAM
 Here are the steps to build PAM.
@@ -1854,8 +1854,8 @@ followed by a brief chronology of things progressed over the years.
 | <!-- --> | <!-- --> |
 | -------- | -------- |
 | Circa | 2018 |
-| Project| [https://github.com/eSentire/qspm](#https://github.com/eSentire/qspm) |
-| Webapp| [https://esentire.github.io/qspm/](#https://esentire.github.io/qspm/) |
+| Project| [https://github.com/eSentire/qspm](https://github.com/eSentire/qspm) |
+| Webapp| [https://esentire.github.io/qspm/](https://esentire.github.io/qspm/) |
 
 This is the oldest surviving effort. It was implemented using Rust and
 javascript and was funded by my employer at that time (eSentire, Inc.) for
@@ -1868,8 +1868,9 @@ name to say the least.
 | <!-- --> | <!-- --> |
 | -------- | -------- |
 | Circa | 2020|
-| Project| [https://github.com/jlinoff/myvault](#https://github.com/jlinoff/myvault)|
-| Webapp| [https://github.com/jlinoff/myvault](#https://github.com/jlinoff/myvault) |
+| Project| [https://github.com/jlinoff/myvault](https://github.com/jlinoff/myvault)|
+| Webapp| [https://jlinoff.github.com/myvault](https://jlinoff.github.com/myvault/) |
+| Help| [https://jlinoff.github.com/myvault/help](https://jlinoff.github.com/myvault/help/) |
 
 This is the precursor to pam. It was implemented using Rust and
 javascript. I used it for a several of years.
@@ -1883,9 +1884,9 @@ Other than that it was okay.
 | <!-- --> | <!-- --> |
 | -------- | -------- |
 | Circa | 2022 |
-| Project| [https://github.com/jlinoff/pam](#https://github.com/jlinoff/pam)|
-| Webapp| [https://jlinoff.github.io/pam/www/](#https://jlinoff.github.io/pam/www/) |
-| Help | [https://jlinoff.github.io/pam/www/help/](#https://jlinoff.github.io/pam/www/help/) |
+| Project| [https://github.com/jlinoff/pam](https://github.com/jlinoff/pam)|
+| Webapp| [https://jlinoff.github.io/pam/www/](https://jlinoff.github.io/pam/www/) |
+| Help | [https://jlinoff.github.io/pam/www/help/](https://jlinoff.github.io/pam/www/help/) |
 
 This is the latest incarnation and it is pure javascript.
 It fixes some of the earlier problems and leverages bootstrap-5

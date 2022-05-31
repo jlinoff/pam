@@ -260,7 +260,7 @@ information for other topics like _"books read"_ or _"unidentified
 aerial phenomena"_ or _"bird watching"_ which would undoubtedly
 require additional, different fields.
 
-In my view, this file/record/field organization does a better job of
+In my view, this _fields in records_ organization does a better job of
 representing this type of information than a spreadsheet or a text
 file editor.
 

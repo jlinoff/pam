@@ -124,16 +124,19 @@ the on-line help is generated.
 </details>
 
 ## Introduction
-_PAM_ or Personal Account Manager is a free and open source single
-page web application that runs in your browser in a secure context
-that enables you to securely manage your confidential personal account
-data as searchable records in a secure, flexible, and persistent
-manner _without ever having to visit a server_ because it stores the
-data in a file that you control. The file is encrypted so even if it
-were stolen the data would be safe _if the password you used to
-encrypt it was strong_.
+_PAM_ or Personal Account Manager is a free open source single
+page web application that runs in a secure context in your browser
+that enables you to keep your confidential personal account
+information as searchable records in a secure and persistent
+manner _without ever having to visit a server_.
 
-You can run the application locally, from your own server or from the
+_PAM_ can do that because it stores the _your information_
+in a file that _you control_.
+
+The file is encrypted so even if it were stolen the data would be safe
+_if the password you used to encrypt it was strong_.
+
+You can serve run _PAM_ locally, from your own server or from the
 public github.io server [here](https://jlinoff.github.io/pam/www/index.html).
 
 See the
@@ -143,8 +146,8 @@ _[Reasons to consider using PAM](#reasons-to-consider-using-pam)_
 sections below if you are interested in what motivated me to write _PAM_.
 
 This is not the first tool I have written to manage passwords but it
-is meant to be the last. See the [History](#history) section for more
-information.
+is meant to be the last. If you are interested in the genesis of _PAM_
+see the [History](#history) section.
 
 ## Overview
 _PAM_ is a pretty simple application. I think of it as a record editor

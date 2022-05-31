@@ -1844,15 +1844,15 @@ and have made modifications.
 
 ### History
 This is the one of the many times that i have written a password
-manager from scratch over many years and it is intended to be the last
-because this version and while it is _far_ from perfect, is good
-enough for my needs and should provide a decent start for someone who
-wants to improve it.
+manager from scratch over the past twenty years and it is intended to
+be the last because this version and while it is _far_ from perfect,
+is good enough for my needs and should provide a decent start for
+someone who wants to improve it.
 
 If you are interested in the evolution of this project read on.
 
 Below are three previous implementations that are still around
-followed by a brief chronology of things progressed over the years.
+followed by a brief chronology of how things progressed over the years.
 
 #### qspm
 | <!-- --> | <!-- --> |

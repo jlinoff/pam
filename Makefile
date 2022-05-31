@@ -30,7 +30,7 @@ clean:   # clean up
 	-[ -d .git ] && git clean -xdf -e keep . || true
 
 .PHONY: init
-init: .init .bs  ## very basic setup for python3 and jshint
+init: .init .bs app-version app-help  ## very basic setup for python3 and jshint
 
 .init: Pipfile conftest.py.bak
 	$(call hdr,"$@-npm")

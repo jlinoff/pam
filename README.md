@@ -1843,9 +1843,9 @@ This pre-supposes that you have clone the pam project
 and have made modifications.
 
 ### History
-This is the one of the many times that i have written a password
+This is one of the several times that i have written a password
 manager from scratch over the past twenty years and it is intended to
-be the last because this version and while it is _far_ from perfect,
+be the last. Because this version while it is _far_ from perfect,
 is good enough for my needs and should provide a decent start for
 someone who wants to improve it.
 
@@ -1854,6 +1854,16 @@ If you are interested in the evolution of this project read on.
 Below are three previous implementations that are still around
 followed by a brief chronology of how things progressed over the years.
 
+#### passman
+| <!-- --> | <!-- --> |
+| -------- | -------- |
+| Circa | 2010 |
+| Project| [https://joelinoff.com/blog/?page_id=1025](#https://joelinoff.com/blog/?page_id=1025)
+| Webapp| [https://projects.joelinoff.com/passman/passman-v0.7/](#https://projects.joelinoff.com/passman/passman-v0.7/)
+This is the oldest surviving effort. It is an early incarnation
+written in pure javascript that uses a table paradigm for presenting
+the data. The UI and the implementation are quite complex.
+
 #### qspm
 | <!-- --> | <!-- --> |
 | -------- | -------- |
@@ -1861,7 +1871,7 @@ followed by a brief chronology of how things progressed over the years.
 | Project| [https://github.com/eSentire/qspm](https://github.com/eSentire/qspm) |
 | Webapp| [https://esentire.github.io/qspm/](https://esentire.github.io/qspm/) |
 
-This is the oldest surviving effort. It was implemented using Rust and
+This is the older effort that was implemented using Rust and
 javascript and was funded by my employer at that time (eSentire, Inc.) for
 a hack week project. The UI and the implementation are quite complex.
 
@@ -1893,11 +1903,16 @@ Other than that it was okay.
 | Help | [https://jlinoff.github.io/pam/www/help/](https://jlinoff.github.io/pam/www/help/) |
 
 This is the latest incarnation and it is pure javascript.
-It fixes some of the earlier problems and leverages bootstrap-5
-but could still be improved.
+It fixes some of the problems seen in the earlier attempts
+and it leverages
+[bootstrap-5](https://getbootstrap.com/docs/5.0/getting-started/introduction/)
+to make it work better in mobile browsers. 
+The implementation is a bit simpler but like all of the
+other attempts there is still plenty of room for improvement.
 
 The acronym stands for Personal Accounts Manager or Password Manager
-or whatever. I just wanted something short and easy to remember.
+or whatever. It doesn't really matter. I just wanted something short
+and easy to remember.
 
 #### Chronology
 I first wrote a password manager in the early 2000's in javascript. In
@@ -1910,7 +1925,7 @@ implement certified algorithms.
 As time went on, i would continue to re-implement password managers as
 a hobby to learn new skills and refresh old ones. That pretty quickly
 got me into javascript, python, docker, golang and, a few years ago, to
-rust. It has been a fun journey.
+rust. It has been a fun journey and i learned a great deal.
 
 By the time, i got around to writing _PAM_, i was using the prototype
 for a lot more than password management (mostly because i could enter

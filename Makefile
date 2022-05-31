@@ -143,6 +143,7 @@ www/help/index.html: Makefile README.md www/help/index.css \
 		$(shell ls -1 www/help/*svg)
 	$(call hdr,"app-help")
 	cp README.md tmp.md
+	sed -i 's@<img src="www/help/@<img src="./@' tmp.md
 	sed -i "s/__VERSION__/$$(cat VERSION | tr -d ' \n')/g" tmp.md
 	sed -i "s/__BUILD__/$$(git show -s --format=%ci $$(git rev-parse --short HEAD | tr -d ' \n'))/g" tmp.md
 	sed -i "s/__GIT_COMMIT_ID__/$$(git rev-parse --short HEAD | tr -d ' \n')/g" tmp.md

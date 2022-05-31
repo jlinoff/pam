@@ -1882,8 +1882,8 @@ followed by a brief chronology of how things progressed over the years.
 | <!-- --> | <!-- --> |
 | -------- | -------- |
 | Circa | 2010 |
-| Project| [https://joelinoff.com/blog/?page_id=1025](#https://joelinoff.com/blog/?page_id=1025)
-| Webapp| [https://projects.joelinoff.com/passman/passman-v0.7/](#https://projects.joelinoff.com/passman/passman-v0.7/)
+| Project| [https://joelinoff.com/blog/?page_id=1025](https://joelinoff.com/blog/?page_id=1025)
+| Webapp| [https://projects.joelinoff.com/passman/passman-v0.7/](https://projects.joelinoff.com/passman/passman-v0.7/)
 This is the oldest surviving effort. It is an early incarnation
 written in pure javascript that uses a table paradigm for presenting
 the data. The UI and the implementation are quite complex.

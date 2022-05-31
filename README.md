@@ -148,8 +148,9 @@ information.
 
 ## Overview
 _PAM_ is a pretty simple application. I think of it as a record editor
-that runs in your browser that allows you create records with interesting
-information that can then be stored and retrieved in a secure way.
+that runs in your browser that allows you to create records with
+interesting information that can then be stored and retrieved in a
+secure way.
 
 ### Reasons to not use PAM
 

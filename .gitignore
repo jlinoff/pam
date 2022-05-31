@@ -1,0 +1,23 @@
+# ignore generated and downloaded files
+www/js/bootstrap.bundle.js
+www/js/bootstrap.bundle.js.map
+www/font
+www/css
+www/favicon.ico
+www/Pipfile
+bootstrap-*
+www/help/index.html
+www/js/version.js
+*~
+.bs
+.init
+pylenium.json
+pytest.ini
+conftest.py
+conftest.py.bak
+backup-pam.tar
+Pipfile
+Pipfile.lock
+pam/
+pam-www.tar
+keep/

@@ -1,0 +1,543 @@
+# -*- mode: Org; org-confirm-babel-evaluate: nil; -*-
+#+TITLE:       Development plan notes
+#+AUTHOR:      Joe Linoff
+#+DESCRIPTION:
+#+SEQ_TODO:    TODO WIP | DONE CANCELLED
+#+OPTIONS:     toc:1
+#+LATEX:       \setlength{\parskip}{\baselineskip}%
+#+LATEX:       \setlength\parindent{0pt}
+#+SETUPFILE:   https://fniessen.github.io/org-html-themes/org/theme-readtheorg.setup
+#+OPTIONS:     ^:{}
+
+* Tidbits
+
+** Mobile Testing
+   #+BEGIN_SRC shell :results output
+     date
+     cp www/examples/example1.txt www/examples/joe.txt $HOME/icloud/myvault
+     ls -l $HOME/icloud/myvault/
+     sum $HOME/icloud/myvault/*
+   #+END_SRC
+   #+RESULTS:
+   #+begin_example
+   Tue May 24 16:00:08 PDT 2022
+   total 248
+   -rw-r--r--@ 1 jlinoff  575902425   2421 May 24 16:00 example1.txt
+   -rw-r--r--@ 1 jlinoff  575902425   2816 May  2 20:57 joe.txt
+   -rw-r--r--@ 1 jlinoff  575902425  45272 May 23 16:25 newdata.pam
+   -rw-r--r--@ 1 jlinoff  575902425  67403 Apr  9 15:33 vault.txt
+   44851 3 /Users/jlinoff/icloud/myvault/example1.txt
+   34995 3 /Users/jlinoff/icloud/myvault/joe.txt
+   741 45 /Users/jlinoff/icloud/myvault/newdata.pam
+   23923 66 /Users/jlinoff/icloud/myvault/vault.txt
+   #+end_example
+
+** Release experimental version to jlinoff.github.io web site
+   #+BEGIN_SRC shell :results output
+     date
+     cd $HOME/work/web/pam
+     make web
+     cd $HOME/work/jlinoff.github.io
+     tar xf $HOME/work/web/pam/pam-www.tar
+     git status
+     git commit -am'pam wip update'
+     git push
+   #+END_SRC
+   #+RESULTS:
+
+** Backup to cloud
+    #+BEGIN_SRC shell :results output
+      date
+      git log -2
+      make backup
+      cp backup-pam.tar $HOME/icloud/
+      ls -l $HOME/icloud/backup-pam.tar
+      echo backup done on $(date)
+   #+END_SRC
+   #+RESULTS:
+   #+begin_example
+   Mon May 30 16:54:25 PDT 2022
+   commit b91719da173ae8824d94d61afeb575fdb18d7924
+   Author: jlinoff <jlinoff@versive.com>
+   Date:   Mon May 30 16:54:14 2022 -0700
+
+       update help
+
+   commit 109b0b56262462bd2a40b5c5b470cc2ac81d512b
+   Author: jlinoff <jlinoff@versive.com>
+   Date:   Mon May 30 16:27:16 2022 -0700
+
+       update plan
+   [35;1m
+   =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+   =-=-= Target: backup 
+   =-=-= Date: Mon May 30 16:54:25 PDT 2022 
+   =-=-= Directory: /Users/jlinoff/work/web/pam 
+   =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=[0m
+   -rw-r--r--  1 jlinoff  575902425    37M May 30 16:54 backup-pam.tar
+   -rw-r--r--  1 jlinoff  575902425  38780944 May 30 16:54 /Users/jlinoff/icloud/backup-pam.tar
+   backup done on Mon May 30 16:54:44 PDT 2022
+   #+end_example
+   #+begin_example
+   Sat May 21 08:02:01 PDT 2022 commit
+   e57d914a6469001353dd2bacd1f15e33507d59bd Author: jlinoff
+   <jlinoff@versive.com> Date: Sat May 21 08:01:51 2022 -0700
+
+       update plan
+
+   commit 2347e6707a864f43b94317305c44418c274e713d Author: jlinoff
+   <jlinoff@versive.com> Date: Sat May 21 08:01:17 2022 -0700
+
+       fix record button wrap problem [35;1m
+   =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+   =-=-= Target: backup =-=-= Date: Sat May 21 08:02:01 PDT 2022 =-=-=
+   Directory: /Users/jlinoff/work/web/pam
+   =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=[0m
+   -rw-r--r-- 1 jlinoff 575902425 3.5M May 21 08:02 backup-pam.tar
+   -rw-r--r-- 1 jlinoff 575902425 3618084 May 21 08:02
+   /Users/jlinoff/icloud/backup-pam.tar backup done on Sat May 21
+   08:02:03 PDT 2022 #+end_example
+
+** Backup to USB
+   #+BEGIN_SRC shell :results output
+      date
+      git log -2
+      make backup
+      cp backup-pam.tar /Volumes/SAMSUNG-USB-256-2/work/backup-pam.tar
+      ls -l /Volumes/SAMSUNG-USB-256-2/work/backup-pam.tar
+      echo backup done on $(date)
+   #+END_SRC
+   #+RESULTS:
+   #+begin_example
+   Sun May 15 09:04:20 PDT 2022 commit
+   5b0b2a4162d10e1e97d0fa4e2d360123b050afd6 Author: jlinoff
+   <jlinoff@versive.com> Date: Sun May 15 09:04:13 2022 -0700
+
+       update plan
+
+   commit 555752ebf887497c782ab42c347b286d9b1c66e5 Author: jlinoff
+   <jlinoff@versive.com> Date: Sat May 14 22:02:02 2022 -0700
+
+       update plan
+
+   commit 2c50a797fbfb74a3441cf5b7d342a6a69d5d8a22 Author: jlinoff
+   <jlinoff@versive.com> Date: Sat May 14 21:59:37 2022 -0700
+
+       fix record title input bug [35;1m
+   =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+   =-=-= Target: backup =-=-= Date: Sun May 15 09:04:20 PDT 2022 =-=-=
+   Directory: /Users/jlinoff/work/web/pam
+   =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=[0m
+   -rw-r--r-- 1 jlinoff 575902425 2.4M May 15 09:04 backup-pam.tar
+   -rw-r--r-- 1 jlinoff 575902425 2506748 May 15 09:04
+   /Volumes/SAMSUNG-USB-256-2/work/backup-pam.tar backup done on Sun
+   May 15 09:04:21 PDT 2022 #+end_example
+
+** Update brew
+   #+BEGIN_SRC shell :results output
+     date
+     brew update
+     brew upgrade
+     brew cleanup
+     brew doctor
+     echo brew update done on $(date)
+   #+END_SRC
+   #+RESULTS:
+   : Sat Apr 30 08:22:29 PDT 2022
+   : Your system is ready to brew.
+   : brew update done on Sat Apr 30 08:22:55 PDT 2022
+
+* Thoughts
+  1. Keep things simple, add complexity over time by making small changes
+  2. Use bootstrap to simplify layout and popups
+  3. Fully dynamic, no static HTML in index.html
+  4. No dark mode to start with.
+  5. Start with simple menu:
+     1. About, Preferences, Help, New Record, Open File, Save File
+     2. Don't need Helpin the first iteration.
+  6. Simple Initial preferences
+     1. password minimum length
+     2. password maximum length
+     3. cryptic password special characters
+  7. DONE: Start with a single input type (text)
+     1. Incrementally add text area, number, url, date, etc.
+     2. Add password last (it is the hardest)
+  8. Incorporate "Duplicate" logic later to save typing.
+  9. Store "About" and "Help" text in separate HTML?
+     1. Does that make sense? Is it possible.
+  10. Add open all tabs/close all accordion entries functionality.
+  11. Add separate copy to clipboard button to allow natural use of URL fields.
+  12. Add show/hide for passwords.
+  13. Get basic flow working:
+      1. create new record
+      2. display record
+      3. edit record
+  14. Install pylenium to test and to add multiple records.
+  15. Don't store data in javascript internally use the DOM.
+  16. Learn about new field names over time from user input.
+
+* Bugs
+** DONE textarea has <pre></pre> after load (on save?) (see example4.txt)
+   CLOSED: [2022-04-17 Sun 10:38]
+** DONE password overwritten with asterisks "*********" on save
+   CLOSED: [2022-04-17 Sun 10:24] worked correctly with example5 not
+   sure how to reproduce it.
+** DONE password overwritten with asterisks "*********" on edit
+   CLOSED: [2022-04-17 Sun 10:38] is this occurring in
+   CopyRecordFieldsToEditDlg?
+** DONE password generation does not work for loaded files
+   CLOSED: [2022-04-17 Sun 10:38] this was the same bug as the
+   "**********" on edit bug
+** DONE on load, password field shows up in name field for example5
+   CLOSED: [2022-04-30 Sat 08:07] seems to only happen intermittently,
+   perhaps the first time?  found it hard to reproduce This has ben
+   fixed for some time.
+** DONE add search support
+   CLOSED: [2022-04-17 Sun 11:01] This turned out to be trivially easy
+   because of ~d-none~.  Created filterRecords().
+** DONE remove filename prompt from load
+   CLOSED: [2022-04-17 Sun 10:41]
+** DONE implement xGetParentWithClass
+   CLOSED: [2022-04-17 Sun 12:44] This is a useful refactor that make
+   the system more resilient
+** DONE fix ~undefined~ value for new fields
+   CLOSED: [2022-04-17 Sun 12:45]
+** DONE implement prefs dialogue
+   CLOSED: [2022-04-30 Sat 08:06] Actually did this yesterday.  It
+   only supports min/max password length at the moment.
+** DONE fix text/password value display in edit mode - needs to expand
+   CLOSED: [2022-04-30 Sat 09:40] Made it adaptive.
+** DONE fix fonts
+   CLOSED: [2022-04-30 Sat 09:40] Fixed some time ago.
+** DONE remove console.log debug messages
+   CLOSED: [2022-05-02 Mon 20:56] Removed most of them.
+** DONE Delete operation for new new record fields does not delete the field name.
+   CLOSED: [2022-04-26 Tue 08:39] Steps to reproduce:
+   1. Select "New Record"
+   2. Select "Add text field"
+   3. Click "Delete"
+   4. The "Field Name" will remain.
+   The problem was that there are now multiple rows to allow
+   name/value on the same line.  The solution was to find the
+   associated form (x-fld-form) and delete its contents.  Added test
+   in test/test_mystuff:test_new_record().
+** DONE URL getting corrupted by linkable anchor tag
+   CLOSED: [2022-04-29 Fri 08:32]
+   1. Select "New Record"
+   2. Select "Add url field"
+   3. Enter valid URL "https://google.com"
+   4. Click "Save" to save the record.
+   5. Select "Save File" from the menu.
+   6. The error message will appear.
+   Fixed as part of the logic clean up in utils.js:mkRecordField()
+** DONE textarea losing newline formatting
+   CLOSED: [2022-04-29 Fri 08:33] Fixed as part of the logic clean up
+   in utils.js:mkRecordField()
+** DONE all accordion items should be closed on load
+   CLOSED: [2022-04-29 Fri 09:26] newly created accordion items were
+   modified to always display as closed.
+** DONE Only dragging vertically (gave up)
+   CLOSED: [2022-04-30 Sat 09:43] I am not sure this is possible.
+   It's not possible for the built-in draggable but it can be
+   accomplished manually but it is too much work for now.
+** DONE Cannot delete the "security question" from ~/tmp/bug01.txt~
+   CLOSED: [2022-04-29 Fri 10:05] Steps to recreate:
+   1. load /tmp/bug01.txt
+   2. edit "Google"
+   3. click "Delete" to delete the "security question" field.
+   4. click "Save" to save the record.
+   make sure to delete the whole field by deleting the row
+   ~x-new-rec-fld~.  not deleting it left artifacts which created an
+   unstable state.
+** DONE Fix overflow in text and password fields for small screens.
+   CLOSED: <2022-04-29 Fri 10:05> Added ~overflow-auto~ class
+** DONE Fix draggable conflict between row field and password length and text select
+   CLOSED: [2022-04-30 Sat 09:38] Steps to recreate:
+   1. select "New Record"
+   2. select "password"
+   3. select "Generate" (the gear)
+   4. try to slide the range length indicator slider.
+   Could this be fixed by setting ~draggable=false~ on the range
+   slider?  NO, that did not work.  Another option might be to try
+   just making the legend draggable (that is a lot of refactoring).
+   Yet another option is to make the top level draggable false while
+   in the password generation dialogue. I tested this manually and it
+   works!  Yet another way is to remove draggable onfocus and add it
+   back onblur. This could work for all inputs. This was the solution
+   i chose.
+** DONE Update test to look up field types by name in record create/edit
+   CLOSED: [2022-04-30 Sat 08:19] Just loop through the
+   ~.dropdown-item~ elements and look at the value.
+** DONE Change top menu text "menu" to icon.
+   CLOSED: [2022-04-30 Sat 08:40] Decided to use the ~bi-list~ icon
+   but there were other reasonable candidates as well like
+   ~bi-menu-down~.
+** DONE Add delete and show/hide to "Load File" and "Save File" dialogues password entry.
+CLOSED: [2022-04-30 Sat 18:21] Reuse the edit stuff if possible.  had
+to duplicate code! SIGH!
+** DONE DRY duplicated code from adding clear, show/hide to Load and Save.
+   CLOSED: [2022-04-30 Sat 18:30] created
+   utils.js:mkLoadSavePassword().
+** DONE Add clearBeforeLoad and loadDupStrategy to prefs dialogue
+   CLOSED: [2022-05-01 Sun 08:27]
+** DONE Remove alert from "Dup" logic.
+   CLOSED: [2022-05-01 Sun 07:37]
+** DONE Add missing generate (gear) to the "Save File" password dialogue
+   CLOSED: [2022-05-01 Sun 16:05] Reuse the edit stuff if possible.
+   This is not needed for the "Load File" dialogue.
+** DONE Add word separator to prefs for memorable password generation
+   CLOSED: [2022-04-30 Sat 12:39] This requires updating
+   ~windows.prefs~, the prefs dialogue and the memorable password
+   generation.  Added support for
+   1. memorablePasswordWordSeparator
+   2. memorablePasswordMinWordLength
+   3. memorablePasswordMinWords
+   4. memorablePasswordMaxWords
+   5. memorablePasswordMaxTries
+** DONE Implement encryption using subtle crypto
+   CLOSED: [2022-05-02 Mon 16:15] documentation
+   [[https://developer.mozilla.org/en-US/docs/Web/API/SubtleCrypto][link]]
+   The app has to be resilient.  If it is not run a in a secure
+   context it should still work but encryption/decryption is not
+   available.  This was tricky, see ~crypt.js~ for details.
+** DONE Fix mobile display of "Delete" "Dup" "Edit" buttons for each record.
+   CLOSED: [2022-05-01 Sun 10:21]
+** DONE Improve statusBlip messages on mobile
+   CLOSED: [2022-05-01 Sun 10:46] They look too much like an info
+   button.  Fixed by changing to exclamation-octagon.
+** DONE Added clear option to search bar (x) for all browsers
+   CLOSED: [2022-05-02 Mon 17:10] Is there a way to turn it off in
+   Chrome?
+** DONE Generate password on iphone causes a failure
+   CLOSED: [2022-05-01 Sun 13:40] Steps to reproduce
+   1. load ~example1.txt~
+   2. select 'Amazon'
+   3. select 'Edit'
+   4. select gear (generate)
+   5. click on 'close password generator'
+   6. weep
+   Not reproducible!
+** DONE Load not setting windows.prefs fields.
+   CLOSED: [2022-05-01 Sun 15:04]
+** DONE Change app name to PAM - Personal Accounts Manager
+   CLOSED: [2022-05-02 Mon 08:49] It's better than JERK - Joe's
+   Electronic Record Keeper :-)
+** DONE Load twice creates a second menu!
+   CLOSED: [2022-05-02 Mon 10:18] This is critical and it is a pain.
+   The bug was that it was creating the wrong DOM elements: mkMenu()
+   instead of mkMenuPrefsDlg()
+** DONE Back out the dark theme
+   CLOSED: [2022-05-02 Mon 20:55] It did not work well, some hover
+   responses did not work properly
+** DONE Recfactor ~utils.js~ into ~records.js~, ~field.js~ and ~utils.js~
+   CLOSED: [2022-05-14 Sat 18:25] This is just general hygiene.
+** DONE Add retry logic for invalid password during load
+   CLOSED: [2022-05-03 Tue 08:08] Do not leave the load dialogue when
+   an invalid password is specified on Save.  The user can always exit
+   the dialogue by clicking on Close.
+** DONE Allow the user to define the field type names in preferences
+   CLOSED: [2022-05-14 Sat 18:24] Each field type name is tuple of the
+   name and the input type.  Examples: [ ~account~, ~text~ ], [
+   ~name~, ~text~ ] Primitive implementation complete.  Enhancements
+   will be capture in separate issues.
+** DONE Modify to support path: ~/pam/www/js/main.js~ to make it easier to release
+   CLOSED: [2022-05-14 Sat 11:43] This will make it easier to release
+   to https://jlinoff.github.io.  It will require changes to ~make
+   run~.  Made all of the paths relative to keep things simple.
+** DONE Change test program name to ~tests/test_pam.py~
+   CLOSED: [2022-05-14 Sat 18:24]
+** DONE Move add field to top of list in prefs
+   CLOSED: [2022-05-14 Sat 21:33]
+** DONE Add text to the add field button to make its function clearer
+   CLOSED: [2022-05-14 Sat 21:34]
+** CANCELLED Fix copy to clipboard bug on iphone and ipad
+   CLOSED: [2022-05-15 Sun 09:01] The problem is that the HTTP server
+   is not secure so navigator.clipboard is not defined.  This fix is
+   to have a HTTPS server.
+** DONE Use drop down menus for field types in the prefs dialog
+   CLOSED: [2022-05-18 Wed 17:47] instead of forcing them to type it
+   in
+** CANCELLED Allow the user to define a custom title in preferences
+   CLOSED: [2022-05-18 Wed 17:52] No need for this because the title
+   is never displayed.
+** DONE Allow the user to add a short custom about description in the preferences
+   CLOSED: [2022-05-18 Wed 18:37]
+** DONE Modify loads/save logic to use ~Object.entries()~ iterator.
+   CLOSED: [2022-05-18 Wed 18:38]
+** DONE Add Help menu item
+   CLOSED: [2022-05-19 Thu 21:39]
+** DONE Change Dup to Clone
+   CLOSED: [2022-05-19 Thu 21:49]
+** DONE Password length not displayed properly in edit dialogue on load
+   CLOSED: [2022-05-20 Fri 11:47]
+** DONE Add fieldsets to prefs dialogue
+   CLOSED: [2022-05-20 Fri 11:47]
+** DONE initialize all preferences on load to make sure all prefs are present
+   CLOSED: [2022-05-20 Fri 11:53] This will make sure that any
+   preferences that were added since the file was saved are present
+   with default settings).
+** DONE Add preference: "cloneFieldValues"
+   CLOSED: [2022-05-20 Fri 12:36] Not sure if this is really useful
+   yet???  Added it anyway to test it out.
+** DONE Add preference: "memorablePasswordPrefix"
+   CLOSED: [2022-05-20 Fri 13:27]
+** DONE Add preference: "memorablePasswordSuffix"
+   CLOSED: [2022-05-20 Fri 13:27]
+** DONE Add preference: "helpLink"
+   CLOSED: [2022-05-20 Fri 13:27]
+** DONE Add preference: "projectLink"
+   CLOSED: [2022-05-20 Fri 13:27]
+** DONE Fix links on About page
+   CLOSED: [2022-05-20 Fri 13:29] They currently point to myvault :-)
+   Updated to link based on variable.
+** CANCELLED Password generator fails on the very first update in when creating a new field.
+   CLOSED: [2022-05-20 Fri 13:31] Steps to reproduce.
+   1. new record
+   2. new password field
+   3. click the generate button
+   4. record disappears - identical steps work the next time (in the same session
+   Could not reproduce it.
+** DONE Add Help infrastructure somewhere
+   CLOSED: [2022-05-20 Fri 14:18] Use the ~pandoc~ markdown to HTML
+   approach used by myvault Make sure to mention the secure HTTP
+   context.  Maybe at the end of the menu? YES create ~HELP.md~.
+** DONE Add some sort of infrastructure for a versioning system
+   CLOSED: [2022-05-20 Fri 14:18] Could be VERSION file that is used
+   to create/update ~www/js/version.js~.  Could be something else.
+** DONE ignore generated and downloaded files
+   CLOSED: [2022-05-20 Fri 14:23] Added ~.gitignore~
+** DONE Verify that relative paths work for https://jlinoff.github.io/
+   CLOSED: [2022-05-21 Sat 07:42] Steps:
+   1. clone jlinoff.github.io
+   2. mkdir jlinoff.github.io/pam
+   3. cp -r $HOME/web/pam/www jlinoff.github.io/pam
+   4. rm -rf jlinoff.github.io/pam/www.venv
+   5. git add $(find -type f pam)
+   6. git commit -am'add pam for testing'
+   7. navigate to https://jlinoff.github.io/pam/www/index.html
+   Relative paths works like a charm.
+** DONE Add support for the ~.pam~ file extension
+   CLOSED: [2022-05-21 Sat 07:49] Continue to support ~.txt~ and
+   ~.js~.
+** DONE Fix record button layout for small screens
+   CLOSED: [2022-05-21 Sat 08:01]
+   The "Edit" button drops down below the "Delete" button.
+   Made the button font smaller.
+** DONE clipboard copy not showing number of bytes copied on status line
+   CLOSED: [2022-05-22 Sun 19:14]
+   to reproduce:
+   1. load file
+   2. select record
+   3. copy any field value to the clipboard
+   statusBlip was not implemented.
+** DONE Show the total number of records
+   CLOSED: [2022-05-23 Mon 13:41]
+   The total number of shown records is next to the search bar x at
+   the top.
+** CANCELLED Add support for lock (read-only) mode
+   CLOSED: [2022-05-24 Tue 15:35]
+   This would lock the app so that changes could not be made to preferences or records.
+   Lock mode would do the following:
+   1. Disable or hide "Preferences" on the menu.
+   2. Disable or hide "Save File" on the menu.
+   3. Disable or hide the "Delete", "Clone" and "Edit" buttons on each record.
+   The idea is to allow pam to be used by folks who only care about the account
+   data but that do not want to modify it.
+   Lock mode should require a password.
+   Not needed.
+** DONE Add search preferences
+   CLOSED: [2022-05-24 Tue 10:40]
+   Add four search preferences:
+   1. searchCaseInsensitive
+   2. searchRecordTitles
+   3. searchRecordFieldNames
+   4. searchRecordFieldValues
+   The goal is to allow me to find all records that use obsolete emails or passwords
+   Created the ~search-prefs~ branch.
+   Merged ~search-prefs~ branch ~main~.
+** DONE Change "New Record" field dialogues
+   CLOSED: [2022-05-24 Tue 15:47]
+    1. Add "extra" password buttons to the bottom right.
+    2. Change "Field Name" to "Name" to save space.
+    2. Change "Field Value" to "Value" to save space.
+** DONE Fix password length update bug for cryptic and memorable passwords.
+   CLOSED: [2022-05-24 Tue 15:59]
+** DONE Show screen resolution in "About"
+   CLOSED: [2022-05-24 Tue 16:39]
+** DONE Add refresh button to "About".
+   CLOSED: [2022-05-24 Tue 19:37]
+   It is a cheap way to allow me to see changes in screen data.
+** DONE Automatically update "About" without the refresh button.
+   CLOSED: [2022-05-25 Wed 12:06]
+** DONE Prettify the data presentation
+CLOSED: [2022-05-25 Wed 16:29]
+   Some ideas:
+   1. Make sure that password fields span at least as far as the field names.
+      1. For editing this can be done by moving the extra buttons (generate, etc.)
+         to the bottom of the field edit dialogue [DONE].
+      2. For presentation, stack the buttons vertically.
+   2. Consider stacking field names and values to make more horizontal room [DONE].
+   3. Consider making some of the fonts smaller to allow more records per window [DONE].
+** DONE Add last commit id and date to about page.
+   CLOSED: [2022-05-25 Wed 16:52]
+** DONE Keep the password buttons close to the value.
+   CLOSED: [2022-05-27 Fri 11:32]
+   Add a horizontal rule line before the password generate dialogue.
+** DONE add status message duration preference
+   CLOSED: [2022-05-28 Sat 14:39]
+   Added ~window.prefs.statusMsgDurationMS~
+** DONE Password generator fails on the very first update in when generating a password.
+   CLOSED: [2022-05-28 Sat 15:19]
+   1. start new browser window
+   2. new record
+   3. new password field
+   4. click the generate button
+   5. record disappears
+   I have reported this, at least twice before but had trouble reproducing it!
+   It is a very frustrating bug!
+   Finally figured out that the bug is caused by closing the child dialogue.
+   This is probably a bootstrap bug.
+   Fortunately it works after the first failure.
+   The best way to fix it may be to simply mock the initial creation
+   or limit event propagation.
+   The fix turned out to be add event.preventDefault()
+** DONE Change ~HELP.md~ to ~README.md~
+   CLOSED: [2022-05-30 Mon 17:06]
+** TODO Save file does not allow user to select the directory (or file name)
+   Steps to reproduce.
+   1. load ~example1.txt~
+   2. save
+** TODO Add test for save operation
+   This is tricky because i don't know how to specify directories to the system file dialog
+   in pylenium.
+** TODO Add test for load operation
+   This is tricky because i don't know how to specify directories to the system file dialog
+   in pylenium.
+* Problems of the day
+
+** how do i set the background color for the body of the app?
+   Ans. Figured out how to do it in bootstrap (see bs0).
+   1. set background color of everything>?
+   2. set the background color for just the container?
+   3. Maybe bootstrap is NOT the right way to go for this?
+      1. https://stackoverflow.com/questions/4069734/fixed-header-footer-with-scrollable-content
+      2. https://stackoverflow.com/questions/10056583/fixed-header-footer-and-sidebars-with-scrolling-content-area-in-center
+      3. https://css-tricks.com/how-to-use-css-grid-for-sticky-headers-and-footers/
+         1. https://codesandbox.io/s/css-grid-blog-final-duwp7?file=/src/styles.scss
+   4. This is hard!!!
+
+** how do i add a status message?
+   Ans. but i chose to have one liners go to the footer.
+   1. could use console.log or alert.
+
+** how do i create the pull down menu?
+   Ans. Use bootstrap
+   1. should be able to used the standard bootstrap dropdown toggle.
+   2. the menu does not need icons.
+
+** how do i view http://localhost:8081 on my internal network from another device?
+   1. Can i simply go to the 192.x.x.x site? Will i encounter firewall issues?
+
+** DONE how do i install pylenium?
+   CLOSED: [2022-04-13 Wed 17:27]
+   Update the Makefile to do it automatically.

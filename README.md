@@ -114,6 +114,8 @@ the on-line help is generated.
     * [Books](#books)
   * [Developer Notes](#developer-notes)
     * [License](#license)
+    * [Build PAM](#build-pam)
+    * [Test PAM](#test-pam)
     * [Release PAM](#release-pam)
     * [History](#history)
 
@@ -1795,6 +1797,28 @@ Although not required, I would appreciate attibution if you decide to
 copy and use the source code.
 
 [MIT License Terms](#https://en.wikipedia.org/wiki/MIT_License)
+
+### Build PAM
+Here are the steps to build PAM.
+
+1. `git clone https://github.com/jlinoff/pam.git`
+1. `make init`
+   * This installs the python test infrastructure
+     including pylenium as well as bootstrap.
+   * It also creates the `www/js/version.js` file
+     and the help.
+1. `make run`
+    * Runs the python server on port 8081 so
+      that you can access the app locally from
+      http://localhost:8081 in a secure context.
+
+### Test PAM
+Here are the steps to test PAM.
+
+1. `make test`
+
+THe test infrastructure uses python and pylenium to
+automate user interactions.
 
 ### Release PAM
 

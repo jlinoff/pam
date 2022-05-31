@@ -142,6 +142,10 @@ and
 _[Reasons to consider using PAM](#reasons-to-consider-using-pam)_
 sections below if you are interested in what motivated me to write _PAM_.
 
+This is not the first tool I have written to manage passwords but it
+is meant to be the last. See the [History](#history) section for more
+information.
+
 ## Overview
 _PAM_ is a pretty simple application. I think of it as a record editor
 that runs in your browser that allows you create records with interesting

@@ -29,6 +29,12 @@ clean:   # clean up
 	-rm -rf pam .venv .init .bs
 	-[ -d .git ] && git clean -xdf -e keep . || true
 
+# spell check README
+.PHONY: spell-check
+spell-check:  ## Spell check the README.md file using aspell.
+	$(call hdr,"$@")
+	aspell check README.md
+
 .PHONY: init
 init: .init .bs app-version app-help  ## very basic setup for python3 and jshint
 

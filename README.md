@@ -213,7 +213,7 @@ the login name and the password of the account. Something like this:
 
 <img src="www/help/pam-google-account.png" alt="google-account-example">
 
-In the acount example above, the record title is `"Google"`, the "url"
+In the account example above, the record title is `"Google"`, the "url"
 field value is `"https://google.com"`, the "login" field value is
 `"pbrain81@gmail.com"` and the "password" field value is hidden because
 _PAM_ hides the contents of passwords by default.
@@ -1016,7 +1016,7 @@ password this is used to unlock all of the records and _PAM_
 does _not_ keep track of it. That means that if the password is lost,
 _PAM_ cannot recover the data it is lost forever.
 
-More details about the encryption algorith used can be found in
+More details about the encryption algorithm used can be found in
 [Reason 6: Secure Context Encryption](#reason-6-secure-context-encryption).
 
 Note that if you do not enter a password, the output will be plain
@@ -1025,7 +1025,7 @@ javascript that can be read by anyone.
 Plain javascript is _NOT_ secure.
 
 If you have records with passwords _ALWAYS_ use a password unless you
-understand the consquences. For example, saving the data without a
+understand the consequences. For example, saving the data without a
 password can sometimes be convenient because it allows you to see how
 the _PAM_ data is organized which can aid automation.
 
@@ -1175,7 +1175,7 @@ dialogue.
 > Note that the fields are completely customizable. You can have as many as you want.
 > Fields are added, modified and deleted by the "Edit" option.
 
-In addition to the cliboard icon there is another icon that looks like
+In addition to the clipboard icon there is another icon that looks like
 an eye
 <img src="www/help/eye.svg" height="32" width="32" alt="eye"/>.
 that shows up for password field. If you click or tap it, the
@@ -1481,7 +1481,7 @@ because, once it is loaded, it will stay resident until you close the
 browser tab.
 
 Another thing to consider is where you store your _PAM_ record
-file(s). I use iCloud which is also quite reliable and allows acess to
+file(s). I use iCloud which is also quite reliable and allows access to
 iCloud files directly from my computers, mobile devices and tablets.
 
 Just make sure that whichever infrastructure as a service (IaaS)
@@ -1707,7 +1707,7 @@ share a common file of account records with credentials that can only
 be decrypted using a single shared password that is only known to the
 group.
 
-This might be suitablefor a _small_ group that requires administrative
+This might be suitable for a _small_ group that requires administrative
 access to a _small_ number of accounts.
 
 > Because it involves sharing a password, this approach may be too
@@ -1793,7 +1793,7 @@ to make it work better in mobile browsers.
 _PAM_ is free and open-source (FOSS) software that licensed under the
 MIT Licensing terms.
 
-Although not required, I would appreciate attibution if you decide to
+Although not required, I would appreciate attribution if you decide to
 copy and use the source code.
 
 [MIT License Terms](#https://en.wikipedia.org/wiki/MIT_License)
@@ -1817,7 +1817,7 @@ Here are the steps to test PAM.
 
 1. `make test`
 
-THe test infrastructure uses python and pylenium to
+The test infrastructure uses python and pylenium to
 automate user interactions.
 
 ### Release PAM
@@ -1859,7 +1859,7 @@ followed by a brief chronology of things progressed over the years.
 
 This is the oldest surviving effort. It was implemented using Rust and
 javascript and was funded by my employer at that time (eSentire, Inc.) for
-a hackweek project. The UI and the implementation are quite complex.
+a hack week project. The UI and the implementation are quite complex.
 
 The acronym stands for Quantum Safe Password Manager. An ambitious
 name to say the least.
@@ -1891,13 +1891,13 @@ This is the latest incarnation and it is pure javascript.
 It fixes some of the earlier problems and leverages bootstrap-5
 but could still be improved.
 
-The acronym stands for Personal Accounts Manager or PAssword Manager
+The acronym stands for Personal Accounts Manager or Password Manager
 or whatever. I just wanted something short and easy to remember.
 
 #### Chronology
 I first wrote a password manager in the early 2000's in javascript. In
 those days I had to write my own uncertified implementations of the
-encrytion algorithms like AES-256-CBC and AES-256-GCM and DES3 but
+encryption algorithms like AES-256-CBC and AES-256-GCM and DES3 but
 that was perfectly okay because, back then, my day job involved a lot
 of security stuff like designing hardware and software (in C++) to
 implement certified algorithms.

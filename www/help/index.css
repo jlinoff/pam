@@ -328,3 +328,17 @@ table td {
         page-break-after: avoid;
     }
 }
+
+/* my custom stuff */
+#title-block-header {
+    font-size: 0.8em;
+}
+
+.title {
+    font-size: 0.8em;
+    margin: 0;
+}
+
+#pam {
+    margin: 0;
+}

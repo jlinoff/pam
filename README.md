@@ -200,13 +200,16 @@ each have a unique title and are, in turn, composed of fields that
 have a name, a type and a value. This approach is similar
 to organizing information using recipe cards or a rolodex.
 
-Following the recipe card analogy a little further using a simple
-example, each recipe would be a single record, a collection of recipes
-for, say, desserts would be a file of dessert recipe records where each
-record or recipe would have three parts: a title (the name of the
-recipe), the ingredients (a field) and the instructions (another
-field). Further assume that you have a simple dessert recipe like this
-written on a card.
+Following the recipe card analogy a little further, we can use a
+simple example to understand the record model a bit better.
+
+A recipe would be a single record that might contain _title_ (the name
+of the recipe), the _ingredients_ (a field) and the _instructions_
+(another field). It would certainly be possible to organize it
+differently but this is fine for such a simple example.
+
+So what would a dessert record (recipe) look like in _PAM_?  Well, if
+you had a simple dessert recipe like this written on a card.
 
 ```
 Ice Cream Sundae
@@ -228,18 +231,36 @@ instructions
 6. put the cherry on top.
 ```
 
-This is what it would look like in _PAM_.
+It might look like this.
 
 <img src="www/help/pam-ice-cream-sundae.png" alt="ice-cream-sundae-example">
 
-As you can see, in this recipe record, the record title is `"Ice Cream
+As you can see, in this _"recipe"_ record, the title is `"Ice Cream
 Sundae"` and the two fields "ingredients" and "instructions" contain
 the multiline (`textarea`) descriptions of what the ingredients and
 instructions are for this specific recipe.
 
-On the other hand, a record for an account that provides information
-about how to login into an account on the internet might have the url,
-the login name and the password of the account. Something like this:
+Of course, there are many other types of records that might be
+interesting to store in _PAM_.
+
+One common one is a record for each account that you need to login
+into where you information about how to login is stored so you don't
+have to remember it.
+
+Such an _"account"_ record would have, at a minimum, the URL, the login
+name and the password of the account.
+
+Note that this is simplified example is only meant to show the basic
+idea of importance of support _other_ record formats.
+
+For a real account record, you might also want to keep track of the
+secrets it the site wants identify you (like what was the name of your
+first pet) or keep a note to remind why you of little details about
+the account (like the last customer service person you spoke to) but
+since you can always add new fields _after_ you create a record,
+leaving them out for now is not a big deal.
+
+Here is what a simple account record might look like.
 
 <img src="www/help/pam-google-account.png" alt="google-account-example">
 
@@ -1931,7 +1952,7 @@ This is the latest incarnation and it is pure javascript.
 It fixes some of the problems seen in the earlier attempts
 and it leverages
 [bootstrap-5](https://getbootstrap.com/docs/5.0/getting-started/introduction/)
-to make it work better in mobile browsers. 
+to make it work better in mobile browsers.
 The implementation is a bit simpler but like all of the
 other attempts there is still plenty of room for improvement.
 

@@ -146,7 +146,7 @@ sections below if you are interested in what motivated me to write _PAM_.
 
 This is not the first tool I have written to manage passwords but it
 is meant to be the last. If you are interested in the genesis of _PAM_
-and the stories of its predeccesors see the [History](#history) section.
+and the stories of its predecessors see the [History](#history) section.
 
 ## Overview
 _PAM_ is a pretty simple application. I think of it as a record editor
@@ -363,12 +363,12 @@ Using a strong, certified encryption algorithm is a strong security
 guarantee which means, that if an encrypted _PAM_ file is stolen, the
 record data is considered safe from hackers trying to read the contents.
 Always use a strong password to make it hard to guess. Typically a strong
-password would have more than 20 characers would not include any personally
+password would have more than 20 characters would not include any personally
 identifiable information (PII) like your name, birth date or address. 
 
 I recommend reading
 [NIST Password Guidelines](#https://www.auditboard.com/blog/nist-password-guidelines/)
-for more information about how to crete strong passwords.
+for more information about how to create strong passwords.
 
 As an interesting aside, note that `AES-256-CBC` is considered to be reasonably
 resistant to quantum attacks as discussed in the literature.

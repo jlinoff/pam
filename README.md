@@ -289,29 +289,43 @@ _PAM_ allows you to search records by their title or their field
 names and values. It also filters out the records that don't match
 to make it easier to see the matching records visually.
 
+The availability of fast interactive searching makes finding records
+easy.
+
 See [Search Records](#search-records) for more details.
 
 #### Reason 4: Automatic Password Generation
 I always find it hard to come up with passwords in the spur of the
-moment so _PAM_ was built with an automatic password generation
-capability.
+moment so _PAM_ was built with the ability to automatically generate
+passwords.
 
 Of course almost all browsers and password tools provide this same
-capability these days, but they tend to generate cryptic, hard to
-memorize passwords which is perfectly fine if you never have to
-remember them but if you want a more memorable password, you are out
-of luck.
+capability nowadays, but they tend to generate secure, cryptic, hard
+to memorize passwords. This is perfectly fine for passwords you do not
+need to remember but sometimes I found, that I wanted a more memorable
+password so I added the ability to create memorable passwords.
 
-_PAM_ gives you a choice because it has the concept of cryptic and
-memorable passwords as discussed in detail in [Password Fields](#password-fields)
-section.
+To make these concepts a bit clearer, here are examples of a cryptic
+and a memorable password
+
+| <!-- --> | <!-- --> |
+| -------- | -------- |
+| cryptic | `Rf5NaR7LH2LbZMRhkPCfeG89TicLiZ` |
+| memorable | `health/mpegs/hopes/beside/call` |
+
+Thus, when it comes to creating a new password, _PAM_ gives you a
+choice because it has the concept of _cryptic_ and _memorable_
+passwords. This is discussed in more detail in
+[Password Fields](#password-fields) section.
 
 #### Reason 5: File Based Storage
 _PAM_ uses files to load and store the record data.
 
 Using a file means that the user does not have to rely on the
 cybersecurity defenses of a company running a web server at their site
-or another third party site.
+or another third party site. This was alluded in 
+[Reason 1: No Client Server Communications](#reason-1-no-client-server-communications)
+but that is not the only advantage of using files.
 
 A _PAM_ file is composed of a set of records. Any records you like.
 You can use a single file for all of your records or you can have
@@ -319,12 +333,16 @@ multiple files where each file contains records that are somehow
 related like records of _"recipes"_ or _"book reviews"_
 or _"my favorite species of Euglena"_.
 
-For a discussion about how the user controls the organization of
-the records and fields in a file see the
+What this means is that you can group associated records in
+different files to make them easier to organize and find. That
+is key reason that I like using files.
+
+For a more detailed discussion about how the user controls the
+organization of the records and fields in a file see the
 [Reason 2: Record Model](#reason-2-record-model)
 section of this document.
 
-I store my record files in iCloud _IaaS_ storage (infrastructure as a
+I store my _PAM_ record files in iCloud _IaaS_ storage (infrastructure as a
 service) that is automatically mounted as a local volume on each device so
 that the files look like they are local but they are, in fact, stored
 in the cloud. That allows me to access the files from any of my
@@ -336,14 +354,23 @@ phones or tables) and you would have to be very diligent about keeping
 it backed up.
 
 #### Reason 6: Secure Context Encryption
-Records are encrypted using an
+When records are stored in a file they can be encrypted using a
+password. The password is then used by an
 [_NIST certified_](https://csrc.nist.gov/projects/cryptographic-algorithm-validation-program),
-symmetric encryption algorithm: `AES-256-CBC`. That is a strong
-security guarantee which means, that if an encrypted _PAM_
-file is stolen, the record data is safe, if it has been encrypted with
-a strong password.
+symmetric encryption algorithm: `AES-256-CBC` to obfuscate the records.
 
-As an added benefit, note that `AES-256-CBC` is thought to be reasonably
+Using a strong, certified encryption algorithm is a strong security
+guarantee which means, that if an encrypted _PAM_ file is stolen, the
+record data is considered safe from hackers trying to read the contents.
+Always use a strong password to make it hard to guess. Typically a strong
+password would have more than 20 characers would not include any personally
+identifiable information (PII) like your name, birth date or address. 
+
+I recommend reading
+[NIST Password Guidelines](#https://www.auditboard.com/blog/nist-password-guidelines/)
+for more information about how to crete strong passwords.
+
+As an interesting aside, note that `AES-256-CBC` is considered to be reasonably
 resistant to quantum attacks as discussed in the literature.
 [Here](https://crypto.stackexchange.com/questions/6712/is-aes-256-a-post-quantum-secure-cipher-or-not)
 is one relevant exchange from a `crypto.stackexchange.com` discussion.

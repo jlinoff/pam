@@ -425,9 +425,9 @@ This is the view of a password when it is not hidden.
 #### Reason 8: Access from mobile devices
 
 The files can be accessed from mobile devices so the user has access to the
-records anywhere. In addition it uses
+records anywhere. _PAM_ uses
 [bootstrap-5](https://getbootstrap.com/docs/5.0/getting-started/introduction/)
-to make it work better in mobile browsers.
+to make the interface work better in mobile browsers.
 
 #### Reason 9: FOSS
 

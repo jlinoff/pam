@@ -345,8 +345,9 @@ related like records of _"recipes"_ or _"book reviews"_
 or _"my favorite species of Euglena"_.
 
 What this means is that you can group associated records in
-different files to make them easier to organize and find. That
-is key reason that I like using files.
+different files to make them easier to organize and find.
+This ability to organize files around topics is one the
+reasons I prefer files.
 
 For a more detailed discussion about how the user controls the
 organization of the records and fields in a file see the

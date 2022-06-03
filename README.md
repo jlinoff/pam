@@ -203,7 +203,7 @@ to organizing information using recipe cards or a rolodex.
 Following the recipe card analogy a little further, we can use a
 simple example to understand the record model a bit better.
 
-A recipe would be a single record that might contain _title_ (the name
+A recipe would be a single record that might contain the _title_ (the name
 of the recipe), the _ingredients_ (a field) and the _instructions_
 (another field). It would certainly be possible to organize it
 differently but this is fine for such a simple example.

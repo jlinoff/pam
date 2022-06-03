@@ -254,11 +254,22 @@ Note that this is simplified example is only meant to show the basic
 idea of importance of support _other_ record formats.
 
 For a real account record, you might also want to keep track of the
-secrets it the site wants identify you (like what was the name of your
-first pet) or keep a note to remind why you of little details about
-the account (like the last customer service person you spoke to) but
-since you can always add new fields _after_ you create a record,
-leaving them out for now is not a big deal.
+secrets the site asks you to enter so that it can identify you if you
+ever lose your password (unlikely if you are using this tool or some
+other tool like it).
+
+The secrets they ask for might be something like your mothers
+maiden name or the name of your first pet or other such, personal,
+things. I am always wary of entering that kind of information on a
+third party site because it can be stolen and used against you so I
+_always_ make things up, like me first car might be a "Saturn V" (as in
+the rocket), which gets hard to remember for many sites with many made
+up secrets.
+
+Or, you might want to keep a note to remind of little details about
+the account (like your favorite customer service) but since you can
+always add new fields _after_ you create a record, leaving them out
+for now is not a big deal.
 
 Here is what a simple account record might look like.
 
@@ -323,7 +334,7 @@ _PAM_ uses files to load and store the record data.
 
 Using a file means that the user does not have to rely on the
 cybersecurity defenses of a company running a web server at their site
-or another third party site. This was alluded in 
+or another third party site. This was alluded in
 [Reason 1: No Client Server Communications](#reason-1-no-client-server-communications)
 but that is not the only advantage of using files.
 
@@ -364,7 +375,8 @@ guarantee which means, that if an encrypted _PAM_ file is stolen, the
 record data is considered safe from hackers trying to read the contents.
 Always use a strong password to make it hard to guess. Typically a strong
 password would have more than 20 characters would not include any personally
-identifiable information (PII) like your name, birth date or address. 
+identifiable information (PII) like your name, birth date or address. Also
+never ever use the same password for two different sites.
 
 I recommend reading
 [NIST Password Guidelines](#https://www.auditboard.com/blog/nist-password-guidelines/)

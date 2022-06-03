@@ -247,8 +247,8 @@ One common one is a record for each account that you need to login
 into where you information about how to login is stored so you don't
 have to remember it.
 
-Such an _"account"_ record would have, at a minimum, the URL, the login
-name and the password of the account.
+Such an _"account"_ record would have, at a minimum, the web address
+(URL), the login name and the password of the account.
 
 Note that this is simplified example is only meant to show the basic
 idea of importance of support _other_ record formats.
@@ -266,10 +266,10 @@ _always_ make things up, like me first car might be a "Saturn V" (as in
 the rocket), which gets hard to remember for many sites with many made
 up secrets.
 
-Or, you might want to keep a note to remind of little details about
-the account (like your favorite customer service) but since you can
-always add new fields _after_ you create a record, leaving them out
-for now is not a big deal.
+Or, you might want to keep a note to remind you of little details
+about the account (like your favorite customer service representative)
+but since you can always add new fields _after_ you create a record,
+leaving them out for now is not a big deal.
 
 Here is what a simple account record might look like.
 

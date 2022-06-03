@@ -369,12 +369,17 @@ it backed up.
 When records are stored in a file they can be encrypted using a
 password. The password is then used by an
 [_NIST certified_](https://csrc.nist.gov/projects/cryptographic-algorithm-validation-program),
-symmetric encryption algorithm: `AES-256-CBC` to obfuscate the records.
+symmetric encryption algorithm: `AES-256-CBC` to encode the records.
 
-Using a strong, certified encryption algorithm is a strong security
+Using a certified encryption algorithm provides a strong security
 guarantee which means, that if an encrypted _PAM_ file is stolen, the
-record data is considered safe from hackers trying to read the contents.
-Always use a strong password to make it hard to guess. Typically a strong
+record data is considered safe from hackers trying to read the contents
+_if a strong password was used_.
+
+A password like _"secret"_ or _"password123"_
+is _not_ strong and will not protect your data because it easy to guess.
+
+_Always_ use a strong password to make it hard to guess. Typically a strong
 password would have more than 20 characters would not include any personally
 identifiable information (PII) like your name, birth date or address. Also
 never ever use the same password for two different sites.
@@ -383,9 +388,10 @@ I recommend reading
 [NIST Password Guidelines](#https://www.auditboard.com/blog/nist-password-guidelines/)
 for more information about how to create strong passwords.
 
-As an interesting aside, note that `AES-256-CBC` is considered to be reasonably
-resistant to quantum attacks as discussed in the literature.
-[Here](https://crypto.stackexchange.com/questions/6712/is-aes-256-a-post-quantum-secure-cipher-or-not)
+As an interesting aside, note that `AES-256-CBC` algorithm is
+considered to be reasonably resistant to quantum attacks as discussed
+in the literature. For example,
+[here](https://crypto.stackexchange.com/questions/6712/is-aes-256-a-post-quantum-secure-cipher-or-not)
 is one relevant exchange from a `crypto.stackexchange.com` discussion.
 
 _PAM_ encryption and decryption operations are provided by and run

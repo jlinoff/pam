@@ -339,10 +339,11 @@ For more detailed information about password generation in _PAM_ see the
 _PAM_ uses files to load and store the record data.
 
 Using a file means that the user does not have to rely on the
-cybersecurity defenses of a company running a web server at their site
-or another third party site. This was alluded in
+cybersecurity infrastructure of a company running a web server and
+storing your data at their site or another third party site. This was
+alluded in
 [Reason 1: No Client Server Communications](#reason-1-no-client-server-communications)
-but that is not the only advantage of using files.
+but that is not the _only_ advantage of using files.
 
 A _PAM_ file is composed of a set of records. Any records you like.
 You can use a single file for all of your records or you can have
@@ -350,43 +351,44 @@ multiple files where each file contains records that are somehow
 related like records of _"recipes"_ or _"book reviews"_
 or _"my favorite species of Euglena"_.
 
-What this means is that you can group associated records in
-different files to make them easier to organize and find.
-This ability to organize files around topics is one the
-reasons I prefer the file based storage model.
+What this means is that you can group records associated by a topic in
+different files to make them easier to organize and find.  This
+ability to organize files around topics is one the reasons I prefer
+the file based storage model.
 
 For a more detailed discussion about how the user controls the
 organization of the records and fields in a file see the
 [Reason 2: Record Model](#reason-2-record-model)
 section of this document.
 
-I store my _PAM_ record files in iCloud _IaaS_ storage (infrastructure as a
-service) that is automatically mounted as a local volume on each device so
-that the files look like they are local but they are, in fact, stored
-in the cloud. That allows me to access the files from any of my
-devices: laptops, phones and tablets.
+As a side note, I store my _PAM_ record files in iCloud _IaaS_ storage
+(infrastructure as a service) that is automatically mounted as a local
+volume on each device so that the files look like they are local but
+they are, in fact, stored in the cloud. That allows me to access the
+files from any of my devices: laptops, phones and tablets.
 
 Of course you could simply load and save the data to a local file but
-that might restrict access to it from other devices (like mobile
-phones or tables) and you would have to be very diligent about keeping
-it backed up.
+that _might_ restrict your ability to access to it from other devices
+(like mobile phones or tables). Not only that but you would have to be
+very diligent about keeping it backed up so that you would not lose
+data if the local file was corrupted or lost.
 
 #### Reason 6: Secure Context Encryption
-When records are stored in a file they can be encrypted using a
+When records are stored in a _PAM_ file they can be encrypted using a
 password. The password is then used by an
 [_NIST certified_](https://csrc.nist.gov/projects/cryptographic-algorithm-validation-program),
 symmetric encryption algorithm: `AES-256-CBC` to encode the records.
 
 Using a certified encryption algorithm provides a strong security
 guarantee which means, that if an encrypted _PAM_ file is stolen, the
-record data is considered safe from hackers trying to read the contents
-_if a strong password was used_.
+record data is considered safe from hackers trying to crack the
+contents _if a strong password was used_.
 
-A password like _"secret"_ or _"password123"_
-is _not_ strong and will not protect your data because it easy to guess.
+A password like _"secret"_ or _"password123"_ is _not_ strong and will
+not protect your data because it is easy to guess.
 
 _Always_ use a strong password to make it hard to guess. Typically a strong
-password would have more than 20 characters would not include any personally
+password would at least 20 characters would not include any personally
 identifiable information (PII) like your name, birth date or address. Also
 never ever use the same password for two different sites.
 

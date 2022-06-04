@@ -312,21 +312,27 @@ passwords.
 
 Of course almost all browsers and password tools provide this same
 capability nowadays, but they tend to generate secure, cryptic, hard
-to memorize passwords. This is perfectly fine for passwords you do not
-need to remember but sometimes I found, that I wanted a more memorable
-password so I added the ability to create memorable passwords.
+to memorize passwords which is perfectly fine for passwords for most
+accounts.
+
+But there are a cases when a more memorable, easy to type password is
+desirable such as the login password for your work computer, where there
+is no way to easily access and use a password management system and
+the ability to type the password easily is important because you can't
+paste it from the clipboard.
 
 To make these concepts a bit clearer, here are examples of a cryptic
 and a memorable password
 
 | <!-- --> | <!-- --> |
 | -------- | -------- |
-| cryptic | `Rf5NaR7LH2LbZMRhkPCfeG89TicLiZ` |
-| memorable | `health/mpegs/hopes/beside/call` |
+| cryptic   | `Rf5NaR7LH2LbZMRhkPCfeG8` |
+| memorable | `A1/health/mpegs/hopes!!` |
 
-Thus, when it comes to creating a new password, _PAM_ gives you a
-choice because it has the concept of _cryptic_ and _memorable_
-passwords. This is discussed in more detail in
+As a result, _PAM_ was built with the ability to generate _cryptic_
+and _memorable_ passwords. 
+
+For more detailed information about password generation in _PAM_ see the
 [Password Fields](#password-fields) section.
 
 #### Reason 5: File Based Storage

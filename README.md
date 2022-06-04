@@ -183,7 +183,7 @@ this tool.
 
 ### Reasons to consider using PAM
 
-As mentioned in the previous section, I wrote _PAM_ provide some
+As mentioned in the previous section, I wrote _PAM_ to provide some
 features I wanted and to address some concerns I had with existing
 approaches. This section lists those concerns and features in the
 each of reasons presented below.

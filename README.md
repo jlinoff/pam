@@ -183,10 +183,9 @@ this tool.
 
 ### Reasons to consider using PAM
 
-As mentioned in the previous section, I wrote _PAM_ to provide some
-features I wanted and to address some concerns I had with existing
-approaches. This section lists those concerns and features in the
-each of reasons presented below.
+This section presents the nine primary reasons that motivated me to
+develop _PAM_. They are provided to to help you determine whether
+_PAM_ might be interesting to you.
 
 #### Reason 1: No Client Server Communications
 _PAM_ is a single page web application (SPA) that has no backend which

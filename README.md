@@ -261,9 +261,9 @@ The secrets they ask for might be something like your mothers
 maiden name or the name of your first pet or other such, personal,
 things. I am always wary of entering that kind of information on a
 third party site because it can be stolen and used against you so I
-_always_ make things up, like me first car might be a "Saturn V" (as in
-the rocket), which gets hard to remember for many sites with many made
-up secrets.
+_always_ make things up, like my first car might be the "Bistromath"
+or the "Tanngrisnir", which gets hard to remember for many sites with
+many made up secrets.
 
 Or, you might want to keep a note to remind you of little details
 about the account (like your favorite customer service representative)
@@ -314,21 +314,34 @@ capability nowadays, but they tend to generate secure, cryptic, hard
 to memorize passwords which is perfectly fine for passwords for most
 accounts.
 
-But there are a cases when a more memorable, easy to type password is
-desirable such as the login password for your work computer, where there
-is no way to easily access and use a password management system and
-the ability to type the password easily is important because you can't
-paste it from the clipboard.
+But there are a cases when you need a password that must be typed in
+manually like the login password for a computer that does not use
+biometric scanning or a key FOB. In those cases it is beneficial to
+have a password that is easy to remember and easy to type because you
+cannot accesss a password management system _before you login_.
+
+I call passwords of this type _memorable_ passwords. They are composed
+of common lower case English words with an optional prefix, an
+optional separator between each word and an optional suffix.
+
+Often, the prefix and suffix are used to guarantee that the password
+contains the correct mix of characters that the authentication system
+requires, like, at least one capital letter, at least one digit and at
+least one special character.
 
 To make these concepts a bit clearer, here are examples of a cryptic
-and a memorable password
+and a memorable password.
 
 | <!-- --> | <!-- --> |
 | -------- | -------- |
 | cryptic   | `Rf5NaR7LH2LbZMRhkPCfeG8` |
 | memorable | `A1/health/mpegs/hopes!!` |
 
-As a result, _PAM_ was built with the ability to generate _cryptic_
+In this example, the memorable password word separator is `"/"`, the
+prefix is `"A1/"` (capital letter and digit) and the suffix is `"!!"`
+(special characters).
+
+To help with this, _PAM_ was built with the ability to generate _cryptic_
 and _memorable_ passwords. 
 
 For more detailed information about password generation in _PAM_ see the
@@ -713,19 +726,36 @@ different types of passwords: cryptic and memorable.
 
 ##### Cryptic Passwords
 Cryptic passwords consist of letters, digits and
-special characters in a single string.
+special characters.
 
 Here is an example: `'N5yAb!XfGa3vELPsK95K4/AAz8mts'`.
 
 Cryptic passwords tend to be hard to memorize for most people.
 
+They are perfect for cases where you don't have to type the
+password in because they are hard to crack.
+
 ##### Memorable Passwords
-Memorable passwords are composed of lower case English words with
-an optional prefix, an optional separator between each word and an optional suffix.
+Memorable passwords are used to define passwords that must
+be typed in manually, as described in the 
+[Reason 4: Automatic Password Generation](#reason-4-automatic-password-generation)
+section which means that it is important that they are easy to type and to remember.
 
-Here is an example: `'rebates/restructuring/jamaica'`.
+They are composed of common lower case English words with an
+optional prefix, an optional separator between each word and an
+optional suffix. Often, the prefix and suffix are used to guarantee that the password
+contains the correct mix of characters that the authentication system
+requires, like, at least one capital letter, at least one digit and at
+least one special character.
 
-Memorable passwords tend to be easier to memorize than cryptic passwords for most people.
+The security rationale for memorable passwords is described in this article:
+[The logic behind three random words](https://www.ncsc.gov.uk/blog-post/the-logic-behind-three-random-words).
+
+Here is an example: `'Z0/rebates/restructuring/jamaica??'` where the prefix is `'Z0/'`,
+the separator is `'/'` and the suffix is `'??'`.
+
+Memorable passwords tend to be easier to memorize than cryptic
+passwords for most people.
 
 ##### Hidden Password Representation
 Here is an example that shows a password in its standard hidden form.

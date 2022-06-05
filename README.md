@@ -124,16 +124,17 @@ the on-line help is generated.
 </details>
 
 ## Introduction
-_PAM_ or Personal Account Manager is a free open source single page
+_PAM_ or Personal Account Manager is a free open source, single page
 web application that helps you manage your confidential information as
-searchable records in a secure and persistent manner _without ever
-having to rely on backend services from a third party server_.
+searchable records _without having to rely on services from a
+third party server_.
 
-_PAM_ can do that because it runs in your browser and because it
+_PAM_ can do that because it runs inside your browser and because it
 stores the _your information_ in a file that _you control_.
 
-The file is encrypted so even if it were stolen the data would be safe
-_if the password you used to encrypt it was strong_.
+The _PAM_ file is encrypted so the contents would be safe from hackers
+if the file was stolen assuming, of course, _that the password you
+used to encrypt it was strong_.
 
 You can access _PAM_ from your own HTTP server (including localhost) or from the
 public github.io server [here](https://jlinoff.github.io/pam/www/index.html).
@@ -158,9 +159,8 @@ secure way.
 
 It is very reasonable to ask yourself why, if _PAM_ is like an editor,
 you can't simply just use something like an Excel spreadsheet or a
-text file editor or
-keep passwords on sheets of paper or use one of the many
-commercially available password managers?
+text file editor or keep passwords on a sheet of paper or use one of
+the many commercially available password managers?
 
 That is an excellent question. The answer is that you _can_ and, if
 you are already using an Excel spreadsheet or a text file editor or a sheet
@@ -197,18 +197,18 @@ it from some types of cyber attacks as detailed in the
 In _PAM_, information is organized into files composed of records that
 each have a unique title and are, in turn, composed of fields that
 have a name, a type and a value. This approach is similar
-to organizing information using recipe cards or a rolodex.
+to organizing information using index cards or a rolodex.
 
-Following the recipe card analogy a little further, we can use a
+Following the index card analogy a little further, we can use a
 simple example to understand the record model a bit better.
 
-A recipe would be a single record that might contain the _title_ (the name
-of the recipe), the _ingredients_ (a field) and the _instructions_
-(another field). It would certainly be possible to organize it
-differently but this is fine for such a simple example.
+A recipe would be something you might store on an index card. Each
+recipe could be a single record that might contain the _title_ (the
+name of the recipe), the _ingredients_ (a field) and the
+_instructions_ (another field).
 
-So what would a dessert record (recipe) look like in _PAM_?  Well, if
-you had a simple dessert recipe like this written on a card.
+So what would a simple dessert recipe look like as a in _PAM_ record?
+Well, if you had a simple dessert recipe like this written on a card.
 
 ```
 Ice Cream Sundae
@@ -250,49 +250,30 @@ Such an _"account"_ record would have, at a minimum, the web address
 (URL), the login name and the password of the account.
 
 Note that this is simplified example is only meant to show the basic
-idea of importance of support _other_ record formats.
-
-For a real account record, you might also want to keep track of the
-secrets the site asks you to enter so that it can identify you if you
-ever lose your password (unlikely if you are using this tool or some
-other tool like it).
-
-The secrets they ask for might be something like your mothers
-maiden name or the name of your first pet or other such, personal,
-things. I am always wary of entering that kind of information on a
-third party site because it can be stolen and used against you so I
-_always_ make things up, like my first car might be the "Bistromath"
-or the "Tanngrisnir", which gets hard to remember for many sites with
-many made up secrets.
-
-Or, you might want to keep a note to remind you of little details
-about the account (like your favorite customer service representative)
-but since you can always add new fields _after_ you create a record,
-leaving them out for now is not a big deal.
+idea of importance of supporting record formats that are different
+than recipes.
 
 Here is what a simple account record might look like.
 
 <img src="www/help/pam-google-account.png" alt="google-account-example">
 
-In the account example above, the record title is `"Google"`, the "url"
-field value is `"https://google.com"`, the "login" field value is
-`"pbrain81@gmail.com"` and the "password" field value is hidden because
-_PAM_ hides the contents of passwords by default.
+Note that the password is hidden in the example above.
+_PAM_ always hides the contents of passwords by default.
 
 As you can see both records look quite different. Recipes records have
 fields for "ingredients" and "instructions" whereas account records
-have fields for the "url", "login" and "password". In both cases
-they have the same basic structure: a title and a set of fields that
-are relevant to them.
+have fields for the "url", "login" and "password". However, in both
+cases they have the same basic structure: a title and a set of fields
+that are relevant to recipes or accounts.
 
 You could easily imagine defining other records that contain
 information for other topics like _"books read"_ or _"unidentified
 aerial phenomena"_ or _"bird watching"_ which would undoubtedly
-require additional, different fields.
+require different fields.
 
-In my view, this _fields in records_ organization does a better job of
-representing this type of information than a spreadsheet or a text
-file editor.
+In my view, this approach of using _records composed of fields_
+does a better job of representing this type of information than a
+spreadsheet or a text file editor.
 
 #### Reason 3: Searching
 _PAM_ allows you to search records by their title or their field
@@ -317,8 +298,9 @@ accounts.
 But there are a cases when you need a password that must be typed in
 manually like the login password for a computer that does not use
 biometric scanning or a key FOB. In those cases it is beneficial to
-have a password that is easy to remember and easy to type because you
-cannot accesss a password management system _before you login_.
+have a password that is secure, easy to remember and easy to type
+because you cannot accesss a password management system _before you
+login_.
 
 I call passwords of this type _memorable_ passwords. They are composed
 of common lower case English words with an optional prefix, an
@@ -365,8 +347,8 @@ or _"my favorite species of Euglena"_.
 
 What this means is that you can group records associated by a topic in
 different files to make them easier to organize and find.  This
-ability to organize files around topics is one the reasons I prefer
-the file based storage model.
+ability to organize files around topics is the other reason that I
+prefer the file based storage model.
 
 For a more detailed discussion about how the user controls the
 organization of the records and fields in a file see the
@@ -396,13 +378,17 @@ guarantee which means, that if an encrypted _PAM_ file is stolen, the
 record data is considered safe from hackers trying to crack the
 contents _if a strong password was used_.
 
-A password like _"secret"_ or _"password123"_ is _not_ strong and will
-not protect your data because it is easy to guess.
+Passwords like _"secret"_ or _"password123"_ or any other password
+that can be found in freely available password dictionaries like the
+[Kali password dictionary](https://kalitut.com/best-password-dictionary/#Kali_password_dictionary)
+are _not_ strong and will not protect your data because they are easy to guess.
 
 _Always_ use a strong password to make it hard to guess. Typically a strong
 password would at least 20 characters would not include any personally
 identifiable information (PII) like your name, birth date or address. Also
-never ever use the same password for two different sites.
+_never, ever_ use the same password for two different sites. This is
+to protect you from hackers if a site you use to is attacked and your
+password is stolen.
 
 I recommend reading
 [NIST Password Guidelines](#https://www.auditboard.com/blog/nist-password-guidelines/)
@@ -453,8 +439,8 @@ to make the interface work better in mobile browsers.
 
 Last but not least, one compelling reason to try _PAM_ is that it is
 free and open source software (FOSS) so you can try it without any
-obligation or cost. You can also help find and fix bugs or customize
-it yourself.
+obligation or cost. You can also help find and fix bugs or improve
+the UI.
 
 ## Layout
 _PAM_ is a simple single page web application (SPA). It consists of three
@@ -548,10 +534,6 @@ Here is a screen shot of what you would see.
 
 <img src="www/help/pam-about.png" alt="about">
 
-Here is the annotated view
-
-<img src="www/help/pam-about-annotated.png" alt="about-annotated">
-
 Here is an about dialogue with a simple custom message.
 
 <img src="www/help/pam-about-custom.png" alt="about-custom">
@@ -561,8 +543,9 @@ Custom messages are defined in preferences as follows.
 <img src="www/help/pam-about-custom-pref.png" alt="about-custom-pref">
 
 The motivation for allowing custom messages is that someone might want
-to share a _PAM_ file. The custom message would allow the person to
-provide their _imprimatur_ on the collection.
+to share a _PAM_ file or describe how the records are related. The
+custom message would allow the person to provide their _imprimatur_ on
+the collection.
 
 ### Create Record
 
@@ -739,7 +722,8 @@ password in because they are hard to crack.
 Memorable passwords are used to define passwords that must
 be typed in manually, as described in the 
 [Reason 4: Automatic Password Generation](#reason-4-automatic-password-generation)
-section which means that it is important that they are easy to type and to remember.
+section which means that it is important that they are secure, easy to
+type and to remember.
 
 They are composed of common lower case English words with an
 optional prefix, an optional separator between each word and an

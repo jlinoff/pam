@@ -32,7 +32,8 @@ the on-line help is generated.
     * [Reasons to not use PAM](#reasons-to-not-use-pam)
     * [Reasons to consider using PAM](#reasons-to-consider-using-pam)
       * [Reason 1: No Client Server Communications](#reason-1-no-client-server-communications)
-      * [Reason 2: Record Model](#reason-2-record-model)
+      *
+      [Reason 2: Record Model](#reason-2-record-model)
       * [Reason 3: Searching](#reason-3-searching)
       * [Reason 4: Automatic Password Generation](#reason-4-automatic-password-generation)
       * [Reason 5: File Based Storage](#reason-5-file-based-storage)
@@ -48,6 +49,8 @@ the on-line help is generated.
     * [Create Record](#create-record)
       * [Topics](#topics)
       * [Fields](#fields)
+        * [Field Types](#field-types)
+        * [Custom Field Types](#custom-field-types)
       * [Password Fields](#password-fields)
         * [Cryptic Passwords](#cryptic-passwords)
         * [Memorable Passwords](#memorable-passwords)
@@ -59,6 +62,8 @@ the on-line help is generated.
       * [Method 3: Javascript Approach](#method-3-javascript-approach)
     * [Edit Record](#edit-record)
     * [Delete Record](#delete-record)
+    * [Clone Record](#clone-record)
+    * [Clear Records](#clear-records)
     * [Save File](#save-file)
     * [Load File](#load-file)
     * [Search Records](#search-records)
@@ -100,6 +105,7 @@ the on-line help is generated.
     * [Malware: Clipboard Attack](#malware-clipboard-attack)
     * [Unattended Browser](#unattended-browser)
     * [Website Spoofing](#website-spoofing)
+    * [Dictionary and Brute Force Password Attacks](#dictionary-and-brute-force-password-attacks)
     * [Protecting Yourself](#protecting-yourself)
     * [Multi-Factor Authentication](#multi-factor-authentication)
   * [Usage Examples](#usage-examples)
@@ -324,7 +330,7 @@ prefix is `"A1/"` (capital letter and digit) and the suffix is `"!!"`
 (special characters).
 
 To help with this, _PAM_ was built with the ability to generate _cryptic_
-and _memorable_ passwords. 
+and _memorable_ passwords.
 
 For more detailed information about password generation in _PAM_ see the
 [Password Fields](#password-fields) section.
@@ -391,7 +397,7 @@ to protect you from hackers if a site you use to is attacked and your
 password is stolen.
 
 I recommend reading
-[NIST Password Guidelines](#https://www.auditboard.com/blog/nist-password-guidelines/)
+[NIST Password Guidelines](https://www.auditboard.com/blog/nist-password-guidelines/)
 for more information about how to create strong passwords.
 
 As an interesting aside, note that `AES-256-CBC` algorithm is
@@ -515,6 +521,7 @@ In a nutshell they are:
 1. Edit Record.
 1. Delete Record.
 1. Clone Record.
+1. Clear Records.
 1. Save records to an encrypted file.
 1. Load a collection of records from an encrypted file.
 1. Search Records.
@@ -583,22 +590,21 @@ more detail, it is very important to understand record topics and
 record fields.
 
 #### Topics
-Topics are a way of organizing records that have similar
-fields.
+Topics provide a convenient abstraction for organizing records in files.
 
 Topics are completely arbitrary associations between records that are
 defined by you based what is important to you. For example, a topic
 could be something like _"recipes"_, _"accounts"_, or _"unidentified
-aerial phenomena"_ or _"my favorite mathematical spaces"_.
+aerial phenomena"_ or _"my favorite cryptography algorithms"_.
 
-One way to use topics is to help you organize records in files.
 For example you could define a "`recipes.pam`" file for all of
 your recipe records and an "`accounts.pam`" for your account records.
 Or, you could put all of your records, irregardless
 of topic, into a single file like "`mystuff.pam`".
 
-Either way, topics provide a useful abstraction for describing the
-fundamental organizing principle.
+Topics are also discussed in the
+[Reason 2: Record Model](#reason-2-record-model)
+section.
 
 #### Fields
 Records are composed of fields. Each field has a name, a type and a value.
@@ -607,12 +613,13 @@ The field name is arbitrary and is meant to describe the data in the
 field. For example, an "ingredients" field would indicate that the value
 is a list of ingredients.
 
-The field type describes the type of data. The available types are described
-in detail below.
+The field type describes the type of data that field holds like a
+number or an email. A complete description list of the available types
+is presented in the [Field Types](#field-types) table below.
 
 The field value is the unique value for the field in an individual record.
-For example, a "url" field in a record would have different value than the
-"url" field in a different record.
+For example, an "email" field in one record would have different value than the
+"email" field in a different record.
 
 To keep things simple, I decided to tightly bind the field name and
 type so that the field name unambiguously defines the type. That means
@@ -639,9 +646,14 @@ when creating a new record. They are only provided for convenience.
 
 <img src="www/help/pam-change-field-name.png" alt="change-field-name">
 
-The field types are based on HTML element input types and that is, in
-fact, how they are presented to the user in the preferences
-dialogue. Here is a brief overview of the types and when to use
+##### Field Types
+
+The field types are based on HTML _input_ element types except for the
+_textarea_ type which is an HTML _textarea_ element. They are presented
+below as simple types regardless of the underlying HTML element to avoid
+unnecessary complexity.
+
+The table below presents a brief overview of the types and when to use
 them. You can search the web for more details.
 
 | Type | Usage |
@@ -651,16 +663,18 @@ them. You can search the web for more details.
 | number | A numeric text string. Use it if you _only_ want to accept an number value. A typical usage might be a measurement like height or width or any other numeric value. |
 | password | A secret text string that is normally displayed as asterisks (`****`) with an eye (<img src="www/help/eye.svg" height="32" width="32" alt="eye"/>) button that can be clicked or tapped to show the value. |
 | phone | A phone number text string. Use it if you _only_ want to accept a phone number value.  A typical usage might be a mobile phone number. |
-| text | A string, like a name or keyword. You can use this for anything. A typical usage might be a login name where the value might be a name like "wiley" or an email like "wcoyote@acme.io" or a number like "12345678". |
-| textarea | A multi-line text box. A typical usage might be a note or a list of recipe ingredients. Note that this is _not_ strictly speaking an HTML input element type, it is a separate element. It is treated as an input type here for convenience. |
-| url | A text string that is a uniform resource locator (URL). Use it if you _only_ want to accept a URL value. A typical usage might be the path to an account like https://google.com |
+| text | A string, like a name or keyword. You can use this for any text but it is especially useful when a field can be multiple types like an email or a name. A typical usage might be a login name where the value might be a name like "wiley" or an email like "wcoyote@acme.io" or a number like "12345678". |
+| textarea | A multi-line text box. A typical usage might be a note or a list of recipe ingredients. |
+| url | A text string that is a uniform resource locator (URL). Use it if you _only_ want to accept a URL value. A typical usage might be the path to an account like `https://google.com` |
 
-> Remember that the types were not made up by me, they were
-> taken directly from input element description
-> [here](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/input),
-> the separate textarea element is described
-> [here](https://developer.mozilla.org/en-US/docs/Web/API/HTMLTextAreaElement).
+Remember that the types were not made up by me, they were
+taken directly from input element description
+[here](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/input),
+the separate textarea element is described
+[here](https://developer.mozilla.org/en-US/docs/Web/API/HTMLTextAreaElement).
 
+
+##### Custom Field Types
 It is oftentimes the case that all of the _available_ types are not
 needed for the records you are keeping. This is especially true in
 cases where you have a very clear understanding of the record field
@@ -720,7 +734,7 @@ password in because they are hard to crack.
 
 ##### Memorable Passwords
 Memorable passwords are used to define passwords that must
-be typed in manually, as described in the 
+be typed in manually, as described in the
 [Reason 4: Automatic Password Generation](#reason-4-automatic-password-generation)
 section which means that it is important that they are secure, easy to
 type and to remember.
@@ -830,15 +844,16 @@ And then change the field name to "ingredients" and populate it.
 
 <img src="pam-new-record-field-1.png" alt="new-record-field-1">
 
-Now do the same thing to create a "instructions" field. Remember to choose
+Now do the same thing to create an "instructions" field. Remember to choose
 "note" just like in the previous step. This is what it looks like after you
 have added the second field.
 
 <img src="pam-new-record-field-2.png" alt="new-record-field-2">
 
-One interesting thing to note is that you can _change the order of the fields_
-by dragging them up or down. To do that select the field title at the top of the
-box (fieldset) and move it.
+One interesting thing to understand is that you can _change the order
+of the fields_ by dragging them up or down. To do that select the
+field title at the top of the box (fieldset) and move it. This can
+also be done when editing the record.
 
 Here is what it looks like when I dragged the "instructions" field up.
 
@@ -1116,6 +1131,20 @@ The clone operation is described in detail in the
 under the  [Method 2: Clone Approach](#method-2-clone-approach)
 subsection.
 
+### Clear Records
+Clear all of the records currently defined.
+
+This is normally done automatically when a new file is loaded but
+could be useful if you want to enter new a set of records from scratch
+using the currently defined fields. Of course, you could simply delete
+all of the records manually but this is simpler.
+
+To clear all records choose the
+"<img src='./trash3-fill.svg' height='32' width='32' />&nbsp;Clear Records"
+option from the menu. See the [Menu](#menu) section for screenshots.
+
+This option will ask you to confirm.
+
 ### Save File
 To save records and preferences to a file by choose the
 "<img src='./file-arrow-down-fill.svg' height='32' width='32' />&nbsp;Save File"
@@ -1205,8 +1234,15 @@ This is what the menu looks like.
 
 <img src="www/help/pam-menu.png" alt="menu">
 
-As you can see, there are seven menu options: "About", "Preferences",
-"New Record", "Clear Records", "Load File", "Save File", and "Help".
+As you can see, there are seven menu options:
+
+1. "About",
+1. "Preferences",
+1. "New Record",
+1. "Clear Records",
+1. "Load File",
+1. "Save File", and
+1. "Help".
 
 Click or tap on the "<img src='./info-circle.svg' height='32' width='32' />&nbsp;About"
 entry to see information about the app.
@@ -1675,6 +1711,51 @@ trusted site.
 
 If you are concerned about this, you can always download, build and
 run _PAM_ from your own trusted site.
+
+### Dictionary and Brute Force Password Attacks
+In general a brute force attack is any attach that uses trial and error
+to crack passwords.
+
+A dictionary attack is a brute force password attack that tries
+every password in a dictionary to break decrypt sensitive data.
+
+Both attacks are very effective in cases where the attacker has the
+ability to try many passwords without being locked out and where the
+password is short.
+
+_PAM_ is vulnerable to dictionary attacks and brute force atttacks
+because it can be run locally where the attacker can setup an automatic
+system to try to decrypt the file using the set of available passwords.
+
+Sites that require passwords for authentication can mitigate this
+type of attack by limiting the number of login attempts allowed.
+
+_PAM_ can also mitigate these types of attacks but it cannot do
+so _automatically_ because the attacker has access to the source
+code. Instead you can mitigate these attacks by using strong (high
+entropy) passwords. 
+
+To give you some feel for just how effective this approach is,
+consider a simple example where we have a password composed of say 20
+pseudo-random upper case letters (26), lower case letters (26), digits
+(10) and 2 special characters.
+
+Thus for 20 characters, there are 64<sup>20</sup> or
+1,329,227,995,784,915,872,903,807,060,280,344,576 (~1.3 undecillion)
+possible passwords which is which is _one heck of
+a lot possibilities_!
+
+If an attacker were to try to crack such a password using a super
+powerful computer that could perform _1 billion tests per second_
+(close to the limit of todays technology), it would take something on
+the order of about a sextillion (10<sup>21</sup>) years to crack
+which means that your data is pretty safe if you use such a password.
+
+On the other hand if you use a simple, six character password like
+"`secret`" it would take about about a minute so don't do that.
+
+Ideas for generating strong password are discussed in the next
+section.
 
 ### Protecting Yourself
 In summary, security can never be fully guaranteed, the best way to

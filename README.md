@@ -133,9 +133,7 @@ the on-line help is generated.
 _PAM_ or Personal Account Manager is a free open source, single page
 web application that helps you manage your confidential information as
 searchable records _without having to rely on services from a
-third party server_. It looks like this.
-
-<img src="www/help/pam-iphone-screenshot.png" alt="iphone-screenshot">
+third party server_.
 
 _PAM_ can do that because it runs inside your browser and because it
 stores the _your information_ in a file that _you control_.
@@ -146,6 +144,10 @@ used to encrypt it was strong_.
 
 You can access _PAM_ from your own HTTP server (including localhost) or from the
 public github.io server [here](https://jlinoff.github.io/pam/www/index.html).
+
+It looks something like this.
+
+<img src="www/help/pam-iphone-screenshot.png" alt="iphone-screenshot" width="300">
 
 See the
 _[Security Considerations](#security-considerations)_

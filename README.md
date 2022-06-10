@@ -1,4 +1,6 @@
 # pam
+[![Releases](https://img.shields.io/github/release/jlinoff/pam?style)](https://github.com/jlinoff/pam/releases)
+
 personal account manager webapp
 
 <details>

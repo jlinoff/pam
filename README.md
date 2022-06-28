@@ -162,7 +162,7 @@ is meant to be the last. If you are interested in the genesis of _PAM_
 and the stories of its predecessors see the [History](#history) section.
 
 ## Overview
-_PAM_ is a pretty simple application. I think of it as a record editor
+_PAM_ is a pretty simple application. It is basically a record editor
 that runs in your browser that allows you to create records with
 interesting information that can then be stored and retrieved in a
 secure way.

@@ -2166,8 +2166,8 @@ from multiple devices working as well as i liked so i stuck with
 javascript.
 
 I sincerely hope that there is something here that others can learn
-something from it and have as much fun as i have had but, if not, it
-doesn't matter, i have really enjoyed playing around with this over
-the years. The journey was worth it.
+from and have as much fun as i have had but, if not, it doesn't
+matter, i have really enjoyed playing around with this over the
+years. The journey was worth it.
 
 Enjoy.

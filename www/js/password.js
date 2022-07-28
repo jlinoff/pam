@@ -92,9 +92,9 @@ function saveGeneratedPassword(event) {
     let row = event.target.xGetParentWithClass('row')
     let e2 = row.xGet('.x-fld-value') // field value input
     let e1 = row.parentElement.xGet('.x-fld-value-length') // span
-    console.log('row', row)
-    console.log('x-fld-value', e1)
-    console.log('x-fld-value-length', e2)
+    //console.log('row', row)
+    //console.log('x-fld-value', e1)
+    //console.log('x-fld-value-length', e2)
     e2.value = event.target.innerHTML
     e1.innerHTML = event.target.innerHTML.length
 }
@@ -140,7 +140,7 @@ export function mkGeneratePasswordDlg(event) {
                     .xAddEventListener('click', (event) => {
                         event.preventDefault() // very important
                         let row = button.xGetParentWithClass('row')
-                        console.log(row)
+                        //console.log(row)
                         row.xGetN('.x-fld-pw-gen').forEach( (col) => {
                             col.classList.add('d-none')
                         })
@@ -240,7 +240,7 @@ export function mkLoadSavePassword(xid) {
             .xAttrs({
                 'type': 'password',
                 'autocomplete': 'new-password',
-                'value': window.prefs.filePass,
+                'value': getPassword(),
             }),
         xmk('span').xClass('input-group-append').xAppend(
             xmk('button')
@@ -277,4 +277,46 @@ export function mkLoadSavePassword(xid) {
                 ),
         ),
     )
+}
+
+// Put the password into local or session storage
+export function setPassword(password) {
+    switch (window.prefs.persistentStore) {
+    case 'none':
+        window.prefs.filePass = ''
+        break
+    case 'global':
+        window.prefs.filePass = password
+        break
+    case 'local':
+        localStorage.setItem('filePass', password)
+        break
+    case 'session':
+        sessionStorage.setItem('filePass', password)
+        break
+    default:
+        console.log('ERROR: internal error, invalid value')
+        break
+    }
+}
+
+// Get the password from local or session storage
+export function getPassword() {
+    switch (window.prefs.persistentStore) {
+    case 'none':
+        return ''
+        break
+    case 'global':
+        return window.prefs.filePass
+        break
+    case 'local':
+        return localStorage.getItem('filePass')
+        break
+    case 'session':
+        return sessionStorage.getItem('filePass')
+        break
+    default:
+        console.log('ERROR: internal error, invalid value')
+        break
+    }
 }

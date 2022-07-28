@@ -16,6 +16,14 @@ export const VALID_FIELD_TYPES = {
     'url': 1,
 }
 
+// These are the storage strategies that the tool understands.
+export const VALID_STORAGE_STRATEGIES = {  // window.prefs.persistentStore
+    'none': 1,
+    'global': 1,
+    'local': 1,
+    'session': 1,
+}
+
 // Re-create the fields if a deletion occurred and
 // the user click on "Close" without saving.
 var delete_occurred = false
@@ -67,6 +75,7 @@ export function initPrefs() {
             'username': 'text',
         },
         predefinedRecordFieldsDefault: 'text',
+        persistentStore: 'global',  // options: none, global, local, session
     }
     setHelpLinks()
 }
@@ -114,6 +123,7 @@ export function menuPrefsDlg() {
             prefClearBeforeLoad(labelClasses, inputClasses),
             prefLoadDupStrategy(labelClasses, inputClasses),
             prefCloneFieldValues(labelClasses, inputClasses),
+            prefStorageStrategy(labelClasses, inputClasses),
             prefCustomAboutInfo(['col-2'],['col-10']),
         ),
         // record fields
@@ -170,7 +180,7 @@ function setPrefs(el) {
         if (type === 'INPUT') {
             // inputs are easy.
             let value = pref.value
-            console.log(`${type} - window.prefs["${key}"] = "${value}"`)
+            //console.log(`${type} - window.prefs["${key}"] = "${value}"`)
             window.prefs[key] = value
         } else if (type === 'BUTTON') {
             let icon = pref.xGet('i')
@@ -187,11 +197,11 @@ function setPrefs(el) {
                 let active = dropdown_menu.xGet('.active')
                 value = active.innerHTML
                 //console.log(`ACTIVE: ${active}`)
-                console.log(`${type} - window.prefs["${key}"] = "${value}"`)
+                //console.log(`${type} - window.prefs["${key}"] = "${value}"`)
                 break
             default:
                 window.prefs[key] = value
-                console.log(`${type} - window.prefs["${key}"] = "${value}"`)
+                //console.log(`${type} - window.prefs["${key}"] = "${value}"`)
                 break
             }
         } else if (type === "TEXTAREA") {
@@ -438,6 +448,56 @@ function prefCloneFieldValues(labelClasses, inputClasses) {
                     }),
             ),
         ),
+    )
+}
+
+function prefStorageStrategy(labelClasses, inputClasses) {
+    let value = window.prefs.persistentStore
+    let list_items = []
+    Object.entries(VALID_STORAGE_STRATEGIES).forEach(([key1,value1]) => {
+        let a  = xmk('a')
+            .xAttrs({'href': '#'})
+            .xClass('dropdown-item')
+            .xInnerHTML(key1)
+            .xAddEventListener('click', (event) => {
+                setActive(event)
+                let new_value = event.target.innerHTML
+                let dm = event.target.xGetParentWithClass('dropdown-menu')
+                let button = dm.parentElement.xGet('.dropdown-toggle')
+                button.innerHTML = new_value
+                window.prefs.persistentStore = new_value
+            })
+        if (key1 === value) {
+            a.xClass('active')
+        }
+        list_items.push(
+            xmk('li').xAppend(a)
+        )
+    })
+    let dropdown_id = `x-prefs-storage-type-dropdown`
+    let dropdown = xmk('div').xAppend(
+        xmk('button')
+            .xId(dropdown_id)
+            .xAttrs({
+                'type': 'button',
+                'data-bs-toggle': 'dropdown',
+                'aria-expanded': false,
+            })
+            .xClass('btn', 'btn-secondary', 'dropdown-toggle')
+            .xInnerHTML(value),
+        xmk('ul')
+            .xAttrs({'aria-labelledby': dropdown_id})
+            .xClass('dropdown-menu')
+            .xAppend(...list_items)
+    )
+    return xmk('div').xClass('row').xAppend(
+        prefLabel(labelClasses, 'Interactive Storage Strategy'),
+        xmk('div').xClass(...inputClasses).xAppend(
+            xmk('div').xClass('input-group').xAppend(
+                dropdown
+            ),
+            xmk('br')
+        )
     )
 }
 
@@ -871,7 +931,7 @@ function predefinedRecordFields() {
                     'data-bs-toggle': 'dropdown',
                     'aria-expanded': false,
                 })
-                .xClass('btn','btn-secondary','dropdown-toggle')
+                .xClass('btn', 'btn-secondary', 'dropdown-toggle')
                 .xInnerHTML(value),
             xmk('ul')
                 .xAttrs({'aria-labelledby': dropdown_id})

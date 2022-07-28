@@ -95,6 +95,7 @@ the on-line help is generated.
       * [Clear Records On Load](#clear-records-on-load)
       * [Load Duplicate Record Strategy](#load-duplicate-record-strategy)
       * [Clone Field Values when Cloning Records](#clone-field-values-when-cloning-records)
+      * [Interactive Storage Strategy](#interactive-storage-strategy)
       * [Custom About](#custom-about)
     * [Record Fields](#record-fields)
     * [Saving Preferences](#saving-preferences)
@@ -1535,6 +1536,27 @@ existing values before entering new ones which is very simple.
 The default is false which says to keep the field values when cloning.
 
 Set this preference if you want to avoid deleting the fields manually.
+
+#### Interactive Storage Strategy
+
+This defines the browser storage strategy for interactive sessions for
+saving the file password. The options are `none`, `prefs`, `local` and `session`.
+
+The `none` option means that the file password is never stored. Each
+time you load or save a file you must re-enter it.
+
+The `global` option means that the file password is stored in a global window
+session variable.
+The file password is remembered for the file load and save operations.
+It is remembered until the browser tab is closed.
+
+The `local` option means that the file password is stored in `localStorage`.
+The file password is remembered for the file load and save operations.
+It is remembered until it is explicitly reset.
+
+The `session` option means that the file password is stored in `sessionStorage`.
+The file password is remembered for the file load and save operations.
+It is remembered until the browser tab is closed.
 
 #### Custom About
 Customized HTML that is added to the about page. It can be used

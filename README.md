@@ -1864,7 +1864,7 @@ To create a file and a record follow these steps:
 1. Enter the file name, perhaps something
    like `"mystuff.pam"` or `"joe.pam"` if your name is "Joe" or `"account.pam"`.
    * I have found that some devices do not like the `".pam"` file extension.
-     I that is the case use the `".txt"` file extension. Everything loves that
+     If that is the case use the `".txt"` file extension. Everything loves that
      and the data is guaranteed to be ASCII text (even when encrypted).
 1. Enter a password.
    1. This is the password that you need to access all

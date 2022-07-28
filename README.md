@@ -312,7 +312,7 @@ But there are a cases when you need a password that must be typed in
 manually like the login password for a computer that does not use
 biometric scanning or a key FOB. In those cases it is beneficial to
 have a password that is secure, easy to remember and easy to type
-because you cannot accesss a password management system _before you
+because you cannot access a password management system _before you
 login_.
 
 I call passwords of this type _memorable_ passwords. They are composed

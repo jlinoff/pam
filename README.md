@@ -371,8 +371,13 @@ section of this document.
 As a side note, I store my _PAM_ record files in iCloud _IaaS_ storage
 (infrastructure as a service) that is automatically mounted as a local
 volume on each device so that the files look like they are local but
-they are, in fact, stored in the cloud. That allows me to access the
-files from any of my devices: laptops, phones and tablets.
+they are, in fact, stored in the cloud which allows them to be
+accessed any of my devices: laptops, phones and tablets from the
+load/save file menu.
+
+For files I want to share with other folks, I use Google Drive to
+store the file and then make the file shared but there are many other
+great options (like DropBox or OneDrive).
 
 Of course you could simply load and save the data to a local file but
 that _might_ restrict your ability to access to it from other devices

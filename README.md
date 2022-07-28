@@ -794,7 +794,7 @@ some choices. I found that more useful than the original
 implementation which only had a single choice.
 
 > The decision to present five memorable passwords was completely
-> arbitrary but it seems to work well enough for my needs and easily be
+> arbitrary but it seems to work well enough for my needs and can easily be
 > changed.
 
 This is what the password generator looks like with annotations.

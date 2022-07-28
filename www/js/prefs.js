@@ -123,7 +123,7 @@ export function menuPrefsDlg() {
             prefClearBeforeLoad(labelClasses, inputClasses),
             prefLoadDupStrategy(labelClasses, inputClasses),
             prefCloneFieldValues(labelClasses, inputClasses),
-            prefStorageStrategy(labelClasses, inputClasses),
+            prefFilePassCacheStrategy(labelClasses, inputClasses),
             prefCustomAboutInfo(['col-2'],['col-10']),
         ),
         // record fields
@@ -451,7 +451,7 @@ function prefCloneFieldValues(labelClasses, inputClasses) {
     )
 }
 
-function prefStorageStrategy(labelClasses, inputClasses) {
+function prefFilePassCacheStrategy(labelClasses, inputClasses) {
     let value = window.prefs.filePassCache
     let list_items = []
     Object.entries(VALID_CACHE_STRATEGIES).forEach(([key1,value1]) => {
@@ -491,7 +491,7 @@ function prefStorageStrategy(labelClasses, inputClasses) {
             .xAppend(...list_items)
     )
     return xmk('div').xClass('row').xAppend(
-        prefLabel(labelClasses, 'Interactive Storage Strategy'),
+        prefLabel(labelClasses, 'filePass Cache Strategy'),
         xmk('div').xClass(...inputClasses).xAppend(
             xmk('div').xClass('input-group').xAppend(
                 dropdown

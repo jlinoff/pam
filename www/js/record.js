@@ -20,6 +20,19 @@ export function findRecord(title) {
     return null
 }
 
+// get the number of records.
+function getNumRecords() {
+    let recordsContainer = document.body.xGet('#records-accordion')
+    let accordionItems = recordsContainer.xGetN('.accordion-item')
+    return accordionItems.length
+}
+
+// set the number of records
+function setNumRecords() {
+    let numrecs = getNumRecords()
+    document.body.xGet('#x-num-records').xInnerHTML(numrecs)
+}
+
 // find the record that would appear after this one
 // for use in an insertBefore operation. If it would
 // be the last record, return null.
@@ -45,6 +58,7 @@ export function deleteRecord(title) {
     let record = findRecord(title)
     if (record) {
         record.remove()
+        setNumRecords()
     }
 }
 
@@ -62,6 +76,7 @@ export function insertRecord(newRecord, title) {
         let recordsContainer = document.body.xGet('#records-accordion')
         recordsContainer.appendChild(newRecord)
     }
+    setNumRecords()
 }
 
 // clear all records
@@ -76,6 +91,7 @@ export function clearRecords() {
     nodeList.forEach((n) => { n.remove() })
     document.body.xGet('#x-num-records').xInnerHTML('0')
 }
+
 // Create the DOM structure for the new record using the bootstrap
 // accordion idiom.
 export function mkRecord(title, ...recordFields) {
@@ -131,6 +147,7 @@ export function mkRecord(title, ...recordFields) {
                                                         .xAddEventListener('click', (event) => {
                                                             let ai = event.target.xGetParentWithClass('accordion-item')
                                                             ai.remove()
+                                                            setNumRecords()
                                                         }),
                                                     xmk('button')
                                                         .xClass('btn', 'fs-6', 'm-1')

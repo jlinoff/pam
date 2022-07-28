@@ -17,7 +17,7 @@ export const VALID_FIELD_TYPES = {
 }
 
 // These are the storage strategies that the tool understands.
-export const VALID_STORAGE_STRATEGIES = {  // window.prefs.persistentStore
+export const VALID_CACHE_STRATEGIES = {  // window.prefs.filePassCache
     'none': 1,
     'global': 1,
     'local': 1,
@@ -32,6 +32,7 @@ export function initPrefs() {
     window.prefs = {
         fileName: 'example.pam',
         filePass: '',
+        filePassCache: 'global',  // options: none, global, local, session
         searchCaseInsensitive: true,
         searchRecordTitles: true,
         searchRecordFieldNames: false,
@@ -75,7 +76,6 @@ export function initPrefs() {
             'username': 'text',
         },
         predefinedRecordFieldsDefault: 'text',
-        persistentStore: 'global',  // options: none, global, local, session
     }
     setHelpLinks()
 }
@@ -452,9 +452,9 @@ function prefCloneFieldValues(labelClasses, inputClasses) {
 }
 
 function prefStorageStrategy(labelClasses, inputClasses) {
-    let value = window.prefs.persistentStore
+    let value = window.prefs.filePassCache
     let list_items = []
-    Object.entries(VALID_STORAGE_STRATEGIES).forEach(([key1,value1]) => {
+    Object.entries(VALID_CACHE_STRATEGIES).forEach(([key1,value1]) => {
         let a  = xmk('a')
             .xAttrs({'href': '#'})
             .xClass('dropdown-item')
@@ -465,7 +465,7 @@ function prefStorageStrategy(labelClasses, inputClasses) {
                 let dm = event.target.xGetParentWithClass('dropdown-menu')
                 let button = dm.parentElement.xGet('.dropdown-toggle')
                 button.innerHTML = new_value
-                window.prefs.persistentStore = new_value
+                window.prefs.filePassCache = new_value
             })
         if (key1 === value) {
             a.xClass('active')

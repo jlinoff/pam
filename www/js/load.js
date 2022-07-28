@@ -6,7 +6,7 @@ import { clearRecords, deleteRecord, findRecord, insertRecord, mkRecord } from '
 import { mkRecordField } from './field.js'
 import { menuPrefsDlg } from './prefs.js'
 import { decrypt } from './crypt.js'
-import { mkLoadSavePassword, setPassword } from './password.js'
+import { mkLoadSavePassword, setFilePass } from './password.js'
 import { initPrefs } from './prefs.js'
 
 // load a file
@@ -38,7 +38,7 @@ export function menuLoadDlg() {
                                  (el) => {
                                      //console.log(el)
                                      let password = el.xGet('#x-load-password').value.trim()
-                                     setPassword(password)
+                                     setFilePass(password)
                                      loadFile(password)
                                      return true
                                 })

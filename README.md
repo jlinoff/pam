@@ -95,7 +95,7 @@ the on-line help is generated.
       * [Clear Records On Load](#clear-records-on-load)
       * [Load Duplicate Record Strategy](#load-duplicate-record-strategy)
       * [Clone Field Values when Cloning Records](#clone-field-values-when-cloning-records)
-      * [Interactive Storage Strategy](#interactive-storage-strategy)
+      * [filePass Cache Strategy](#filepass-cache-strategy)
       * [Custom About](#custom-about)
     * [Record Fields](#record-fields)
     * [Saving Preferences](#saving-preferences)
@@ -1537,13 +1537,14 @@ The default is false which says to keep the field values when cloning.
 
 Set this preference if you want to avoid deleting the fields manually.
 
-#### Interactive Storage Strategy
+#### filePass Cache Strategy
 
-This defines the browser storage strategy for interactive sessions for
-saving the file password. The options are `none`, `prefs`, `local` and `session`.
+This defines the browser cache strategy for the file password.
+The options are `none`, `prefs`, `local` and `session`.
 
-The `none` option means that the file password is never stored. Each
-time you load or save a file you must re-enter it.
+The `none` option means that the file password is never stored.
+The file password is _not_ remembered for the file load and save operations.
+Each time you load or save a file you must re-enter it.
 
 The `global` option means that the file password is stored in a global window
 session variable.
@@ -1761,7 +1762,7 @@ type of attack by limiting the number of login attempts allowed.
 _PAM_ can also mitigate these types of attacks but it cannot do
 so _automatically_ because the attacker has access to the source
 code. Instead you can mitigate these attacks by using strong (high
-entropy) passwords. 
+entropy) passwords.
 
 To give you some feel for just how effective this approach is,
 consider a simple example where we have a password composed of say 20

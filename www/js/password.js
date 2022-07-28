@@ -240,7 +240,7 @@ export function mkLoadSavePassword(xid) {
             .xAttrs({
                 'type': 'password',
                 'autocomplete': 'new-password',
-                'value': getPassword(),
+                'value': getFilePass(),
             }),
         xmk('span').xClass('input-group-append').xAppend(
             xmk('button')
@@ -280,8 +280,8 @@ export function mkLoadSavePassword(xid) {
 }
 
 // Put the password into local or session storage
-export function setPassword(password) {
-    switch (window.prefs.persistentStore) {
+export function setFilePass(password) {
+    switch (window.prefs.filePassCache) {
     case 'none':
         window.prefs.filePass = ''
         break
@@ -301,8 +301,8 @@ export function setPassword(password) {
 }
 
 // Get the password from local or session storage
-export function getPassword() {
-    switch (window.prefs.persistentStore) {
+export function getFilePass() {
+    switch (window.prefs.filePassCache) {
     case 'none':
         return ''
         break

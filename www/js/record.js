@@ -68,12 +68,13 @@ export function insertRecord(newRecord, title) {
 export function clearRecords() {
     let recordsContainer = document.body.xGet('#records-accordion') // middle part of the document.
     let accordionItems = recordsContainer.xGetN('.accordion-item')
-    let delList = []
+    let nodeList = []
     for (let i=0; i<accordionItems.length; i++) {
         let accordionItem = accordionItems[i]
-        delList.push(accordionItem)
+        nodeList.push(accordionItem)
     }
-    delList.forEach((n) => { n.remove() })
+    nodeList.forEach((n) => { n.remove() })
+    document.body.xGet('#x-num-records').xInnerHTML('0')
 }
 // Create the DOM structure for the new record using the bootstrap
 // accordion idiom.

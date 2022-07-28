@@ -368,16 +368,17 @@ organization of the records and fields in a file see the
 [Reason 2: Record Model](#reason-2-record-model)
 section of this document.
 
-As a side note, I store my _PAM_ record files in iCloud _IaaS_ storage
-(infrastructure as a service) that is automatically mounted as a local
-volume on each device so that the files look like they are local but
-they are, in fact, stored in the cloud which allows them to be
-accessed any of my devices: laptops, phones and tablets from the
-load/save file menu.
+As a side note, I store my personal _PAM_ record files in _Apple iCloud_
+which is one of many cloud based storage services like _Dropbox_, _Google
+Drive_ and _Microsoft OneDrive_.
 
-For files I want to share with other folks, I use Google Drive to
-store the file and then make the file shared but there are many other
-great options (like DropBox or OneDrive).
+For files I want to share with other folks, I use _Google Drive_ to
+store the file and then share it.
+
+When properly configured all of these storage services store the _PAM_
+record file in the cloud so that it is available to anyone who knows
+the file password as long as their laptop, phone or tablet is
+authorized to access the storage service.
 
 Of course you could simply load and save the data to a local file but
 that _might_ restrict your ability to access to it from other devices

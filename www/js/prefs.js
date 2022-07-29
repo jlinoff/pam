@@ -34,7 +34,7 @@ export function initPrefs() {
         // does not work on some mobile devices.
         fileName: 'example.txt',
         filePass: '',
-        filePassCache: 'global',  // options: none, global, local, session
+        filePassCache: 'local',  // options: none, global, local, session
         editableFieldName: false, // if true, allow field names to be changed
         searchCaseInsensitive: true,
         searchRecordTitles: true,

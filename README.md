@@ -1574,7 +1574,7 @@ This is what it looks likes when it is unchecked (false).
 
 <img src="www/help/pam-fld-name-edit-off.png" width="300" alt="false"/>
 
-WHen this is not enabled, the user can only choose record fields from
+When this is not enabled, the user can only choose record fields from
 the pre-defined "Record Fields" section of the preferences. See the
 [Record Fields](#record-fields) section for more details.
 
@@ -1585,7 +1585,10 @@ This is what it looks likes when it is checked (true).
 
 <img src="www/help/pam-fld-name-edit-on.png" width="300" alt="true"/>
 
-The user can replace the default field name (in this case "name") with whatever they want.
+The user can replace the default field name (in this case "name") with
+whatever they want, perhaps something like "full name" or "first name"
+or "last name". The "value" field is where the name is actually
+entered.
 
 #### filePass Cache Strategy
 

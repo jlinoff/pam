@@ -253,6 +253,15 @@ Sundae"` and the two fields "ingredients" and "instructions" contain
 the multiline (`textarea`) descriptions of what the ingredients and
 instructions are for this specific recipe.
 
+Note that the record field names "ingredients" and "instructions" are
+custom _field names_ so you must set the "Enable Editable Field Name"
+preference to true to enter them.
+
+<img src="www/help/pam-fld-name-edit-checked.png" width="300" alt="false"/>
+
+See the [Enable Editable Field Name](#enable-editable-field-name)
+entry under preferences for more details.
+
 Of course, there are many other types of records that might be
 interesting to store in _PAM_.
 
@@ -270,6 +279,13 @@ than recipes.
 Here is what a simple account record might look like.
 
 <img src="www/help/pam-google-account.png" alt="google-account-example">
+
+In this case the record field names "login", "password" and "url" are
+standard record field names so you do not need to set the "Enable Editable
+Field Name" preference. For more information about standard record fields,
+see the[Record Fields](#record-fields) section for more details.
+
+<img src="www/help/pam-fld-name-edit-unchecked.png" width="300" alt="false"/>
 
 Note that the password is hidden in the example above.
 _PAM_ always hides the contents of passwords by default.
@@ -1551,12 +1567,18 @@ Set this preference if you want to avoid deleting the fields manually.
 #### Enable Editable Field Name
 This defines whether or not the user can change a field name.
 
+##### Not Enabled
 This is what it looks likes when it is unchecked (false).
 
 <img src="www/help/pam-fld-name-edit-unchecked.png" width="300" alt="false"/>
 
 <img src="www/help/pam-fld-name-edit-off.png" width="300" alt="false"/>
 
+WHen this is not enabled, the user can only choose record fields from
+the pre-defined "Record Fields" section of the preferences. See the
+[Record Fields](#record-fields) section for more details.
+
+##### Enabled
 This is what it looks likes when it is checked (true).
 
 <img src="www/help/pam-fld-name-edit-checked.png" width="300" alt="false"/>

@@ -30,7 +30,9 @@ var delete_occurred = false
 
 export function initPrefs() {
     window.prefs = {
-        fileName: 'example.pam',
+        // Use the '.txt' extension because the '.pam' extension
+        // does not work on some mobile devices.
+        fileName: 'example.txt',
         filePass: '',
         filePassCache: 'global',  // options: none, global, local, session
         searchCaseInsensitive: true,

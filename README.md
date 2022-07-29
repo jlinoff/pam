@@ -610,10 +610,14 @@ defined by you based what is important to you. For example, a topic
 could be something like _"recipes"_, _"accounts"_, or _"unidentified
 aerial phenomena"_ or _"my favorite cryptography algorithms"_.
 
-For example you could define a "`recipes.pam`" file for all of
-your recipe records and an "`accounts.pam`" for your account records.
+For example you could define a "`recipes.txt`" file for all of
+your recipe records and an "`accounts.txt`" for your account records.
 Or, you could put all of your records, irregardless
-of topic, into a single file like "`mystuff.pam`".
+of topic, into a single file like "`mystuff.txt`".
+
+> Although the `.pam` extension is supported and works on laptops.
+> It sometimes does _not_ work on mobile devices so the `.txt` is
+> always.safe to use.
 
 Topics are also discussed in the
 [Reason 2: Record Model](#reason-2-record-model)

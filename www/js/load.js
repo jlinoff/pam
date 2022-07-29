@@ -50,7 +50,7 @@ function loadFile(password) {
     // Create a hidden file input element element
     let input = xmk('input')
         .xAttr('type', 'file')
-        .xAttr('value', 'unused.pam')
+        .xAttr('value', 'unused.txt')
         .xAttr('accept', '.js,.pam,.txt')
         .xStyle({display: 'none'})
 

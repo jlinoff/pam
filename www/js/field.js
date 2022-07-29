@@ -200,7 +200,7 @@ function mkRecordEditField(name, type, container, value) {
                     num++
                     name = base + num
                 }
-                dups[name]= num
+                dups[name] = num // cache 'em to avoid duplicates
             }
         }
     })
@@ -239,6 +239,7 @@ function mkRecordEditField(name, type, container, value) {
         let e = xmk('input').xAttrs({'type': type, 'value': value})
         inputs.push(e)
     }
+
     // These are the same for all inputs.
     inputs[0]
         .xClass('x-fld-value', 'form-control', 'font-monospace')
@@ -303,6 +304,90 @@ function mkRecordEditField(name, type, container, value) {
             })
     }
 
+    window.prefs.editableFieldName = false
+    let editableFieldName = null
+    let display = 'none'
+    if (window.prefs.editableFieldName === true ) {
+        let display = 'block'
+    }
+    editableFieldName = xmk('div').xStyle({'display': display}).xClass('row').xAppend(
+        xmk('div').xClass('col-12').xAppend(
+            xmk('label')
+                .xClass('col-form-label')
+                .xInnerHTML('Name')
+        ),
+        xmk('div').xClass('col-12').xAppend(
+            xmk('div').xClass('input-group').xAppend(
+                xmk('input')
+                    .xAttrs({'value': name})
+                    .xClass('x-fld-name', 'form-control')
+                    .xAddEventListener('input', (event) => {
+                        let fieldset = event.target.xGetParentOfType('fieldset')
+                        let legend = fieldset.xGet('legend')
+                        legend.innerHTML = event.target.value
+                    }),
+                xmk('span').xClass('input-group-append').xAppend(
+                    xmk('button')
+                        .xClass('btn', 'btn-lg', 'px-0', 'ms-2')
+                        .xAttr('type', 'button')
+                        .xAddEventListener('click', (event) => {
+                            let row = event.target.xGetParentWithClass('row')
+                            row.xGet('input').value = ''
+                        })
+                        .xAppend(
+                            icon('bi-x-circle', 'clear field name')
+                        ),
+                ),
+            ),
+        ),
+    )
+
+    let editableFieldValue = xmk('div').xClass('row').xAppend(
+        xmk('div').xClass('col-12').xAppend(
+            xmk('label').xStyle({'display': display})
+                .xClass('col-form-label')
+                .xInnerHTML('Value')
+        ),
+        xmk('div').xClass('col-12', 'overflow-auto').xAppend(
+            xmk('div').xClass('input-group').xAppend(
+                ...inputs,
+                xmk('span').xClass('input-group-append').xAppend(
+                    xmk('button')
+                        .xClass('btn', 'btn-lg', 'px-0', 'ms-2')
+                        .xAttr('type', 'button')
+                        .xAddEventListener('click', (event) => {
+                            let row = event.target.xGetParentWithClass('row')
+                            let field = row.xGet('.x-fld-value')
+                            //console.log(field)
+                            let ftype = field.getAttribute('data-fld-type')
+                            //console.log(ftype)
+                            if (ftype === 'textarea') {
+                                field.value = ''
+                            } else {
+                                field.value = ''
+                            }
+                            if (ftype === 'password') {
+                                let e1 = row.xGet('.x-fld-value-length')
+                                e1.innerHTML = '0' // length
+                            }
+                        })
+                        .xAppend(
+                            icon('bi-x-circle', `clear ${type} value`)
+                        ),
+                ),
+            ),
+        ),
+        // Buttons
+        xmk('div').xClass('col-12', 'x-fld-value-div')
+            .xAppend(
+                recordDeleteButton,
+                passwordLength,
+                passwordShowHide,
+                passwordGenerate,
+            ),
+    )
+
+    // Create the field name/value sub-dialogue
     let draggableRow = mkDraggableRow(type)
     draggableRow.xAppend(
         xmk('form').xClass('x-fld-form').xAppend(
@@ -312,86 +397,8 @@ function mkRecordEditField(name, type, container, value) {
                     .xStyle({cursor: 'grab'})
                     .xAttrs({'title': 'field name draggable'})
                     .xInnerHTML(`${drag} ${name}`),
-
-                // Field name
-                xmk('div').xClass('row').xAppend(
-                    xmk('div').xClass('col-12').xAppend(
-                        xmk('label')
-                            .xClass('col-form-label')
-                            .xInnerHTML('Name')
-                    ),
-                    xmk('div').xClass('col-12').xAppend(
-                        xmk('div').xClass('input-group').xAppend(
-                            xmk('input')
-                                .xAttrs({'value': name,})
-                                .xClass('x-fld-name', 'form-control')
-                                .xAddEventListener('input', (event) => {
-                                    let fieldset = event.target.xGetParentOfType('fieldset')
-                                    let legend = fieldset.xGet('legend')
-                                    legend.innerHTML = event.target.value
-                                }),
-                            xmk('span').xClass('input-group-append').xAppend(
-                                xmk('button')
-                                    .xClass('btn', 'btn-lg', 'px-0', 'ms-2')
-                                    .xAttr('type', 'button')
-                                    .xAddEventListener('click', (event) => {
-                                        let row = event.target.xGetParentWithClass('row')
-                                        row.xGet('input').value = ''
-                                    })
-                                    .xAppend(
-                                        icon('bi-x-circle', 'clear field name')
-                                    ),
-                            ),
-                        ),
-                    ),
-                ),
-
-                // Field value
-                xmk('div').xClass('row').xAppend(
-                    xmk('div').xClass('col-12').xAppend(
-                        xmk('label')
-                            .xClass('col-form-label')
-                            .xInnerHTML('Value')
-                    ),
-                    xmk('div').xClass('col-12', 'overflow-auto').xAppend(
-                        xmk('div').xClass('input-group').xAppend(
-                            ...inputs,
-                            xmk('span').xClass('input-group-append').xAppend(
-                                xmk('button')
-                                    .xClass('btn', 'btn-lg', 'px-0', 'ms-2')
-                                    .xAttr('type', 'button')
-                                    .xAddEventListener('click', (event) => {
-                                        let row = event.target.xGetParentWithClass('row')
-                                        let field = row.xGet('.x-fld-value')
-                                        //console.log(field)
-                                        let ftype = field.getAttribute('data-fld-type')
-                                        //console.log(ftype)
-                                        if (ftype === 'textarea') {
-                                            field.value = ''
-                                        } else {
-                                            field.value = ''
-                                        }
-                                        if (ftype === 'password') {
-                                            let e1 = row.xGet('.x-fld-value-length')
-                                            e1.innerHTML = '0' // length
-                                        }
-                                    })
-                                    .xAppend(
-                                        icon('bi-x-circle', `clear ${type} value`)
-                                    ),
-                            ),
-                        ),
-                    ),
-
-                    // Buttons
-                    xmk('div').xClass('col-12', 'x-fld-value-div')
-                        .xAppend(
-                            recordDeleteButton,
-                            passwordLength,
-                            passwordShowHide,
-                            passwordGenerate,
-                        ),
-                ),
+                editableFieldName,
+                editableFieldValue,
             ),
         ),
     )

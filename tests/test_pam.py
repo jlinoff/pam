@@ -189,7 +189,8 @@ def test_prefs(py):
     ei(prefs_dlg)
     assert prefs_dlg.tag_name() == 'div'
     buttons = prefs_dlg.find('button')
-    assert len(buttons) == 45  # 1 close button plus the buttons for the field delete/edit/add
+    # 1 close button plus the buttons for the field delete/edit/add
+    assert len(buttons) == 46
     close_button = None
     for button in buttons:
         if 'Close' in button.get_property('innerHTML'):

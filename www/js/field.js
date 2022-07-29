@@ -304,12 +304,11 @@ function mkRecordEditField(name, type, container, value) {
             })
     }
 
-    let editableFieldName = null
     let display = 'none'
     if (window.prefs.editableFieldName === true ) {
-        let display = 'block'
+        display = 'block'
     }
-    editableFieldName = xmk('div').xStyle({'display': display}).xClass('row').xAppend(
+    let editableFieldName = xmk('div').xStyle({'display': display}).xClass('row').xAppend(
         xmk('div').xClass('col-12').xAppend(
             xmk('label')
                 .xClass('col-form-label')

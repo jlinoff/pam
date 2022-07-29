@@ -95,6 +95,7 @@ the on-line help is generated.
       * [Clear Records On Load](#clear-records-on-load)
       * [Load Duplicate Record Strategy](#load-duplicate-record-strategy)
       * [Clone Field Values when Cloning Records](#clone-field-values-when-cloning-records)
+      * [Enable Editable Field Name](#enable-editable-field-name)
       * [filePass Cache Strategy](#filepass-cache-strategy)
       * [Custom About](#custom-about)
     * [Record Fields](#record-fields)
@@ -1546,6 +1547,23 @@ existing values before entering new ones which is very simple.
 The default is false which says to keep the field values when cloning.
 
 Set this preference if you want to avoid deleting the fields manually.
+
+#### Enable Editable Field Name
+This defines whether or not the user can change a field name.
+
+This is what it looks likes when it is unchecked (false).
+
+<img src="www/help/pam-fld-name-edit-unchecked.png" width="300" alt="false"/>
+
+<img src="www/help/pam-fld-name-edit-off.png" width="300" alt="false"/>
+
+This is what it looks likes when it is checked (true).
+
+<img src="www/help/pam-fld-name-edit-checked.png" width="300" alt="false"/>
+
+<img src="www/help/pam-fld-name-edit-on.png" width="300" alt="true"/>
+
+The user can replace the default field name (in this case "name") with whatever they want.
 
 #### filePass Cache Strategy
 

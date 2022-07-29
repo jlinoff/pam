@@ -139,7 +139,7 @@ searchable records _without having to rely on services from a
 third party server_.
 
 _PAM_ can do that because it runs inside your browser and because it
-stores the _your information_ in a file that _you control_.
+stores _your information_ in a file that _you control_.
 
 The _PAM_ file is encrypted so the contents would be safe from hackers
 if the file was stolen assuming, of course, _that the password you

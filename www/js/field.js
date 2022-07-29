@@ -304,7 +304,6 @@ function mkRecordEditField(name, type, container, value) {
             })
     }
 
-    window.prefs.editableFieldName = false
     let editableFieldName = null
     let display = 'none'
     if (window.prefs.editableFieldName === true ) {

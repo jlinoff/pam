@@ -35,6 +35,7 @@ export function initPrefs() {
         fileName: 'example.txt',
         filePass: '',
         filePassCache: 'global',  // options: none, global, local, session
+        editableFieldName: false, // if true, allow field names to be changed
         searchCaseInsensitive: true,
         searchRecordTitles: true,
         searchRecordFieldNames: false,
@@ -125,6 +126,7 @@ export function menuPrefsDlg() {
             prefClearBeforeLoad(labelClasses, inputClasses),
             prefLoadDupStrategy(labelClasses, inputClasses),
             prefCloneFieldValues(labelClasses, inputClasses),
+            prefEditableFieldName(labelClasses, inputClasses),
             prefFilePassCacheStrategy(labelClasses, inputClasses),
             prefCustomAboutInfo(['col-2'],['col-10']),
         ),
@@ -168,6 +170,8 @@ function setHelpLinks() {
 }
 
 // Set the preferences
+// The window.prefs entries are determined automatically from the
+// data-pref-id attribute.
 function setPrefs(el) {
     //console.log(el)
     // add logic to set window.prefs.* here
@@ -210,9 +214,10 @@ function setPrefs(el) {
             if (key === 'customAboutInfo') {
                 let about = document.body.xGet('#x-about-info')
                 about.innerHTML = pref.value
+            } else {
+                window.prefs[key] = pref.value
+                //console.log(`${type} - window.prefs["${key}"] = "${value}"`)
             }
-            window.prefs[key] = pref.value
-            //console.log(`${type} - window.prefs["${key}"] = "${value}"`)
         }
     }
     setHelpLinks()
@@ -444,6 +449,45 @@ function prefCloneFieldValues(labelClasses, inputClasses) {
                             icon.classList.remove('bi-square')
                             icon.classList.add('bi-check2-square')
                             let msg = 'do not clone field values when cloning records'
+                            button.xAttr('title', msg)
+                            icon.xAttr('title', msg)
+                        }
+                    }),
+            ),
+        ),
+    )
+}
+
+function prefEditableFieldName(labelClasses, inputClasses) {
+    let checkbox = window.prefs.editableFieldName ? 'bi-check2-square' : 'bi-square'
+    return xmk('div').xClass('row').xAppend(
+        prefLabel(labelClasses, 'Enable Editable Field Name'),
+        xmk('div').xClass(...inputClasses).xAppend(
+            xmk('div').xClass('input-group').xAppend(
+                xmk('button')
+                    .xClass('form-control', 'btn', 'btn-lg')
+                    .xAttrs({'type': 'button',
+                             'title': 'duplicate status to the console',
+                             'data-pref-id': 'editableFieldName',
+                            })
+                    .xAppend(icon(checkbox, 'enable or disable'))
+                    .xAddEventListener('click', (event) => {
+                        //console.log(event)
+                        //console.log(event.target.parentElement.tagName)
+                        let button = event.target.xGetParentOfType('button')
+                        let icon = button.xGet('i')
+                        let enabled = icon.classList.contains('bi-check2-square')
+                        let mbody = event.target.xGetParentWithClass('modal-body')
+                        if (enabled) {
+                            icon.classList.remove('bi-check2-square')
+                            icon.classList.add('bi-square')
+                            let msg = 'cannot edit field name'
+                            button.xAttr('title', msg)
+                            icon.xAttr('title', msg)
+                        } else {
+                            icon.classList.remove('bi-square')
+                            icon.classList.add('bi-check2-square')
+                            let msg = 'edit field name'
                             button.xAttr('title', msg)
                             icon.xAttr('title', msg)
                         }

@@ -281,6 +281,10 @@ export function mkLoadSavePassword(xid) {
 
 // Put the password into local or session storage
 export function setFilePass(password) {
+    if ( password == null ) {
+        // Could potentially use: password = password ?? ''
+        password = ''
+    }
     switch (window.prefs.filePassCache) {
     case 'none':
         window.prefs.filePass = ''
@@ -302,21 +306,25 @@ export function setFilePass(password) {
 
 // Get the password from local or session storage
 export function getFilePass() {
+    let password = ''
     switch (window.prefs.filePassCache) {
     case 'none':
-        return ''
         break
     case 'global':
-        return window.prefs.filePass
+        password = window.prefs.filePass
         break
     case 'local':
-        return localStorage.getItem('filePass')
+        password = localStorage.getItem('filePass')
         break
     case 'session':
-        return sessionStorage.getItem('filePass')
+        password = sessionStorage.getItem('filePass')
         break
     default:
         console.log('ERROR: internal error, invalid value')
         break
     }
+    if ( password == null ) {
+        password = ''
+    }
+    return password
 }

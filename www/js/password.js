@@ -123,7 +123,7 @@ export function mkGeneratePasswordDlg(event) {
                 .xClass('btn', 'btn-secondary', 'x-fld-pw-mp', 'm-2', 'font-monospace')
                 .xAttrs({'title': 'click to save this memorable password'})
                 .xInnerHTML(pwd)
-                .xAddEventListener('click', (event) => {
+                .xAddEventListener('click', (event) => { /* jshint ignore:line */
                     saveGeneratedPassword(event)
                 })
             mbs.push(button)
@@ -281,7 +281,7 @@ export function mkLoadSavePassword(xid) {
 
 // Put the password into local or session storage
 export function setFilePass(password) {
-    if ( password == null ) {
+    if ( password == null ) { /* jshint ignore:line */
         // Could potentially use: password = password ?? ''
         password = ''
     }
@@ -323,7 +323,7 @@ export function getFilePass() {
         console.log('ERROR: internal error, invalid value')
         break
     }
-    if ( password == null ) {
+    if ( password == null ) { /* jshint ignore:line */
         password = ''
     }
     return password

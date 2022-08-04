@@ -190,7 +190,7 @@ def test_prefs(py):
     assert prefs_dlg.tag_name() == 'div'
     buttons = prefs_dlg.find('button')
     # 1 close button plus the buttons for the field delete/edit/add
-    assert len(buttons) == 46
+    assert len(buttons) == 48
     close_button = None
     for button in buttons:
         if 'Close' in button.get_property('innerHTML'):
@@ -385,7 +385,7 @@ def test_create_simple_record_with_fields(py):
     dlg_body = dlg.get('.modal-body')
     assert dlg_body
     assert dlg_body.tag_name() == 'div'
-    
+
     # the container contains all of the record fields
     container = dlg_body.get('.container')
     assert container

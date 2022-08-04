@@ -292,7 +292,9 @@ export function checkRecordEditDlg(event, allowCloneTitle) {
     let flds = container.xGetN('.x-new-rec-fld')
     if (flds.length === 0) {
         // no fields were added.
-        container.xAttr('data-check-failed', 'no fields found')
+        if (window.prefs.requireRecordFields) {
+            container.xAttr('data-check-failed', 'no fields found')
+        }
         return
     } else {
         for (let i=0; i<flds.length; i++) {

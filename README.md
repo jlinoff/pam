@@ -95,6 +95,7 @@ the on-line help is generated.
       * [Clear Records On Load](#clear-records-on-load)
       * [Load Duplicate Record Strategy](#load-duplicate-record-strategy)
       * [Clone Field Values when Cloning Records](#clone-field-values-when-cloning-records)
+      * [Require Record Fields](#require-record-fields)
       * [Enable Editable Field Name](#enable-editable-field-name)
       * [filePass Cache Strategy](#filepass-cache-strategy)
       * [Custom About](#custom-about)
@@ -1569,6 +1570,14 @@ existing values before entering new ones which is very simple.
 The default is false which says to keep the field values when cloning.
 
 Set this preference if you want to avoid deleting the fields manually.
+
+#### Require Record Fields
+This determines whether a record can be created with no fields.
+
+If it is true, then a new record must have a least one field defined.
+
+The default is false which means that records can be created with no
+fields so that records.
 
 #### Enable Editable Field Name
 This defines whether or not the user can change a field name.

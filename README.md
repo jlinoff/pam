@@ -256,17 +256,14 @@ instructions are for this specific recipe.
 
 Note that the record field names "ingredients" and "instructions" are
 custom _field names_ so you must set the "Enable Editable Field Name"
-preference to true to enter them.
+preference to true to enter them or you must go to the preferences add
+the "ingredients" and "instructions" custom fields. The ability to
+customize record fields makes the interface more intuitive for users.
 
 <img src="www/help/pam-fld-name-edit-checked.png" width="300" alt="false"/>
 
 See the [Enable Editable Field Name](#enable-editable-field-name)
 entry under preferences for more details.
-
-Also note that the "ingredients" and "instructions" custom record
-field names, can be added to the default list in the perefences
-section. This introduces the idea of customizing the record fields in
-_PAM_ to make things work in a more intuitive way.
 
 Of course, there are many other types of records that might be
 interesting to store in _PAM_ that can use the pre-defined record

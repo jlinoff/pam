@@ -137,6 +137,7 @@ export function menuPrefsDlg() {
             xmk('p').xInnerHTML('These are the fields pre-defined to simplify creating a new record.'),
             fldsList),
     )
+
     let b1 = mkPopupModalDlgButton('Close',
                                  'btn-secondary',
                                  'close the dialogue without making changes',
@@ -160,6 +161,11 @@ export function menuPrefsDlg() {
                                        return savePrefs(el)
                                    })
     let e = mkPopupModalDlg('menuPrefsDlg', 'Preferences', body, b1, b2)
+    e.xAddEventListener('show.bs.modal', (event) => {
+        // do this each time the prefs modal popup pops up
+        let div = document.body.xGet('#x-prefs-fld-div')
+        div.replaceWith(mkRecordFields(window.prefs.predefinedRecordFields))
+    })
     return e
 }
 

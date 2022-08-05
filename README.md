@@ -51,8 +51,8 @@ the on-line help is generated.
     * [Create Record](#create-record)
       * [Topics](#topics)
       * [Fields](#fields)
-        * [Field Types](#field-types)
-        * [Custom Field Types](#custom-field-types)
+        * [Default Record Field Types](#default-record-field-types)
+        * [Custom Record Field Types](#custom-record-field-types)
       * [Password Fields](#password-fields)
         * [Cryptic Passwords](#cryptic-passwords)
         * [Memorable Passwords](#memorable-passwords)
@@ -262,9 +262,14 @@ custom fields so that they are available all of the time. The ability
 to customize record fields makes the interface more intuitive for
 users.
 
-These are the default field names. You can new fields here if you want.
+These are the default record field names.
+You can change, add or delete record fields here if you wish to customize
+the user experience.
 
-<img src="www/help/pam-custom-record-fields.png" width="300" alt="default"/>
+<img src="www/help/pam-default-record-fields.png" width="300" alt="default"/>
+
+See the [Default Record Field Types](#default-record-field-types) section
+for a description of the available record field types.
 
 When you enable it, you must change the name of existing field
 when you add it to the record but the preference must be checked.
@@ -662,7 +667,7 @@ is a list of ingredients.
 
 The field type describes the type of data that field holds like a
 number or an email. A complete description list of the available types
-is presented in the [Field Types](#field-types) table below.
+is presented in the [Custom Record Field Types](#custom-record-field-types) table below.
 
 The field value is the unique value for the field in an individual record.
 For example, an "email" field in one record would have different value than the
@@ -693,12 +698,26 @@ when creating a new record. They are only provided for convenience.
 
 <img src="www/help/pam-change-field-name.png" alt="change-field-name">
 
-##### Field Types
+> Note that the ability to change field names is _only_ enabled when 
+> the `Enable Editable Field Name` preference is enabled (checked).
+> It is not enabled by default.
 
-The field types are based on HTML _input_ element types except for the
+##### Default Record Field Types
+
+The record field types are the fields that you can define for each record
+you create.
+
+They are based on HTML _input_ element types except for the
 _textarea_ type which is an HTML _textarea_ element. They are presented
 below as simple types regardless of the underlying HTML element to avoid
-unnecessary complexity.
+unnecessary complexity. 
+
+You can change, add or delete record fields here if you wish to customize
+the user experience.
+
+This is what the default record field types look like.
+
+<img src="www/help/pam-default-record-fields.png" width="300" alt="default"/>
 
 The table below presents a brief overview of the types and when to use
 them. You can search the web for more details.
@@ -707,6 +726,7 @@ them. You can search the web for more details.
 | ---- | ----- |
 | datetime-local | A datetime text string. Use it if you _only_ want to accept a datetime value. A typical usage might be the date that you finished reading a book. |
 | email | An email text string. Use it if you _only_ want to accept an email value. A typical usage might be the email address of a contact. |
+| html | Textarea data that is rendered directly as HTML. A typical usage might be to reference an image or to display formatted text. |
 | number | A numeric text string. Use it if you _only_ want to accept an number value. A typical usage might be a measurement like height or width or any other numeric value. |
 | password | A secret text string that is normally displayed as asterisks (`****`) with an eye (<img src="www/help/eye.svg" height="32" width="32" alt="eye"/>) button that can be clicked or tapped to show the value. |
 | phone | A phone number text string. Use it if you _only_ want to accept a phone number value.  A typical usage might be a mobile phone number. |
@@ -721,7 +741,7 @@ the separate textarea element is described
 [here](https://developer.mozilla.org/en-US/docs/Web/API/HTMLTextAreaElement).
 
 
-##### Custom Field Types
+##### Custom Record Field Types
 It is oftentimes the case that all of the _available_ types are not
 needed for the records you are keeping. This is especially true in
 cases where you have a very clear understanding of the record field

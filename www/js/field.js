@@ -28,6 +28,9 @@ export function mkRecordField(name, type, value) {
     case 'textarea':
         fieldValue = `<pre>${rawValue}</pre>` // needed to keep line breaks in HTML
         break
+    case 'html':
+        fieldValue = `${rawValue}` // user HTML
+        break
     default:
         break
     }
@@ -40,7 +43,7 @@ export function mkRecordField(name, type, value) {
 }
 
 // Make the DOM elements for a single record field.
-function mkRecordFldElement(name, type, value, rawValue, ...buttons) {
+function mkRecordFldElement(name, type, fieldValue, rawValue, ...buttons) {
     return xmk('div').xClass('row', 'p-0').xAppend(
         xmk('div')
             //.xClass('col-12', 'col-sm-3', 'text-start')
@@ -51,7 +54,6 @@ function mkRecordFldElement(name, type, value, rawValue, ...buttons) {
                     .xClass('x-fld-name', 'overflow-auto', 'text-secondary')
                     .xInnerHTML(name),
             ),
-        //xmk('div').xClass('col', 'text-center').xAppend(xmk('div').xInnerHTML(type)),
         xmk('div')
             //.xClass('col-12', 'col-sm-7', 'text-start').xAppend(
             .xClass('col-12', 'text-start').xAppend(
@@ -62,7 +64,7 @@ function mkRecordFldElement(name, type, value, rawValue, ...buttons) {
                         'data-fld-type': type,
                         'data-fld-raw-value': rawValue,
                     })
-                    .xInnerHTML(value)
+                    .xInnerHTML(fieldValue)
             ),
         xmk('div')
             //.xClass('col-12', 'col-sm-2', 'text-end').xAppend(...buttons)
@@ -213,7 +215,7 @@ function mkRecordEditField(name, type, container, value) {
     let passwordShowHide = null
     let passwordGenerate = null
     let inputs = [] // There can be multiple input elements (see password)
-    if ( type === 'textarea' ) {
+    if ( type === 'textarea' || type == 'html') {
         let e = xmk('textarea')
         if (value) {
             e.value = value
@@ -236,7 +238,7 @@ function mkRecordEditField(name, type, container, value) {
         let len = value ? value.length : 0
         passwordLength = xmk('span').xClass('x-fld-value-length', 'ms-3').xInnerHTML(len)
     } else {
-        let e = xmk('input').xAttrs({'type': type, 'value': value})
+        let e = xmk('input').xAttrs({'type': 'textarea', 'value': value})
         inputs.push(e)
     }
 
@@ -361,10 +363,7 @@ function mkRecordEditField(name, type, container, value) {
                             //console.log(ftype)
                             if (ftype === 'textarea') {
                                 field.value = ''
-                            } else {
-                                field.value = ''
-                            }
-                            if (ftype === 'password') {
+                            } else if (ftype === 'password') {
                                 let e1 = row.xGet('.x-fld-value-length')
                                 e1.innerHTML = '0' // length
                             }
@@ -478,8 +477,15 @@ export function copyRecordFieldsToEditDlg(title, body, clone) {
         let valueDiv = row.xGet('.x-fld-value')
         let value = valueDiv.innerHTML
         let type = valueDiv.getAttribute('data-fld-type')
-        if (type === 'password' || type === 'url' || type === 'textarea') {
+        switch (type) {
+        case 'html':
+        case 'password':
+        case 'textarea':
+        case 'url':
             value = valueDiv.getAttribute('data-fld-raw-value')
+            break
+        default:
+            break
         }
         if (clone && !window.prefs.cloneFieldValues) {
             value = ''

@@ -8,6 +8,7 @@ import { refreshAbout } from './about.js'
 export const VALID_FIELD_TYPES = {
     'datetime-local': 1,
     'email': 1,
+    'html': 1,
     'password': 1,
     'phone': 1,
     'text': 1,
@@ -64,6 +65,7 @@ export function initPrefs() {
             'datetime': 'datetime-local',
             'email': 'email',
             'host': 'text',
+            'html': 'html',
             'key': 'password',
             'login': 'text',
             'name': 'text',

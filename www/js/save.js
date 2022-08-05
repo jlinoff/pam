@@ -131,8 +131,15 @@ function saveFile(filename, password) {
             let valueDiv = row.xGet('.x-fld-value')
             let value = valueDiv.innerHTML
             let type = valueDiv.getAttribute('data-fld-type')
-            if (type === 'password' || type === 'url' || type === 'textarea') {
+            switch( type ) {
+            case 'html':
+            case 'password':
+            case 'textarea':
+            case 'url':
                 value = valueDiv.getAttribute('data-fld-raw-value')
+                break
+            default:
+                break
             }
             let fld = {
                 'name': name,

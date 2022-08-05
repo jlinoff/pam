@@ -238,7 +238,7 @@ function mkRecordEditField(name, type, container, value) {
         let len = value ? value.length : 0
         passwordLength = xmk('span').xClass('x-fld-value-length', 'ms-3').xInnerHTML(len)
     } else {
-        let e = xmk('input').xAttrs({'type': 'textarea', 'value': value})
+        let e = xmk('input').xAttrs({'type': type, 'value': value})
         inputs.push(e)
     }
 

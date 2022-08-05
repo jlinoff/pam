@@ -433,7 +433,13 @@ export function mkRecordEditDlg(title) {
         ),
         xmk('div').xClass('row').xAppend(
             xmk('div').xClass('col').xAppend(
-                xmk('div').xClass('dropdown').xAppend(
+                xmk('div').xClass('dropdown')
+                    .xAddEventListener('show.bs.dropdown', (event) => {
+                        // Make sure that any new field types are included.
+                        let ul = event.relatedTarget.parentElement.xGet('.dropdown-menu')
+                        ul.replaceChildren(...mkRecordFieldNameListItems(window.prefs.predefinedRecordFields))
+                    })
+                    .xAppend(
                     // This is the field types button that displays the field name pulldown.
                     xmk('button')
                         .xId('x-new-field-type')

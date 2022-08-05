@@ -256,9 +256,18 @@ instructions are for this specific recipe.
 
 Note that the record field names "ingredients" and "instructions" are
 custom _field names_ so you must set the "Enable Editable Field Name"
-preference to true to enter them or you must go to the preferences add
-the "ingredients" and "instructions" custom fields. The ability to
-customize record fields makes the interface more intuitive for users.
+preference to true to enter them _when you create the field_ or you
+must go to the preferences add the "ingredients" and "instructions"
+custom fields so that they are available all of the time. The ability
+to customize record fields makes the interface more intuitive for
+users.
+
+These are the default field names. You can new fields here if you want.
+
+<img src="www/help/pam-custom-record-fields.png" width="300" alt="default"/>
+
+When you enable it, you must change the name of existing field
+when you add it to the record but the preference must be checked.
 
 <img src="www/help/pam-fld-name-edit-checked.png" width="300" alt="false"/>
 

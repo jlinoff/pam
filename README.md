@@ -756,10 +756,10 @@ the separate textarea element is described
 
 
 ##### Custom Record Field Types
-It is oftentimes the case that all of the _available_ types are not
-needed for the records you are keeping. This is especially true in
-cases where you have a very clear understanding of the record field
-requirements.
+It is oftentimes the case that all of the _default_ record field types
+are not needed for the records you are managing. This is especially
+true in cases where you have a very clear understanding of the record
+field requirements.
 
 If that is the case you might want to use the preferences to delete
 fields that are not relevant for your usage so that they don't clutter

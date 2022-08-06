@@ -48,7 +48,7 @@ the on-line help is generated.
     * [Records Section](#records-section)
     * [Status Section](#status-section)
   * [Functions](#functions)
-    * [Create Record](#create-record)
+    * [Create New Record](#create-new-record)
       * [Topics](#topics)
       * [Fields](#fields)
         * [Default Record Field Types](#default-record-field-types)
@@ -115,7 +115,7 @@ the on-line help is generated.
     * [Multi-Factor Authentication](#multi-factor-authentication)
   * [Usage Examples](#usage-examples)
     * [Personal Account Records](#personal-account-records)
-      * [Create Record and File](#create-record-and-file)
+      * [Create Record File](#create-record-file)
       * [Use Record Data to Log into a Site](#use-record-data-to-log-into-a-site)
       * [Edit an Existing Record](#edit an-existing-record)
       * [Delete an Existing Record](#delete-an-existing-record)
@@ -152,7 +152,7 @@ public github.io server [here](https://jlinoff.github.io/pam/www/index.html).
 
 It looks something like this.
 
-<img src="www/help/pam-iphone-screenshot.png" alt="iphone-screenshot" width="300">
+<img src="www/help/pam-iphone-screenshot.png" alt="iphone-screenshot" width="400">
 
 See the
 _[Security Considerations](#security-considerations)_
@@ -254,19 +254,24 @@ Sundae"` and the two fields "ingredients" and "instructions" contain
 the multiline (`textarea`) descriptions of what the ingredients and
 instructions are for this specific recipe.
 
-Note that the record field names "ingredients" and "instructions" are
-custom _field names_ so you must set the "Enable Editable Field Name"
-preference to true to enter them _when you create the field_ or you
-must go to the preferences add the "ingredients" and "instructions"
-custom fields so that they are available all of the time. The ability
-to customize record fields makes the interface more intuitive for
-users.
+Note that the record field names "ingredients" and "instructions" used
+in this example are custom _field names_.
+They are not available by default.
+To make them available you must set the
+[Enable Editable Field Name](#enable-editable-field-name)
+preference to true to enter them _when you create the field_.
+
+Another way to do the same thing is to create them to the default
+record field list in the preferences section
+[Record Fields](#record-fields) section so that they are available
+all of the time. The ability to customize record fields makes the interface
+more intuitive for users.
 
 These are the default record field names.
 You can change, add or delete record fields here if you wish to customize
 the user experience.
 
-<img src="www/help/pam-default-record-fields.png" width="300" alt="default"/>
+<img src="www/help/pam-default-record-fields.png" width="400" alt="default"/>
 
 See the [Default Record Field Types](#default-record-field-types) section
 for a description of the available record field types.
@@ -274,7 +279,7 @@ for a description of the available record field types.
 When you enable it, you must change the name of existing field
 when you add it to the record but the preference must be checked.
 
-<img src="www/help/pam-fld-name-edit-checked.png" width="300" alt="false"/>
+<img src="www/help/pam-fld-name-edit-checked.png" width="400" alt="false"/>
 
 See the [Enable Editable Field Name](#enable-editable-field-name)
 entry under preferences for more details.
@@ -303,7 +308,7 @@ standard record field names so you do not need to set the "Enable Editable
 Field Name" preference. For more information about standard record fields,
 see the[Record Fields](#record-fields) section for more details.
 
-<img src="www/help/pam-fld-name-edit-unchecked.png" width="300" alt="false"/>
+<img src="www/help/pam-fld-name-edit-unchecked.png" width="400" alt="false"/>
 
 Note that the password is hidden in the example above.
 _PAM_ always hides the contents of passwords by default.
@@ -565,7 +570,7 @@ provides.
 In a nutshell they are:
 
 1. Display information about the application.
-1. Create Record.
+1. Create New Record.
 1. Edit Record.
 1. Delete Record.
 1. Clone Record.
@@ -602,15 +607,15 @@ to share a _PAM_ file or describe how the records are related. The
 custom message would allow the person to provide their _imprimatur_ on
 the collection.
 
-### Create Record
+### Create New Record
 
 This is a long section because it covers a number of general concepts
 that are needed by other functions like "topics" and "fields".
 
-Creating a record is a very common activity in _PAM_ so I tried to
+Creating a new record is a very common activity in _PAM_ so I tried to
 make it as easy as possible.
 
-There are three different methods you can use to create records:
+There are three different methods you can use to create new records:
 
 1. A record can be created in the application by clicking or tapping the "New Record" menu option,
 2. A record can be created in the application by cloning an existing record or
@@ -621,12 +626,17 @@ All three approaches will be discussed below in more detail.
 The first method, creating the record by clicking or tapping the "New
 Record" menu option in the application, is probably the best way to
 create the first new record for a topic family. This is also known as
-the "menu" approach.
+the "menu" approach and is shown below.
+
+<img src="pam-create-new-record.png" width="400" alt="new-rec">
 
 The second method, creating a record by cloning an existing record, is
 useful when you want to use the same fields as the existing record. It
 is a great way to guarantee uniformity. Although if the number of
-fields is small using the first method is also fine.
+fields is small using the first method is also fine. Here is what
+the clone option looks like.
+
+<img src="pam-clone-google.png" width="400" alt="clone-rec">
 
 The third method, creating a record by editing javascript, is most
 useful if you are interested in creating records programmatically
@@ -682,11 +692,9 @@ be a phone number or a date.
 > the same name but different types which would add more complexity
 > to the UI.
 
-Fields are defined in [Preferences](#Preferences) and they are stored
-in each file with the along with the records. Here is what they are by
-default.
-
-<img src="www/help/pam-predefined-fields.png" alt="predefined-fields">
+Default record fields are defined in [Preferences](#Preferences) and they are stored
+in each file with the along with the records. See the next section
+([Default Record Field Types](#default-record-field-types)) for details.
 
 You can change them at any time. Because the fields are stored in each
 file they can be different for each topic file, if you choose to
@@ -696,28 +704,34 @@ _PAM_ is very flexible so it doesn't impose any strict rules on the
 fields. Thus, you can also change the names of the pre-defined fields
 when creating a new record. They are only provided for convenience.
 
-<img src="www/help/pam-change-field-name.png" alt="change-field-name">
+<img src="www/help/pam-change-field-name.png" width="400" alt="change-field-name">
 
 > Note that the ability to change field names is _only_ enabled when 
-> the `Enable Editable Field Name` preference is enabled (checked).
+> the  [Enable Editable Field Name](#enable-editable-field-name)
+> preference is enabled (checked).
 > It is not enabled by default.
 
 ##### Default Record Field Types
 
-The record field types are the fields that you can define for each record
-you create.
+The record field type defines the type of each field that you define
+for a record.
 
-They are based on HTML _input_ element types except for the
-_textarea_ type which is an HTML _textarea_ element. They are presented
-below as simple types regardless of the underlying HTML element to avoid
-unnecessary complexity. 
+Record field types are based on HTML _input_ element types except
+for the _textarea_ type which is an HTML _textarea_ element and the
+_html_ type which is a _textarea_ type that is displayed as raw
+HTML. They are presented below as simple types regardless of the
+underlying HTML element to avoid unnecessary complexity.
 
 You can change, add or delete record fields here if you wish to customize
-the user experience.
+the user experience but you cannot change the types. For example, you
+change the record field _note_ from a _textarea_ field to a _text_ field
+but you cannot change the type _text_.
 
-This is what the default record field types look like.
+These are the default (pre-defined) field types.
 
-<img src="www/help/pam-default-record-fields.png" width="300" alt="default"/>
+<img src="www/help/pam-default-record-fields.png" width="400" alt="default"/>
+
+> Note that they can be changed at any time.
 
 The table below presents a brief overview of the types and when to use
 them. You can search the web for more details.
@@ -756,16 +770,18 @@ Here is an example that shows a recipe record with "ingredients" and
 
 <img src="www/help/pam-ice-cream-sundae.png" alt="ice-cream-sundae-example">
 
-Here is what the preferences look like with the other fields pruned out.
+Here is what the preferences look like after "ingredients" and "instructions" record fields
+have been added and the previous default record fields have been pruned out.
 
 <img src="www/help/pam-ice-cream-sundae-prefs.png" alt="ice-cream-sundae-example-prefs">
 
 Here is an example that shows an account record with "url", "login"
-and "password" fields.
+and "password" record fields.
 
 <img src="www/help/pam-google-account.png" alt="google-account-example">
 
 Here is what the preferences look like with the other fields pruned out.
+The "url", "login" and "password" record fields are part of the default.
 
 <img src="www/help/pam-google-account-prefs.png" alt="google-account-example-prefs">
 
@@ -1175,10 +1191,10 @@ example that shows how simple the format is.
 ### Edit Record
 To edit a record, select it from the records list and click or tap on the `"Edit"` button
 to popup the edit dialogue _which is exactly the same_ as the dialogue used to
-create record.
+create a new record.
 
 In fact, it is implemented using the _same code_ so you can use the
-instructions from the [Create Record](#create-record) section to
+instructions from the [Create New Record](#create-new-record) section to
 understand how to change or add new fields.
 
 ### Delete Record
@@ -1194,7 +1210,7 @@ To clone a record, select it from the records list and click or tap on the `"Clo
 This will create a new record that you can edit.
 
 The clone operation is described in detail in the
-[Create Record](#create-record) section
+[Create New Record](#create-new-record) section
 under the  [Method 2: Clone Approach](#method-2-clone-approach)
 subsection.
 
@@ -1322,7 +1338,7 @@ to read the [Preferences](#preferences) section before trying it.
 
 Click or tap on the "<img src='./plus-circle-fill.svg' height='32' width='32' />&nbsp;New Record"
 entry to create a new record.
-See the [Create Record](#create-record) section for more details.
+See the [Create New Record](#create-new-record) section for more details.
 
 Click or tap on the "<img src='./trash3-fill.svg' height='32' width='32' />&nbsp;Clear Records"
 entry to delete all of the records.
@@ -1355,7 +1371,7 @@ example with seven records that contain confidential information for
 "Amazon", "Email", "Facebook", "Github", "Google", "Netflix" and
 "Stack Exchange" fictional accounts.
 
-See the [Create Record](#create-record) section for details about how to create
+See the [Create New Record](#create-new-record) section for details about how to create
 records.
 
 ### Unexpanded View of all Records
@@ -1590,7 +1606,7 @@ If there is a conflict it prefers the record being loaded.
 This preference specifies that all data is kept when cloning a record.
 
 Remember that cloning a record is very simple and powerful way to
-create records with the same fields but you have to delete the
+create new records with the same fields but you have to delete the
 existing values before entering new ones which is very simple.
 
 The default is false which says to keep the field values when cloning.
@@ -1611,9 +1627,9 @@ This defines whether or not the user can change a field name.
 ##### Not Enabled
 This is what it looks likes when it is unchecked (false).
 
-<img src="www/help/pam-fld-name-edit-unchecked.png" width="300" alt="false"/>
+<img src="www/help/pam-fld-name-edit-unchecked.png" width="400" alt="false"/>
 
-<img src="www/help/pam-fld-name-edit-off.png" width="300" alt="false"/>
+<img src="www/help/pam-fld-name-edit-off.png" width="400" alt="false"/>
 
 When this is not enabled, the user can only choose record fields from
 the pre-defined "Record Fields" section of the preferences. See the
@@ -1622,9 +1638,9 @@ the pre-defined "Record Fields" section of the preferences. See the
 ##### Enabled
 This is what it looks likes when it is checked (true).
 
-<img src="www/help/pam-fld-name-edit-checked.png" width="300" alt="false"/>
+<img src="www/help/pam-fld-name-edit-checked.png" width="400" alt="false"/>
 
-<img src="www/help/pam-fld-name-edit-on.png" width="300" alt="true"/>
+<img src="www/help/pam-fld-name-edit-on.png" width="400" alt="true"/>
 
 The user can replace the default field name (in this case "name") with
 whatever they want, perhaps something like "full name" or "first name"
@@ -1671,6 +1687,8 @@ a delete button (<img src="www/help/trash3-fill.svg" height="32" width="32" alt=
 that you click to delete the record field.
 
 The record field names must be unique.
+
+For a more detailed description see [Fields](#fields).
 
 ### Saving Preferences
 You _must_ scroll to the bottom of the dialogue and
@@ -1941,8 +1959,8 @@ This is the most common usage. It is where personal account records
 are stored so that you have a permanent, encrypted record of all of
 your passwords.
 
-#### Create Record and File
-To create a file and a record follow these steps:
+#### Create Record File
+To create a file with a single record follow these steps:
 
 1. Navigate to the app: [ https://jlinoff.github.io/pam/www/](https://jlinoff.github.io/pam/www/).
    * This can be done from any device, like your phone, tablet or computer

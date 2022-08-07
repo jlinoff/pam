@@ -15,7 +15,7 @@ export function menuLoadDlg() {
         .xAppendChild(
             xmk('p')
                 .xAddEventListener('click', (event) => loadExample(event))
-                .xTooltip('click here to load the example')
+                .xTooltip('click here to load the example records')
                 .xInnerHTML('Enter a password if the file was encrypted.'),
             xmk('form').xClass('container').xAppend(
                 xmk('div').xClass('row').xAppend(

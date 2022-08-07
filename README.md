@@ -247,7 +247,7 @@ instructions
 
 It might look like this.
 
-<img src="www/help/pam-ice-cream-sundae.png" alt="ice-cream-sundae-example">
+<img src="www/help/pam-ice-cream-sundae.png" width="400" alt="ice-cream-sundae-example">
 
 As you can see, in this _"recipe"_ record, the title is `"Ice Cream
 Sundae"` and the two fields "ingredients" and "instructions" contain
@@ -301,7 +301,7 @@ than recipes.
 
 Here is what a simple account record might look like.
 
-<img src="www/help/pam-google-account.png" alt="google-account-example">
+<img src="www/help/pam-google-account.png" width="400" alt="google-account-example">
 
 In this case the record field names "login", "password" and "url" are
 standard record field names so you do not need to set the "Enable Editable
@@ -481,11 +481,11 @@ more about why this is beneficial in the
 
 This is the default hidden view of a password.
 
-<img src="www/help/pam-password-hidden.png" alt="password-hidden">
+<img src="www/help/pam-password-hidden.png" width="400" alt="password-hidden">
 
 This is the view of a password when it is not hidden.
 
-<img src="www/help/pam-password-shown.png" alt="password-shown">
+<img src="www/help/pam-password-shown.png" width="400" alt="password-shown">
 
 #### Reason 8: Access from mobile devices
 
@@ -508,7 +508,7 @@ status section.
 
 It looks something like this
 
-<img src="www/help/pam-basic-sections.png" alt="menu-bar">
+<img src="www/help/pam-basic-sections.png" width="400" alt="menu-bar">
 
 ### Menu and Search Section
 The top section that contains a search input
@@ -520,7 +520,7 @@ them easier to find.
 The menu at the top right is the control center for the application it
 has a number of options as you can see below.
 
-<img src="www/help/pam-basic-menu.png" alt="menu">
+<img src="www/help/pam-basic-menu.png" width="400" alt="menu">
 
 ### Records Section
 
@@ -534,12 +534,12 @@ This way of presenting the records is called an accordion display.
 Below you can see how it expands after the "Facebook" entry has been
 selected.
 
-<img src="www/help/pam-record-expanded.png" alt="record-expanded">
+<img src="www/help/pam-record-expanded.png" width="400" alt="record-expanded">
 
 As you can see the expanded "Facebook" record has three fields: "url",
 "login" and "password".
 
-<img src="www/help/pam-record-expanded-fields.png" alt="record-expanded">
+<img src="www/help/pam-record-expanded-fields.png" width="400" alt="record-expanded">
 
 You can copy the field values to the clipboard so that they can be
 pasted into login forms.
@@ -547,7 +547,7 @@ pasted into login forms.
 > Note that the copy works for passwords whether the
 > password is visible or not.
 
-<img src="www/help/pam-record-expanded-fields2.png" alt="record-expanded">
+<img src="www/help/pam-record-expanded-fields2.png" width="400" alt="record-expanded">
 
 You can also click or tap on the title of the opened record to close it.
 
@@ -561,7 +561,7 @@ The status messages are used to provide activity feedback like showing
 how many bytes were copied to a clipboard when a copy button is
 clicked or tapped as shown in the example below.
 
-<img src="www/help/pam-status-msg.png" alt="status-message">
+<img src="www/help/pam-status-msg.png" width="400" alt="status-message">
 
 ## Functions
 The following sections will go over the basic functions that _PAM_
@@ -592,15 +592,15 @@ You can even add custom HTML through the preferences.
 
 Here is a screen shot of what you would see.
 
-<img src="www/help/pam-about.png" alt="about">
+<img src="www/help/pam-about.png" width="400" alt="about">
 
 Here is an about dialogue with a simple custom message.
 
-<img src="www/help/pam-about-custom.png" alt="about-custom">
+<img src="www/help/pam-about-custom.png" width="400" alt="about-custom">
 
 Custom messages are defined in preferences as follows.
 
-<img src="www/help/pam-about-custom-pref.png" alt="about-custom-pref">
+<img src="www/help/pam-about-custom-pref.png" width="400" alt="about-custom-pref">
 
 The motivation for allowing custom messages is that someone might want
 to share a _PAM_ file or describe how the records are related. The
@@ -768,22 +768,22 @@ up the choices. You can always add them back later if you want.
 Here is an example that shows a recipe record with "ingredients" and
 "instructions" fields.
 
-<img src="www/help/pam-ice-cream-sundae.png" alt="ice-cream-sundae-example">
+<img src="www/help/pam-ice-cream-sundae.png" width="400" alt="ice-cream-sundae-example">
 
 Here is what the preferences look like after "ingredients" and "instructions" record fields
 have been added and the previous default record fields have been pruned out.
 
-<img src="www/help/pam-ice-cream-sundae-prefs.png" alt="ice-cream-sundae-example-prefs">
+<img src="www/help/pam-ice-cream-sundae-prefs.png" width="400" alt="ice-cream-sundae-example-prefs">
 
 Here is an example that shows an account record with "url", "login"
 and "password" record fields.
 
-<img src="www/help/pam-google-account.png" alt="google-account-example">
+<img src="www/help/pam-google-account.png" width="400" alt="google-account-example">
 
 Here is what the preferences look like with the other fields pruned out.
 The "url", "login" and "password" record fields are part of the default.
 
-<img src="www/help/pam-google-account-prefs.png" alt="google-account-example-prefs">
+<img src="www/help/pam-google-account-prefs.png" width="400" alt="google-account-example-prefs">
 
 #### Password Fields
 Passwords fields show up in a lot of places. I chose to document them
@@ -841,7 +841,7 @@ passwords for most people.
 ##### Hidden Password Representation
 Here is an example that shows a password in its standard hidden form.
 
-<img src="www/help/pam-record-expanded-fields.png" alt="record-expanded">
+<img src="www/help/pam-record-expanded-fields.png" width="400" alt="record-expanded">
 
 To make the password visible, click or tap on the
 <img src="www/help/eye.svg" height="32" width="32" alt="eye"/> icon.
@@ -849,7 +849,7 @@ To make the password visible, click or tap on the
 ##### Visible Password Representation
 Here is an example that shows a password in its visible hidden form.
 
-<img src="www/help/pam-record-expanded-password.png" alt="record-expanded-password">
+<img src="www/help/pam-record-expanded-password.png" width="400" alt="record-expanded-password">
 
 To hide the password, click or tap on the
 <img src="www/help/eye-slash.svg" height="32" width="32" alt="eye"/> icon.
@@ -857,13 +857,13 @@ To hide the password, click or tap on the
 ##### Password Generator
 This is what the password field dialogue looks like with no generator.
 
-<img src="www/help/pam-password-no-generator.png" alt="password-no-generator">
+<img src="www/help/pam-password-no-generator.png" width="400" alt="password-no-generator">
 
 When you click or tap on the <img src='./gear.svg' height='32' width='32' /> icon,
 cryptic and memorable passwords are generated and the password
 generator dialogue appears.
 
-<img src="www/help/pam-password-generator.png" alt="password-generator">
+<img src="www/help/pam-password-generator.png" width="400" alt="password-generator">
 
 As you can see it always generates five memorable passwords to provide
 some choices. I found that more useful than the original
@@ -875,7 +875,7 @@ implementation which only had a single choice.
 
 This is what the password generator looks like with annotations.
 
-<img src="www/help/pam-password-generator-annotated.png" alt="password-generator-annotated">
+<img src="www/help/pam-password-generator-annotated.png" width="400" alt="password-generator-annotated">
 
 If you click or tap on the <img src='./gear.svg' height='32' width='32' /> icon
 a second time, new passwords will be generated.
@@ -883,9 +883,9 @@ a second time, new passwords will be generated.
 You must click or tap on the <img src='./x-circle.svg' height='32' width='32' /> icon
 to close the dialogue.
 
-I chose this approach because I wanted the <img src='./gear.svg'
-height='32' width='32' /> icon to be used to generate new
-passwords.
+I chose this approach because I wanted the
+<img src='./gear.svg' height='32' width='32' />
+icon to be used to generate new passwords.
 
 > In retrospect, that choice may not have been the most intuitive way
 > to implement closing the generator dialogue it but it works well
@@ -898,15 +898,15 @@ be added to the field value.
 #### Method 1: Menu Approach
 Click or tap on the `"New Record"` option from the menu.
 
-<img src="www/help/pam-new-record-menu.png" alt="new-record">
+<img src="www/help/pam-new-record-menu.png" width="400" alt="new-record">
 
 That will popup a dialogue that looks like this.
 
-<img src="www/help/pam-new-record.png" alt="new-record">
+<img src="www/help/pam-new-record.png" width="400" alt="new-record">
 
 You can now type in the record title.
 
-<img src="www/help/pam-new-record-title.png" alt="new-record">
+<img src="www/help/pam-new-record-title.png" width="400" alt="new-record">
 
 From there you click or tap on the `"Type"` pulldown to select and create
 the first record field. Don't worry if you select the wrong one,
@@ -918,20 +918,20 @@ ingredients in the value input.
 
 Here is where you select "note" for the first field.
 
-<img src="pam-new-record-field-1-select.png" alt="new-record-field-1-select">
+<img src="pam-new-record-field-1-select.png" width="400" alt="new-record-field-1-select">
 
 And then change the field name to "ingredients" and populate it.
 
 > Remember that you can customize the available fields in the
 > preferences so that the list of fields is shorter.
 
-<img src="pam-new-record-field-1.png" alt="new-record-field-1">
+<img src="pam-new-record-field-1.png" width="400" alt="new-record-field-1">
 
 Now do the same thing to create an "instructions" field. Remember to choose
 "note" just like in the previous step. This is what it looks like after you
 have added the second field.
 
-<img src="pam-new-record-field-2.png" alt="new-record-field-2">
+<img src="pam-new-record-field-2.png" width="400" alt="new-record-field-2">
 
 One interesting thing to understand is that you can _change the order
 of the fields_ by dragging them up or down. To do that select the
@@ -940,7 +940,7 @@ also be done when editing the record.
 
 Here is what it looks like when I dragged the "instructions" field up.
 
-<img src="pam-new-record-drag.png" alt="new-record-drag">
+<img src="pam-new-record-drag.png" width="400" alt="new-record-drag">
 
 I then dragged "instructions" field back down because it should appear after
 "ingredients" field.
@@ -948,11 +948,11 @@ I then dragged "instructions" field back down because it should appear after
 When you are finished click or tap on the `"Save"` button to save it and you
 will see it show up as a new record in the records part of the screen.
 
-<img src="pam-new-record-done.png" alt="new-record-done">
+<img src="pam-new-record-done.png" width="400" alt="new-record-done">
 
 You can click or tap on the record to expand it and see the fields you just defined.
 
-<img src="pam-new-record-done-expand.png" alt="new-record-done-expand">
+<img src="pam-new-record-done-expand.png" width="400" alt="new-record-done-expand">
 
 #### Method 2: Clone Approach
 Cloning a record is simple. Just expand a record and click or tap on the clone button
@@ -961,7 +961,7 @@ and an edit dialogue pops up.
 Using the record that was created in the previous section here is what happens when
 you click or tap the `"Clone"` button.
 
-<img src="pam-clone-record-popup.png" alt="clone-record-popup">
+<img src="pam-clone-record-popup.png" width="400" alt="clone-record-popup">
 
 As you can see, the clone operation created a new record with a
 slightly modified title "Ice Cream Sundae Clone" _because the record
@@ -973,7 +973,7 @@ the title is unique so it can be saved.
 
 Click or tap the `"Save"` button and you will see this.
 
-<img src="pam-clone-records-1.png" alt="clone-records-1">
+<img src="pam-clone-records-1.png" width="400" alt="clone-records-1">
 
 As you can see, _PAM_ still remembers that you had the original record
 open. Just below it you will see the new cloned record.
@@ -985,7 +985,7 @@ records.
 In this case we only care about one record so you can click
 or tap on the new record to expand it.
 
-<img src="pam-clone-records-2.png" alt="clone-records-1">
+<img src="pam-clone-records-2.png" width="400" alt="clone-records-1">
 
 #### Method 3: Javascript Approach
 This approach is not going to have any screenshots because it deals with
@@ -1235,7 +1235,7 @@ option from the menu. See the [Menu](#menu) section for screenshots.
 
 This is the save file dialogue.
 
-<img src="www/help/pam-file-save.png" alt="file-save">
+<img src="www/help/pam-file-save.png" width="400" alt="file-save">
 
 If you want the records to be encrypted, enter or generate a password
 as described in [Password Generator](#password-generator) section.
@@ -1265,10 +1265,19 @@ option from the menu.  See the [Menu](#menu) section for screenshots.
 
 This is the load file dialogue.
 
-<img src="www/help/pam-file-load.png" alt="file-load">
+<img src="www/help/pam-file-load.png" width="400" alt="file-load">
 
 If the file was saved with a password, you must enter that password or
 the file will not load.
+
+If you wish to load the example records file, click on the text to load
+example records that can be used to get you started.
+
+<img src="www/help/pam-file-load-example.png" width="400" alt="file-load-example">
+
+These are the records that are loaded.
+
+<img src="www/help/pam-file-load-example-records.png" width="400" alt="file-load-example-records">
 
 ### Search Records
 _PAM_ allows you to search records by their title or their field
@@ -1282,14 +1291,14 @@ to make it easier to find stuff.
 This can be very helpful for finding out where old
 passwords and obsolete accounts are still being used.
 
-Here is an made up list of accounts:
+Here is the made up list of account records from the [Load Files](#load-files) example:
 
-<img src="www/help/pam-search.png" alt="pam-search">
+<img src="www/help/pam-search.png" width="400" alt="pam-search">
 
 Here is the same list after filtering for those whose titles contain the
 letter `"g"`.
 
-<img src="www/help/pam-search-g.png" alt="pam-search-g">
+<img src="www/help/pam-search-g.png" width="400" alt="pam-search-g">
 
 To filter only those that start with `"g"` you
 would use this regular expression search term instead: `"^g"`.
@@ -1315,7 +1324,7 @@ helpful. Plus there are links to the sections with relevant details.
 
 This is what the menu looks like.
 
-<img src="www/help/pam-menu.png" alt="menu">
+<img src="www/help/pam-menu.png" width="400" alt="menu">
 
 As you can see, there are seven menu options:
 
@@ -1377,7 +1386,7 @@ records.
 ### Unexpanded View of all Records
 We start with the unexpanded view of all records as shown below.
 
-<img src="www/help/pam-example-records.png" alt="example-records">
+<img src="www/help/pam-example-records.png" width="400" alt="example-records">
 
 As you can see _PAM_ presents the records as an accordion. Each record
 is one entry in the accordion that you can expand to view the record fields
@@ -1396,13 +1405,13 @@ messages.
 Once you click on or tap a record it expands as shown below where
 the "Facebook" record was tapped.
 
-<img src="www/help/pam-record-expanded.png" alt="record-expanded">
+<img src="www/help/pam-record-expanded.png" width="400" alt="record-expanded">
 
 You can see that there are three fields in the record: "url", "login" and "password",
 next to each field there is a icon that looks like a clipboard
 <img src="www/help/clipboard.svg" height="32" width="32" alt="clipboard"/>.
 
-<img src="www/help/pam-record-expanded-fields.png" alt="record-expanded">
+<img src="www/help/pam-record-expanded-fields.png" width="400" alt="record-expanded">
 
 If you click or tap the clipboard icon,
 the field contents will be copied to the clipboard so that you can paste them into a login
@@ -1428,7 +1437,7 @@ In addition there are three buttons at the bottom
 
 As you can see here.
 
-<img src="www/help/pam-record-expanded-fields2.png" alt="record-expanded">
+<img src="www/help/pam-record-expanded-fields2.png" width="400" alt="record-expanded">
 
 ## Preferences
 Preferences allow you to customized the behavior of the app.

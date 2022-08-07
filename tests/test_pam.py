@@ -190,7 +190,7 @@ def test_prefs(py):
     assert prefs_dlg.tag_name() == 'div'
     buttons = prefs_dlg.find('button')
     # 1 close button plus the buttons for the field delete/edit/add
-    assert len(buttons) == 48
+    assert len(buttons) == 50
     close_button = None
     for button in buttons:
         if 'Close' in button.get_property('innerHTML'):
@@ -290,8 +290,8 @@ def test_new_record_delete(py):
     fld_type_button = dlg.get('#x-new-field-type')
     items = fld_type_button.parent().find('.dropdown-item')
     ei(items)
-    # there are 16 menu items as defined in www/js/prefs.py
-    assert len(items) == 17
+    # there are 17 field type menu items as defined in www/js/prefs.py
+    assert len(items) == 18
     text = None
     for item in items:
         value = item.get_attribute('value')

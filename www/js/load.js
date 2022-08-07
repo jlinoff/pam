@@ -13,7 +13,10 @@ import { initPrefs } from './prefs.js'
 export function menuLoadDlg() {
     let body = xmk('span')
         .xAppendChild(
-            xmk('p').xInnerHTML('Enter a password if the file was encrypted.'),
+            xmk('p')
+                .xAddEventListener('click', (event) => loadExample(event))
+                .xTooltip('click here to load the example')
+                .xInnerHTML('Enter a password if the file was encrypted.'),
             xmk('form').xClass('container').xAppend(
                 xmk('div').xClass('row').xAppend(
                     xmk('div').xClass('col-12', 'overflow-auto').xAppend(
@@ -44,6 +47,24 @@ export function menuLoadDlg() {
                                 })
     let e = mkPopupModalDlg('menuLoadDlg', 'Load Records From File', body, b1, b2)
     return e
+}
+
+function loadExample(event) {
+    if (confirm("Do you really want to load the example?") !== true) {
+        return
+    }
+    let url = '/examples/example.txt'
+    fetch(url)
+        .then((response) => {
+            return response.text()
+        })
+        .then((data) => {
+            console.log(data)
+            loadCallback(data)
+        })
+        .catch((error) => {
+            console.log(`ERROR: ${error.message}`)
+        })
 }
 
 function loadFile(password) {

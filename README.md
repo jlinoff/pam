@@ -9,19 +9,19 @@ personal account manager webapp
 The meta data in the table is populated during the build process when
 the on-line help is generated.
 
-| Field | Value |
-| ----- | ----- |
-| Author | Joe Linoff |
-| Copyright (&copy;) | 2022 |
-| License| MIT Open Source |
-| Version | `__VERSION__` |
-| Bootstrap Version | `__BOOTSTRAP_VERSION__` |
-| Build | `__BUILD__` |
-| GitCommitId | `__GIT_COMMIT_ID__` |
-| GitBranch | `__GIT_BRANCH__` |
-| project | [https://github.com/jlinoff/pam](https://github.com/jlinoff/pam) |
-| webapp | [https://jlinoff.github.io/pam/www/](https://jlinoff.github.io/pam/www/) |
-| help | [https://jlinoff.github.io/pam/www/help/](https://jlinoff.github.io/pam/www/help) |
+| Field              | Value                                                                             |
+| -----              | -----                                                                             |
+| Author             | Joe Linoff                                                                        |
+| Copyright (&copy;) | 2022                                                                              |
+| License            | MIT Open Source                                                                   |
+| Version            | `__VERSION__`                                                                     |
+| Bootstrap Version  | `__BOOTSTRAP_VERSION__`                                                           |
+| Build              | `__BUILD__`                                                                       |
+| GitCommitId        | `__GIT_COMMIT_ID__`                                                               |
+| GitBranch          | `__GIT_BRANCH__`                                                                  |
+| project            | [https://github.com/jlinoff/pam](https://github.com/jlinoff/pam)                  |
+| webapp             | [https://jlinoff.github.io/pam/www/](https://jlinoff.github.io/pam/www/)          |
+| help               | [https://jlinoff.github.io/pam/www/help/](https://jlinoff.github.io/pam/www/help) |
 
 </details>
 

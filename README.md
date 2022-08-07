@@ -15,6 +15,7 @@ the on-line help is generated.
 | Copyright (&copy;) | 2022 |
 | License| MIT Open Source |
 | Version | `__VERSION__` |
+| Bootstrap Version | `__BOOTSTRAP_VERSION__` |
 | Build | `__BUILD__` |
 | GitCommitId | `__GIT_COMMIT_ID__` |
 | GitBranch | `__GIT_BRANCH__` |

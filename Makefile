@@ -4,9 +4,9 @@
 DST  ?= www
 PORT ?= 8081
 FAVICON_SVG ?= bootstrap-icons/icons/box.svg
-export PIPENV_VENV_IN_PROJECT := True
 BS_VER ?= 5.1.3
 BS_DIST ?= bootstrap-$(BS_VER)-dist
+export PIPENV_VENV_IN_PROJECT := True
 
 # Macros
 define hdr
@@ -21,14 +21,14 @@ endef
 
 # Rules
 .PHONY: default
-default: bs app-help app-version
+default: init bs app-help app-version
 
 .PHONY: clean
 clean:   # clean up
 	$(call hdr,"$@")
 	-pipenv clean
 	-find . -type f -name '*~' -delete
-	-rm -rf pam .venv .init .bs
+	-rm -rf pam .venv .init .bs Pipfile*
 	-[ -d .git ] && git clean -xdf -e keep . || true
 
 # spell check README
@@ -44,6 +44,8 @@ init: .init .bs app-version app-help  ## very basic setup for python3 and jshint
 	$(call hdr,"$@-npm")
 	@touch $@
 
+# URL: https://github.com/ElSnoMan/pyleniumio/tree/main/docs
+# /Applications/Google\ Chrome.app/Contents/MacOS/Google\ Chrome --version
 Pipfile:
 	$(call hdr,"$@-python")
 	-rm -rf .venv
@@ -52,6 +54,7 @@ Pipfile:
 	pipenv install pytest
 	pipenv install pytest-reportportal~=1.0
 	pipenv install pyleniumio
+	pipenv run pylenium init
 
 conftest.py.bak:
 	$(call hdr,"$@-pylenium")

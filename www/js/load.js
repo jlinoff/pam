@@ -14,9 +14,17 @@ export function menuLoadDlg() {
     let body = xmk('span')
         .xAppendChild(
             xmk('p')
-                .xAddEventListener('click', (event) => loadExample(event))
-                .xTooltip('click here to load the example records')
-                .xInnerHTML('Enter a password if the file was encrypted.'),
+                .xInnerHTML('Normally you simply click the "Load" button but there are two special cases:'),
+            xmk('ol').xAppend(
+                xmk('li')
+                    .xAddEventListener('click', (event) => loadExample(event))
+                    .xInnerHTML('Click or tap anywhere on this line to load example records.'),
+                xmk('li')
+                    .xAddEventListener('click', (event) => loadUrl(event))
+                    .xInnerHTML('Click or tap anywhere on this line to load records from a URL.'),
+            ),
+            xmk('p')
+                .xInnerHTML('Enter a password if the PAM records file was encrypted.'),
             xmk('form').xClass('container').xAppend(
                 xmk('div').xClass('row').xAppend(
                     xmk('div').xClass('col-12', 'overflow-auto').xAppend(
@@ -49,6 +57,38 @@ export function menuLoadDlg() {
     return e
 }
 
+function loadUrlContent(url) {
+    fetch(url)
+        .then((response) => {
+            return response.text()
+        })
+        .then((content) => {
+            //console.log(data)
+            let size = content.length
+            if (content[0] === '{') {
+                // This file is plain json, it is not encrypted
+                statusBlip(`not encrypted ${url} (${size}B)`)
+                loadCallback(content)
+            }  else {
+                statusBlip(`encrypted ${url} (${size}B)`)
+                let password = el.xGet('#x-load-password').value.trim()
+                decrypt(password, content, loadCallback, invalidPasswordCallback)
+            }
+        })
+        .catch((error) => {
+            alert(`failed to load ${url}: ${error.message}`)
+            console.log(`ERROR: ${error.message}`)
+        })
+}
+
+function loadUrl() {
+    let url = prompt('URL:').trim()
+    if (url.length > 4 ) {
+        loadUrlContent(url)
+    } else {
+    }
+}
+
 function loadExample(event) {
     // figure out the base url
     let href = window.location.href
@@ -58,18 +98,7 @@ function loadExample(event) {
     if (confirm(`Do you really want to load the example from\n${url}?`) !== true) {
         return
     }
-    fetch(url)
-        .then((response) => {
-            return response.text()
-        })
-        .then((data) => {
-            //console.log(data)
-            loadCallback(data)
-        })
-        .catch((error) => {
-            alert(`failed to load ${url}: ${error.message}`)
-            console.log(`ERROR: ${error.message}`)
-        })
+    loadUrlContent(url)
 }
 
 function loadFile(password) {

@@ -1269,16 +1269,21 @@ This is the load file dialogue.
 <img src="www/help/pam-file-load.png" width="400" alt="file-load">
 
 If the file was saved with a password, you must enter that password or
-the file will not load.
+the file will prompt for the password when loading.
 
-If you wish to load the example records file, click on the text to load
-example records that can be used to get you started.
+If you wish to load the example records file, click or tap on the
+examples text (#1) to load example records that can be used to get you
+started.
 
 <img src="www/help/pam-file-load-example.png" width="400" alt="file-load-example">
 
 These are the records that are loaded.
 
 <img src="www/help/pam-file-load-example-records.png" width="400" alt="file-load-example-records">
+
+Click or tap on the URL text (#2) to load a file from the web.
+This is typically used when a PAM records file is shared because
+no changes can be made.
 
 ### Search Records
 _PAM_ allows you to search records by their title or their field

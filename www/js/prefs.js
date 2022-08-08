@@ -55,7 +55,7 @@ export function initPrefs() {
         memorablePasswordPrefix: '', // common prefix for all memorable passwords
         memorablePasswordSuffix: '', // common suffix for all memorable passwords
         helpLink: './help/index.html', // link to the help page.
-        projectLink: 'https://github.com/jlinoff/myvault', // link to the project page.
+        projectLink: 'https://github.com/jlinoff/pam', // link to the project page.
         // valid dup strategies are 'ignore', 'replace', 'allow'
         loadDupStrategy: 'ignore', // only used if clearBeforeLoad is false
         logStatusToConsole: false, // tee the status to console.log

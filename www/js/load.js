@@ -50,19 +50,24 @@ export function menuLoadDlg() {
 }
 
 function loadExample(event) {
-    if (confirm("Do you really want to load the example?") !== true) {
+    // figure out the base url
+    let href = window.location.href
+    let lidx = href.lastIndexOf('/') + 1
+    let base = href.substring(0, lidx)
+    let url = base + 'examples/example.txt'
+    if (confirm(`Do you really want to load the example from\n${url}?`) !== true) {
         return
     }
-    let url = '/examples/example.txt'
     fetch(url)
         .then((response) => {
             return response.text()
         })
         .then((data) => {
-            console.log(data)
+            //console.log(data)
             loadCallback(data)
         })
         .catch((error) => {
+            alert(`failed to load ${url}: ${error.message}`)
             console.log(`ERROR: ${error.message}`)
         })
 }

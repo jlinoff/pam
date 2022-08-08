@@ -215,7 +215,7 @@ function mkRecordEditField(name, type, container, value) {
     let passwordShowHide = null
     let passwordGenerate = null
     let inputs = [] // There can be multiple input elements (see password)
-    if ( type === 'textarea' || type == 'html') {
+    if ( type === 'textarea' || type === 'html') {
         let e = xmk('textarea')
         if (value) {
             e.value = value

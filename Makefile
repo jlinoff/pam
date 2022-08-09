@@ -37,7 +37,7 @@ spell-check:  ## Spell check the README.md file using aspell.
 .PHONY: init
 init: .init bs app-version app-help  ## very basic setup for python3 and jshint
 
-.init: Pipfile.lock
+.init: Pipfile
 	$(call hdr,"$@-npm")
 	npm install -g jshint
 	@touch $@
@@ -48,7 +48,7 @@ init: .init bs app-version app-help  ## very basic setup for python3 and jshint
 # to fix
 #   ERROR:: --system is intended to be used for pre-existing Pipfile installation
 #   $ rm -rf ~/.local/share/virtualenvs/*
-Pipfile.lock:
+Pipfile:
 	$(call hdr,"$@-python")
 	-rm -rf .venv
 	pipenv install --python /usr/local/opt/python@3.10/bin/python3

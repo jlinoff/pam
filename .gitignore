@@ -17,6 +17,7 @@ conftest.py
 conftest.py.bak
 backup-pam.tar
 Pipfile
+Pipfile.lock
 pam/
 pam-www.tar
 keep/

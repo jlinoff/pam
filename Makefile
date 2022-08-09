@@ -21,14 +21,11 @@ endef
 
 # Rules
 .PHONY: default
-default: init bs app-help app-version
+default: init
 
 .PHONY: clean
 clean:   # clean up
 	$(call hdr,"$@")
-	-pipenv clean
-	-find . -type f -name '*~' -delete
-	-rm -rf pam .venv .init .bs Pipfile*
 	-[ -d .git ] && git clean -xdf -e keep . || true
 
 # spell check README
@@ -38,29 +35,29 @@ spell-check:  ## Spell check the README.md file using aspell.
 	aspell check README.md
 
 .PHONY: init
-init: .init .bs app-version app-help  ## very basic setup for python3 and jshint
+init: .init bs app-version app-help  ## very basic setup for python3 and jshint
 
-.init: Pipfile conftest.py.bak
+.init: Pipfile.lock
 	$(call hdr,"$@-npm")
+	npm install -g jshint
 	@touch $@
 
 # URL: https://github.com/ElSnoMan/pyleniumio/tree/main/docs
-# /Applications/Google\ Chrome.app/Contents/MacOS/Google\ Chrome --version
-Pipfile:
+# $ /Applications/Google\ Chrome.app/Contents/MacOS/Google\ Chrome --version
+# https://github.com/ElSnoMan/pyleniumio/issues/278
+# to fix
+#   ERROR:: --system is intended to be used for pre-existing Pipfile installation
+#   $ rm -rf ~/.local/share/virtualenvs/*
+Pipfile.lock:
 	$(call hdr,"$@-python")
 	-rm -rf .venv
 	pipenv install --python /usr/local/opt/python@3.10/bin/python3
 	pipenv install pylint mypy
 	pipenv install pytest
 	pipenv install pytest-reportportal~=1.0
+	pipenv install webdriver_manager==3.7.0
 	pipenv install pyleniumio
 	pipenv run pylenium init
-
-conftest.py.bak:
-	$(call hdr,"$@-pylenium")
-	pipenv run pylenium init
-	sed -i.bak -e 's/return TestCase(name=test_name, file_path=test_result_path)/return TestCase(name=test_name, file_path=str(test_result_path))/' conftest.py
-	npm install -g jshint
 
 # to copy to icloud:
 # $ make backup
@@ -136,12 +133,12 @@ bootstrap-icons/font/bootstrap-icons.css:
 	git clone https://github.com/twbs/icons.git bootstrap-icons
 
 .PHONY: run
-run:  ## Run the server on port PORT
+run: init  ## Run the server on port PORT
 	$(call hdr,'$@ - http://localhost:$(PORT)')
 	cd www && pwd && pipenv run python -m http.server $(PORT)
 
 .PHONY: test
-test: | tests/test_pam.py ## Run local tests
+test: init | tests/test_pam.py ## Run local tests
 	$(call hdr,"$@")
 	pipenv run python3 --version
 	pipenv run python3 -m pytest tests/test_pam.py

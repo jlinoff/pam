@@ -248,6 +248,7 @@ _instructions_ (another field).
 So what would a simple dessert recipe look like as a in _PAM_ record?
 Well, if you had a simple dessert recipe like this written on a card.
 
+<blockquote style="border: 1px black solid; width: 32ch">
 ```
 Ice Cream Sundae
 
@@ -267,6 +268,7 @@ instructions
 5. add whip cream
 6. put the cherry on top.
 ```
+</blockquote>
 
 It would look like this when you create it in _PAM_.
 

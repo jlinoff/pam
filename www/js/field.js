@@ -148,7 +148,9 @@ function mkRecordFieldNameListEntry(name, type) {
         .xAddEventListener('click', (event) => {
             let pp = event.target.xGetParentWithClass('dropdown-menu')
             let ppa = pp.xGet('.active')
-            ppa.classList.remove('active')
+            if (!!ppa) {
+                ppa.classList.remove('active')
+            }
             event.target.classList.add('active')
             let row = event.target.xGetParentWithClass('row')
 

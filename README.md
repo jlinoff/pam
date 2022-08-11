@@ -168,9 +168,10 @@ You can even include images like this.
 
 <img src="www/help/pam-ice-cream-sundae-open.png" width="400" alt="ice-cream-sundae-example">
 
-There a lots of other features like customized records fields and
-preferences as well as techniques for securely sharing records and
-embedding images that are described in the documentation below.
+There a lots of other features like searching/filtering, memorable
+password generation, customized records fields and preferences as well
+as techniques for securely sharing records and embedding images that
+are described in the documentation below.
 
 Please note that this is not the first tool I have written to manage
 passwords but it is meant to be the last. If you are interested in

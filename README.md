@@ -287,8 +287,8 @@ Another way to do the same thing is to create them to the default
 record field list in the preferences section
 [Record Fields](#record-fields) section so that they are available
 all of the time. The ability to customize record fields makes the interface
-more intuitive for users. This is what i did for this example. Here is what
-the preferences look like after i modified them for this example.
+more intuitive for users which is what I did for this example. Here is what
+the preferences look like after the modifications were made.
 
 <img src="www/help/pam-recipe-prefs.png" width="400" alt="default"/>
 
@@ -2232,7 +2232,7 @@ This pre-supposes that you have clone the pam project
 and have made modifications.
 
 ### History
-This is one of the several times that i have written a password
+This is one of the several times that I have written a password
 manager from scratch over the past twenty years and it is intended to
 be the last. Because this version while it is _far_ from perfect,
 is good enough for my needs and should provide a decent start for
@@ -2311,29 +2311,29 @@ that was perfectly okay because, back then, my day job involved a lot
 of security stuff like designing hardware and software (in C++) to
 implement certified algorithms.
 
-As time went on, i would continue to re-implement password managers as
+As time went on, I would continue to re-implement password managers as
 a hobby to learn new skills and refresh old ones. That pretty quickly
 got me into javascript, python, docker, golang and, a few years ago, to
-rust. It has been a fun journey and i learned a great deal.
+rust. It has been a fun journey and I learned a great deal.
 
-By the time, i got around to writing _PAM_, i was using the prototype
-for a lot more than password management (mostly because i could enter
+By the time, I got around to writing _PAM_, I was using the prototype
+for a lot more than password management (mostly because I could enter
 records from my phone). It was a useful idiom for record management in
 general which is where things are today.
 
-You will see that i dropped Rust in the latest incarnation but that is
-not because i don't think Rust is suitable or wonderful. Rust is most
-definitely suitable and wonderful. I dropped it because i did not need
-it. The secure context had everything i needed.
+You will see that I dropped Rust in the latest incarnation but that is
+not because I don't think Rust is suitable or wonderful. Rust is most
+definitely suitable and wonderful. I dropped it because I did not need
+it. The secure context had everything I needed.
 
-In a perfect world, i would have done this in emacs `org-mode`
-(yes, i am one of those) but i was never able to get remote access
-from multiple devices working as well as i liked so i stuck with
+In a perfect world, I would have done this in emacs `org-mode`
+(yes, I am one of those) but I was never able to get remote access
+from multiple devices working as well as I liked so I stuck with
 javascript.
 
 I sincerely hope that there is something here that others can learn
-from and have as much fun as i have had but, if not, it doesn't
-matter, i have really enjoyed playing around with this over the
+from and have as much fun as I have had but, if not, it doesn't
+matter, I have really enjoyed playing around with this over the
 years. The journey was worth it.
 
 Enjoy.

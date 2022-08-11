@@ -810,7 +810,7 @@ up the choices. You can always add them back later if you want.
 Here is an example that shows a recipe record with "ingredients" and
 "instructions" fields.
 
-<img src="www/help/pam-ice-cream-sundae.png" width="400" alt="ice-cream-sundae-example">
+<img src="www/help/pam-ice-cream-sundae-open.png" width="400" alt="ice-cream-sundae-example">
 
 Here is what the preferences look like after "ingredients" and "instructions" record fields
 have been added and the previous default record fields have been pruned out.

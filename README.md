@@ -151,19 +151,36 @@ used to encrypt it was strong_.
 You can access _PAM_ from your own HTTP server (including localhost) or from the
 public github.io server [here](https://jlinoff.github.io/pam/www/index.html).
 
-It looks something like this.
+Furthermore, _PAM_ is designed to be mobile friendly so you can access
+it from your laptop browser, mobile phone or tablet.
+
+It looks something like this on my iphone for some fictitious example
+records.
 
 <img src="www/help/pam-iphone-screenshot.png" alt="iphone-screenshot" width="400">
 
-See the
+The records appear as accordion entries that expand when you click on them like this.
+
+<img src="www/help/pam-google-record.png" width="400" alt="google-account-example">
+
+You can even include images like this.
+
+<img src="www/help/pam-ice-cream-sundae-open.png" width="400" alt="ice-cream-sundae-example">
+
+There a lots of other features like customized records fields and
+preferences as well as techniques for securely sharing records and
+embedding images that are described in the documentation below.
+
+Please note that this is not the first tool I have written to manage
+passwords but it is meant to be the last. If you are interested in
+what motivated to create yet another tool see the
 _[Security Considerations](#security-considerations)_
 and
-_[Reasons to consider using PAM](#reasons-to-consider-using-pam)_
-sections below if you are interested in what motivated me to write _PAM_.
+_[Reasons to consider using PAM](#reasons-to-consider-using-pam)_.
+If you are interested in the genesis of _PAM_ and the stories of its
+predecessors see the [History](#history) section.
 
-This is not the first tool I have written to manage passwords but it
-is meant to be the last. If you are interested in the genesis of _PAM_
-and the stories of its predecessors see the [History](#history) section.
+I hope that you find useful in some way.
 
 ## Overview
 _PAM_ is a pretty simple application. It is basically a record editor
@@ -714,7 +731,7 @@ when creating a new record. They are only provided for convenience.
 
 <img src="www/help/pam-change-field-name.png" width="400" alt="change-field-name">
 
-> Note that the ability to change field names is _only_ enabled when 
+> Note that the ability to change field names is _only_ enabled when
 > the  [Enable Editable Field Name](#enable-editable-field-name)
 > preference is enabled (checked).
 > It is not enabled by default.

@@ -173,7 +173,7 @@ embedding images that are described in the documentation below.
 
 Please note that this is not the first tool I have written to manage
 passwords but it is meant to be the last. If you are interested in
-what motivated to create yet another tool see the
+what motivated me to create yet another tool see the
 _[Security Considerations](#security-considerations)_
 and
 _[Reasons to consider using PAM](#reasons-to-consider-using-pam)_.

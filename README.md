@@ -298,18 +298,26 @@ for each field in addition to the value prompt.
 
 <img src="www/help/pam-fld-name-edit-checked.png" width="400" alt="false"/>
 
-Another way to do the same thing is to create them to the default
-record field list in the preferences section
-[Record Fields](#record-fields) section so that they are available
-all of the time. The ability to customize record fields makes the interface
-more intuitive for users which is what I did for this example. Here is what
-the preferences look like after the modifications were made.
+Another way to do the same thing is to create the "ingredients" and
+"instructions" fields in the default record field list in the
+preferences section so that they are available all of the time. See
+the [Record Fields](#record-fields) section for more information.  The
+ability to customize record fields makes it possible to create more
+intuitive interfaces for users. 
+
+For this example I chose the second option. I created two new
+_textarea_ fields named "ingredients" and "instructions" so that users
+could enter multiple lines and removed all of the other default fields
+except the "html" field because they were not needed. I kept the
+"html" field because I wanted to be able add pictures to the recipes.
+Here is what the preferences look like after the modifications were
+made.
 
 <img src="www/help/pam-recipe-prefs.png" width="400" alt="default"/>
 
 Of course, there are many other types of records that might be
 interesting to store in _PAM_ that can use the pre-defined record
-field types.
+field types _as is_.
 
 One common one is a record for each account that you need to login
 into where you information about how to login is stored so you don't
@@ -318,9 +326,10 @@ have to remember it.
 Such an _"account"_ record would have, at a minimum, the web address
 (URL), the login name and the password of the account.
 
-Note that this is simplified example is only meant to show the basic
+Note that this simplified example is only meant to show the basic
 idea of importance of supporting record formats that are different
-than recipes.
+than recipes. For a real account record you might want to add an
+email address or, perhaps, a notes field.
 
 Here is what a simple account record might look like.
 

@@ -368,6 +368,11 @@ to make it easier to see the matching records visually.
 The availability of fast interactive searching makes finding records
 easy.
 
+This is what search/filtering looks like for all example records
+that contain a "g".
+
+<img src="www/help/pam-search-g.png" width="400" alt="search-g"/>
+
 See [Search Records](#search-records) for more details.
 
 #### Reason 4: Automatic Password Generation

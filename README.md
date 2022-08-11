@@ -246,9 +246,13 @@ instructions
 6. put the cherry on top.
 ```
 
-It might look like this.
+It might look like this when you create it.
 
-<img src="www/help/pam-ice-cream-sundae.png" width="400" alt="ice-cream-sundae-example">
+<img src="www/help/pam-ice-cream-sundae-new.png" width="400" alt="ice-cream-sundae-example">
+
+It might look like this when you view it.
+
+<img src="www/help/pam-ice-cream-sundae-open.png" width="400" alt="ice-cream-sundae-example">
 
 As you can see, in this _"recipe"_ record, the title is `"Ice Cream
 Sundae"` and the two fields "ingredients" and "instructions" contain
@@ -266,7 +270,10 @@ Another way to do the same thing is to create them to the default
 record field list in the preferences section
 [Record Fields](#record-fields) section so that they are available
 all of the time. The ability to customize record fields makes the interface
-more intuitive for users.
+more intuitive for users. This is what i did for this example. Here is what
+the preferences look like after i modified them for this example.
+
+<img src="www/help/pam-recipe-prefs.png" width="400" alt="default"/>
 
 These are the default record field names.
 You can change, add or delete record fields here if you wish to customize

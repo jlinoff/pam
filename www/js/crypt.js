@@ -44,7 +44,7 @@ export function encrypt(password, plaintext, filename, callback) {
     }
     if (!password || password.length === 0) {
         if (plaintext[0] !== '{') {
-            callback(plaintext, filename) // already encrypted
+            callback(plaintext, filename) // already encrypted, encrypt again
         }
         callback(plaintext, filename) // write out in plaintext
         return

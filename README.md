@@ -720,9 +720,9 @@ The field type describes the type of data that field holds like a
 number or an email. A complete description list of the available types
 is presented in the [Default Record Field Types](#default-record-field-types) table below.
 
-The field value is the unique value for the field in an individual record.
-For example, an "email" field in one record would have different value than the
-"email" field in a different record.
+The field value is the unique value for the field in an individual
+record. For example, an "email" field in one record would have a
+different value than the "email" field in a different record.
 
 To keep things simple, I decided to tightly bind the field name and
 type so that the field name unambiguously defines the type. That means

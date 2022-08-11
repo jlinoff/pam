@@ -246,9 +246,11 @@ name of the recipe), the _ingredients_ (a field) and the
 _instructions_ (another field).
 
 So what would a simple dessert recipe look like as a in _PAM_ record?
-Well, if you had a simple dessert recipe like this written on a card.
+Well, if you had a simple dessert recipe like this written on a card
+with a taped on picture.
 
 <blockquote style="border: 1px black solid; width: 32ch">
+<img src="ice-cream-sundae.jpg" width="200" alt="examples/ice-cream-sundae">
 ```
 Ice Cream Sundae
 

@@ -750,7 +750,8 @@ when creating a new record. They are only provided for convenience.
 > Note that the ability to change field names is _only_ enabled when
 > the  [Enable Editable Field Name](#enable-editable-field-name)
 > preference is enabled (checked) as shown in the following figure.
-> It is not enabled by default.
+> It is not enabled by default to avoid confusion between the "name"
+> input and the "value" input.
 
 <img src="www/help/pam-fld-name-edit-checked.png" width="400" alt="false"/>
 
@@ -789,6 +790,7 @@ types.
 | text | A string, like a name or keyword. You can use this for any text but it is especially useful when a field can be multiple types like an email or a name. A typical usage might be a login name where the value might be a name like "wiley" or an email like "wcoyote@acme.io" or a number like "12345678". |
 | textarea | A multi-line text box. A typical usage might be a note or a list of recipe ingredients. |
 | url | A text string that is a uniform resource locator (URL). Use it if you _only_ want to accept a URL value. A typical usage might be the path to an account like `https://google.com` |
+| username | A username. This may be slightly different than a login because a login could be an email address but, in general, it probably makes more sense to user `login` rather than `username`. |
 
 Remember that the types were not made up by me, they were
 taken directly from input element description

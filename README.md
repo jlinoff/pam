@@ -268,11 +268,11 @@ instructions
 6. put the cherry on top.
 ```
 
-It might look like this when you create it.
+It would look like this when you create it in _PAM_.
 
 <img src="www/help/pam-ice-cream-sundae-new.png" width="400" alt="ice-cream-sundae-example">
 
-It might look like this when you view it.
+It would look like this when you view it in _PAM_.
 
 <img src="www/help/pam-ice-cream-sundae-open.png" width="400" alt="ice-cream-sundae-example">
 
@@ -283,10 +283,20 @@ instructions are for this specific recipe.
 
 Note that the record field names "ingredients" and "instructions" used
 in this example are custom _field names_.
-They are not available by default.
-To make them available you must set the
+They are not available by default. These are the default fields.
+
+<img src="www/help/pam-default-record-fields.png" width="400" alt="default"/>
+
+See the [Default Record Field Types](#default-record-field-types) section
+for a description of the available record field types.
+
+You must set the
 [Enable Editable Field Name](#enable-editable-field-name)
-preference to true to enter them _when you create the field_.
+preference to true to allow field names to be changed 
+_when the field is created in a record_ by adding a name prompt
+for each field in addition to the value prompt.
+
+<img src="www/help/pam-fld-name-edit-checked.png" width="400" alt="false"/>
 
 Another way to do the same thing is to create them to the default
 record field list in the preferences section
@@ -296,23 +306,6 @@ more intuitive for users which is what I did for this example. Here is what
 the preferences look like after the modifications were made.
 
 <img src="www/help/pam-recipe-prefs.png" width="400" alt="default"/>
-
-These are the default record field names.
-You can change, add or delete record fields here if you wish to customize
-the user experience.
-
-<img src="www/help/pam-default-record-fields.png" width="400" alt="default"/>
-
-See the [Default Record Field Types](#default-record-field-types) section
-for a description of the available record field types.
-
-When you enable it, you must change the name of existing field
-when you add it to the record but the preference must be checked.
-
-<img src="www/help/pam-fld-name-edit-checked.png" width="400" alt="false"/>
-
-See the [Enable Editable Field Name](#enable-editable-field-name)
-entry under preferences for more details.
 
 Of course, there are many other types of records that might be
 interesting to store in _PAM_ that can use the pre-defined record

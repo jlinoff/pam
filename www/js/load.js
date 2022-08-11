@@ -20,6 +20,9 @@ export function menuLoadDlg() {
                     .xAddEventListener('click', (event) => loadExample(event))
                     .xInnerHTML('Click or tap anywhere on this line to load example records.'),
                 xmk('li')
+                    .xAddEventListener('click', (event) => loadExampleRecipe(event))
+                    .xInnerHTML('Click or tap anywhere on this line to the example recipes.'),
+                xmk('li')
                     .xAddEventListener('click', (event) => loadUrl(event))
                     .xInnerHTML('Click or tap anywhere on this line to load records from a URL.'),
             ),
@@ -95,6 +98,18 @@ function loadExample(event) {
     let lidx = href.lastIndexOf('/') + 1
     let base = href.substring(0, lidx)
     let url = base + 'examples/example.txt'
+    if (confirm(`Do you really want to load the example from\n${url}?`) !== true) {
+        return
+    }
+    loadUrlContent(url)
+}
+
+function loadExampleRecipe(event) {
+    // figure out the base url
+    let href = window.location.href
+    let lidx = href.lastIndexOf('/') + 1
+    let base = href.substring(0, lidx)
+    let url = base + 'examples/recipes.txt'
     if (confirm(`Do you really want to load the example from\n${url}?`) !== true) {
         return
     }

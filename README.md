@@ -1278,17 +1278,32 @@ This is the load file dialogue.
 If the file was saved with a password, you must enter that password or
 the file will prompt for the password when loading.
 
+##### Example Records
 If you wish to load the example records file, click or tap on the
 examples text (#1) to load example records that can be used to get you
 started.
 
-<img src="www/help/pam-file-load-example.png" width="400" alt="file-load-example">
+<img src="www/help/pam-file-load-example.png" width="400" alt="load-example-records">
 
 These are the records that are loaded.
 
 <img src="www/help/pam-file-load-example-records.png" width="400" alt="file-load-example-records">
 
-Click or tap on the URL text (#2) to load a file from the web.
+##### Example Recipe
+If you wish to load the example recipes file, click or tap on the
+examples text (#2).
+
+<img src="www/help/pam-file-load-recipes.png" width="400" alt="load-example-recipes">
+
+This is what is loaded.
+
+<img src="www/help/pam-ice-cream-sundae-open.png" width="400" alt="ice-cream-sundae-example">
+
+##### URL
+Click or tap on the URL text (#3) to load a file from the web.
+
+<img src="www/help/pam-file-load-url.png" width="400" alt="load-url">
+
 This is typically used when a PAM records file is shared because
 no changes can be made.
 

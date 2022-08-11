@@ -33,10 +33,11 @@ the on-line help is generated.
   * [Introduction](#introduction)
   * [Overview](#overview)
     * [Reasons to not use PAM](#reasons-to-not-use-pam)
+      * [Reason 1: Do Not Need It](#reason-1-do-not-need-it)
+      * [Reason 2: Too Complex](#reason-2-too-complex)
     * [Reasons to consider using PAM](#reasons-to-consider-using-pam)
       * [Reason 1: No Client Server Communications](#reason-1-no-client-server-communications)
-      *
-      [Reason 2: Record Model](#reason-2-record-model)
+      * [Reason 2: Record Model](#reason-2-record-model)
       * [Reason 3: Searching](#reason-3-searching)
       * [Reason 4: Automatic Password Generation](#reason-4-automatic-password-generation)
       * [Reason 5: File Based Storage](#reason-5-file-based-storage)
@@ -189,7 +190,9 @@ interesting information that can then be stored and retrieved in a
 secure way.
 
 ### Reasons to not use PAM
+This section talks about why you may not need or want to use _PAM_.
 
+#### Reason 1: Do Not Need It
 It is very reasonable to ask yourself why, if _PAM_ is like an editor,
 you can't simply just use something like an Excel spreadsheet or a
 text file editor or keep passwords on a sheet of paper or use one of
@@ -200,6 +203,7 @@ you are already using an Excel spreadsheet or a text file editor or a sheet
 of paper or a password management service or anything other method
 that works well for you, _you should_.
 
+#### Reason 2: Too Complex
 Even if you do not already have a method for managing passwords _PAM_
 may not be the right choice. _PAM_ requires that you understand a bit
 about HTML input and textarea elements which may be confusing.  Also

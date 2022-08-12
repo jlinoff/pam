@@ -280,11 +280,11 @@ instructions
 ```
 </blockquote>
 
-It would look like this when you create it in _PAM_.
+It would look like this when you _create_ it in _PAM_.
 
 <img src="www/help/pam-ice-cream-sundae-new.png" width="400" alt="ice-cream-sundae-example">
 
-It would look like this when you view it in _PAM_.
+It would look like this when you _view_ it in _PAM_.
 
 <img src="www/help/pam-ice-cream-sundae-open.png" width="400" alt="ice-cream-sundae-example">
 
@@ -319,14 +319,12 @@ makes it possible to create more intuitive interfaces for users.
 For this example I chose the second option. I created two new
 _textarea_ fields named "ingredients" and "instructions" so that users
 could enter multiple lines and removed all of the other default fields
-except the "html" field because they were not needed. I kept the
+except the "html" field because they were not needed. I kept the default
 "html" field because I wanted to be able add pictures to the recipes.
 Here is what the preferences look like after the modifications were
 made.
 
 <img src="www/help/pam-recipe-prefs.png" width="400" alt="default"/>
-
-All of this is discussed in more detail in subsequent sections.
 
 ##### Simple Account Record
 
@@ -345,15 +343,17 @@ Such an _"account"_ record would have, at a minimum, the web address
 
 Note that this simplified example is only meant to show the basic
 idea of importance of supporting record formats that are different
-than recipes. For a real account record you might want to add an
-email address or, perhaps, a notes field.
+than recipes. For a real account record you would probably want to add 
+additional fields like an email address or a notes field.
 
-Here is what a simple account record might look like.
+Here is what the simple account record would look like.
 
 <img src="www/help/pam-google-account.png" width="400" alt="google-account-example">
 
 Note that the password is hidden in the example above.
 _PAM_ always hides the contents of passwords by default.
+
+##### Record Model Summary
 
 As you can see both records look quite different. Recipes records have
 fields for "ingredients" and "instructions" whereas account records
@@ -368,7 +368,7 @@ require different fields.
 
 In my view, this approach of using _records composed of fields_
 does a better job of representing this type of information than a
-spreadsheet or a text file editor.
+spreadsheet or a text file.
 
 #### Reason 3: Searching
 _PAM_ allows you to search records by their title or their field

@@ -42,7 +42,7 @@ the on-line help is generated.
       * [Reason 4: Automatic Password Generation](#reason-4-automatic-password-generation)
       * [Reason 5: File Based Storage](#reason-5-file-based-storage)
       * [Reason 6: Secure Context Encryption](#reason-6-secure-context-encryption)
-      * [Reason 7: Hiding Passwords from Causal Observers](#reason-8-hiding-passwords-from-causal-observers)
+      * [Reason 7: Hiding Passwords from Casual Observers](#reason-8-hiding-passwords-from-casual-observers)
       * [Reason 8: Access from mobile devices](#reason-8-access-from-mobile-devices)
       * [Reason 9: FOSS](#reason-9-foss)
   * [Layout](#layout)
@@ -518,7 +518,7 @@ that develop the major browsers.
 You can read more about secure contexts
 [here](https://developer.mozilla.org/en-US/docs/Web/Security/Secure_Contexts).
 
-#### Reason 7: Hiding Passwords from Causal Observers
+#### Reason 7: Hiding Passwords from Casual Observers
 
 Passwords and other secrets are automatically hidden on the screen
 (displayed as asterisks) so that someone looking over your shoulder
@@ -526,11 +526,16 @@ cannot read them unless you choose to make them visible. You can read
 more about why this is beneficial in the
 [Security Considerations](#security-considerations) section.
 
-This is the default hidden view of a password.
+This is the default hidden view of a password with
+[Enable Editable Field Name](#enable-editable-field-name)
+preference set which shows the name of the field. In this
+case "password". You can see that the password value is
+all _asterisks_.
 
 <img src="www/help/pam-password-hidden.png" width="400" alt="password-hidden">
 
-This is the view of a password when it is not hidden.
+This is the same view of a password when it is not hidden.
+You can now see the password value.
 
 <img src="www/help/pam-password-shown.png" width="400" alt="password-shown">
 

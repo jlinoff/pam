@@ -164,7 +164,7 @@ The records appear as accordion entries that expand when you click on them as sh
 
 <img src="www/help/pam-google-record.png" width="400" alt="google-account-example">
 
-Once the record is expanded you simply click on the 
+Once the record is expanded you simply click on the
 <img src="www/help/clipboard.svg" height="32" width="32" alt="clipboard"/>
 icon associated with the record field you are interested in (like the
 password) to copy its value to the system clipboard so that it can
@@ -302,15 +302,15 @@ for a description of the default record field types.
 
 There are two ways to create custom fields.
 
-They can be created by setting the 
+They can be created by setting the
 [Enable Editable Field Name](#enable-editable-field-name)
-preference to true to allow field names to be changed 
+preference to true to allow field names to be changed
 _when the field is created in a record_ by adding a name prompt
 for each field in addition to the value prompt. This approach
 requires adding them for every record.
 
 They can also be created by adding new fields to the default fields
-defined in the preferences so they are available all of the time. 
+defined in the preferences so they are available all of the time.
 See the
 [Record Fields](#record-fields)
 section for more information. The ability to customize record fields
@@ -343,7 +343,7 @@ Such an _"account"_ record would have, at a minimum, the web address
 
 Note that this simplified example is only meant to show the basic
 idea of importance of supporting record formats that are different
-than recipes. For a real account record you would probably want to add 
+than recipes. For a real account record you would probably want to add
 additional fields like an email address or a notes field.
 
 Here is what the simple account record would look like.
@@ -526,7 +526,7 @@ cannot read them unless you choose to make them visible. You can read
 more about why this is beneficial in the
 [Security Considerations](#security-considerations) section.
 
-This is the default hidden view of a password with
+This is the default hidden view of a password with the
 [Enable Editable Field Name](#enable-editable-field-name)
 preference set which shows the name of the field. In this
 case "password". You can see that the password value is
@@ -541,10 +541,15 @@ You can now see the password value.
 
 #### Reason 8: Access from mobile devices
 
-The files can be accessed from mobile devices so the user has access to the
-records anywhere. _PAM_ uses
+The record files can be accessed from mobile devices so the user has access to the
+records anywhere as described in the
+[Reason 5: File Based Storage](#reason-5-file-based-storage)
+but that does not necessarily imply that the interface is _mobile friendly_.
+
+What makes _PAM_ is _mobile friendly_ is that it is implelementing using the
 [bootstrap-5](https://getbootstrap.com/docs/5.0/getting-started/introduction/)
-to make the interface work better in mobile browsers.
+library to make the interface work better in the browsers present on
+mobile devices.
 
 #### Reason 9: FOSS
 

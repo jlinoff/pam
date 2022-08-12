@@ -251,6 +251,8 @@ recipe could be a single record that might contain the _title_ (the
 name of the recipe), the _ingredients_ (a field) and the
 _instructions_ (another field).
 
+##### Simple Recipe Record
+
 So what would a simple dessert recipe look like as a in _PAM_ record?
 Well, if you had a simple dessert recipe like this written on a card
 with a taped on picture.
@@ -289,31 +291,30 @@ It would look like this when you view it in _PAM_.
 As you can see, in this _"recipe"_ record, the title is `"Ice Cream
 Sundae"` and the two fields "ingredients" and "instructions" contain
 the multiline (`textarea`) descriptions of what the ingredients and
-instructions are for this specific recipe.
+instructions are for this specific recipe. And, finally, there is an
+"html" field that contains the image.
 
 Note that the record field names "ingredients" and "instructions" used
 in this example are custom _field names_.
-They are not available by default. These are the default fields.
-
-<img src="www/help/pam-default-record-fields.png" width="400" alt="default"/>
-
+They are not available by default. The "html" field _is_ a default field.
 See the [Default Record Field Types](#default-record-field-types) section
-for a description of the available record field types.
+for a description of the default record field types.
 
-You must set the
+There are two ways to create custom fields.
+
+They can be created by setting the 
 [Enable Editable Field Name](#enable-editable-field-name)
 preference to true to allow field names to be changed 
 _when the field is created in a record_ by adding a name prompt
-for each field in addition to the value prompt.
+for each field in addition to the value prompt. This approach
+requires adding them for every record.
 
-<img src="www/help/pam-fld-name-edit-checked.png" width="400" alt="false"/>
-
-Another way to do the same thing is to create the "ingredients" and
-"instructions" fields in the default record field list in the
-preferences section so that they are available all of the time. See
-the [Record Fields](#record-fields) section for more information.  The
-ability to customize record fields makes it possible to create more
-intuitive interfaces for users. 
+They can also be created by adding new fields to the default fields
+defined in the preferences so they are available all of the time. 
+See the
+[Record Fields](#record-fields)
+section for more information. The ability to customize record fields
+makes it possible to create more intuitive interfaces for users.
 
 For this example I chose the second option. I created two new
 _textarea_ fields named "ingredients" and "instructions" so that users
@@ -325,9 +326,15 @@ made.
 
 <img src="www/help/pam-recipe-prefs.png" width="400" alt="default"/>
 
+All of this is discussed in more detail in subsequent sections.
+
+##### Simple Account Record
+
 Of course, there are many other types of records that might be
 interesting to store in _PAM_ that can use the pre-defined record
 field types _as is_.
+See the [Default Record Field Types](#default-record-field-types) section
+for a description of the default record field types.
 
 One common one is a record for each account that you need to login
 into where you information about how to login is stored so you don't
@@ -344,13 +351,6 @@ email address or, perhaps, a notes field.
 Here is what a simple account record might look like.
 
 <img src="www/help/pam-google-account.png" width="400" alt="google-account-example">
-
-In this case the record field names "login", "password" and "url" are
-standard record field names so you do not need to set the "Enable Editable
-Field Name" preference. For more information about standard record fields,
-see the[Record Fields](#record-fields) section for more details.
-
-<img src="www/help/pam-fld-name-edit-unchecked.png" width="400" alt="false"/>
 
 Note that the password is hidden in the example above.
 _PAM_ always hides the contents of passwords by default.

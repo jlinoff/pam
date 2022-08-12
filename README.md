@@ -259,7 +259,7 @@ with a taped on picture.
 
 <!-- PP: <blockquote style="border: 1px black solid; width: 32ch"> PP: -->
 
-<img src="help/ice-cream-sundae.jpg" width="200" alt="ice-cream-sundae">
+<img src="www/help/ice-cream-sundae.jpg" width="200" alt="ice-cream-sundae">
 
 ```
 Ice Cream Sundae

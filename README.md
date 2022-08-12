@@ -160,9 +160,15 @@ records.
 
 <img src="www/help/pam-iphone-screenshot.png" alt="iphone-screenshot" width="400">
 
-The records appear as accordion entries that expand when you click on them like this.
+The records appear as accordion entries that expand when you click on them as shown below.
 
 <img src="www/help/pam-google-record.png" width="400" alt="google-account-example">
+
+Once the record is expanded you simply click on the 
+<img src="www/help/clipboard.svg" height="32" width="32" alt="clipboard"/>
+icon associated with the record field you are interested in (like the
+password) to copy its value to the system clipboard so that it can
+then be pasted them into the appropriate login field.
 
 You can even include images like this.
 

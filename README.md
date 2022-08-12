@@ -258,7 +258,9 @@ Well, if you had a simple dessert recipe like this written on a card
 with a taped on picture.
 
 <!-- PP: <blockquote style="border: 1px black solid; width: 32ch"> PP: -->
+
 <img src="ice-cream-sundae.jpg" width="200" alt="examples/ice-cream-sundae">
+
 ```
 Ice Cream Sundae
 
@@ -278,6 +280,7 @@ instructions
 5. add whip cream
 6. put the cherry on top.
 ```
+
 <!-- PP: </blockquote> PP: -->
 
 It would look like this when you _create_ it in _PAM_.

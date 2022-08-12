@@ -549,7 +549,7 @@ records anywhere as described in the
 [Reason 5: File Based Storage](#reason-5-file-based-storage)
 but that does not necessarily imply that the interface is _mobile friendly_.
 
-What makes _PAM_ is _mobile friendly_ is that it is implelementing using the
+What makes _PAM_ mobile friendly is that it is implemented using the
 [bootstrap-5](https://getbootstrap.com/docs/5.0/getting-started/introduction/)
 library to make the interface work better in the browsers present on
 mobile devices.

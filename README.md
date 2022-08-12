@@ -255,7 +255,7 @@ _instructions_ (another field).
 
 So what would a simple dessert recipe look like as a in _PAM_ record?
 Well, if you had a simple dessert recipe like this written on a card
-with a taped on picture.
+with an attached picture.
 
 <!-- PP: <blockquote style="border: 1px black solid; width: 32ch"> PP: -->
 

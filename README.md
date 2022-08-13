@@ -777,11 +777,9 @@ customize the user experience but you cannot change the types. For
 example, you change the record field _note_ from a _textarea_ field to
 a _text_ field but you cannot change the type _text_.
 
-These are the default fields and their types.
+These are the default field definitions.
 
 <img src="www/help/pam-default-record-fields.png" width="400" alt="default"/>
-
-> Note that they can be changed at any time.
 
 The table below presents a brief overview of the pre-defined record
 field types and when to use them. You can search the web for more

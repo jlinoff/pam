@@ -703,11 +703,12 @@ completely arbitrary. For example a topic could be something like
 _"recipes"_, _"accounts"_, or _"unidentified aerial phenomena"_ or
 _"my favorite cryptography algorithms"_ or _"green things"_.
 
-For example, you could define a "`recipes.txt`" file for all of your
-recipe records (topic: _"recipes"_ or _"stuff to cook"_) and an
+One way to use topics is to keep records related by a topic in separate
+files. For example, you could define a "`recipes.txt`" file for all of
+your recipe records (topic: _"recipes"_ or _"stuff to cook"_) and an
 "`accounts.txt`" for your account records (topic: _"accounts"_).  Or,
-you could completely disregard organizing by topics and put all of your records
-into a single file like "`myrecords.txt`".
+you could completely disregard organizing by topics and put all of
+your records into a single file like "`myrecords.txt`".
 
 Note the use of the "`.txt`" extension in the previous paragraph.
 Although the "`.pam`" file extension is supported for record files

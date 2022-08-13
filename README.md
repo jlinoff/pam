@@ -699,7 +699,7 @@ record fields.
 #### Topics
 Topics define how records are related. They provide a convenient
 abstraction for organizing related records in files.  Topics are
-completely arbitrary, for example a topic could be something like
+completely arbitrary. For example a topic could be something like
 _"recipes"_, _"accounts"_, or _"unidentified aerial phenomena"_ or
 _"my favorite cryptography algorithms"_ or _"green things"_.
 

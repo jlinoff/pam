@@ -318,11 +318,10 @@ made.
 ##### Simple Account Record
 
 Of course, there are many other types of records that might be
-interesting to store in _PAM_ that can use the pre-defined record
-field types _as is_.
-See the [Record Field Types](#record-field-types) section
-for a description of the default records and the pre-defined record
-field types.
+interesting to store in _PAM_ that can use the defaultd record
+fields _as is_.
+See the [Fields](#fields) section for a description of the default
+records and their types.
 
 One common one is a record for each account that you need to login
 into where you information about how to login is stored so you don't
@@ -761,7 +760,7 @@ preference is enabled (checked) as shown in the following figure. It
 is not enabled by default to avoid confusion between the "name" input
 and the "value" input. Typically there is no reason to change record
 field names on a per record basis. It is better to add the new record
-fields to the default (pre-defined) list in the preferences.
+fields to the default list in the preferences.
 
 ##### Record Field Types
 
@@ -1719,7 +1718,7 @@ This is what it looks likes when it is unchecked (false).
 <img src="www/help/pam-fld-name-edit-off.png" width="400" alt="false"/>
 
 When this is not enabled, the user can only choose record fields from
-the pre-defined "Record Fields" section of the preferences. See the
+the "Record Fields" section of the preferences. See the
 [Record Fields](#record-fields) section for more details.
 
 ##### Enabled
@@ -1774,7 +1773,7 @@ At the top of the section there is
 <img src="www/help/plus-circle.svg" height="32" width="32" alt="add"/>
 icon that is used to create a new record field.
 
-Each pre-defined record field has a name, a type (from a pulldown menu) and
+Each default record field has a name, a type (from a pulldown menu) and
 a delete button (<img src="www/help/trash3-fill.svg" height="32" width="32" alt="trash"/>)
 that you click to delete the record field.
 

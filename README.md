@@ -725,43 +725,55 @@ section.
 Records are composed of fields. Each field has a unique name, a type
 and a value.
 
-The field _name_ is arbitrary and is meant to describe the data in the
-field. For example, an "ingredients" field would indicate that the value
+The field _name_ is arbitrary and is meant to describes how the data in the
+field is used. For example, an "ingredients" field would indicate that the value
 is a list of ingredients and a "number" field would indicate that the value
 is a number. An example of a field _name_ might be "mobile phone".
 
 The field _type_ explicitly describes the type of data that field
-holds like a number or an email. A complete description list of the
-available types is presented in the
+holds like a "number" or a "phone" or an "email". Types are
+pre-defined and strictly enforced by javascript. An example of the
+difference between a _name_ and a _type_ would be a field named
+"mobile" of type _phone_.  The name describes _how_ it is used whereas
+the type describes _what_ the input type is which, in turn, dictates
+what user inputs are acceptable.  A description of each pre-defined
+record field type can be found inin the
 [Record Field Types](#record-field-types)
-ection.
+section.
 
 The field _value_ is the unique value for the field in an individual
-record. For example, an field named "email" of type "email" could
-have a value "wombat@foo.io" the name and the type could be the same
-for all records but the value would vary.
+record that is set when a field is created or edited. For example, an
+field named "email" of type "email" could have a value "wombat@foo.io"
+the name and the type could be the same for all records that had an "email"
+field but the value would vary.
 
-The default records are defined in the
-[Preferences](#Preferences).
-They are stored in each file with the along with the
-actual records so each records file can have different
-types of records. For example a file of recipe records
-would always want "ingredients" and "instructions" fields
-but a file of _"books read"_ records would not.
+The default record fields are defined in the
+[Preferences](#Preferences)
+and show up in the "New Field" pulldown menu when a record is created
+or edited. They are stored in each file with the along with the actual
+records so each records file can have different types of records. For
+example a file of recipe records would probably want "ingredients" and
+"instructions" fields but a file of _"books read"_ records probably
+would not.
 
 See the [Record Fields](#record-fields) section for details about how
-to modify the default records.
+to add or modify the default record fields.
+
+There is a second more obscure way to define field names, you can
+change field names _when you create or edit an individual record_ by
+setting the
+[Enable Editable Field Name](#enable-editable-field-name)
+preference.
+
+It is not enabled by default to avoid confusion between the "name"
+input and the "value" input as shown below. Typically there is no reason to change
+record field names on a per record basis. It is better to add the new
+record fields to the default list in the preferences.
 
 <img src="www/help/pam-change-field-name.png" width="400" alt="change-field-name">
 
-Note that the ability to change record field names for _individual_
-records is _only_ enabled when the
-[Enable Editable Field Name](#enable-editable-field-name)
-preference is enabled (checked) as shown in the following figure. It
-is not enabled by default to avoid confusion between the "name" input
-and the "value" input. Typically there is no reason to change record
-field names on a per record basis. It is better to add the new record
-fields to the default list in the preferences.
+> Don't do this because it might be confusingto users.
+> Instead create a new pre-defined record as described above.
 
 ##### Record Field Types
 

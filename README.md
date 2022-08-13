@@ -53,7 +53,7 @@ the on-line help is generated.
     * [Create New Record](#create-new-record)
       * [Topics](#topics)
       * [Fields](#fields)
-        * [Default Record Field Types](#default-record-field-types)
+        * [Record Field Types](#record-field-types)
         * [Custom Record Fields](#custom-record-fields)
       * [Password Fields](#password-fields)
         * [Cryptic Passwords](#cryptic-passwords)
@@ -300,26 +300,12 @@ instructions are for this specific recipe. And, finally, there is an
 Note that the record field names "ingredients" and "instructions" used
 in this example are custom _field names_.
 They are not available by default. The "html" field _is_ a default field.
-See the [Default Record Field Types](#default-record-field-types) section
-for a description of the default record field types.
 
-There are two ways to create custom fields.
+Custom record fields can be created by adding new fields to the
+default fields defined in the preferences so they are available all of
+the time.
 
-They can be created by setting the
-[Enable Editable Field Name](#enable-editable-field-name)
-preference to true to allow field names to be changed
-_when the field is created in a record_ by adding a name prompt
-for each field in addition to the value prompt. This approach
-requires adding them for every record.
-
-They can also be created by adding new fields to the default fields
-defined in the preferences so they are available all of the time.
-See the
-[Record Fields](#record-fields)
-section for more information. The ability to customize record fields
-makes it possible to create more intuitive interfaces for users.
-
-For this example I chose the second option. I created two new
+For this example I created two new
 _textarea_ fields named "ingredients" and "instructions" so that users
 could enter multiple lines and removed all of the other default fields
 except the "html" field because they were not needed. I kept the default
@@ -334,8 +320,9 @@ made.
 Of course, there are many other types of records that might be
 interesting to store in _PAM_ that can use the pre-defined record
 field types _as is_.
-See the [Default Record Field Types](#default-record-field-types) section
-for a description of the default record field types.
+See the [Record Field Types](#record-field-types) section
+for a description of the default records and the pre-defined record
+field types.
 
 One common one is a record for each account that you need to login
 into where you information about how to login is stored so you don't
@@ -735,54 +722,48 @@ Topics are also discussed briefly at the end of the
 section.
 
 #### Fields
-Records are composed of fields. Each field has a name, a type and a value.
+Records are composed of fields. Each field has a unique name, a type
+and a value.
 
 The field _name_ is arbitrary and is meant to describe the data in the
 field. For example, an "ingredients" field would indicate that the value
 is a list of ingredients and a "number" field would indicate that the value
-is a number.
+is a number. An example of a field _name_ might be "mobile phone".
 
-The field _type_ describes the type of data that field holds like a
-number or an email. A complete description list of the available types
-is presented in the [Default Record Field Types](#default-record-field-types)
-in the next section.
+The field _type_ explicitly describes the type of data that field
+holds like a number or an email. A complete description list of the
+available types is presented in the
+[Record Field Types](#record-field-types)
+ection.
 
 The field _value_ is the unique value for the field in an individual
 record. For example, an field named "email" of type "email" could
 have a value "wombat@foo.io" the name and the type could be the same
 for all records but the value would vary.
 
-To keep things simple, each field name has a unique type which
-means that a field like `"login"` is always a `"text"` field. It will never
-be a phone number or a date.
-
-Note that the this keeps things simple by not having multiple fields
-with the same name but different types which would add more complexity
-for no good reason.
-
-The default record fields are defined in
+The default records are defined in the
 [Preferences](#Preferences).
-They are stored in each file with the along with the records
-so that files with are organized by topic can have fields
-unique to that topic. For example, a file of recipe records
+They are stored in each file with the along with the
+actual records so each records file can have different
+types of records. For example a file of recipe records
 would always want "ingredients" and "instructions" fields
 but a file of _"books read"_ records would not.
 
-_PAM_ is very flexible so it doesn't impose any strict rules on the
-fields. Thus, you can also change the names of the pre-defined fields
-when creating a new record. They are only provided for convenience.
+See the [Record Fields](#record-fields) section for details about how
+to modify the default records.
 
 <img src="www/help/pam-change-field-name.png" width="400" alt="change-field-name">
 
-> Note that the ability to change field names is _only_ enabled when
-> the  [Enable Editable Field Name](#enable-editable-field-name)
-> preference is enabled (checked) as shown in the following figure.
-> It is not enabled by default to avoid confusion between the "name"
-> input and the "value" input.
+Note that the ability to change record field names for _individual_
+records is _only_ enabled when the
+[Enable Editable Field Name](#enable-editable-field-name)
+preference is enabled (checked) as shown in the following figure. It
+is not enabled by default to avoid confusion between the "name" input
+and the "value" input. Typically there is no reason to change record
+field names on a per record basis. It is better to add the new record
+fields to the default (pre-defined) list in the preferences.
 
-<img src="www/help/pam-fld-name-edit-checked.png" width="400" alt="false"/>
-
-##### Default Record Field Types
+##### Record Field Types
 
 Record field types define the type of each field that you define for a
 record. They are based on HTML _input_ element types except for the
@@ -791,20 +772,20 @@ type which is a _textarea_ type that is displayed as raw HTML. They
 are presented below as simple types regardless of the underlying HTML
 element to avoid unnecessary complexity.
 
-You can change, add or delete record fields here if you wish to customize
-the user experience but you cannot change the types. For example, you
-change the record field _note_ from a _textarea_ field to a _text_ field
-but you cannot change the type _text_.
+You can change, add or delete record field _names_ here if you wish to
+customize the user experience but you cannot change the types. For
+example, you change the record field _note_ from a _textarea_ field to
+a _text_ field but you cannot change the type _text_.
 
-These are the default (pre-defined) fields and their associated types.
+These are the default fields and their types.
 
 <img src="www/help/pam-default-record-fields.png" width="400" alt="default"/>
 
 > Note that they can be changed at any time.
 
-The table below presents a brief overview of the field types and when
-to use them. You can search the web for more details about HTML input
-types.
+The table below presents a brief overview of the pre-defined record
+field types and when to use them. You can search the web for more
+details about HTML input types.
 
 | Type | Usage |
 | ---- | ----- |
@@ -827,7 +808,7 @@ the separate textarea element is described
 
 
 ##### Custom Record Fields
-It is oftentimes the case that all of the _default_ record field types
+It is oftentimes the case that all of the _default_ record fields
 are not needed for the records you are managing. This is especially
 true in cases where you have a very clear understanding of the record
 field requirements.
@@ -1722,7 +1703,15 @@ The default is false which means that records can be created with no
 fields so that records.
 
 #### Enable Editable Field Name
-This defines whether or not the user can change a field name.
+This preference defines whether or not the user can change a field
+name on a _per record_ basis.
+
+Setting this preference is not recommended because the presence of the
+"name" input can be confusing for users, a better approach is to
+simply add a new field to the default fields in the preference section
+as described in the
+[Fields](#fields)
+section.
 
 ##### Not Enabled
 This is what it looks likes when it is unchecked (false).
@@ -1774,9 +1763,14 @@ Customized HTML that is added to the about page. It can be used
 in cases where the field records have been customized to provide
 an explanation or link to internal documentation.
 
+Its use is described in the [About](#about) section.
+
 ### Record Fields
-These are the pre-defined record fields that are used when creating or
-editing record fields. They can be overridden.
+These are the default record fields that are used when creating or
+editing record fields. They can be can be changed.
+
+See the [Fields](#fields) section for more information about record
+fields.
 
 At the top of the section there is
 <img src="www/help/plus-circle.svg" height="32" width="32" alt="add"/>
@@ -1786,9 +1780,12 @@ Each pre-defined record field has a name, a type (from a pulldown menu) and
 a delete button (<img src="www/help/trash3-fill.svg" height="32" width="32" alt="trash"/>)
 that you click to delete the record field.
 
-The record field names must be unique.
+The record field names must be unique but you can modify them.
+They are stored with the each record file individually.
 
-For a more detailed description see [Fields](#fields).
+This is what the default records filed preference dialogue looks like.
+
+<img src="www/help/pam-default-record-fields.png" width="400" alt="default"/>
 
 ### Saving Preferences
 You _must_ scroll to the bottom of the dialogue and

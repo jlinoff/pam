@@ -367,7 +367,8 @@ that are relevant to recipes or accounts.
 You could easily imagine defining other records that contain
 information for other topics like _"books read"_ or _"unidentified
 aerial phenomena"_ or _"bird watching"_ which would undoubtedly
-require different fields.
+require different fields. The idea of topics is dicussed in more
+detail in the [Topics](#topics) section.
 
 In my view, this approach of using _records composed of fields_
 does a better job of representing this type of information than a
@@ -679,7 +680,7 @@ There are three different methods you can use to create new records:
 
 1. A record can be created in the application by clicking or tapping the "New Record" menu option,
 2. A record can be created in the application by cloning an existing record or
-3. A record can be created outside of the application by editing javascript.
+3. A record can be created outside of the application by editing a JSON record file.
 
 All three approaches will be discussed below in more detail.
 
@@ -698,67 +699,74 @@ the clone option looks like.
 
 <img src="pam-clone-google.png" width="400" alt="clone-rec">
 
-The third method, creating a record by editing javascript, is most
+The third method, creating a record by editing a JSON record file, is most
 useful if you are interested in creating records programmatically
 (perhaps a subset of accounts that shared with a small group of users
-that is automatically generated from a database).
+that is automatically generated from a database). The example records
+and recipes example files that are available in the "Load" dialogue
+are a great place to start.
 
 But, before any of the record creation approaches can be discussed in
 more detail, it is very important to understand record topics and
 record fields.
 
 #### Topics
-Topics provide a convenient abstraction for organizing records in files.
+Topics define how records are related. They provide a convenient
+abstraction for organizing related records in files.  Topics are
+complete arbitrary, for example a topic could be something like
+_"recipes"_, _"accounts"_, or _"unidentified aerial phenomena"_ or
+_"my favorite cryptography algorithms"_ or _"green things"_.
 
-Topics are completely arbitrary associations between records that are
-defined by you based what is important to you. For example, a topic
-could be something like _"recipes"_, _"accounts"_, or _"unidentified
-aerial phenomena"_ or _"my favorite cryptography algorithms"_.
+For example, you could define a "`recipes.txt`" file for all of your
+recipe records (topic: _"recipes"_ or _"stuff to cook"_) and an
+"`accounts.txt`" for your account records (topic: _"accounts"_).  Or,
+you could completely disregard organizing by topics and put all of your records
+into a single file like "`myrecords.txt`".
 
-For example you could define a "`recipes.txt`" file for all of
-your recipe records and an "`accounts.txt`" for your account records.
-Or, you could put all of your records, irregardless
-of topic, into a single file like "`mystuff.txt`".
+Note the use of the "`.txt`" extension in the previous paragraph.
+Although the "`.pam`" file extension is supported for record files
+and it works on laptops. It does not always work on mobile devices
+so a records file named "`myrecords.pam`" would not be readable
+by the mobile browser. I recommend using the "`.txt`" for all
+record files.
 
-> Although the `.pam` extension is supported and works on laptops.
-> It sometimes does _not_ work on mobile devices so the `.txt` is
-> always.safe to use.
-
-Topics are also discussed in the
-[Reason 2: Record Model](#reason-2-record-model)
+Topics are also discussed briefly at the end of the
+[Reason 2: Record Model](#record-model-summary))
 section.
 
 #### Fields
 Records are composed of fields. Each field has a name, a type and a value.
 
-The field name is arbitrary and is meant to describe the data in the
+The field _name_ is arbitrary and is meant to describe the data in the
 field. For example, an "ingredients" field would indicate that the value
-is a list of ingredients.
+is a list of ingredients and a "number" field would indicate that the value
+is a number.
 
-The field type describes the type of data that field holds like a
+The field _type_ describes the type of data that field holds like a
 number or an email. A complete description list of the available types
-is presented in the [Default Record Field Types](#default-record-field-types) table below.
+is presented in the [Default Record Field Types](#default-record-field-types)
+in the next section.
 
-The field value is the unique value for the field in an individual
-record. For example, an "email" field in one record would have a
-different value than the "email" field in a different record.
+The field _value_ is the unique value for the field in an individual
+record. For example, an field named "email" of type "email" could
+have a value "wombat@foo.io" the name and the type could be the same
+for all records but the value would vary.
 
-To keep things simple, I decided to tightly bind the field name and
-type so that the field name unambiguously defines the type. That means
-that a field like `"login"` is always a `"text"` field. It will never
+To keep things simple, each field name has a unique type which
+means that a field like `"login"` is always a `"text"` field. It will never
 be a phone number or a date.
 
-> Note this keeps things simple by not having multiple fields with
-> the same name but different types which would add more complexity
-> to the UI.
+Note that the this keeps things simple by not having multiple fields
+with the same name but different types which would add more complexity
+for no good reason.
 
-Default record fields are defined in [Preferences](#Preferences) and they are stored
-in each file with the along with the records. See the next section
-([Default Record Field Types](#default-record-field-types)) for details.
-
-You can change them at any time. Because the fields are stored in each
-file they can be different for each topic file, if you choose to
-organize things that way.
+The default record fields are defined in
+[Preferences](#Preferences).
+They are stored in each file with the along with the records
+so that files with are organized by topic can have fields
+unique to that topic. For example, a file of recipe records
+would always want "ingredients" and "instructions" fields
+but a file of _"books read"_ records would not.
 
 _PAM_ is very flexible so it doesn't impose any strict rules on the
 fields. Thus, you can also change the names of the pre-defined fields

@@ -373,6 +373,7 @@ that contain a "g".
 
 <img src="www/help/pam-search-g.png" width="400" alt="search-g"/>
 
+Note that regular expressions can be used as well.
 See [Search Records](#search-records) for more details.
 
 #### Reason 4: Automatic Password Generation
@@ -477,7 +478,7 @@ contents _if a strong password was used_.
 Passwords like _"secret"_ or _"password123"_ or any other password
 that can be found in freely available password dictionaries like the
 [Kali password dictionary](https://kalitut.com/best-password-dictionary/#Kali_password_dictionary)
-are _not_ strong and will not protect your data because they are easy to guess.
+are _not_ strong and will _not_ protect your data because they are easy to guess.
 
 _Always_ use a strong password to make it hard to guess. Typically a strong
 password would at least 20 characters would not include any personally

@@ -318,7 +318,7 @@ made.
 ##### Simple Account Record
 
 Of course, there are many other types of records that might be
-interesting to store in _PAM_ that can use the defaultd record
+interesting to store in _PAM_ that can use the default record
 fields _as is_.
 See the [Fields](#fields) section for a description of the default
 records and their types.

@@ -709,16 +709,17 @@ _"my favorite cryptography algorithms"_ or _"green things"_.
 One way to use topics is to keep records related by a topic in separate
 files. For example, you could define a "`recipes.txt`" file for all of
 your recipe records (topic: _"recipes"_ or _"stuff to cook"_) and an
-"`accounts.txt`" for your account records (topic: _"accounts"_).  Or,
-you could completely disregard organizing by topics and put all of
+"`accounts.txt`" for your account records (topic: _"accounts"_). 
+
+Or, you could completely disregard organizing by topics and put all of
 your records into a single file like "`myrecords.txt`".
 
 Note the use of the "`.txt`" extension in the previous paragraph.
 Although the "`.pam`" file extension is supported for record files
 and it works on laptops. It does not always work on mobile devices
-so a records file named "`myrecords.pam`" would not be readable
+so a records file named "`myrecords.pam`" might not be readable
 by the mobile browser. I recommend using the "`.txt`" for all
-record files.
+record files for maximum portability.
 
 Topics are also discussed briefly at the end of the
 [Reason 2: Record Model](#record-model-summary))

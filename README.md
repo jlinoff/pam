@@ -572,11 +572,11 @@ has a number of options as you can see below.
 
 ### Records Section
 
-Underneath the top level bar is the records section. Each
-record is shown as an entry that is displayed by its title.
-If you click or tap on the record title, the record will expand to
-show the record contents (fields) and provide options for deleting,
-cloning or editing the record contents.
+Underneath the top level bar, in the middle, is the records
+section. Each record is shown as an entry that is displayed by its
+title.  If you click or tap on the record title, the record will
+expand to show the record contents (fields) and provide options for
+deleting, cloning or editing the record contents.
 
 This way of presenting the records is called an accordion display.
 Below you can see how it expands after the "Facebook" entry has been
@@ -600,10 +600,11 @@ pasted into login forms.
 You can also click or tap on the title of the opened record to close it.
 
 ### Status Section
-Below the records section is the section where ephemeral status
-messages are displayed. The messages disappear after about 1.5 seconds
-but the duration is controlled by a preference that you can set.
-See the [Preferences](#preferences) section for more information.
+Below, at the bottom, is the records section is the section where
+ephemeral status messages are displayed. The messages disappear after
+about 1.5 seconds but the duration is controlled by a preference that
+you can set.  See the [Preferences](#preferences) section for more
+information.
 
 The status messages are used to provide activity feedback like showing
 how many bytes were copied to a clipboard when a copy button is
@@ -701,7 +702,7 @@ record fields.
 Topics define how records are related. They provide a convenient
 abstraction for organizing related records in files.  Topics are
 completely arbitrary. For example a topic could be something like
-_"recipes"_, _"accounts"_, or _"unidentified aerial phenomena"_ or
+_"recipes"_ or _"accounts"_ or _"unidentified aerial phenomena"_ or
 _"my favorite cryptography algorithms"_ or _"green things"_.
 
 One way to use topics is to keep records related by a topic in separate

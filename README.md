@@ -600,7 +600,7 @@ pasted into login forms.
 You can also click or tap on the title of the opened record to close it.
 
 ### Status Section
-Below, at the bottom, is the records section is the section where
+Below the records section, at the bottom, is the status section where
 ephemeral status messages are displayed. The messages disappear after
 about 1.5 seconds but the duration is controlled by a preference that
 you can set.  See the [Preferences](#preferences) section for more

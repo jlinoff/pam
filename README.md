@@ -637,7 +637,8 @@ top level section in this document.
 ### About
 
 Click or tap on the "About" menu entry to get information about _PAM_.
-You can even add custom HTML through the preferences.
+You can even add custom HTML through the preferences that is stored
+for each _PAM_ file.
 
 Here is a screen shot of what you would see.
 

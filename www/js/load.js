@@ -14,7 +14,7 @@ export function menuLoadDlg() {
     let body = xmk('span')
         .xAppendChild(
             xmk('p')
-                .xInnerHTML('Normally you simply click the "Load" button but there are two special cases:'),
+                .xInnerHTML('Normally you simply click the "Load" button but there are three special cases:'),
             xmk('ol').xAppend(
                 xmk('li')
                     .xAddEventListener('click', (event) => loadExample(event))
@@ -40,24 +40,39 @@ export function menuLoadDlg() {
             )
         )
     let b1 = mkPopupModalDlgButton('Close',
-                                 'btn-secondary',
-                                 'close the dialogue with no changes',
-                                 (el) => {
-                                    console.log(el)
-                                    return true
-                                })
+                                   'btn-secondary',
+                                   'close the dialogue with no changes',
+                                   (el) => {
+                                       console.log(el)
+                                       return true
+                                   })
     let b2 = mkPopupModalDlgButton('Load',
-                                 'btn-primary',
-                                 'load using the password',
-                                 (el) => {
-                                     //console.log(el)
-                                     let password = el.xGet('#x-load-password').value.trim()
-                                     setFilePass(password)
-                                     loadFile(password)
-                                     return true
+                                   'btn-primary',
+                                   'load using the password',
+                                   (el) => {
+                                       //console.log(el)
+                                       let password = el.xGet('#x-load-password').value.trim()
+                                       setFilePass(password)
+                                       loadFile(password)
+                                       return true
                                 })
     let e = mkPopupModalDlg('menuLoadDlg', 'Load Records From File', body, b1, b2)
     return e
+}
+
+function closeDlg() {
+    let dlg = document.getElementById('menuLoadDlg')
+    let buttons = dlg.getElementsByTagName('button')
+    let closeButton = null
+    for (let button of buttons) {
+        if (button.innerHTML.trim() === 'Close') {
+            closeButton = button
+            break
+        }
+    }
+    if (closeButton) {
+        closeButton.click()
+    }
 }
 
 function loadUrlContent(url) {
@@ -77,6 +92,7 @@ function loadUrlContent(url) {
                 let password = el.xGet('#x-load-password').value.trim()
                 decrypt(password, content, loadCallback, invalidPasswordCallback)
             }
+            closeDlg()
         })
         .catch((error) => {
             alert(`failed to load ${url}: ${error.message}`)
@@ -89,6 +105,7 @@ function loadUrl() {
     if (url.length > 4 ) {
         loadUrlContent(url)
     } else {
+        alert(`WARNING! invalid url specified: ${url}`)
     }
 }
 

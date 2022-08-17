@@ -158,6 +158,12 @@ function saveCallback(text, filename) {
     if (!text || text.length === 0 ) {
         return
     }
+
+    let check = xmk('a')
+    console.log(check)
+    if (check.download === undefined) {
+        alert('WARNING!\nsave dialogue not fully supported in this browser.')
+    }
     // Create anchor element, add the data and click it.
     let data = 'data:text/plain; charset=utf-8,' + encodeURIComponent(text)
     let a = xmk('a')

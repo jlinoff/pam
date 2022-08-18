@@ -51,7 +51,7 @@ the on-line help is generated.
   * [Topics](#topics)
   * [Fields](#fields)
     * [Record Field Types](#record-field-types)
-    * [Custom Record Fields](#custom-record-fields)
+    * [Custom Fields](#custom-fields)
   * [Password Fields](#password-fields)
     * [Cryptic Passwords](#cryptic-passwords)
     * [Memorable Passwords](#memorable-passwords)
@@ -301,9 +301,9 @@ Note that the record field names "ingredients" and "instructions" used
 in this example are custom _field names_.
 They are not available by default. The "html" field _is_ a default field.
 
-Custom record fields can be created by adding new fields to the
-default fields defined in the preferences so they are available all of
-the time.
+Custom fields can be created by adding new fields to the default
+fields defined in the preferences so they are available all of the
+time.
 
 For this example I created two new
 _textarea_ fields named "ingredients" and "instructions" so that users
@@ -743,15 +743,11 @@ the separate textarea element is described
 [here](https://developer.mozilla.org/en-US/docs/Web/API/HTMLTextAreaElement).
 
 
-### Custom Record Fields
-It is oftentimes the case that all of the _default_ record fields
-are not needed for the records you are managing. This is especially
-true in cases where you have a very clear understanding of the record
-field requirements.
-
-If that is the case you might want to use the preferences to delete
-fields that are not relevant for your usage so that they don't clutter
-up the choices. You can always add them back later if you want.
+### Custom Fields
+It is oftentimes the case that all of the _default_ record fields are
+not needed for the records you are managing or you may want to define
+new, custom fields that are more intuitive for your records. This
+section shows you how to do that.
 
 Here is an example that shows a recipe record with "ingredients" and
 "instructions" fields.
@@ -759,9 +755,9 @@ Here is an example that shows a recipe record with "ingredients" and
 <img src="www/help/pam-ice-cream-sundae-open.png" width="400" alt="ice-cream-sundae-example">
 
 Here is what the preferences look like after "ingredients" and "instructions" record fields
-have been added and the previous default record fields have been pruned out.
+have been added and the previous default record fields other than _"html"_ have been pruned out.
 
-<img src="www/help/pam-ice-cream-sundae-prefs.png" width="400" alt="ice-cream-sundae-example-prefs">
+<img src="www/help/pam-recipe-prefs.png" width="400" alt="ice-cream-sundae-example-prefs">
 
 Here is an example that shows an account record with "url", "login"
 and "password" record fields.

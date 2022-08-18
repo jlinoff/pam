@@ -560,7 +560,7 @@ The top section that contains a search input
 and a menu.
 
 The search input is used to find records that match the input to make
-them easier to find. You find more information about searching in the
+them easier to find. You can find more information about searching in the
 [Search Records](#search-records) section
 
 The menu at the top right is the control center for the application it

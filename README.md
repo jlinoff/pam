@@ -676,7 +676,7 @@ There are three different methods you can use to create new records:
 2. A record can be created in the application by cloning an existing record or
 3. A record can be created outside of the application by editing a JSON record file.
 
-All three approaches will be discussed below in more detail.
+#### Method 1
 
 The first method, creating the record by clicking or tapping the "New
 Record" menu option in the application, is probably the best way to
@@ -687,6 +687,7 @@ the "menu" approach and is shown below.
 
 See the [Method 1: Menu Approach](#method-1-menu-approach) section for details.
 
+#### Method 2
 The second method, creating a record by cloning an existing record, is
 useful when you want to use the same fields as the existing record. It
 is a great way to guarantee uniformity. Although if the number of
@@ -696,6 +697,8 @@ the clone option looks like.
 <img src="pam-clone-google.png" width="400" alt="clone-rec">
 
 See the [Method 2: Clone Approach](#method-2-clone-approach) section for details.
+
+#### Method 3
 
 The third method, creating a record by editing a JSON record file, is most
 useful if you are interested in creating records programmatically

@@ -560,12 +560,16 @@ The top section that contains a search input
 and a menu.
 
 The search input is used to find records that match the input to make
-them easier to find.
+them easier to find. You find more information about searching in the
+[Search Records](#search-records) section
 
 The menu at the top right is the control center for the application it
 has a number of options as you can see below.
 
 <img src="www/help/pam-basic-menu.png" width="400" alt="menu">
+
+Each of the menu options is discussed in more detail in the
+[Functions](#functions) section.
 
 ### Records Section
 
@@ -596,11 +600,15 @@ pasted into login forms.
 
 You can also click or tap on the title of the opened record to close it.
 
+Each of the record management options is discussed in more detail in the
+[Functions](#functions) section.
+
+
 ### Status Section
 Below the records section, at the bottom, is the status section where
 ephemeral status messages are displayed. The messages disappear after
 about 1.5 seconds but the duration is controlled by a preference that
-you can set.  See the [Preferences](#preferences) section for more
+you can set. See the [Preferences](#preferences) section for more
 information.
 
 The status messages are used to provide activity feedback like showing
@@ -615,7 +623,7 @@ provides.
 
 In a nutshell they are:
 
-1. Display information about the application.
+1. Display information About the application.
 1. Create New Record.
 1. Edit Record.
 1. Delete Record.
@@ -721,7 +729,7 @@ Note the use of the "`.txt`" extension in the previous paragraph.
 Although the "`.pam`" file extension is supported for record files
 and it works on laptops. It does not always work on mobile devices
 so a records file named "`myrecords.pam`" might not be readable
-by the mobile browser. I recommend using the "`.txt`" for all
+by the mobile browser. Thus, I recommend using the "`.txt`" for all
 record files for maximum portability.
 
 Topics are also discussed briefly at the end of the

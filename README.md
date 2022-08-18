@@ -570,7 +570,7 @@ by the mobile browser. Thus, I recommend using the "`.txt`" for all
 record files for maximum portability.
 
 Topics are also discussed briefly at the end of the
-[Reason 2: Record Model](#record-model-summary))
+[Reason 2: Record Model](#record-model-summary)
 section.
 
 ## Fields

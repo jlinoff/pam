@@ -771,15 +771,15 @@ setting the
 [Enable Editable Field Name](#enable-editable-field-name)
 preference.
 
-It is not enabled by default to avoid confusion between the "name"
-input and the "value" input as shown below. Typically there is no reason to change
-record field names on a per record basis. It is better to add the new
-record fields to the default list in the preferences.
+This capability is not enabled by default to avoid confusion between
+the "name" input and the "value" input as shown below. Normally only
+the "value" input is shown.
+
+Typically there is no reason to change record field names on a per
+record basis. It is better to add the new record fields to the default
+list in the preferences.
 
 <img src="www/help/pam-change-field-name.png" width="400" alt="change-field-name">
-
-> Don't do this because it might be confusingto users.
-> Instead create a new pre-defined record as described above.
 
 ##### Record Field Types
 
@@ -793,17 +793,19 @@ simple types regardless of the underlying HTML element to avoid
 unnecessary complexity.
 
 You can change, add or delete record field _names_ here if you wish to
-customize the user experience but you cannot change the types. For
-example, you change the record field _note_ from a _textarea_ field to
-a _text_ field but you cannot change the type _text_.
+customize the user experience but you cannot change the built in
+_types_. For example, you change the record field name _"note"_ from a
+_"textarea"_ field to a _"text"_ but there is no way to add a new built in
+type to the drop down list from the user interface.
 
 These are the default field definitions.
 
 <img src="www/help/pam-default-record-fields.png" width="400" alt="default"/>
 
 The table below presents a brief overview of the pre-defined record
-field types and when to use them. You can search the web for more
-details about HTML input types.
+fields and their associated built in types and when to use them. You
+can search the web for more details about
+[HTML input types](https://developer.mozilla.org/en-US/docs/Learn/Forms/HTML5_input_types).
 
 | Type | Usage |
 | ---- | ----- |
@@ -916,10 +918,19 @@ Here is an example that shows a password in its standard hidden form.
 To make the password visible, click or tap on the
 <img src="www/help/eye.svg" height="32" width="32" alt="eye"/> icon.
 
+The password can be copied to the clipboard when it is hidden by
+clicking on the
+<img src="www/help/clipboard.svg" height="32" width="32" alt="clipboard"/>
+icon.
+
 ##### Visible Password Representation
 Here is an example that shows a password in its visible hidden form.
 
 <img src="www/help/pam-record-expanded-password.png" width="400" alt="record-expanded-password">
+
+The password can be copied to the clipboard by clicking on the
+<img src="www/help/clipboard.svg" height="32" width="32" alt="clipboard"/>
+icon.
 
 To hide the password, click or tap on the
 <img src="www/help/eye-slash.svg" height="32" width="32" alt="eye"/> icon.

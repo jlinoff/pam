@@ -755,10 +755,12 @@ The default record fields are defined in the
 [Preferences](#Preferences)
 and show up in the "New Field" pulldown menu when a record is created
 or edited. They are stored in each file with the along with the actual
-records so each records file can have different types of records. For
-example a file of recipe records would probably want "ingredients" and
-"instructions" fields but a file of _"books read"_ records probably
-would not.
+records so each records file can have different default fields. For
+example a file of recipe records would probably want fields of type
+_"textarea"_ named "ingredients" and "instructions" but a file of
+_"books read"_ records probably would not. Instead it might want _"text"_
+fields named "author" and "publisher" along with, possibly, a field
+of type _"number"_ named "copyright".
 
 See the [Record Fields](#record-fields) section for details about how
 to add or modify the default record fields.

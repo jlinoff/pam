@@ -305,13 +305,12 @@ Custom fields can be created by adding new fields to the default
 fields defined in the preferences so they are available all of the
 time.
 
-For this example I created two new
-_textarea_ fields named "ingredients" and "instructions" so that users
-could enter multiple lines and removed all of the other default fields
-except the "html" field because they were not needed. I kept the default
-"html" field because I wanted to be able add pictures to the recipes.
-Here is what the preferences look like after the modifications were
-made.
+For this example I created two new _textarea_ fields named
+"ingredients" and "instructions" so that users could enter multiple
+lines and removed all of the other default fields except the "html"
+field because they were not needed. I kept the default "html" field
+because I wanted to be able add pictures to the recipes.  Here is what
+the preferences look like after the modifications were made.
 
 <img src="www/help/pam-recipe-prefs.png" width="400" alt="default"/>
 
@@ -768,6 +767,11 @@ Here is what the preferences look like with the other fields pruned out.
 The "url", "login" and "password" record fields are part of the default.
 
 <img src="www/help/pam-google-account-prefs.png" width="400" alt="google-account-example-prefs">
+
+This is what they will look like in the `"New Record"` pull down menu
+when creating or editing a record.
+
+<img src="pam-new-record-field-1-select.png" width="400" alt="new-record-field-1-select">
 
 ## Password Fields
 

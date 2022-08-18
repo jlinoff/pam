@@ -45,10 +45,6 @@ the on-line help is generated.
       * [Reason 7: Hiding Passwords from Casual Observers](#reason-8-hiding-passwords-from-casual-observers)
       * [Reason 8: Access from mobile devices](#reason-8-access-from-mobile-devices)
       * [Reason 9: FOSS](#reason-9-foss)
-  * [Layout](#layout)
-    * [Menu and Search Section](#menu-and-search-section)
-    * [Records Section](#records-section)
-    * [Status Section](#status-section)
   * [Topics](#topics)
   * [Fields](#fields)
     * [Record Field Types](#record-field-types)
@@ -59,6 +55,10 @@ the on-line help is generated.
     * [Hidden Password Representation](#hidden-password-representation)
     * [Visible Password Representation](#visible-password-representation)
     * [Password Generator](#password-generator)
+  * [Layout](#layout)
+    * [Menu and Search Section](#menu-and-search-section)
+    * [Records Section](#records-section)
+    * [Status Section](#status-section)
   * [Functions](#functions)
     * [Create New Record](#create-new-record)
       * [Method 1: Menu Approach](#method-1-menu-approach)
@@ -823,6 +823,9 @@ icon to be used to generate new passwords.
 
 To choose a generated password simply click or tap on it and it will
 be added to the field value.
+
+See the [Password Preferences](#password-preferences) section about
+how to define the prefix and suffixes for memorable passwords.
 
 
 ## Layout

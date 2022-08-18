@@ -763,16 +763,19 @@ field named "email" of type "email" could have a value "wombat@foo.io"
 the _name_ and the _type_ could be the same for all records that had an "email"
 field but the _value_ would vary.
 
-The default record fields are defined in the
-[Preferences](#Preferences)
-and show up in the "New Field" pulldown menu when a record is created
-or edited. They are stored in each file with the along with the actual
-records so each records file can have different default fields. For
-example a file of recipe records would probably want fields of type
-_"textarea"_ named "ingredients" and "instructions" but a file of
-_"books read"_ records probably would not. Instead it might want _"text"_
-fields named "author" and "publisher" along with, possibly, a field
-of type _"number"_ named "copyright".
+The default record fields are the fields that are available in the
+`"New Field"` pull down menu when a record is created or edited. They
+are defined in the
+[Preferences](#Preferences) section.
+
+The default record fields are stored in each file with the along with the
+records so each records file can have different default fields.
+
+For example a file of recipe records would probably want fields of
+type _"textarea"_ named "ingredients" and "instructions" but a file of
+_"books read"_ records probably would not. Instead it might want
+_"text"_ fields named "author" and "publisher" along with, possibly, a
+field of type _"number"_ named "copyright".
 
 See the [Record Fields](#record-fields) section for details about how
 to add or modify the default record fields.
@@ -814,7 +817,7 @@ These are the default field definitions.
 
 <img src="www/help/pam-default-record-fields.png" width="400" alt="default"/>
 
-The table below presents a brief overview of the pre-defined record
+The table below presents a brief overview of the default record
 fields and their associated built in types and when to use them. You
 can search the web for more details about
 [HTML input types](https://developer.mozilla.org/en-US/docs/Learn/Forms/HTML5_input_types).
@@ -994,7 +997,7 @@ there are three different ways to create records. In this and the following sect
 three are discussed.
 
 For this example we will create the "ingredients" and "instruction"
-pre-defined fields in the [Preferences](#preferences) as _"textarea"_ fields, when
+default fields in the [Preferences](#preferences) as _"textarea"_ fields, when
 complete they will look like this.
 
 <img src="www/help/pam-recipe-prefs.png" width="400" alt="default"/>

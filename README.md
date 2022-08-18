@@ -988,8 +988,16 @@ As mentioned at the beginning of the [Create New Record Section](#create-new-rec
 there are three different ways to create records. In this and the following sections all
 three are discussed.
 
-To create a new record using the menu approach
-click or tap on the `"New Record"` option from the menu.
+For this example we will create the "ingredients" and "instruction"
+pre-defined fields in the [Preferences](#preferences) as _"textarea"_ fields, when
+complete they will look like this.
+
+<img src="www/help/pam-recipe-prefs.png" width="400" alt="default"/>
+
+Make sure that you click on the `"Save"` button to save the new fields.
+
+To create a new record using the menu approach click or tap on the
+`"New Record"` option from the menu.
 
 <img src="www/help/pam-new-record-menu.png" width="400" alt="new-record">
 
@@ -1005,24 +1013,15 @@ From there you click or tap on the `"Type"` pulldown to select and create
 the first record field. Don't worry if you select the wrong one,
 they are easy to delete.
 
-For this example we will choose "note" because it is a "textarea"
-field and then rename it to "ingredients" and type in some basic
-ingredients in the value input.
-
-Here is where you select "note" for the first field.
+Here is where you select "ingredients" for the first field.
 
 <img src="pam-new-record-field-1-select.png" width="400" alt="new-record-field-1-select">
 
 And then change the field name to "ingredients" and populate it.
 
-> Remember that you can customize the available fields in the
-> preferences so that the list of fields is shorter.
-
 <img src="pam-new-record-field-1.png" width="400" alt="new-record-field-1">
 
-Now do the same thing to create an "instructions" field. Remember to choose
-"note" just like in the previous step. This is what it looks like after you
-have added the second field.
+Now do the same thing to create an "instructions" field.
 
 <img src="pam-new-record-field-2.png" width="400" alt="new-record-field-2">
 

@@ -709,7 +709,7 @@ _"my favorite cryptography algorithms"_ or _"green things"_.
 One way to use topics is to keep records related by a topic in separate
 files. For example, you could define a "`recipes.txt`" file for all of
 your recipe records (topic: _"recipes"_ or _"stuff to cook"_) and an
-"`accounts.txt`" for your account records (topic: _"accounts"_). 
+"`accounts.txt`" for your account records (topic: _"accounts"_).
 
 Or, you could completely disregard organizing by topics and put all of
 your records into a single file like "`myrecords.txt`".
@@ -785,10 +785,12 @@ record fields to the default list in the preferences.
 
 Record field types define the type of each field that you define for a
 record. They are based on HTML _input_ element types except for the
-_textarea_ type which is an HTML _textarea_ element and the _html_
-type which is a _textarea_ type that is displayed as raw HTML. They
-are presented below as simple types regardless of the underlying HTML
-element to avoid unnecessary complexity.
+_textarea_ type which is a HTML _textarea_ element that is displayed
+as _preformatted_ text (&lt;pre&gt;&lt;/pre&gt;) and the _html_ type
+which is also a HTML _textarea_ type but is displayed as raw HTML so
+it can be used for inserting images. They are presented below as
+simple types regardless of the underlying HTML element to avoid
+unnecessary complexity.
 
 You can change, add or delete record field _names_ here if you wish to
 customize the user experience but you cannot change the types. For

@@ -973,7 +973,7 @@ the "menu" approach and is shown below.
 To show how it works, we will create a recipe record using
 "ingredients" and "instruction" fields. But first we need to define
 them as default _"textarea"_ fields in the [Preferences](#preferences)
-section. So the available records look like this.
+dialogue. So the available records look like this.
 
 <img src="www/help/pam-recipe-prefs.png" width="400" alt="default"/>
 

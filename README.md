@@ -63,7 +63,7 @@ the on-line help is generated.
         * [Password Generator](#password-generator)
       * [Method 1: Menu Approach](#method-1-menu-approach)
       * [Method 2: Clone Approach](#method-2-clone-approach)
-      * [Method 3: Javascript Approach](#method-3-javascript-approach)
+      * [Method 3: JSON Approach](#method-3-json-approach)
     * [Edit Record](#edit-record)
     * [Delete Record](#delete-record)
     * [Clone Record](#clone-record)
@@ -680,6 +680,8 @@ the "menu" approach and is shown below.
 
 <img src="pam-create-new-record.png" width="400" alt="new-rec">
 
+See the [Method 1: Menu Approach](#method-1-menu-approach) section for details.
+
 The second method, creating a record by cloning an existing record, is
 useful when you want to use the same fields as the existing record. It
 is a great way to guarantee uniformity. Although if the number of
@@ -688,12 +690,16 @@ the clone option looks like.
 
 <img src="pam-clone-google.png" width="400" alt="clone-rec">
 
+See the [Method 2: Clone Approach](#method-2-clone-approach) section for details.
+
 The third method, creating a record by editing a JSON record file, is most
 useful if you are interested in creating records programmatically
 (perhaps a subset of accounts that shared with a small group of users
 that is automatically generated from a database). The example records
 and recipes example files that are available in the "Load" dialogue
 are a great place to start.
+
+See the [Method 3: JSON Approach](#method-3-json-approach) section for details.
 
 But, before any of the record creation approaches can be discussed in
 more detail, it is very important to understand record topics and
@@ -736,12 +742,13 @@ is a number. An example of a field _name_ might be "mobile phone".
 
 The field _type_ explicitly describes the type of data that field
 holds like a "number" or a "phone" or an "email". Types are
-pre-defined and strictly enforced by javascript. An example of the
-difference between a _name_ and a _type_ would be a field named
-"mobile" of type _phone_.  The name describes _how_ it is used whereas
-the type describes _what_ the input type is which, in turn, dictates
-what user inputs are acceptable.  A description of each pre-defined
-record field type can be found in the
+built in and strictly enforced by javascript.
+
+An example of the difference between a _name_ and a _type_ would be a
+field named "mobile" of type _phone_.  The name describes _how_ it is
+used whereas the type describes _what_ the input type is which, in
+turn, dictates what user inputs are acceptable.  A description of each
+built in record field type can be found in the
 [Record Field Types](#record-field-types)
 section.
 
@@ -977,7 +984,12 @@ To choose a generated password simply click or tap on it and it will
 be added to the field value.
 
 #### Method 1: Menu Approach
-Click or tap on the `"New Record"` option from the menu.
+As mentioned at the beginning of the [Create New Record Section](#create-new-record) section,
+there are three different ways to create records. In this and the following sections all
+three are discussed.
+
+To create a new record using the menu approach
+click or tap on the `"New Record"` option from the menu.
 
 <img src="www/help/pam-new-record-menu.png" width="400" alt="new-record">
 
@@ -1036,6 +1048,7 @@ You can click or tap on the record to expand it and see the fields you just defi
 <img src="pam-new-record-done-expand.png" width="400" alt="new-record-done-expand">
 
 #### Method 2: Clone Approach
+The second way to create a new record is by cloning it.
 Cloning a record is simple. Just expand a record and click or tap on the clone button
 and an edit dialogue pops up.
 
@@ -1068,12 +1081,12 @@ or tap on the new record to expand it.
 
 <img src="pam-clone-records-2.png" width="400" alt="clone-records-1">
 
-#### Method 3: Javascript Approach
+#### Method 3: JSON Approach
 This approach is not going to have any screenshots because it deals with
 _PAM_ internals and may change from time to time. Instead a set of instructions
 is provided that should allows you to figure it out pretty easily.
 
-1. Create one record using the menu approach.
+1. Create one record using the menu approach or use one the examples from the "Load" dialogue.
 2. Save the record to a file _without a password_.
    Normally this is a very bad idea because it could expose your data
    to a hacker so take precautions to protect the file.

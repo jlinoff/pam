@@ -992,7 +992,7 @@ To choose a generated password simply click or tap on it and it will
 be added to the field value.
 
 #### Method 1: Menu Approach
-As mentioned at the beginning of the [Create New Record Section](#create-new-record) section,
+As mentioned at the beginning of the [Create New Record](#create-new-record) section,
 there are three different ways to create records. In this and the following sections all
 three are discussed.
 

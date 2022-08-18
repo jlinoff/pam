@@ -45,6 +45,9 @@ the on-line help is generated.
       * [Reason 7: Hiding Passwords from Casual Observers](#reason-8-hiding-passwords-from-casual-observers)
       * [Reason 8: Access from mobile devices](#reason-8-access-from-mobile-devices)
       * [Reason 9: FOSS](#reason-9-foss)
+  * [Records](#records)
+    * [Unexpanded View of all Records](#unexpanded-view-of-all-records)
+    * [Expanded View of a Record](#expanded-view-of-a-record)
   * [Topics](#topics)
   * [Fields](#fields)
     * [Record Field Types](#record-field-types)
@@ -57,6 +60,8 @@ the on-line help is generated.
     * [Password Generator](#password-generator)
   * [Layout](#layout)
     * [Menu and Search Section](#menu-and-search-section)
+      * [Search](#search)
+      * [Menu](#menu)
     * [Records Section](#records-section)
     * [Status Section](#status-section)
   * [Functions](#functions)
@@ -70,12 +75,7 @@ the on-line help is generated.
     * [Clear Records](#clear-records)
     * [Save File](#save-file)
     * [Load File](#load-file)
-    * [Search Records](#search-records)
     * [Get Help](#get-help)
-  * [Menu](#menu)
-  * [Records](#records)
-    * [Unexpanded View of all Records](#unexpanded-view-of-all-records)
-    * [Expanded View of a Record](#expanded-view-of-a-record)
   * [Preferences](#preferences)
     * [Search Preferences](#search-preferences)
       * [Case Insensitive Searches](#case-insensitive-searches)
@@ -374,7 +374,7 @@ that contain a "g".
 <img src="www/help/pam-search-g.png" width="400" alt="search-g"/>
 
 Note that regular expressions can be used as well.
-See [Search Records](#search-records) for more details.
+See [Search](#search) for more details.
 
 #### Reason 4: Automatic Password Generation
 I always find it hard to come up with passwords in the spur of the
@@ -546,6 +546,75 @@ free and open source software (FOSS) so you can try it without any
 obligation or cost. You can also help find and fix bugs or improve
 the UI.
 
+## Records
+
+Records are a key concept in _PAM_ as described in  [Reason 2: Record Model](#reason-2-record-model).
+
+This section talks about how records are presented in _PAM_ using an
+example with seven records that contain confidential information for
+"Amazon", "Email", "Facebook", "Github", "Google", "Netflix" and
+"Stack Exchange" fictional accounts from the [Load File](#load-file) example.
+
+See the [Create New Record](#create-new-record) section for details about how to create
+records and the [Topics](#topics) and [Fields](#fields) sections for more details
+about their contents.
+
+### Unexpanded View of all Records
+We start with the unexpanded view of all records as shown below.
+
+<img src="www/help/pam-example-records.png" width="400" alt="example-records">
+
+As you can see _PAM_ presents the records as an accordion. Each record
+is one entry in the accordion that you can expand to view the record fields
+or [delete](#delete-record), [clone](#clone-record) or [edit](#edit-record)
+edit the record.
+
+To get the information for an account you click or tap the button.
+
+At the top of the screen is the search bar and, at the far right, the
+menu.
+
+At the bottom of the screen is a status bar that shows status
+messages.
+
+### Expanded View of a Record
+Once you click on or tap a record it expands as shown below where
+the "Facebook" record was tapped.
+
+<img src="www/help/pam-record-expanded.png" width="400" alt="record-expanded">
+
+You can see that there are three fields in the record: "url", "login" and "password",
+next to each field there is a icon that looks like a clipboard
+<img src="www/help/clipboard.svg" height="32" width="32" alt="clipboard"/>.
+
+<img src="www/help/pam-record-expanded-fields.png" width="400" alt="record-expanded">
+
+If you click or tap the clipboard icon,
+the field contents will be copied to the clipboard so that you can paste them into a login
+dialogue.
+
+> Note that the fields are completely customizable. You can have as many as you want.
+> Fields are added, modified and deleted by the "Edit" option.
+
+In addition to the clipboard icon there is another icon that looks like
+an eye
+<img src="www/help/eye.svg" height="32" width="32" alt="eye"/>.
+that shows up for password field. If you click or tap it, the
+password will be shown in plaintext and the icon will change to
+an eye with a slash through it
+<img src="www/help/eye-slash.svg" height="32" width="32" alt="eye-slash"/>.
+By default all passwords are hidden so that they are not visible to
+casual observers. Click or tap it again to re-hide the password.
+
+In addition there are three buttons at the bottom
+"<img src='./trash.svg' height='32' width='32' />&nbsp;Delete" to delete the record,
+"<img src='./files.svg' height='32' width='32' />&nbsp;Clone" to clone the record and
+"<img src='./pencil-square.svg' height='32' width='32' />&nbsp;Edit" to edit the record fields.
+
+As you can see here.
+
+<img src="www/help/pam-record-expanded-fields2.png" width="400" alt="record-expanded">
+
 ## Topics
 
 Topics define how records are related. They provide a convenient
@@ -568,10 +637,6 @@ and it works on laptops. It does not always work on mobile devices
 so a records file named "`myrecords.pam`" might not be readable
 by the mobile browser. Thus, I recommend using the "`.txt`" for all
 record files for maximum portability.
-
-Topics are also discussed briefly at the end of the
-[Reason 2: Record Model](#record-model-summary)
-section.
 
 ## Fields
 Records are composed of fields. Each field has a unique name, a type
@@ -841,17 +906,91 @@ It looks something like this
 The top section that contains a search input
 and a menu.
 
-The search input is used to find records that match the input to make
-them easier to find. You can find more information about searching in the
-[Search Records](#search-records) section
+#### Search
+
+_PAM_ allows you to search records by their title or their field
+names and values to filter out records that do not match the search
+pattern. This is extremely useful when the number of records
+grows.
+
+The search function at the top left supports case insensitive searches
+and regular expressions to make it easier to find records.
+
+This can be very helpful for finding out where old
+passwords and obsolete accounts are still being used.
+
+Here is the made up list of account records from the [Load Files](#load-files) example:
+
+<img src="www/help/pam-search.png" width="400" alt="pam-search">
+
+Here is the same list after filtering for those whose titles contain the
+letter `"g"`. Note that searches are case insensitive but you can change
+that by unsetting the [Case Insensitive Searches](#case-insensitive-searches)
+preference.
+
+<img src="www/help/pam-search-g.png" width="400" alt="pam-search-g">
+
+To filter only those that start with `"g"` you
+would use this regular expression search term instead: `"^g"`.
+which would result in only two records found.
+
+For more information about regular expression syntax see the documentation
+for [Javascript Regular Expressions](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_Expressions).
+
+For more information about how you control the all of
+the available search options see the
+[Search Preferences](#search-preferences)
+section.
+
+#### Menu
 
 The menu at the top right is the control center for the application it
-has a number of options as you can see below.
+has a number of options as you can see below. This is what it looks
+like.
 
-<img src="www/help/pam-basic-menu.png" width="400" alt="menu">
+<img src="www/help/pam-menu.png" width="400" alt="menu">
 
-Each of the menu options is discussed in more detail in the
-[Functions](#functions) section.
+As you can see, there are seven menu options:
+
+1. [About](#about)
+1. [Preferences](#preferences)
+1. [New Record](#create-new-record)
+1. [Clear Records](#clear-records)
+1. [Load File](#load-file)
+1. [Save File](#save-file)
+1. [Help](#get-help).
+
+Click or tap on the "<img src='./info-circle.svg' height='32' width='32' />&nbsp;About"
+entry to see information about the app.
+See the [About](#about) section for more details.
+
+Click or tap on the "<img src='./gear.svg' height=' 32' width='32' />&nbsp;Preferences"
+entry to see the preferences dialogue which allows you
+to customize some of the app behavior. There is a lot of stuff so you might want
+to read the [Preferences](#preferences) section before trying it.
+
+Click or tap on the "<img src='./plus-circle-fill.svg' height='32' width='32' />&nbsp;New Record"
+entry to create a new record.
+See the [Create New Record](#create-new-record) section for more details.
+
+Click or tap on the "<img src='./trash3-fill.svg' height='32' width='32' />&nbsp;Clear Records"
+entry to delete all of the records.
+This is useful for times when you want to create a new collection of
+records that is saved in a separate file.  For example, if you wanted
+to create a collection personal accounts in one file and a collection
+shared accounts for a group of folks (like a development team sharing
+AWS accounts).
+
+Click or tap on the "<img src='./file-arrow-up-fill.svg' height='32' width='32' />&nbsp;Load File"
+entry to load a records file.
+See the [Load File](#load-file) section for more details.
+
+Click or tap on the "<img src='./file-arrow-down-fill.svg' height='32' width='32' />&nbsp;Save File" entry
+to save all of the records to a file.
+See the [Save File](#save-file) section for more details.
+
+Click or tap on the "<img src='./question-circle.svg' height='32' width='32' />&nbsp;Help"
+entry to see this help message.
 
 ### Records Section
 
@@ -905,16 +1044,15 @@ provides.
 
 In a nutshell they are:
 
-1. Display information About the application.
-1. Create New Record.
-1. Edit Record.
-1. Delete Record.
-1. Clone Record.
-1. Clear Records.
-1. Save records to an encrypted file.
-1. Load a collection of records from an encrypted file.
-1. Search Records.
-1. Get Help.
+1. [Display information About the application](#about)
+1. [Create New Record](#create-new-record)
+1. [Edit Record](#edit-record)
+1. [Delete Record](#delete-record)
+1. [Clone Record](#clone-record)
+1. [Clear Records](#clear-records)
+1. [Save Records](#save-records)
+1. [Load Records](#load-records)
+1. [Help](#get-help).
 
 Each function will be discussed in a separate subsection below.
 
@@ -1389,33 +1527,6 @@ Click or tap on the URL text (#3) to load a file from the web.
 This is typically used when a PAM records file is shared because
 no changes can be made.
 
-### Search Records
-_PAM_ allows you to search records by their title or their field
-names and values to filter out records that do not match the search
-pattern. This is extremely useful when the number of records
-grows.
-
-The search function supports case insensitive searches and regular expressions
-to make it easier to find stuff.
-
-This can be very helpful for finding out where old
-passwords and obsolete accounts are still being used.
-
-Here is the made up list of account records from the [Load Files](#load-files) example:
-
-<img src="www/help/pam-search.png" width="400" alt="pam-search">
-
-Here is the same list after filtering for those whose titles contain the
-letter `"g"`.
-
-<img src="www/help/pam-search-g.png" width="400" alt="pam-search-g">
-
-To filter only those that start with `"g"` you
-would use this regular expression search term instead: `"^g"`.
-
-For more information about regular expression syntax see the documentation
-for [Javascript Regular Expressions](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_Expressions).
-
 ### Get Help
 To get this help message, choose the `"Help"` option from the menu.
 
@@ -1423,131 +1534,7 @@ If you find a bug or want to request a change or submit an improvement,
 go to the [Metadata section](#pam---personal-account-manager) at the top of
 this help and click or tap on the project link.
 
-## Menu
-The menu is the control center for the app. It provides the basic
-operations for creating records, loading records, saving them and
-it provide information about the app including this help.
 
-Note that much of this material presented here has been discussed in
-earlier sections but having it consolidated here might be
-helpful. Plus there are links to the sections with relevant details.
-
-This is what the menu looks like.
-
-<img src="www/help/pam-menu.png" width="400" alt="menu">
-
-As you can see, there are seven menu options:
-
-1. "About",
-1. "Preferences",
-1. "New Record",
-1. "Clear Records",
-1. "Load File",
-1. "Save File", and
-1. "Help".
-
-Click or tap on the "<img src='./info-circle.svg' height='32' width='32' />&nbsp;About"
-entry to see information about the app.
-See the [About](#about) section for more details.
-
-Click or tap on the "<img src='./gear.svg' height=' 32' width='32' />&nbsp;Preferences"
-entry to see the preferences dialogue which allows you
-to customize some of the app behavior. There is a lot of stuff so you might want
-to read the [Preferences](#preferences) section before trying it.
-
-Click or tap on the "<img src='./plus-circle-fill.svg' height='32' width='32' />&nbsp;New Record"
-entry to create a new record.
-See the [Create New Record](#create-new-record) section for more details.
-
-Click or tap on the "<img src='./trash3-fill.svg' height='32' width='32' />&nbsp;Clear Records"
-entry to delete all of the records.
-This is useful for times when you want to create a new collection of
-records that is saved in a separate file.  For example, if you wanted
-to create a collection personal accounts in one file and a collection
-shared accounts for a group of folks (like a development team sharing
-AWS accounts).
-
-Click or tap on the "<img src='./file-arrow-up-fill.svg' height='32' width='32' />&nbsp;Load File"
-entry to load a records file.
-See the [Load File](#load-file) section for more details.
-
-Click or tap on the "<img src='./file-arrow-down-fill.svg' height='32' width='32' />&nbsp;Save File" entry
-to save all of the records to a file.
-See the [Save File](#save-file) section for more details.
-
-Click or tap on the "<img src='./question-circle.svg' height='32' width='32' />&nbsp;Help"
-entry to see this help message.
-
-At the top of the screen is the search bar and, at the far right, the
-menu.
-
-At the bottom of the screen is a status bar that shows status
-messages.
-
-## Records
-This section talks about how records are presented in _PAM_ using an
-example with seven records that contain confidential information for
-"Amazon", "Email", "Facebook", "Github", "Google", "Netflix" and
-"Stack Exchange" fictional accounts.
-
-See the [Create New Record](#create-new-record) section for details about how to create
-records.
-
-### Unexpanded View of all Records
-We start with the unexpanded view of all records as shown below.
-
-<img src="www/help/pam-example-records.png" width="400" alt="example-records">
-
-As you can see _PAM_ presents the records as an accordion. Each record
-is one entry in the accordion that you can expand to view the record fields
-or [delete](#delete-record), [clone](#clone-record) or [edit](#edit-record)
-edit the record.
-
-To get the information for an account you click or tap the button.
-
-At the top of the screen is the search bar and, at the far right, the
-menu.
-
-At the bottom of the screen is a status bar that shows status
-messages.
-
-### Expanded View of a Record
-Once you click on or tap a record it expands as shown below where
-the "Facebook" record was tapped.
-
-<img src="www/help/pam-record-expanded.png" width="400" alt="record-expanded">
-
-You can see that there are three fields in the record: "url", "login" and "password",
-next to each field there is a icon that looks like a clipboard
-<img src="www/help/clipboard.svg" height="32" width="32" alt="clipboard"/>.
-
-<img src="www/help/pam-record-expanded-fields.png" width="400" alt="record-expanded">
-
-If you click or tap the clipboard icon,
-the field contents will be copied to the clipboard so that you can paste them into a login
-dialogue.
-
-> Note that the fields are completely customizable. You can have as many as you want.
-> Fields are added, modified and deleted by the "Edit" option.
-
-In addition to the clipboard icon there is another icon that looks like
-an eye
-<img src="www/help/eye.svg" height="32" width="32" alt="eye"/>.
-that shows up for password field. If you click or tap it, the
-password will be shown in plaintext and the icon will change to
-an eye with a slash through it
-<img src="www/help/eye-slash.svg" height="32" width="32" alt="eye-slash"/>.
-By default all passwords are hidden so that they are not visible to
-casual observers. Click or tap it again to re-hide the password.
-
-In addition there are three buttons at the bottom
-"<img src='./trash.svg' height='32' width='32' />&nbsp;Delete" to delete the record,
-"<img src='./files.svg' height='32' width='32' />&nbsp;Clone" to clone the record and
-"<img src='./pencil-square.svg' height='32' width='32' />&nbsp;Edit" to edit the record fields.
-
-As you can see here.
-
-<img src="www/help/pam-record-expanded-fields2.png" width="400" alt="record-expanded">
 
 ## Preferences
 Preferences allow you to customized the behavior of the app.
@@ -1565,6 +1552,7 @@ Each preference is discussed in more detail in the subsections below.
 
 ### Search Preferences
 These preferences control search options.
+See the [Search](#search) section for an example.
 
 #### Case Insensitive Searches
 If enabled, all searches are case insensitive, otherwise they are case sensitive.

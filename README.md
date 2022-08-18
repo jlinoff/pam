@@ -287,7 +287,7 @@ It would look like this when you _create_ it in _PAM_.
 
 <img src="www/help/pam-ice-cream-sundae-new.png" width="400" alt="ice-cream-sundae-example">
 
-It would look like this when you _view_ it in _PAM_.
+It would look like this when you _view_ it in _PAM_ in edit mode.
 
 <img src="www/help/pam-ice-cream-sundae-open.png" width="400" alt="ice-cream-sundae-example">
 
@@ -517,11 +517,8 @@ cannot read them unless you choose to make them visible. You can read
 more about why this is beneficial in the
 [Security Considerations](#security-considerations) section.
 
-This is the default hidden view of a password with the
-[Enable Editable Field Name](#enable-editable-field-name)
-preference set which shows the name of the field. In this
-case "password". You can see that the password value is
-all _asterisks_.
+This is the default hidden view of a password.  You can see that the
+password value is all _asterisks_.
 
 <img src="www/help/pam-password-hidden.png" width="400" alt="password-hidden">
 
@@ -1009,15 +1006,15 @@ You can now type in the record title.
 
 <img src="www/help/pam-new-record-title.png" width="400" alt="new-record">
 
-From there you click or tap on the `"Type"` pulldown to select and create
-the first record field. Don't worry if you select the wrong one,
-they are easy to delete.
+From there you click or tap on the `"New Field"` pulldown to select
+and create the first record field. Don't worry if you select the wrong
+one, they are easy to delete.
 
 Here is where you select "ingredients" for the first field.
 
 <img src="pam-new-record-field-1-select.png" width="400" alt="new-record-field-1-select">
 
-And then change the field name to "ingredients" and populate it.
+Populate it by typing into the _"textarea"_ box.
 
 <img src="pam-new-record-field-1.png" width="400" alt="new-record-field-1">
 

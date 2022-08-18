@@ -247,8 +247,8 @@ export function cleanRecordEditDlg(event) {
         }
     })
 
-    // reset dropdown state when creating a new record.
-    button.innerHTML = `Type (${window.prefs.predefinedRecordFieldsDefault})` // this is the default
+    // reset dropdown state when creating a new record field.
+    button.innerHTML = 'New Field'
     let container = button.xGetParentWithClass('container')
 
     // clear the title

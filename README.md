@@ -785,8 +785,8 @@ record fields to the default list in the preferences.
 
 Record field types define the type of each field that you define for a
 record. They are based on HTML _input_ element types except for the
-_textarea_ type which is a HTML _textarea_ element that is displayed
-as _preformatted_ text (&lt;pre&gt;&lt;/pre&gt;) and the _html_ type
+_"textarea"_ type which is a HTML _textarea_ element that is displayed
+as _preformatted_ text (&lt;pre&gt;&lt;/pre&gt;) and the _"html"_ type
 which is also a HTML _textarea_ type but is displayed as raw HTML so
 it can be used for inserting images. They are presented below as
 simple types regardless of the underlying HTML element to avoid

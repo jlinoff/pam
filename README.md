@@ -741,15 +741,15 @@ difference between a _name_ and a _type_ would be a field named
 "mobile" of type _phone_.  The name describes _how_ it is used whereas
 the type describes _what_ the input type is which, in turn, dictates
 what user inputs are acceptable.  A description of each pre-defined
-record field type can be found inin the
+record field type can be found in the
 [Record Field Types](#record-field-types)
 section.
 
 The field _value_ is the unique value for the field in an individual
 record that is set when a field is created or edited. For example, an
 field named "email" of type "email" could have a value "wombat@foo.io"
-the name and the type could be the same for all records that had an "email"
-field but the value would vary.
+the _name_ and the _type_ could be the same for all records that had an "email"
+field but the _value_ would vary.
 
 The default record fields are defined in the
 [Preferences](#Preferences)

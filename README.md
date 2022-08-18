@@ -769,13 +769,13 @@ of type _"number"_ named "copyright".
 See the [Record Fields](#record-fields) section for details about how
 to add or modify the default record fields.
 
-There is a second more obscure way to define field names, you can
+There is a second more obscure way to define field names. You can
 change field names _when you create or edit an individual record_ by
 setting the
 [Enable Editable Field Name](#enable-editable-field-name)
 preference.
 
-This capability is not enabled by default to avoid confusion between
+This capability is _not_ enabled by default to avoid confusion between
 the "name" input and the "value" input as shown below. Normally only
 the "value" input is shown.
 

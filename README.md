@@ -49,18 +49,18 @@ the on-line help is generated.
     * [Menu and Search Section](#menu-and-search-section)
     * [Records Section](#records-section)
     * [Status Section](#status-section)
+  * [Topics](#topics)
+  * [Fields](#fields)
+    * [Record Field Types](#record-field-types)
+    * [Custom Record Fields](#custom-record-fields)
+  * [Password Fields](#password-fields)
+    * [Cryptic Passwords](#cryptic-passwords)
+    * [Memorable Passwords](#memorable-passwords)
+    * [Hidden Password Representation](#hidden-password-representation)
+    * [Visible Password Representation](#visible-password-representation)
+    * [Password Generator](#password-generator)
   * [Functions](#functions)
     * [Create New Record](#create-new-record)
-      * [Topics](#topics)
-      * [Fields](#fields)
-        * [Record Field Types](#record-field-types)
-        * [Custom Record Fields](#custom-record-fields)
-      * [Password Fields](#password-fields)
-        * [Cryptic Passwords](#cryptic-passwords)
-        * [Memorable Passwords](#memorable-passwords)
-        * [Hidden Password Representation](#hidden-password-representation)
-        * [Visible Password Representation](#visible-password-representation)
-        * [Password Generator](#password-generator)
       * [Method 1: Menu Approach](#method-1-menu-approach)
       * [Method 2: Clone Approach](#method-2-clone-approach)
       * [Method 3: JSON Approach](#method-3-json-approach)
@@ -546,6 +546,285 @@ free and open source software (FOSS) so you can try it without any
 obligation or cost. You can also help find and fix bugs or improve
 the UI.
 
+## Topics
+
+Topics define how records are related. They provide a convenient
+abstraction for organizing related records in files.  Topics are
+completely arbitrary. For example a topic could be something like
+_"recipes"_ or _"accounts"_ or _"unidentified aerial phenomena"_ or
+_"my favorite cryptography algorithms"_ or _"green things"_.
+
+One way to use topics is to keep records related by a topic in separate
+files. For example, you could define a "`recipes.txt`" file for all of
+your recipe records (topic: _"recipes"_ or _"stuff to cook"_) and an
+"`accounts.txt`" for your account records (topic: _"accounts"_).
+
+Or, you could completely disregard organizing by topics and put all of
+your records into a single file like "`myrecords.txt`".
+
+Note the use of the "`.txt`" extension in the previous paragraph.
+Although the "`.pam`" file extension is supported for record files
+and it works on laptops. It does not always work on mobile devices
+so a records file named "`myrecords.pam`" might not be readable
+by the mobile browser. Thus, I recommend using the "`.txt`" for all
+record files for maximum portability.
+
+Topics are also discussed briefly at the end of the
+[Reason 2: Record Model](#record-model-summary))
+section.
+
+## Fields
+Records are composed of fields. Each field has a unique name, a type
+and a value.
+
+The field _name_ is arbitrary and is meant to describes how the data in the
+field is used. For example, an "ingredients" field would indicate that the value
+is a list of ingredients and a "number" field would indicate that the value
+is a number. An example of a field _name_ might be "mobile phone".
+
+The field _type_ explicitly describes the type of data that field
+holds like a "number" or a "phone" or an "email". Types are
+built in and strictly enforced by javascript.
+
+An example of the difference between a _name_ and a _type_ would be a
+field named "mobile" of type _phone_.  The name describes _how_ it is
+used whereas the type describes _what_ the input type is which, in
+turn, dictates what user inputs are acceptable.  A description of each
+built in record field type can be found in the
+[Record Field Types](#record-field-types)
+section.
+
+The field _value_ is the unique value for the field in an individual
+record that is set when a field is created or edited. For example, an
+field named "email" of type "email" could have a value "wombat@foo.io"
+the _name_ and the _type_ could be the same for all records that had an "email"
+field but the _value_ would vary.
+
+The default record fields are the fields that are available in the
+`"New Field"` pull down menu when a record is created or edited. They
+are defined in the
+[Preferences](#Preferences)
+section and they are stored in each records _file_ along with the
+records so each records file can have different default fields.
+
+For example a file of recipe records would probably want fields of
+type _"textarea"_ named "ingredients" and "instructions" but a file of
+_"books read"_ records probably would not. Instead it might want
+_"text"_ fields named "author" and "publisher" along with, possibly, a
+field of type _"number"_ named "copyright".
+
+See the [Record Fields](#record-fields) section for details about how
+to add or modify the default record fields in the preferences dialogue.
+
+There is a second more obscure way to define field names. You can
+change field names _when you create or edit an individual record_ by
+setting the
+[Enable Editable Field Name](#enable-editable-field-name)
+preference.
+
+This capability is _not_ enabled by default to avoid confusion between
+the "name" input and the "value" input as shown below. Normally only
+the "value" input is shown.
+
+Typically there is no reason to change record field names on a per
+record basis. It is better to add the new record fields to the default
+list in the preferences.
+
+<img src="www/help/pam-change-field-name.png" width="400" alt="change-field-name">
+
+### Record Field Types
+
+Record field types define the type of each field that you define for a
+record. They are based on HTML _input_ element types except for the
+_"textarea"_ type which is a HTML _textarea_ element that is displayed
+as _preformatted_ text (&lt;pre&gt;&lt;/pre&gt;) and the _"html"_ type
+which is also a HTML _textarea_ type but is displayed as raw HTML so
+it can be used for inserting images. They are presented below as
+simple types regardless of the underlying HTML element to avoid
+unnecessary complexity.
+
+You can change, add or delete record field _names_ here if you wish to
+customize the user experience but you cannot change the built in
+_types_. For example, you change the record field name _"note"_ from a
+_"textarea"_ field to a _"text"_ but there is no way to add a new built in
+type to the drop down list from the user interface.
+
+These are the default field definitions.
+
+<img src="www/help/pam-default-record-fields.png" width="400" alt="default"/>
+
+The table below presents a brief overview of the default record
+fields and their associated built in types and when to use them. You
+can search the web for more details about
+[HTML input types](https://developer.mozilla.org/en-US/docs/Learn/Forms/HTML5_input_types).
+
+| Type | Usage |
+| ---- | ----- |
+| datetime-local | A datetime text string. Use it if you _only_ want to accept a datetime value. A typical usage might be the date that you finished reading a book. |
+| email | An email text string. Use it if you _only_ want to accept an email value. A typical usage might be the email address of a contact. |
+| html | Textarea data that is rendered directly as HTML. A typical usage might be to reference an image or to display formatted text. |
+| number | A numeric text string. Use it if you _only_ want to accept an number value. A typical usage might be a measurement like height or width or any other numeric value. |
+| password | A secret text string that is normally displayed as asterisks (`****`) with an eye (<img src="www/help/eye.svg" height="32" width="32" alt="eye"/>) button that can be clicked or tapped to show the value. |
+| phone | A phone number text string. Use it if you _only_ want to accept a phone number value.  A typical usage might be a mobile phone number. |
+| text | A string, like a name or keyword. You can use this for any text but it is especially useful when a field can be multiple types like an email or a name. A typical usage might be a login name where the value might be a name like "wiley" or an email like "wcoyote@acme.io" or a number like "12345678". |
+| textarea | A multi-line text box. A typical usage might be a note or a list of recipe ingredients. |
+| url | A text string that is a uniform resource locator (URL). Use it if you _only_ want to accept a URL value. A typical usage might be the path to an account like `https://google.com` |
+| username | A username. This may be slightly different than a login because a login could be an email address but, in general, it probably makes more sense to user `login` rather than `username`. |
+
+Remember that the types were not made up by me, they were
+taken directly from input element description
+[here](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/input),
+the separate textarea element is described
+[here](https://developer.mozilla.org/en-US/docs/Web/API/HTMLTextAreaElement).
+
+
+### Custom Record Fields
+It is oftentimes the case that all of the _default_ record fields
+are not needed for the records you are managing. This is especially
+true in cases where you have a very clear understanding of the record
+field requirements.
+
+If that is the case you might want to use the preferences to delete
+fields that are not relevant for your usage so that they don't clutter
+up the choices. You can always add them back later if you want.
+
+Here is an example that shows a recipe record with "ingredients" and
+"instructions" fields.
+
+<img src="www/help/pam-ice-cream-sundae-open.png" width="400" alt="ice-cream-sundae-example">
+
+Here is what the preferences look like after "ingredients" and "instructions" record fields
+have been added and the previous default record fields have been pruned out.
+
+<img src="www/help/pam-ice-cream-sundae-prefs.png" width="400" alt="ice-cream-sundae-example-prefs">
+
+Here is an example that shows an account record with "url", "login"
+and "password" record fields.
+
+<img src="www/help/pam-google-account.png" width="400" alt="google-account-example">
+
+Here is what the preferences look like with the other fields pruned out.
+The "url", "login" and "password" record fields are part of the default.
+
+<img src="www/help/pam-google-account-prefs.png" width="400" alt="google-account-example-prefs">
+
+## Password Fields
+
+Password fields are a special case for the following three reasons.
+
+First, they provide a generator that allows you to automatically
+create passwords at the click or tap of a button.
+For information about preferences that can be used to customize
+password generation see
+[Password Preferences](#password-preferences)
+
+Second, they always hide the value by default so that it can be seen
+by someone observing your screen.
+
+And, finally, because they provide the ability to generate two
+different types of passwords: cryptic and memorable.
+
+### Cryptic Passwords
+Cryptic passwords consist of letters, digits and
+special characters.
+
+Here is an example: `'N5yAb!XfGa3vELPsK95K4/AAz8mts'`.
+
+Cryptic passwords tend to be hard to memorize for most people.
+
+They are perfect for cases where you don't have to type the
+password in because they are hard to crack.
+
+### Memorable Passwords
+Memorable passwords are used to define passwords that must
+be typed in manually, as described in the
+[Reason 4: Automatic Password Generation](#reason-4-automatic-password-generation)
+section which means that it is important that they are secure, easy to
+type and to remember.
+
+They are composed of common lower case English words with an
+optional prefix, an optional separator between each word and an
+optional suffix. Often, the prefix and suffix are used to guarantee that the password
+contains the correct mix of characters that the authentication system
+requires, like, at least one capital letter, at least one digit and at
+least one special character.
+
+The security rationale for memorable passwords is described in this article:
+[The logic behind three random words](https://www.ncsc.gov.uk/blog-post/the-logic-behind-three-random-words).
+
+Here is an example: `'Z0/rebates/restructuring/jamaica??'` where the prefix is `'Z0/'`,
+the separator is `'/'` and the suffix is `'??'`.
+
+Memorable passwords tend to be easier to memorize than cryptic
+passwords for most people.
+
+### Hidden Password Representation
+Here is an example that shows a password in its standard hidden form.
+
+<img src="www/help/pam-record-expanded-fields.png" width="400" alt="record-expanded">
+
+To make the password visible, click or tap on the
+<img src="www/help/eye.svg" height="32" width="32" alt="eye"/> icon.
+
+The password can be copied to the clipboard when it is hidden by
+clicking on the
+<img src="www/help/clipboard.svg" height="32" width="32" alt="clipboard"/>
+icon.
+
+### Visible Password Representation
+Here is an example that shows a password in its visible hidden form.
+
+<img src="www/help/pam-record-expanded-password.png" width="400" alt="record-expanded-password">
+
+The password can be copied to the clipboard by clicking on the
+<img src="www/help/clipboard.svg" height="32" width="32" alt="clipboard"/>
+icon.
+
+To hide the password, click or tap on the
+<img src="www/help/eye-slash.svg" height="32" width="32" alt="eye"/> icon.
+
+### Password Generator
+This is what the password field dialogue looks like with no generator.
+
+<img src="www/help/pam-password-no-generator.png" width="400" alt="password-no-generator">
+
+When you click or tap on the <img src='./gear.svg' height='32' width='32' /> icon,
+cryptic and memorable passwords are generated and the password
+generator dialogue appears.
+
+<img src="www/help/pam-password-generator.png" width="400" alt="password-generator">
+
+As you can see it always generates five memorable passwords to provide
+some choices. I found that more useful than the original
+implementation which only had a single choice.
+
+> The decision to present five memorable passwords was completely
+> arbitrary but it seems to work well enough for my needs and can easily be
+> changed.
+
+This is what the password generator looks like with annotations.
+
+<img src="www/help/pam-password-generator-annotated.png" width="400" alt="password-generator-annotated">
+
+If you click or tap on the <img src='./gear.svg' height='32' width='32' /> icon
+a second time, new passwords will be generated.
+
+You must click or tap on the <img src='./x-circle.svg' height='32' width='32' /> icon
+to close the dialogue.
+
+I chose this approach because I wanted the
+<img src='./gear.svg' height='32' width='32' />
+icon to be used to generate new passwords.
+
+> In retrospect, that choice may not have been the most intuitive way
+> to implement closing the generator dialogue it but it works well
+> enough and can easily be changed if it turns out to be too
+> cumbersome.
+
+To choose a generated password simply click or tap on it and it will
+be added to the field value.
+
+
 ## Layout
 _PAM_ is a simple single page web application (SPA). It consists of three
 basic parts: the menu and search section, the records section and the
@@ -664,8 +943,9 @@ the collection.
 
 ### Create New Record
 
-This is a long section because it covers a number of general concepts
-that are needed by other functions like "topics" and "fields".
+Before reading this section, please make sure that you are familiar
+with the ideas covered in the [Topics](#topics), [Fields](#fields) and
+[Password Fields](#password-fieldds) sections.
 
 Creating a new record is a very common activity in _PAM_ so I tried to
 make it as easy as possible.
@@ -676,7 +956,9 @@ There are three different methods you can use to create new records:
 2. A record can be created in the application by cloning an existing record or
 3. A record can be created outside of the application by editing a JSON record file.
 
-#### Method 1
+Each method is discussed in detail in the following subsections.
+
+#### Method 1: Menu Approach
 
 The first method, creating the record by clicking or tapping the "New
 Record" menu option in the application, is probably the best way to
@@ -685,327 +967,12 @@ the "menu" approach and is shown below.
 
 <img src="pam-create-new-record.png" width="400" alt="new-rec">
 
-See the [Method 1: Menu Approach](#method-1-menu-approach) section for details.
-
-#### Method 2
-The second method, creating a record by cloning an existing record, is
-useful when you want to use the same fields as the existing record. It
-is a great way to guarantee uniformity. Although if the number of
-fields is small using the first method is also fine. Here is what
-the clone option looks like.
-
-<img src="pam-clone-google.png" width="400" alt="clone-rec">
-
-See the [Method 2: Clone Approach](#method-2-clone-approach) section for details.
-
-#### Method 3
-
-The third method, creating a record by editing a JSON record file, is most
-useful if you are interested in creating records programmatically
-(perhaps a subset of accounts that shared with a small group of users
-that is automatically generated from a database). The example records
-and recipes example files that are available in the "Load" dialogue
-are a great place to start.
-
-See the [Method 3: JSON Approach](#method-3-json-approach) section for details.
-
-But, before any of the record creation approaches can be discussed in
-more detail, it is very important to understand record topics and
-record fields.
-
-#### Topics
-Topics define how records are related. They provide a convenient
-abstraction for organizing related records in files.  Topics are
-completely arbitrary. For example a topic could be something like
-_"recipes"_ or _"accounts"_ or _"unidentified aerial phenomena"_ or
-_"my favorite cryptography algorithms"_ or _"green things"_.
-
-One way to use topics is to keep records related by a topic in separate
-files. For example, you could define a "`recipes.txt`" file for all of
-your recipe records (topic: _"recipes"_ or _"stuff to cook"_) and an
-"`accounts.txt`" for your account records (topic: _"accounts"_).
-
-Or, you could completely disregard organizing by topics and put all of
-your records into a single file like "`myrecords.txt`".
-
-Note the use of the "`.txt`" extension in the previous paragraph.
-Although the "`.pam`" file extension is supported for record files
-and it works on laptops. It does not always work on mobile devices
-so a records file named "`myrecords.pam`" might not be readable
-by the mobile browser. Thus, I recommend using the "`.txt`" for all
-record files for maximum portability.
-
-Topics are also discussed briefly at the end of the
-[Reason 2: Record Model](#record-model-summary))
-section.
-
-#### Fields
-Records are composed of fields. Each field has a unique name, a type
-and a value.
-
-The field _name_ is arbitrary and is meant to describes how the data in the
-field is used. For example, an "ingredients" field would indicate that the value
-is a list of ingredients and a "number" field would indicate that the value
-is a number. An example of a field _name_ might be "mobile phone".
-
-The field _type_ explicitly describes the type of data that field
-holds like a "number" or a "phone" or an "email". Types are
-built in and strictly enforced by javascript.
-
-An example of the difference between a _name_ and a _type_ would be a
-field named "mobile" of type _phone_.  The name describes _how_ it is
-used whereas the type describes _what_ the input type is which, in
-turn, dictates what user inputs are acceptable.  A description of each
-built in record field type can be found in the
-[Record Field Types](#record-field-types)
-section.
-
-The field _value_ is the unique value for the field in an individual
-record that is set when a field is created or edited. For example, an
-field named "email" of type "email" could have a value "wombat@foo.io"
-the _name_ and the _type_ could be the same for all records that had an "email"
-field but the _value_ would vary.
-
-The default record fields are the fields that are available in the
-`"New Field"` pull down menu when a record is created or edited. They
-are defined in the
-[Preferences](#Preferences) section.
-
-The default record fields are stored in each file with the along with the
-records so each records file can have different default fields.
-
-For example a file of recipe records would probably want fields of
-type _"textarea"_ named "ingredients" and "instructions" but a file of
-_"books read"_ records probably would not. Instead it might want
-_"text"_ fields named "author" and "publisher" along with, possibly, a
-field of type _"number"_ named "copyright".
-
-See the [Record Fields](#record-fields) section for details about how
-to add or modify the default record fields.
-
-There is a second more obscure way to define field names. You can
-change field names _when you create or edit an individual record_ by
-setting the
-[Enable Editable Field Name](#enable-editable-field-name)
-preference.
-
-This capability is _not_ enabled by default to avoid confusion between
-the "name" input and the "value" input as shown below. Normally only
-the "value" input is shown.
-
-Typically there is no reason to change record field names on a per
-record basis. It is better to add the new record fields to the default
-list in the preferences.
-
-<img src="www/help/pam-change-field-name.png" width="400" alt="change-field-name">
-
-##### Record Field Types
-
-Record field types define the type of each field that you define for a
-record. They are based on HTML _input_ element types except for the
-_"textarea"_ type which is a HTML _textarea_ element that is displayed
-as _preformatted_ text (&lt;pre&gt;&lt;/pre&gt;) and the _"html"_ type
-which is also a HTML _textarea_ type but is displayed as raw HTML so
-it can be used for inserting images. They are presented below as
-simple types regardless of the underlying HTML element to avoid
-unnecessary complexity.
-
-You can change, add or delete record field _names_ here if you wish to
-customize the user experience but you cannot change the built in
-_types_. For example, you change the record field name _"note"_ from a
-_"textarea"_ field to a _"text"_ but there is no way to add a new built in
-type to the drop down list from the user interface.
-
-These are the default field definitions.
-
-<img src="www/help/pam-default-record-fields.png" width="400" alt="default"/>
-
-The table below presents a brief overview of the default record
-fields and their associated built in types and when to use them. You
-can search the web for more details about
-[HTML input types](https://developer.mozilla.org/en-US/docs/Learn/Forms/HTML5_input_types).
-
-| Type | Usage |
-| ---- | ----- |
-| datetime-local | A datetime text string. Use it if you _only_ want to accept a datetime value. A typical usage might be the date that you finished reading a book. |
-| email | An email text string. Use it if you _only_ want to accept an email value. A typical usage might be the email address of a contact. |
-| html | Textarea data that is rendered directly as HTML. A typical usage might be to reference an image or to display formatted text. |
-| number | A numeric text string. Use it if you _only_ want to accept an number value. A typical usage might be a measurement like height or width or any other numeric value. |
-| password | A secret text string that is normally displayed as asterisks (`****`) with an eye (<img src="www/help/eye.svg" height="32" width="32" alt="eye"/>) button that can be clicked or tapped to show the value. |
-| phone | A phone number text string. Use it if you _only_ want to accept a phone number value.  A typical usage might be a mobile phone number. |
-| text | A string, like a name or keyword. You can use this for any text but it is especially useful when a field can be multiple types like an email or a name. A typical usage might be a login name where the value might be a name like "wiley" or an email like "wcoyote@acme.io" or a number like "12345678". |
-| textarea | A multi-line text box. A typical usage might be a note or a list of recipe ingredients. |
-| url | A text string that is a uniform resource locator (URL). Use it if you _only_ want to accept a URL value. A typical usage might be the path to an account like `https://google.com` |
-| username | A username. This may be slightly different than a login because a login could be an email address but, in general, it probably makes more sense to user `login` rather than `username`. |
-
-Remember that the types were not made up by me, they were
-taken directly from input element description
-[here](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/input),
-the separate textarea element is described
-[here](https://developer.mozilla.org/en-US/docs/Web/API/HTMLTextAreaElement).
-
-
-##### Custom Record Fields
-It is oftentimes the case that all of the _default_ record fields
-are not needed for the records you are managing. This is especially
-true in cases where you have a very clear understanding of the record
-field requirements.
-
-If that is the case you might want to use the preferences to delete
-fields that are not relevant for your usage so that they don't clutter
-up the choices. You can always add them back later if you want.
-
-Here is an example that shows a recipe record with "ingredients" and
-"instructions" fields.
-
-<img src="www/help/pam-ice-cream-sundae-open.png" width="400" alt="ice-cream-sundae-example">
-
-Here is what the preferences look like after "ingredients" and "instructions" record fields
-have been added and the previous default record fields have been pruned out.
-
-<img src="www/help/pam-ice-cream-sundae-prefs.png" width="400" alt="ice-cream-sundae-example-prefs">
-
-Here is an example that shows an account record with "url", "login"
-and "password" record fields.
-
-<img src="www/help/pam-google-account.png" width="400" alt="google-account-example">
-
-Here is what the preferences look like with the other fields pruned out.
-The "url", "login" and "password" record fields are part of the default.
-
-<img src="www/help/pam-google-account-prefs.png" width="400" alt="google-account-example-prefs">
-
-#### Password Fields
-Passwords fields show up in a lot of places. I chose to document them
-here because you will probably first encounter them when creating a
-record.
-
-Password fields are a special case for the following three reasons.
-
-First, they provide a generator that allows you to automatically
-create passwords at the click or tap of a button.
-For information about preferences that can be used to customize
-password generation see
-[Password Preferences](#password-preferences)
-
-Second, they always hide the value by default so that it can be seen
-by someone observing your screen.
-
-And, finally, because they provide the ability to generate two
-different types of passwords: cryptic and memorable.
-
-##### Cryptic Passwords
-Cryptic passwords consist of letters, digits and
-special characters.
-
-Here is an example: `'N5yAb!XfGa3vELPsK95K4/AAz8mts'`.
-
-Cryptic passwords tend to be hard to memorize for most people.
-
-They are perfect for cases where you don't have to type the
-password in because they are hard to crack.
-
-##### Memorable Passwords
-Memorable passwords are used to define passwords that must
-be typed in manually, as described in the
-[Reason 4: Automatic Password Generation](#reason-4-automatic-password-generation)
-section which means that it is important that they are secure, easy to
-type and to remember.
-
-They are composed of common lower case English words with an
-optional prefix, an optional separator between each word and an
-optional suffix. Often, the prefix and suffix are used to guarantee that the password
-contains the correct mix of characters that the authentication system
-requires, like, at least one capital letter, at least one digit and at
-least one special character.
-
-The security rationale for memorable passwords is described in this article:
-[The logic behind three random words](https://www.ncsc.gov.uk/blog-post/the-logic-behind-three-random-words).
-
-Here is an example: `'Z0/rebates/restructuring/jamaica??'` where the prefix is `'Z0/'`,
-the separator is `'/'` and the suffix is `'??'`.
-
-Memorable passwords tend to be easier to memorize than cryptic
-passwords for most people.
-
-##### Hidden Password Representation
-Here is an example that shows a password in its standard hidden form.
-
-<img src="www/help/pam-record-expanded-fields.png" width="400" alt="record-expanded">
-
-To make the password visible, click or tap on the
-<img src="www/help/eye.svg" height="32" width="32" alt="eye"/> icon.
-
-The password can be copied to the clipboard when it is hidden by
-clicking on the
-<img src="www/help/clipboard.svg" height="32" width="32" alt="clipboard"/>
-icon.
-
-##### Visible Password Representation
-Here is an example that shows a password in its visible hidden form.
-
-<img src="www/help/pam-record-expanded-password.png" width="400" alt="record-expanded-password">
-
-The password can be copied to the clipboard by clicking on the
-<img src="www/help/clipboard.svg" height="32" width="32" alt="clipboard"/>
-icon.
-
-To hide the password, click or tap on the
-<img src="www/help/eye-slash.svg" height="32" width="32" alt="eye"/> icon.
-
-##### Password Generator
-This is what the password field dialogue looks like with no generator.
-
-<img src="www/help/pam-password-no-generator.png" width="400" alt="password-no-generator">
-
-When you click or tap on the <img src='./gear.svg' height='32' width='32' /> icon,
-cryptic and memorable passwords are generated and the password
-generator dialogue appears.
-
-<img src="www/help/pam-password-generator.png" width="400" alt="password-generator">
-
-As you can see it always generates five memorable passwords to provide
-some choices. I found that more useful than the original
-implementation which only had a single choice.
-
-> The decision to present five memorable passwords was completely
-> arbitrary but it seems to work well enough for my needs and can easily be
-> changed.
-
-This is what the password generator looks like with annotations.
-
-<img src="www/help/pam-password-generator-annotated.png" width="400" alt="password-generator-annotated">
-
-If you click or tap on the <img src='./gear.svg' height='32' width='32' /> icon
-a second time, new passwords will be generated.
-
-You must click or tap on the <img src='./x-circle.svg' height='32' width='32' /> icon
-to close the dialogue.
-
-I chose this approach because I wanted the
-<img src='./gear.svg' height='32' width='32' />
-icon to be used to generate new passwords.
-
-> In retrospect, that choice may not have been the most intuitive way
-> to implement closing the generator dialogue it but it works well
-> enough and can easily be changed if it turns out to be too
-> cumbersome.
-
-To choose a generated password simply click or tap on it and it will
-be added to the field value.
-
-#### Method 1: Menu Approach
-As mentioned at the beginning of the [Create New Record](#create-new-record) section,
-there are three different ways to create records. In this and the following sections all
-three are discussed.
-
-For this example we will create the "ingredients" and "instruction"
-default fields in the [Preferences](#preferences) as _"textarea"_ fields, when
-complete they will look like this.
+To show how it works, we will create a recipe record using
+"ingredients" and "instruction" fields. But first we need to define
+them as default _"textarea"_ fields in the [Preferences](#preferences)
+section. So the available records look like this.
 
 <img src="www/help/pam-recipe-prefs.png" width="400" alt="default"/>
-
-Make sure that you click on the `"Save"` button to save the new fields.
 
 To create a new record using the menu approach click or tap on the
 `"New Record"` option from the menu.
@@ -1058,7 +1025,15 @@ You can click or tap on the record to expand it and see the fields you just defi
 <img src="pam-new-record-done-expand.png" width="400" alt="new-record-done-expand">
 
 #### Method 2: Clone Approach
-The second way to create a new record is by cloning it.
+
+The second method, creating a record by cloning an existing record, is
+useful when you want to use the same fields as the existing record. It
+is a great way to guarantee uniformity. Although if the number of
+fields is small using the first method is also fine. Here is what
+the clone option looks like.
+
+<img src="pam-clone-google.png" width="400" alt="clone-rec">
+
 Cloning a record is simple. Just expand a record and click or tap on the clone button
 and an edit dialogue pops up.
 
@@ -1092,7 +1067,15 @@ or tap on the new record to expand it.
 <img src="pam-clone-records-2.png" width="400" alt="clone-records-1">
 
 #### Method 3: JSON Approach
-This approach is not going to have any screenshots because it deals with
+
+The third method, creating a record by editing a JSON record file, is most
+useful if you are interested in creating records programmatically
+(perhaps a subset of accounts that shared with a small group of users
+that is automatically generated from a database). The example records
+and recipes example files that are available in the "Load" dialogue
+are a great place to start.
+
+This approach does not have any screenshots because it deals with
 _PAM_ internals and may change from time to time. Instead a set of instructions
 is provided that should allows you to figure it out pretty easily.
 

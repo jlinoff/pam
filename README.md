@@ -50,7 +50,7 @@ the on-line help is generated.
     * [Expanded View of a Record](#expanded-view-of-a-record)
   * [Topics](#topics)
   * [Fields](#fields)
-    * [Record Field Types](#record-field-types)
+    * [Field Types](#field-types)
     * [Custom Fields](#custom-fields)
   * [Password Fields](#password-fields)
     * [Cryptic Passwords](#cryptic-passwords)
@@ -547,7 +547,8 @@ the UI.
 
 ## Records
 
-Records are a key concept in _PAM_ as described in  [Reason 2: Record Model](#reason-2-record-model).
+Records composed of fields are a key concept in _PAM_ as described in
+[Reason 2: Record Model](#reason-2-record-model).
 
 This section talks about how records are presented in _PAM_ using an
 example with seven records that contain confidential information for
@@ -592,8 +593,23 @@ If you click or tap the clipboard icon,
 the field contents will be copied to the clipboard so that you can paste them into a login
 dialogue.
 
-> Note that the fields are completely customizable. You can have as many as you want.
-> Fields are added, modified and deleted by the "Edit" option.
+The fields _in_ records are completely customizable when you select the `"Edit"` option.
+
+Fields are added _to_ the record by selecting the `"New Record"` drop down menu as shown
+below for the `"Facebook"` record.
+
+<img src="www/help/pam-record-expanded-edit-facebook-new-field.png" width="400" alt="record-expanded">
+
+Fields are modified _in_ the record by editing them directly and they
+are deleted _from_ the record by clicking on the
+<img src='./trash.svg' height='32' width='32' /> icon.
+
+<img src="www/help/pam-record-expanded-edit-facebook.png" width="400" alt="record-expanded">
+
+The default record fields that appear in the in the `"New
+Field"` dropdown menu can also be changed. For information
+about how to do that see the [Custom Fields](#custom-fields)
+and [Field Types](#field-types) sections.
 
 In addition to the clipboard icon there is another icon that looks like
 an eye
@@ -604,6 +620,8 @@ an eye with a slash through it
 <img src="www/help/eye-slash.svg" height="32" width="32" alt="eye-slash"/>.
 By default all passwords are hidden so that they are not visible to
 casual observers. Click or tap it again to re-hide the password.
+Passwords are correctly copied to the clipboard at all times even
+when the password is hidden.
 
 In addition there are three buttons at the bottom
 "<img src='./trash.svg' height='32' width='32' />&nbsp;Delete" to delete the record,
@@ -655,7 +673,7 @@ field named "mobile" of type _phone_.  The name describes _how_ it is
 used whereas the type describes _what_ the input type is which, in
 turn, dictates what user inputs are acceptable.  A description of each
 built in record field type can be found in the
-[Record Field Types](#record-field-types)
+[Field Types](#field-types)
 section.
 
 The field _value_ is the unique value for the field in an individual
@@ -696,7 +714,7 @@ list in the preferences.
 
 <img src="www/help/pam-change-field-name.png" width="400" alt="change-field-name">
 
-### Record Field Types
+### Field Types
 
 Record field types define the type of each field that you define for a
 record. They are based on HTML _input_ element types except for the

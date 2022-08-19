@@ -593,24 +593,6 @@ If you click or tap the clipboard icon,
 the field contents will be copied to the clipboard so that you can paste them into a login
 dialogue.
 
-The fields _in_ records are completely customizable when you select the `"Edit"` option.
-
-Fields are added _to_ the record by selecting the `"New Record"` drop down menu as shown
-below for the `"Facebook"` record.
-
-<img src="www/help/pam-record-expanded-edit-facebook-new-field.png" width="400" alt="record-expanded">
-
-Fields are modified _in_ the record by editing them directly and they
-are deleted _from_ the record by clicking on the
-<img src='./trash.svg' height='32' width='32' /> icon.
-
-<img src="www/help/pam-record-expanded-edit-facebook.png" width="400" alt="record-expanded">
-
-The default record fields that appear in the in the `"New
-Field"` dropdown menu can also be changed. For information
-about how to do that see the [Custom Fields](#custom-fields)
-and [Field Types](#field-types) sections.
-
 In addition to the clipboard icon there is another icon that looks like
 an eye
 <img src="www/help/eye.svg" height="32" width="32" alt="eye"/>.
@@ -631,6 +613,22 @@ In addition there are three buttons at the bottom
 As you can see here.
 
 <img src="www/help/pam-record-expanded-fields2.png" width="400" alt="record-expanded">
+
+The fields _in_ records are completely customizable when you select the `"Edit"` option.
+
+Fields are added _to_ the record by selecting a new field from the
+`"New Record"` drop down menu as shown below for the `"Facebook"`
+record but these fields can _also_ be changed. 
+See the [Custom Fields](#custom-fields)
+and [Field Types](#field-types) sections for details.
+
+<img src="www/help/pam-record-expanded-edit-facebook-new-field.png" width="400" alt="record-expanded">
+
+Fields are modified _in_ the record by editing them directly and they
+are deleted _from_ the record by clicking on the
+<img src='./trash.svg' height='32' width='32' /> icon.
+
+<img src="www/help/pam-record-expanded-edit-facebook.png" width="400" alt="record-expanded">
 
 ## Topics
 

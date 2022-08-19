@@ -595,7 +595,7 @@ dialogue.
 
 In addition to the clipboard icon there is another icon that looks like
 an eye
-<img src="www/help/eye.svg" height="32" width="32" alt="eye"/>.
+<img src="www/help/eye.svg" height="32" width="32" alt="eye"/>
 that shows up for password field. If you click or tap it, the
 password will be shown in plaintext and the icon will change to
 an eye with a slash through it

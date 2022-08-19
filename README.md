@@ -122,7 +122,7 @@ the on-line help is generated.
       * [Edit an Existing Record](#edit an-existing-record)
       * [Delete an Existing Record](#delete-an-existing-record)
       * [Clone an Existing Record](#clone-an-existing-record)
-    * [Shared Credentials for a Small Group](#shared-credentials-for-a-small-group)
+    * [Share Credentials for a Small Group](#share-credentials-for-a-small-group)
     * [Recipes](#recipes)
     * [Books](#books)
   * [Developer Notes](#developer-notes)
@@ -618,7 +618,7 @@ The fields _in_ records are completely customizable when you select the `"Edit"`
 
 Fields are added _to_ the record by selecting a new field from the
 `"New Record"` drop down menu as shown below for the `"Facebook"`
-record but these fields can _also_ be changed. 
+record but these fields can _also_ be changed.
 See the [Custom Fields](#custom-fields)
 and [Field Types](#field-types) sections for details.
 
@@ -2179,7 +2179,7 @@ If you want to disable the copying of field data turn off the
 having to delete each old field value before typing in the new
 field value.
 
-### Shared Credentials for a Small Group
+### Share Credentials for a Small Group
 This scenario assumes that a small group of trusted people wants to
 share a common file of account records with credentials that can only
 be decrypted using a single shared password that is only known to the
@@ -2209,6 +2209,10 @@ Here are the high level steps necessary to share a _PAM_ file.
 1. Save the file to the mounted volume with a password.
 1. Communicate the location of the file and the password
    to the members of the group in a secure way.
+
+Another approach is to create the encrypted _PAM_ file and
+store it on a publicly accessible web site. Users can then
+use option #3 in [Load File](#load-file) dialogue to load it.
 
 ### Recipes
 This is a bit of contrived example because you could easily keep all
@@ -2267,6 +2271,9 @@ It uses
 [bootstrap-5](https://getbootstrap.com/docs/5.0/getting-started/introduction/)
 to make it work better in mobile browsers.
 
+I wrote my own little library to provide a limited functional interface to make
+coding HTML DOM constructs easier. See the `www/js/lib.js` source code module.
+
 ### License
 _PAM_ is free and open-source (FOSS) software that licensed under the
 MIT Licensing terms.
@@ -2280,9 +2287,9 @@ copy and use the source code.
 Here are the steps to build PAM.
 
 1. `git clone https://github.com/jlinoff/pam.git`
-1. `make init`
+1. `make` or `make init`
    * This installs the python test infrastructure
-     including pylenium as well as bootstrap.
+     including pylenium as well as bootstrap 5.
    * It also creates the `www/js/version.js` file
      and the help.
 1. `make run`
@@ -2313,8 +2320,7 @@ Here are the steps.
 1. Run `make web` to create `pam-www.tar` which contains the app in `pam/www`.
 1. Untar the `pam-www.tar` on your site.
 
-This pre-supposes that you have clone the pam project
-and have made modifications.
+This pre-supposes that you have cloned the pam project from github.
 
 ### History
 This is one of the several times that I have written a password

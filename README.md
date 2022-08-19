@@ -646,7 +646,7 @@ your recipe records (topic: _"recipes"_ or _"stuff to cook"_) and an
 Or, you could completely disregard organizing by topics and put all of
 your records into a single file like "`myrecords.txt`".
 
-Note the use of the "`.txt`" extension in the previous paragraph.
+Note the use of the "`.txt`" extension in the previous paragraphs.
 Although the "`.pam`" file extension is supported for record files
 and it works on laptops. It does not always work on mobile devices
 so a records file named "`myrecords.pam`" might not be readable

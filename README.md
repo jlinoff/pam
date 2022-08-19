@@ -209,13 +209,13 @@ the many commercially available password managers?
 
 That is an excellent question. The answer is that you _can_ and, if
 you are already using an Excel spreadsheet or a text file editor or a sheet
-of paper or a password management service or anything other method
-that works well for you, _you should_.
+of paper or a password management service or any other method
+that works for you, _you should_.
 
 #### Reason 2: Too Complex
 Even if you do not already have a method for managing passwords _PAM_
 may not be the right choice. _PAM_ requires that you understand a bit
-about HTML input and textarea elements which may be confusing.  Also
+about HTML input and textarea elements which may be confusing. Also
 the _PAM_ user interface (UI) and record data model may be confusing
 or hard to understand and use because I am not a UI programmer.
 

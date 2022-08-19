@@ -176,10 +176,9 @@ You can even include images like this.
 
 <img src="www/help/pam-ice-cream-sundae-open.png" width="400" alt="ice-cream-sundae-example">
 
-There a lots of other features like searching/filtering, memorable
-password generation, customized records fields and preferences as well
-as techniques for securely sharing records and embedding images that
-are described in the documentation below.
+There are other features like memorable password generation and
+customized record fields that are described in the documentation
+below.
 
 Please note that this is not the first tool I have written to manage
 passwords but it is meant to be the last. If you are interested in
@@ -190,7 +189,7 @@ _[Reasons to consider using PAM](#reasons-to-consider-using-pam)_.
 If you are interested in the genesis of _PAM_ and the stories of its
 predecessors, see the [History](#history) section.
 
-I hope that you find useful in some way.
+I hope that you also find useful in some way.
 
 ## Overview
 _PAM_ is a pretty simple application. It is basically a record editor
@@ -2425,8 +2424,9 @@ from multiple devices working as well as I liked so I stuck with
 javascript.
 
 I sincerely hope that there is something here that others can learn
-from and have as much fun as I have had but, if not, it doesn't
-matter, I have really enjoyed playing around with this over the
-years. The journey was worth it.
+from this.
+
+I have really enjoyed playing around with password management over the
+years. The journey has been great fun.
 
 Enjoy.

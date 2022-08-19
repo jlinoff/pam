@@ -1978,7 +1978,7 @@ If you leave the browser unattended without locking your screen after
 you have loaded your record data, someone can sit down and see the
 records because they are impersonating you _after you have logged in_.
 
-The best way to mitigate this attach is to always lock your screen when
+The best way to mitigate this attack is to always lock your screen when
 you leave the computer unattended.
 
 ### Website Spoofing
@@ -1993,7 +1993,7 @@ If you are concerned about this, you can always download, build and
 run _PAM_ from your own trusted site.
 
 ### Dictionary and Brute Force Password Attacks
-In general a brute force attack is any attach that uses trial and error
+In general a brute force attack is any attack that uses trial and error
 to crack passwords.
 
 A dictionary attack is a brute force password attack that tries

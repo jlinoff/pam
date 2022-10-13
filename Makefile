@@ -1,3 +1,12 @@
+# BEWARE!!
+# This makefile is setup to run PAM builds and tests on MacOS with
+# the setup described here: https://github.com/jlinoff/my-mac-setup.
+#
+# To see the available targets: make help
+#
+# Typical usage:
+#    make
+#    make test
 #
 # Make the local bootstrap environment in the local www directory.
 #

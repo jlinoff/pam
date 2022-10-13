@@ -4,7 +4,7 @@
 DST  ?= www
 PORT ?= 8081
 FAVICON_SVG ?= bootstrap-icons/icons/box.svg
-BS_VER ?= 5.1.3
+BS_VER ?= 5.2.2
 BS_DIST ?= bootstrap-$(BS_VER)-dist
 export PIPENV_VENV_IN_PROJECT := True
 
@@ -12,9 +12,9 @@ export PIPENV_VENV_IN_PROJECT := True
 define hdr
         @printf '\033[35;1m\n'
         @printf '=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=\n'
-	@printf '=-=-= Target: %s %s\n' "$1"
-        @printf '=-=-= Date: %s %s\n' "$(shell date)"
-        @printf '=-=-= Directory: %s %s\n' "$$(pwd)"
+	@printf '=-=-= Target: %s\n' "$1"
+        @printf '=-=-= Date: %s\n' "$(shell date)"
+        @printf '=-=-= Directory: %s\n' "$$(pwd)"
         @printf '=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-='
         @printf '\033[0m\n'
 endef
@@ -37,7 +37,7 @@ spell-check:  ## Spell check the README.md file using aspell.
 .PHONY: init
 init: .init bs app-version app-help  ## very basic setup for python3 and jshint
 
-.init: Pipfile
+.init: .venv/pylenium.json
 	$(call hdr,"$@-npm")
 	npm install -g jshint
 	@touch $@
@@ -48,7 +48,7 @@ init: .init bs app-version app-help  ## very basic setup for python3 and jshint
 # to fix
 #   ERROR:: --system is intended to be used for pre-existing Pipfile installation
 #   $ rm -rf ~/.local/share/virtualenvs/*
-Pipfile:
+.venv/pylenium.json:
 	$(call hdr,"$@-python")
 	-rm -rf .venv
 	pipenv install --python /usr/local/opt/python@3.10/bin/python3
@@ -146,10 +146,12 @@ test: init | tests/test_pam.py ## Run local tests
 .PHONY: app-help
 app-help: www/help/index.html  ## generate the pam help
 
+# requires sed 4.8 or later
 www/help/index.html: Makefile README.md www/help/index.css \
 		$(shell ls -1 www/help/*png) \
 		$(shell ls -1 www/help/*svg)
 	$(call hdr,"app-help")
+	sed --version
 	cp README.md tmp.md
 	sed -i 's@<img src="www/help/@<img src="./@' tmp.md
 	sed -i "s/__VERSION__/$$(cat VERSION | tr -d ' \n')/g" tmp.md
@@ -160,7 +162,7 @@ www/help/index.html: Makefile README.md www/help/index.css \
 	sed -i "s/<!-- PP: //g" tmp.md
 	sed -i "s/ PP: -->//g" tmp.md
 	grep -v '^# myVault' tmp.md > tmp1.md
-	grep -v '\[\!\[Releases\](' tmp1.md > tmp.md
+	grep -v '\[!\[Releases\](' tmp1.md > tmp.md
 	pandoc -s --css index.css -s --metadata title='PAM - help' --html-q-tags -o $@ tmp.md
 	rm -f tmp*.md
 

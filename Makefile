@@ -1,6 +1,7 @@
 #
 # Make the local bootstrap environment in the local www directory.
 #
+SHELL := bash
 DST  ?= www
 PORT ?= 8081
 FAVICON_SVG ?= bootstrap-icons/icons/box.svg
@@ -141,7 +142,9 @@ run: init  ## Run the server on port PORT
 test: init | tests/test_pam.py ## Run local tests
 	$(call hdr,"$@")
 	pipenv run python3 --version
-	pipenv run python3 -m pytest tests/test_pam.py
+	( cd www && pipenv run python -m http.server $(PORT) ) &
+	pipenv run python3 -m pytest --options='headless, incognito' tests/test_pam.py
+	kill -9 $$(lsof -i :$(PORT))
 
 .PHONY: app-help
 app-help: www/help/index.html  ## generate the pam help

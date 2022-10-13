@@ -138,13 +138,21 @@ run: init  ## Run the server on port PORT
 	$(call hdr,'$@ - http://localhost:$(PORT)')
 	cd www && pwd && pipenv run python -m http.server $(PORT)
 
+# Run the local tests
+# kill any servers already running on PORT
+# start a server in the background, give it a few seconds to get started
+# run the tests
+# kill the background server so it doesn't run forever in the background
+# example usage: make test PORT=8088
 .PHONY: test
 test: init | tests/test_pam.py ## Run local tests
 	$(call hdr,"$@")
 	pipenv run python3 --version
+	-lsof -i :$(PORT) && kill -9 $$(lsof -F pcuftDsin -i :$(PORT) | grep ^p | sed -e 's/^p//')
 	( cd www && pipenv run python -m http.server $(PORT) ) &
+	sleep 2
 	pipenv run python3 -m pytest --options='headless, incognito' tests/test_pam.py
-	kill -9 $$(lsof -i :$(PORT))
+	-lsof -i :$(PORT) && kill -9 $$(lsof -F pcuftDsin -i :$(PORT) | grep ^p | sed -e 's/^p//')
 
 .PHONY: app-help
 app-help: www/help/index.html  ## generate the pam help

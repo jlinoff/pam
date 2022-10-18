@@ -17,6 +17,7 @@ FAVICON_SVG ?= bootstrap-icons/icons/box.svg
 BS_VER ?= 5.2.2
 BS_DIST ?= bootstrap-$(BS_VER)-dist
 export PIPENV_VENV_IN_PROJECT := True
+PYTHON3_PATH ?= python3
 
 # Macros
 define hdr
@@ -58,15 +59,21 @@ init: .init bs app-version app-help  ## very basic setup for python3 and jshint
 # to fix
 #   ERROR:: --system is intended to be used for pre-existing Pipfile installation
 #   $ rm -rf ~/.local/share/virtualenvs/*
+
+# The following setup works on MacOS and Ubuntu 20.04.
+# For some reason pipenv install did not work reliably on Ubuntu.
+# pytest-reportportal~=1.0 and webdriver_manager==3.7.0
+# are required for pylenium compatibility.
 .venv/pylenium.json:
-	$(call hdr,"$@-python")
 	-rm -rf .venv
-	pipenv install --python /usr/local/opt/python@3.10/bin/python3
-	pipenv install pylint mypy
-	pipenv install pytest
-	pipenv install pytest-reportportal~=1.0
-	pipenv install webdriver_manager==3.7.0
-	pipenv install pyleniumio
+	pipenv install --python $(PYTHON3_PATH)
+	pipenv run python3 -m pip install -U pip
+	pipenv run python3 -m pip install pylint
+	pipenv run python3 -m pip install mypy
+	pipenv run python3 -m pip install pytest
+	pipenv run python3 -m pip install pytest-reportportal~=1.0
+	pipenv run python3 -m pip install webdriver_manager==3.7.0
+	pipenv run python3 -m pip install pyleniumio
 	pipenv run pylenium init
 
 # to copy to icloud:
@@ -147,21 +154,24 @@ run: init  ## Run the server on port PORT
 	$(call hdr,'$@ - http://localhost:$(PORT)')
 	cd www && pwd && pipenv run python -m http.server $(PORT)
 
-# Run the local tests
+# Run the local tests - verified on MacOS and Ubuntu-20.04
 # kill any servers already running on PORT
 # start a server in the background, give it a few seconds to get started
 # run the tests
 # kill the background server so it doesn't run forever in the background
 # example usage: make test PORT=8088
+KILL_SERVER := lsof -i :$(PORT) && kill -9 $$(lsof -F pcuftDsin -i :$(PORT) | grep ^p | sed -e 's/^p//')
 .PHONY: test
 test: init | tests/test_pam.py ## Run local tests
 	$(call hdr,"$@")
 	pipenv run python3 --version
-	-lsof -i :$(PORT) && kill -9 $$(lsof -F pcuftDsin -i :$(PORT) | grep ^p | sed -e 's/^p//')
+	lsof -v
+	-$(KILL_SERVER)
 	( cd www && pipenv run python -m http.server $(PORT) ) &
 	sleep 2
-	pipenv run python3 -m pytest --options='headless, incognito' tests/test_pam.py
-	-lsof -i :$(PORT) && kill -9 $$(lsof -F pcuftDsin -i :$(PORT) | grep ^p | sed -e 's/^p//')
+	lsof -i :$(PORT)
+	pipenv run python3 -m pytest --options='headless, incognito, no-sandbox, disable-extensions' tests/test_pam.py
+	$(KILL_SERVER)
 
 .PHONY: app-help
 app-help: www/help/index.html  ## generate the pam help

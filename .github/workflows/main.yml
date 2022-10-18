@@ -3,6 +3,9 @@ name: Build and Test PAM
 run-name: ${{ github.actor }} is building PAM
 
 on:
+  push:
+    branches:
+      - main
   workflow_dispatch:
 
 jobs:

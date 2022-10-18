@@ -44,9 +44,13 @@ jobs:
           sudo unzip -o /tmp/chromedriver_linux64.zip -d /usr/bin
           sudo apt-get --only-upgrade install google-chrome-stable
           chromedriver --version
+      - name: checkout-pam
+        uses: actions/checkout@v2
+        with:
+          repository: jlinoff/pam
+          path: './pam'
       - name: build-test
         run: |
-          git checkout https://github.com/jlinoff/pam.git
           cd pam
           make
           make test

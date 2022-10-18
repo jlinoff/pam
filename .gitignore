@@ -8,6 +8,7 @@ bootstrap-*
 www/help/index.html
 www/js/version.js
 *~
+*.deb
 .bs
 .init
 pylenium.json

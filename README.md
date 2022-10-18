@@ -2273,13 +2273,15 @@ It uses
 to make it work better in mobile browsers.
 
 It uses [pylenium](https://docs.pylenium.io/)
-to test web app which means the github actions file
+to test the web app which means the github actions file
 [main.yml](https://github.com/jlinoff/pam/blob/main/.github/workflows/main.yml)
 is pretty interesting because it demonstrates to how to build a complete
-web test environment using python on an ubuntu VM with a local web server.
+web test environment using python on an Ubuntu:20.04 VM with a local web server.
 
-I wrote my own little library to provide a limited functional interface to make
-coding HTML DOM constructs easier. See the `www/js/lib.js` source code module.
+Not only that but I wrote my own little, lightweight javascript
+library to provide a limited functional interface to make coding HTML
+DOM constructs easier. See the
+[www/js/lib.js](www/js/lib.js) source code module.
 
 ### License
 _PAM_ is free and open-source (FOSS) software that licensed under the

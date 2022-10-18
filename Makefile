@@ -162,7 +162,7 @@ run: init  ## Run the server on port PORT
 # example usage: make test PORT=8088
 KILL_SERVER := lsof -i :$(PORT) && kill -9 $$(lsof -F pcuftDsin -i :$(PORT) | grep ^p | sed -e 's/^p//')
 .PHONY: test
-test: init | tests/test_pam.py ## Run local tests
+test: init lint | tests/test_pam.py ## Run local tests
 	$(call hdr,"$@")
 	pipenv run python3 --version
 	lsof -v
@@ -227,6 +227,14 @@ web: app-help app-version  ## create a web release in pam-www.tar
 	find pam/www -type f -name '*~' -delete
 	tar Jcf pam-www.tar pam
 
+# could replace
+#   awk -F'##' '{printf("%-16s %s\n",$1,$2)}'
+# with
+#   column -t -s '##'
+# the commands below if a recent version column was easily available
+# on all interesting platforms.
+# unfortunately ubuntu only provides the ancient BSD version.
+# ref: https://bugs.launchpad.net/ubuntu/+source/util-linux/+bug/1705437
 .PHONY: help
 help:  ## this help message
 	$(call hdr,"$@")
@@ -235,7 +243,7 @@ help:  ## this help message
 		grep -E -v '^ *#' | \
 	        grep -E -v "egrep|sort|sed|MAKEFILE" | \
 		sed -e 's/: .*##/##/' -e 's/^[^:#]*://' | \
-		column -t -s '##' | \
+		awk -F'##' '{printf("%-16s %s\n",$$1,$$2)}' | \
 		sort -f | \
 		sed -e 's@^@   @'
 	@printf "\n\033[35;1m%s\n" "Variables"

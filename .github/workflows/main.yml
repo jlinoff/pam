@@ -1,0 +1,54 @@
+name: Build and Test PAM
+
+run-name: ${{ github.actor }} is building PAM
+
+on:
+  workflow_dispatch:
+
+jobs:
+  pam-build-test:
+    runs-on: ubuntu-20.04
+    env:
+      DEBIAN_FRONTEND: noninteractive
+      SHELL: /usr/bin/bash
+      PIPENV_VENV_IN_PROJECT: 1
+    steps:
+      - name: required-packages
+        run: |
+          sudo apt update
+          sudo apt upgrade -y
+          sudo apt install -y apt-utils
+          sudo apt install -y tzdata
+          sudo apt install -y software-properties-common
+          sudo apt install -y build-essential
+          sudo apt install -y pipenv
+          sudo apt install -y vim
+          sudo apt install -y tree
+          sudo apt install -y git
+          sudo apt install -y npm
+          sudo apt install -y pandoc
+          sudo apt install -y aspell
+          sudo apt install -y curl
+          sudo apt install -y wget
+          sudo apt install -y zip
+          sudo apt install -y lsof
+      - name: google-chrome
+        run: |
+          wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
+          sudo apt install -y ./keep/google-chrome-stable_current_amd64.deb
+          google-chrome --version
+      - name: chromedriver
+        run: |
+          VERSION=$(curl -s "https://chromedriver.storage.googleapis.com/LATEST_RELEASE")
+          wget -qP /tmp/ "https://chromedriver.storage.googleapis.com/${VERSION}/chromedriver_linux64.zip"
+          sudo unzip -o /tmp/chromedriver_linux64.zip -d /usr/bin
+          sudo apt-get --only-upgrade install google-chrome-stable
+          install google-chrome-stable
+      - name: checkout pam
+        uses: actions/checkout@v3
+        with:
+          repository: jlinoff/pam.git
+      - name: build
+        run: make
+      - name: test
+        run: make test

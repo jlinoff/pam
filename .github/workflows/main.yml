@@ -15,27 +15,27 @@ jobs:
     steps:
       - name: required-packages
         run: |
-          sudo apt update
-          sudo apt upgrade -y
-          sudo apt install -y apt-utils
-          sudo apt install -y tzdata
-          sudo apt install -y software-properties-common
-          sudo apt install -y build-essential
-          sudo apt install -y pipenv
-          sudo apt install -y vim
-          sudo apt install -y tree
-          sudo apt install -y git
-          sudo apt install -y npm
-          sudo apt install -y pandoc
-          sudo apt install -y aspell
-          sudo apt install -y curl
-          sudo apt install -y wget
-          sudo apt install -y zip
-          sudo apt install -y lsof
+          sudo apt-get update
+          sudo apt-get upgrade -y
+          sudo apt-get install -y apt-utils
+          sudo apt-get install -y tzdata
+          sudo apt-get install -y software-properties-common
+          sudo apt-get install -y build-essential
+          sudo apt-get install -y pipenv
+          sudo apt-get install -y vim
+          sudo apt-get install -y tree
+          sudo apt-get install -y git
+          sudo apt-get install -y npm
+          sudo apt-get install -y pandoc
+          sudo apt-get install -y aspell
+          sudo apt-get install -y curl
+          sudo apt-get install -y wget
+          sudo apt-get install -y zip
+          sudo apt-get install -y lsof
       - name: google-chrome
         run: |
           wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
-          sudo apt install -y ./keep/google-chrome-stable_current_amd64.deb
+          sudo apt-get install -y ./google-chrome-stable_current_amd64.deb
           google-chrome --version
       - name: chromedriver
         run: |

@@ -54,3 +54,5 @@ jobs:
           cd pam
           make
           make test
+          make web
+          ls -l pam-www.tar

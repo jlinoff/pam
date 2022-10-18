@@ -52,6 +52,7 @@ jobs:
       - name: build-test
         run: |
           cd pam
+          make help
           make
           make test
           make web

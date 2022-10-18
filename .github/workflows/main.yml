@@ -43,7 +43,7 @@ jobs:
           wget -qP /tmp/ "https://chromedriver.storage.googleapis.com/${VERSION}/chromedriver_linux64.zip"
           sudo unzip -o /tmp/chromedriver_linux64.zip -d /usr/bin
           sudo apt-get --only-upgrade install google-chrome-stable
-          install google-chrome-stable
+          chromedriver --version
       - name: checkout pam
         uses: actions/checkout@v3
         with:

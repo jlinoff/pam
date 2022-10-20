@@ -58,5 +58,7 @@ export SHELL=/usr/bin/bash
 export PIPENV_VENV_IN_PROJECT=1
 cd /Users/jlinoff/work/pam
 rm -rf Pipfile .venv/
+make help
 make
 make test
+make web

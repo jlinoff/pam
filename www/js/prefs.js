@@ -33,6 +33,7 @@ export function initPrefs() {
     window.prefs = {
         // Use the '.txt' extension because the '.pam' extension
         // does not work on some mobile devices.
+        enablePrinting: false,
         fileName: 'example.txt',
         filePass: '',
         filePassCache: 'local',  // options: none, global, local, session
@@ -126,6 +127,7 @@ export function menuPrefsDlg() {
         mkFieldset('Miscellaneous').xAppend(
             prefStatusMsgDurationMS(labelClasses, inputClasses),
             prefLogStatusToConsole(labelClasses, inputClasses),
+            prefEnablePrinting(labelClasses, inputClasses),
             prefClearBeforeLoad(labelClasses, inputClasses),
             prefLoadDupStrategy(labelClasses, inputClasses),
             prefCloneFieldValues(labelClasses, inputClasses),
@@ -300,18 +302,18 @@ function prefStatusMsgDurationMS(labelClasses, inputClasses) {
 
 function prefLogStatusToConsole(labelClasses, inputClasses) {
     return mkPrefsCheckBox(labelClasses,
-                      inputClasses,
-                      'logStatusToConsole',
-                      'Log Status to the Console',
-                      'duplicate status to the console')
+                           inputClasses,
+                           'logStatusToConsole',
+                           'Log Status to the Console',
+                           'duplicate status to the console')
 }
 
 function prefClearBeforeLoad(labelClasses, inputClasses) {
     return mkPrefsCheckBox(labelClasses,
-                      inputClasses,
-                      'clearBeforeLoad',
-                      'Clear Records On Load',
-                      'clear records before loading')
+                           inputClasses,
+                           'clearBeforeLoad',
+                           'Clear Records On Load',
+                           'clear records before loading')
 }
 
 function prefLoadDupStrategy(labelClasses, inputClasses) {
@@ -367,25 +369,33 @@ function prefLoadDupStrategy(labelClasses, inputClasses) {
 
 function prefCloneFieldValues(labelClasses, inputClasses) {
     return mkPrefsCheckBox(labelClasses,
-                      inputClasses,
-                      'cloneFieldValues',
-                      'Clone Field Values when Cloning Records',
-                      'clone field values')
+                           inputClasses,
+                           'cloneFieldValues',
+                           'Clone Field Values when Cloning Records',
+                           'clone field values')
 }
 function prefRequireRecordFields(labelClasses, inputClasses) {
     return mkPrefsCheckBox(labelClasses,
-                      inputClasses,
-                      'requireRecordFields',
-                      'Require Record Fields',
-                      'require at least one field in a record')
+                           inputClasses,
+                           'requireRecordFields',
+                           'Require Record Fields',
+                           'require at least one field in a record')
 }
 
 function prefEditableFieldName(labelClasses, inputClasses) {
     return mkPrefsCheckBox(labelClasses,
-                      inputClasses,
-                      'editableFieldName',
-                      'Enable Editable Field Name',
-                      'allow each field name to be edited')
+                           inputClasses,
+                           'editableFieldName',
+                           'Enable Editable Field Name',
+                           'allow each field name to be edited')
+}
+
+function prefEnablePrinting(labelClasses, inputClasses) {
+    return mkPrefsCheckBox(labelClasses,
+                           inputClasses,
+                           'enablePrinting',
+                           'Enable Printing (Ctrl-P)',
+                           'enable printing using Ctrl-P')
 }
 
 function prefFilePassCacheStrategy(labelClasses, inputClasses) {
@@ -440,34 +450,34 @@ function prefFilePassCacheStrategy(labelClasses, inputClasses) {
 
 function prefSearchCaseInsensitive(labelClasses, inputClasses) {
     return mkPrefsCheckBox(labelClasses,
-                      inputClasses,
-                      'searchCaseInsensitive',
-                      'Case Insensitive Searches',
-                      'do case insensitiv searches')
+                           inputClasses,
+                           'searchCaseInsensitive',
+                           'Case Insensitive Searches',
+                           'do case insensitiv searches')
 }
 
 function prefSearchRecordTitles(labelClasses, inputClasses) {
     return mkPrefsCheckBox(labelClasses,
-                      inputClasses,
-                      'search record titles',
-                      'Search Record Titles',
-                      'searchRecordTitles')
+                           inputClasses,
+                           'search record titles',
+                           'Search Record Titles',
+                           'searchRecordTitles')
 }
 
 function prefSearchRecordFieldNames(labelClasses, inputClasses) {
     return mkPrefsCheckBox(labelClasses,
-                      inputClasses,
-                      'searchRecordFieldNames',
-                      'Search Record Field Names',
-                      'search record field names')
+                           inputClasses,
+                           'searchRecordFieldNames',
+                           'Search Record Field Names',
+                           'search record field names')
 }
 
 function prefSearchRecordFieldValues(labelClasses, inputClasses) {
     return mkPrefsCheckBox(labelClasses,
-                      inputClasses,
-                      'searchRecordFieldValues',
-                      'Search Record Field Values',
-                      'search record field values')
+                           inputClasses,
+                           'searchRecordFieldValues',
+                           'Search Record Field Values',
+                           'search record field values')
 }
 
 function prefPasswordRangeMinLength(labelClasses, inputClasses) {

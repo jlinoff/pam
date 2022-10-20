@@ -10,6 +10,7 @@ import { initPrefs } from './prefs.js'
 import { mkMenu } from './menu.js'
 import { mkSearchInputElement, searchRecords } from './search.js'
 import { refreshAbout } from './about.js'
+import { printRecords } from './print.js'
 
 /**
  * Actions to take when the window is loaded.
@@ -26,6 +27,7 @@ window.onresize = () => { refreshAbout() }
 window.addEventListener('beforeunload', () => {/*console.log('beforeunload')*/})
 window.addEventListener('unload', () => {/*console.log('unload')*/})
 window.addEventListener('load', () => {/*console.log('load')*/})
+window.addEventListener('keyup', (event) => { printRecords(event) })
 
 /**
  * Main entry point for the application.

@@ -13,7 +13,9 @@ function mkAbout() {
         .xId('about')
         .xAppendChild(
             xmk('p').xInnerHTML('PAM &copy; 2022'),
-            xmk('p').xInnerHTML(`Version ${VERSION} (${COMMIT_BRANCH})`),
+            xmk('p').xInnerHTML(`Version ${VERSION}`),
+            xmk('p').xInnerHTML(`Branch ${COMMIT_BRANCH}`),
+            xmk('p').xInnerHTML(`Commit ${COMMIT_DATE} (${COMMIT_ID})`),
             xmk('p').xInnerHTML(`Bootstrap Version ${BOOTSTRAP_VERSION}`),
             xmk('p').xInnerHTML('Personal Accounts Manager'),
             xmk('p').xInnerHTML('Written by Joe Linoff'),

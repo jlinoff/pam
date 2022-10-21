@@ -11,7 +11,9 @@ import { encrypt } from './crypt.js'
 export function menuSaveDlg() {
     let body = xmk('span')
         .xAppendChild(
-            xmk('p').xInnerHTML('Allow the use of a password to encrypt the file contents.'),
+            xmk('p').xInnerHTML('Enter a password to encrypt the record contents. \
+You must use the same password to decrypt when loading.'),
+            xmk('p').xInnerHTML('Enter "clipboard" or "copy" as the filename paste to the clipboard.'),
             xmk('form').xClass('container').xAppend(
                 // save file name
                 xmk('div').xClass('row').xAppend(
@@ -159,6 +161,25 @@ function saveCallback(text, filename) {
         return
     }
 
+    // hack to handle special case where mobile browsers just don't work.
+    if ( filename === 'clipboard' || filename == "copy" ) {
+        if (navigator.clipboard) {
+            navigator.clipboard.writeText(text)
+                .then( (value) => {
+                    // succeeded
+                    statusBlip(`copied ${text.length} bytes to clipboard`)
+                })
+                .catch( (error) => {
+                    // failed
+                    const msg = `internal error:\nnavigator.clipboard.writeText() error:\n${error}`
+                    statusBlip(msg)
+                    alert(msg)
+                })
+        }
+        statusBlip(`Copied ${text.length} bytes to the clipboard`)
+        return
+    }
+
     // https://developer.mozilla.org/en-US/docs/Web/API/File_System_Access_API
     let options = {suggestedName: filename}
     window.showSaveFilePicker(options)
@@ -169,9 +190,17 @@ function saveCallback(text, filename) {
                     writableStream.write(text)
                     writableStream.close()
                 })
-                .catch( (error) => { alert(error) })
+                .catch( (error) => {
+                    const msg = `internal error:\nnavigator.clipboard.writeText() exception:\n${error}`
+                    statusBlip(msg)
+                    alert(msg)
+                })
         })
-        .catch((error) => { alert(error) })
+        .catch( (error) => {
+            const msg = `internal error:\nnavigator.clipboard.writeText() exception:\n${error}`
+            statusBlip(msg)
+            alert(msg)
+        })
     /*
       // old approach using a link.
     let check = xmk('a')

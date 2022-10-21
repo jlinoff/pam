@@ -215,6 +215,8 @@ www/js/version.js: Makefile $(SRC_FILES)
 		xargs -I{} echo "export const COMMIT_ID = '{}'" ) >> $@
 	echo $$(git show -s --format=%ci $$(git rev-parse --short HEAD | tr -d ' \n')) | \
 		xargs -I{} echo "export const COMMIT_DATE = '{}'" >>$@
+	echo $$(git rev-parse --abbrev-ref HEAD) | \
+		xargs -I{} echo "export const COMMIT_BRANCH = '{}'" >>$@
 	@cat -n $@
 
 .PHONY: web

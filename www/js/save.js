@@ -159,6 +159,21 @@ function saveCallback(text, filename) {
         return
     }
 
+    // https://developer.mozilla.org/en-US/docs/Web/API/File_System_Access_API
+    let options = {suggestedName: filename}
+    window.showSaveFilePicker(options)
+        .then( (fileHandle) => {
+            console.log(fileHandle)
+            fileHandle.createWritable()
+                .then( (writableStream) => {
+                    writableStream.write(text)
+                    writableStream.close()
+                })
+                .catch( (error) => { alert(error) })
+        })
+        .catch((error) => { alert(error) })
+    /*
+      // old approach using a link.
     let check = xmk('a')
     console.log(check)
     if (check.download === undefined) {
@@ -176,5 +191,6 @@ function saveCallback(text, filename) {
         })
     document.body.appendChild(a)
     a.click()
-    a.remove()
+    setTimeout( () => {a.remove()}, 2000)
+    */
 }

@@ -85,7 +85,9 @@ def test_basic_menu_options(py):
     #  8 save file
     #  9 divider
     # 10 help
-    assert len(children) == 10
+    # 11 divider
+    # 12 print
+    assert len(children) == 12
 
     # Menu option 1: About
     li = children[0]
@@ -190,7 +192,7 @@ def test_prefs(py):
     assert prefs_dlg.tag_name() == 'div'
     buttons = prefs_dlg.find('button')
     # 1 close button plus the buttons for the field delete/edit/add
-    assert len(buttons) == 50
+    assert len(buttons) == 51
     close_button = None
     for button in buttons:
         if 'Close' in button.get_property('innerHTML'):
@@ -214,7 +216,7 @@ def test_record_create(py):
 
     # random check
     children = dropdown.find('li')
-    assert len(children) == 9
+    assert len(children) == 10
     span = button.get('span')
     ei(span)
     assert span.tag_name() == 'span'

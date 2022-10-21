@@ -3,6 +3,7 @@ import { xmk, xget, xgetn, enableFunctionChaining } from './lib.js'
 import { convertDictKeys2List, icon, mkPopupModalDlgButton, mkPopupModalDlg, sortDictByKey } from './utils.js'
 import { updateRecordFieldTypes }  from './field.js'
 import { refreshAbout } from './about.js'
+import { enablePrinting } from './print.js'
 
 // These are the input types that the tool knows how to handle.
 export const VALID_FIELD_TYPES = {
@@ -253,6 +254,7 @@ function savePrefs(el) {
     let sorted = sortDictByKey(window.prefs.predefinedRecordFields)
     window.prefs.predefinedRecordFields = sorted
     refreshAbout()
+    enablePrinting()
     return true
 }
 
@@ -394,8 +396,8 @@ function prefEnablePrinting(labelClasses, inputClasses) {
     return mkPrefsCheckBox(labelClasses,
                            inputClasses,
                            'enablePrinting',
-                           'Enable Printing (Ctrl-P)',
-                           'enable printing using Ctrl-P')
+                           'Enable Printing',
+                           'enable printing')
 }
 
 function prefFilePassCacheStrategy(labelClasses, inputClasses) {

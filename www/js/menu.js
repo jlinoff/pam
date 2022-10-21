@@ -8,11 +8,11 @@ import { checkRecordEditDlg,
          insertRecord,
          saveRecordEditDlg } from './record.js'
 import { mkRecordEditDlg } from './field.js'
-
 import { menuAboutDlg } from './about.js'
 import { menuPrefsDlg } from './prefs.js'
 import { menuSaveDlg } from './save.js'
 import { menuLoadDlg } from './load.js'
+import { printRecords } from './print.js'
 
 function menuEntryDivider() {
     return xmk('li').xAppend(xmk('hr').xClass('dropdown-divider'))
@@ -142,7 +142,7 @@ export function mkMenu() {
                               'bi-file-arrow-down-fill',
                               'save records to a file'),
                     menuEntryDivider(),
-                    xmk('button')
+                    xmk('button') // Help
                         .xAttrs({'type': 'button'})
                         .xClass('dropdown-item')
                         .xAppend(
@@ -150,7 +150,19 @@ export function mkMenu() {
                             xmk('span').xInnerHTML('&nbsp;Help'))
                         .xAddEventListener('click', (event) => {
                             window.open(window.prefs.helpLink, '_blank')
-                        })
+                        }),
+                    xmk('li')
+                        .xAppend(xmk('hr')
+                                 .xClass('dropdown-divider', 'x-print')),
+                    xmk('button') // Print
+                        .xAttrs({'type': 'button'})
+                        .xClass('dropdown-item', 'x-print')
+                        .xAppend(
+                            icon('bi-printer', 'print records'),
+                            xmk('span').xInnerHTML('&nbsp;Print'))
+                        .xAddEventListener('click', (event) => { 
+                            printRecords()
+                        }),
                 ),
         )
 

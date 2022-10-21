@@ -10,7 +10,7 @@ import { initPrefs } from './prefs.js'
 import { mkMenu } from './menu.js'
 import { mkSearchInputElement, searchRecords } from './search.js'
 import { refreshAbout } from './about.js'
-import { printRecords } from './print.js'
+import { printRecords, enablePrinting } from './print.js'
 
 /**
  * Actions to take when the window is loaded.
@@ -27,7 +27,6 @@ window.onresize = () => { refreshAbout() }
 window.addEventListener('beforeunload', () => {/*console.log('beforeunload')*/})
 window.addEventListener('unload', () => {/*console.log('unload')*/})
 window.addEventListener('load', () => {/*console.log('load')*/})
-window.addEventListener('keyup', (event) => { printRecords(event) })
 
 /**
  * Main entry point for the application.
@@ -38,6 +37,7 @@ export function main() {
     enableFunctionChaining()
     initialize()
     adjust()
+    enablePrinting()
     //setTimeout(() => {adjust()}, 1000)
     const secure = window.isSecureContext? '(secure)' : ''
     statusBlip(`initializing PAM... ${secure} ${window.screen.width}x${window.screen.height}`)
@@ -101,12 +101,15 @@ function topLayout() {
                     'p-2',
                     'bg-dark',
                     'fs-5',
-                    'text-center',
+                    'text-left',
                     'text-info',
                    )
-            .xId('status')
-            .xAttrs({'title': 'dynamic status messages appear here'})
-            .xInnerHTML('footer')
+            .xAppend(
+                xmk('span')
+                    .xId('status')
+                    .xStyle({'width': '80%'})
+                    .xAttrs({'title': 'dynamic status messages appear here'}),
+            )
     )
 }
 

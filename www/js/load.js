@@ -8,6 +8,7 @@ import { menuPrefsDlg } from './prefs.js'
 import { decrypt } from './crypt.js'
 import { mkLoadSavePassword, setFilePass } from './password.js'
 import { initPrefs } from './prefs.js'
+import { enablePrinting } from './print.js'
 
 // load a file
 export function menuLoadDlg() {
@@ -73,6 +74,7 @@ function closeDlg() {
     if (closeButton) {
         closeButton.click()
     }
+    enablePrinting()
 }
 
 function loadUrlContent(url) {

@@ -95,6 +95,7 @@ the on-line help is generated.
     * [Miscellaneous Preferences](#miscellaneous-preferences)
       * [Log Status to the Console](#log-status-to-the-console)
       * [Clear Records On Load](#clear-records-on-load)
+      * [Enable Printing](#enable-printing)
       * [Load Duplicate Record Strategy](#load-duplicate-record-strategy)
       * [Clone Field Values when Cloning Records](#clone-field-values-when-cloning-records)
       * [Require Record Fields](#require-record-fields)
@@ -1568,6 +1569,8 @@ to make it easier to understand:
 Each preference is discussed in more detail in the subsections below.
 
 ### Search Preferences
+<img src="www/help/pam-prefs-search.png" width="400" alt="pam-prefs-search">
+
 These preferences control search options.
 See the [Search](#search) section for an example.
 
@@ -1597,6 +1600,8 @@ You would want to enable this you wanted to see records that contained a specifi
 value like an obsolete email or really old password.
 
 ### Password Preferences
+<img src="www/help/pam-prefs-password.png" width="400" alt="pam-prefs-password">
+
 These preferences control automatic password creation.
 
 For more information about passwords see [Password Fields](#password-fields)
@@ -1685,7 +1690,9 @@ criteria which might create passwords like
 `'html/wishes/combined/A1!!'` or `'rebates/restructuring/jamaica/A1!!'`.
 
 ### Miscellaneous Preferences
-These are the preferences didn't fall into the other categories.
+<img src="www/help/pam-prefs-miscellaneous.png" width="400" alt="pam-prefs-miscellaneous">
+
+These are the preferences that didn't fall into the other categories.
 
 #### Log Status to the Console
 Log status messages to the console as well as the screen to aid
@@ -1709,6 +1716,31 @@ strategy you want to used for conflicts.
 
 You might set this preference to false if you want to to merge sets of records
 from different files.
+
+#### Enable Printing
+Click this to add the Print option to the menu.
+
+This is what the enable printing preference looks like in the preferences dialogue.
+
+<img src="www/help/pam-prefs-enable-printing-check.png" width="400" alt="pam-prefs-enable-printing-check">
+
+Once it is enabled, the "Print" option will appear at the bottom of
+the menu as shown below.
+
+<img src="www/help/pam-prefs-enable-printing-menu.png" width="400" alt="pam-prefs-enable-printing-menu">
+
+When you click on "Print", PAM will print the records with the
+passwords visible. This is what it looks like for the example records.
+
+<img src="www/help/pam-prefs-enable-printing-example.png" width="400" alt="pam-prefs-enable-printing-example">
+
+This capability is useful if you want a paper copy of your records but
+it is a security risk. If you choose to enable this option, make sure
+that the paper copy is stored securely.
+
+Disable this option (the default) if you intend to share PAM records
+with multiple users from a read-only URL.
+
 
 #### Load Duplicate Record Strategy
 This preference is not visible unless the "Clear Records On Load" preference is false.

@@ -1486,6 +1486,9 @@ This is the save file dialogue.
 If you want the records to be encrypted, enter or generate a password
 as described in [Password Generator](#password-generator) section.
 
+If you want to copy the records to the clipboard enter a dot `"."`
+as the filename.
+
 Make sure that you do not forget this password. It is the _master_
 password this is used to unlock all of the records and _PAM_
 does _not_ keep track of it. That means that if the password is lost,

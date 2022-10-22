@@ -18,12 +18,27 @@ export function menuLoadDlg() {
                 .xInnerHTML('Normally you simply click the "Load" button but there are three special cases:'),
             xmk('ol').xAppend(
                 xmk('li')
-                    .xAddEventListener('click', (event) => loadExample(event))
+                    .xAddEventListener('touchstart', (event) => { event.target.xStyle({'font-weight': 'bold'}) })
+                    .xAddEventListener('touchend', (event) => { event.target.xStyle({'font-weight': 'normal'}) })
+                    .xAddEventListener('mouseover', (event) => { event.target.xStyle({'font-weight': 'bold'}) })
+                    .xAddEventListener('mouseout', (event) => { event.target.xStyle({'font-weight': 'normal'}) })
+                    .xAddEventListener('click', (event) => {
+                        event.target.xStyle({'font-weight': 'normal'})
+                        setTimeout( () => loadExample(event), 500)
+                    })
                     .xInnerHTML('Click or tap anywhere on this line to load example records.'),
                 xmk('li')
+                    .xAddEventListener('touchstart', (event) => { event.target.xStyle({'font-weight': 'bold'}) })
+                    .xAddEventListener('touchend', (event) => { event.target.xStyle({'font-weight': 'normal'}) })
+                    .xAddEventListener('mouseover', (event) => { event.target.xStyle({'font-weight': 'bold'}) })
+                    .xAddEventListener('mouseout', (event) => { event.target.xStyle({'font-weight': 'normal'}) })
                     .xAddEventListener('click', (event) => loadExampleRecipe(event))
                     .xInnerHTML('Click or tap anywhere on this line to the example recipes.'),
                 xmk('li')
+                    .xAddEventListener('touchstart', (event) => { event.target.xStyle({'font-weight': 'bold'}) })
+                    .xAddEventListener('touchend', (event) => { event.target.xStyle({'font-weight': 'normal'}) })
+                    .xAddEventListener('mouseover', (event) => { event.target.xStyle({'font-weight': 'bold'}) })
+                    .xAddEventListener('mouseout', (event) => { event.target.xStyle({'font-weight': 'normal'}) })
                     .xAddEventListener('click', (event) => loadUrl(event))
                     .xInnerHTML('Click or tap anywhere on this line to load records from a URL.'),
             ),

@@ -175,7 +175,6 @@ function saveCallback(text, filename) {
                     alert(msg)
                 })
         }
-        statusBlip(`Copied ${text.length} bytes to the clipboard`)
         return
     }
 
@@ -190,13 +189,13 @@ function saveCallback(text, filename) {
                     writableStream.close()
                 })
                 .catch( (error) => {
-                    const msg = `internal error:\nnavigator.clipboard.writeText() exception:\n${error}`
+                    const msg = `internal error:\nfileHandle.createWritable() exception:\n${error}`
                     statusBlip(msg)
                     alert(msg)
                 })
         })
         .catch( (error) => {
-            const msg = `internal error:\nnavigator.clipboard.writeText() exception:\n${error}`
+            const msg = `internal error:\nwindow.showSaveFilePicker(options) exception:\n${error}`
             statusBlip(msg)
             alert(msg)
         })

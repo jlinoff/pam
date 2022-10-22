@@ -155,29 +155,25 @@ function saveFile(filename, password) {
     encrypt(password, text, filename, saveCallback)
 }
 
-function saveCallback(text, filename) {
-    if (!text || text.length === 0 ) {
-        return
+function copyToClipboard(text, filename) {
+    if (navigator.clipboard) {
+        navigator.clipboard.writeText(text)
+            .then( (value) => {
+                // succeeded
+                statusBlip(`copied ${text.length} bytes to clipboard`)
+            })
+            .catch( (error) => {
+                // failed
+                const msg = `internal error:\nnavigator.clipboard.writeText() error:\n${error}`
+                statusBlip(msg)
+                alert(msg)
+            })
     }
+}
 
-    // hack to handle special case where mobile browsers just don't work.
-    if ( filename === 'clipboard' || filename === "copy" ) {
-        if (navigator.clipboard) {
-            navigator.clipboard.writeText(text)
-                .then( (value) => {
-                    // succeeded
-                    statusBlip(`copied ${text.length} bytes to clipboard`)
-                })
-                .catch( (error) => {
-                    // failed
-                    const msg = `internal error:\nnavigator.clipboard.writeText() error:\n${error}`
-                    statusBlip(msg)
-                    alert(msg)
-                })
-        }
-        return
-    }
-
+function saveUsingPromises(text, filename) {
+    // new experimental approach - did not work reliably in testing
+    // especially in mobile browsers.
     // https://developer.mozilla.org/en-US/docs/Web/API/File_System_Access_API
     let options = {suggestedName: filename}
     window.showSaveFilePicker(options)
@@ -199,15 +195,20 @@ function saveCallback(text, filename) {
             statusBlip(msg)
             alert(msg)
         })
-    /*
-      // old approach using a link.
+}
+
+function saveUsingAnchorLink(text, filename) {
+   // old approach using a link.
     let check = xmk('a')
-    console.log(check)
     if (check.download === undefined) {
-        alert('WARNING!\nsave dialogue not fully supported in this browser.')
+        let msg ='cannot save: check.download not supported'
+        statusBlip(msg)
+        alert(msg)
+        return
     }
+
     // Create anchor element, add the data and click it.
-    let data = 'data:text/plain; charset=utf-8,' + encodeURIComponent(text)
+    let data = 'data:text/plain;charset=utf-8,' + encodeURIComponent(text)
     let a = xmk('a')
         .xStyle({
             'display': 'none'
@@ -217,7 +218,24 @@ function saveCallback(text, filename) {
             'download': filename
         })
     document.body.appendChild(a)
-    a.click()
-    setTimeout( () => {a.remove()}, 2000)
-    */
+    setTimeout( () => {
+        a.click()
+        statusBlip(`downloading ${text.length} bytes to ${filename}`)
+        setTimeout( () => {a.remove()}, 2000)
+    }, 500)
 }
+
+function saveCallback(text, filename) {
+    if (!text || text.length === 0 ) {
+        return
+    }
+
+    // hack to handle special case where mobile browsers just don't work.
+    if ( filename === 'clipboard' || filename === "copy" ) {
+        copyToClipboard(text, filename)
+        return
+    } else {
+        //saveUsingPromises(text, filename) // newer
+        saveUsingAnchorLink(text, filename) // old
+    }
+ }

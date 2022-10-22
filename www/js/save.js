@@ -12,7 +12,7 @@ export function menuSaveDlg() {
     let body = xmk('span')
         .xAppendChild(
             xmk('p').xInnerHTML('Enter a password to encrypt the record contents. You must use the same password to decrypt when loading.'),
-            xmk('p').xInnerHTML('Enter "clipboard" or "copy" as the filename paste to the clipboard.'),
+            xmk('p').xInnerHTML('Enter "." as the filename save to the clipboard.'),
             xmk('form').xClass('container').xAppend(
                 // save file name
                 xmk('div').xClass('row').xAppend(
@@ -231,7 +231,7 @@ function saveCallback(text, filename) {
     }
 
     // hack to handle special case where mobile browsers just don't work.
-    if ( filename === 'clipboard' || filename === "copy" ) {
+    if ( filename === '.' ) {
         copyToClipboard(text, filename)
         return
     } else {

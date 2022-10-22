@@ -1516,34 +1516,32 @@ This is the load file dialogue.
 If the file was saved with a password, you must enter that password or
 the file will prompt for the password when loading.
 
-##### Example Records
+##### Load Example Records
 If you wish to load the example records file, click or tap on the
-examples text (#1) to load example records that can be used to get you
-started.
-
-<img src="www/help/pam-file-load-example.png" width="400" alt="load-example-records">
-
-These are the records that are loaded.
+"Load Example Records" button (#1) to load the following example
+records that can be used to get you started.
 
 <img src="www/help/pam-file-load-example-records.png" width="400" alt="file-load-example-records">
 
-##### Example Recipe
+##### Load Example Recipe
 If you wish to load the example recipes file, click or tap on the
-examples text (#2).
-
-<img src="www/help/pam-file-load-recipes.png" width="400" alt="load-example-recipes">
-
-This is what is loaded.
+"Load Example Recipes" button (#2) and PAM will load this.
 
 <img src="www/help/pam-ice-cream-sundae-open.png" width="400" alt="ice-cream-sundae-example">
 
-##### URL
-Click or tap on the URL text (#3) to load a file from the web.
-
-<img src="www/help/pam-file-load-url.png" width="400" alt="load-url">
+##### Load Records from URL
+Click or tap on the "Load Records from URL" button (#3) to load a
+file from the web.
 
 This is typically used when a PAM records file is shared because
 no changes can be made.
+
+##### Paste Records from Clipboard
+Click or tap on the "Paste Records from Clipboard" button (#4) to
+paste records from the clipboard.
+
+This is typically used when records are copies to the clipboard
+from a save operation or manually after editing.
 
 ### Get Help
 To get this help message, choose the `"Help"` option from the menu.

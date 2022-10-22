@@ -314,6 +314,7 @@ function loadCallback(text) {
         let newRecord = mkRecord(title, ...recordFields)
         insertRecord(newRecord, title)
     }
+    enablePrinting()
     xget('#x-num-records').xInnerHTML(num)
 }
 

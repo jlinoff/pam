@@ -44,7 +44,7 @@ jobs:
       - name: chromedriver
         run: |
           VERSION=$(curl -s "https://chromedriver.storage.googleapis.com/LATEST_RELEASE")
-          echo VERSION=${VERSION}
+          echo "VERSION=${VERSION}"
           wget -vP /tmp/ "https://chromedriver.storage.googleapis.com/${VERSION}/chromedriver_linux64.zip"
           ls -l /tmp/chromedriver_linux64.zip
           sudo unzip -o /tmp/chromedriver_linux64.zip -d /usr/bin

@@ -39,15 +39,18 @@ apt install -y lsof
 # Install google chrome for pylenium/selenium.
 if [ ! -f ./keep/google-chrome-stable_current_amd64.deb ] ; then
     cd keep
-    wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
+    wget -vP keep/ https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
     cd ..
 fi
+ls -l ./keep/google-chrome-stable_current_amd64.deb
 apt install -y ./keep/google-chrome-stable_current_amd64.deb
 google-chrome --version
 
 # Install chromedriver for pylenium/selenium.
 VERSION=$(curl -s "https://chromedriver.storage.googleapis.com/LATEST_RELEASE")
+echo "VERSION=${VERSION}"
 wget -qP /tmp/ "https://chromedriver.storage.googleapis.com/${VERSION}/chromedriver_linux64.zip"
+ls -l /tmp/chromedriver_linux64.zip
 unset VERSION
 unzip -o /tmp/chromedriver_linux64.zip -d /usr/bin
 apt-get --only-upgrade install google-chrome-stable

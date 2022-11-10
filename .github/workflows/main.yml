@@ -43,7 +43,8 @@ jobs:
       - name: chromedriver
         run: |
           VERSION=$(curl -s "https://chromedriver.storage.googleapis.com/LATEST_RELEASE")
-          wget -qP /tmp/ "https://chromedriver.storage.googleapis.com/${VERSION}/chromedriver_linux64.zip"
+          wget -vP /tmp/ "https://chromedriver.storage.googleapis.com/${VERSION}/chromedriver_linux64.zip"
+          ls -l /tmp/chromedriver_linux64.zip
           sudo unzip -o /tmp/chromedriver_linux64.zip -d /usr/bin
           sudo apt-get --only-upgrade install google-chrome-stable
           chromedriver --version

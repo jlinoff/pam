@@ -43,7 +43,7 @@ if [ ! -f ./keep/google-chrome-stable_current_amd64.deb ] ; then
     cd ..
 fi
 ls -l ./keep/google-chrome-stable_current_amd64.deb
-apt install -y ./keep/google-chrome-stable_current_amd64.deb
+apt install -y --allow-downgrades ./keep/google-chrome-stable_current_amd64.deb
 google-chrome --version
 
 # Install chromedriver for pylenium/selenium.

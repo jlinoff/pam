@@ -39,7 +39,7 @@ jobs:
         run: |
           wget -vP /tmp/ https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
           ls -l /tmp/google-chrome-stable_current_amd64.deb
-          sudo apt-get install -y /tmp/google-chrome-stable_current_amd64.deb
+          sudo apt-get install -y --allow-downgrades /tmp/google-chrome-stable_current_amd64.deb
           google-chrome --version
       - name: chromedriver
         run: |
@@ -55,11 +55,17 @@ jobs:
         with:
           repository: jlinoff/pam
           path: './pam'
-      - name: build-test
+      - name: help
         run: |
           cd pam
           make help
+      - name: build
+        run: |
           make
+      - name: test
+        run: |
           make test
+      - name: web
+        run: |
           make web
           ls -l pam-www.tar

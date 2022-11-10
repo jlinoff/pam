@@ -37,12 +37,14 @@ jobs:
           sudo apt-get install -y lsof
       - name: google-chrome
         run: |
-          wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
-          sudo apt-get install -y ./google-chrome-stable_current_amd64.deb
+          wget -vP /tmp/ https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
+          ls -l /tmp/google-chrome-stable_current_amd64.deb
+          sudo apt-get install -y /tmp/google-chrome-stable_current_amd64.deb
           google-chrome --version
       - name: chromedriver
         run: |
           VERSION=$(curl -s "https://chromedriver.storage.googleapis.com/LATEST_RELEASE")
+          echo VERSION=${VERSION}
           wget -vP /tmp/ "https://chromedriver.storage.googleapis.com/${VERSION}/chromedriver_linux64.zip"
           ls -l /tmp/chromedriver_linux64.zip
           sudo unzip -o /tmp/chromedriver_linux64.zip -d /usr/bin

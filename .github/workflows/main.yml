@@ -55,17 +55,20 @@ jobs:
         with:
           repository: jlinoff/pam
           path: './pam'
-      - name: help
+      - name: make help
         run: |
           cd pam
           make help
-      - name: build
+      - name: make build
         run: |
+          cd pam
           make
-      - name: test
+      - name: make test
         run: |
+          cd pam
           make test
-      - name: web
+      - name: make web
         run: |
+          cd pam
           make web
           ls -l pam-www.tar

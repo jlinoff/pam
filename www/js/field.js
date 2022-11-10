@@ -368,6 +368,9 @@ function mkRecordEditField(name, type, container, value) {
                             } else if (ftype === 'password') {
                                 let e1 = row.xGet('.x-fld-value-length')
                                 e1.innerHTML = '0' // length
+                                field.value = ''
+                            } else {
+                                field.value = ''
                             }
                         })
                         .xAppend(

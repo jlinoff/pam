@@ -13,7 +13,7 @@
 #      > cd /mnt/pam
 #      > ./ubuntu-build.sh
 #
-PS4='$(printf "\x1b[34;1mCOMMAND:%-10s \x1b[0m" "${LINENO}")'
+PS4='$(printf "\x1b[34;1m# ==== COMMAND:%-10s \x1b[0m" "${LINENO}")'
 set -ex
 export SHELL=$(which bash)
 export PIPENV_VENV_IN_PROJECT=1
@@ -24,7 +24,7 @@ apt update
 apt upgrade -y
 apt install -y apt-utils
 apt install -y tzdata
-apt install software-properties-common -y
+apt install -y software-properties-common
 apt install -y build-essential
 apt install -y pipenv
 apt install -y vim
@@ -46,6 +46,7 @@ if [ ! -f ./keep/google-chrome-stable_current_amd64.deb ] ; then
 fi
 ls -l ./keep/google-chrome-stable_current_amd64.deb
 apt install -y --allow-downgrades ./keep/google-chrome-stable_current_amd64.deb
+which google-chrome
 google-chrome --version
 
 # Install chromedriver for pylenium/selenium.
@@ -55,13 +56,15 @@ wget -qP /tmp/ "https://chromedriver.storage.googleapis.com/${VERSION}/chromedri
 ls -l /tmp/chromedriver_linux64.zip
 unset VERSION
 unzip -o /tmp/chromedriver_linux64.zip -d /usr/bin
-apt-get --only-upgrade install google-chrome-stable
+which chromedriver
 chromedriver --version
 
 # Run PAM make build and test.
-cd /Users/jlinoff/work/pam
+cd /mnt/pam
 rm -rf Pipfile .venv/
+make clean
 make help
 make
 make test
 make web
+ls -l pam-www.tar

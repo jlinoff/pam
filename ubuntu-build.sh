@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Proof of concept for running the PAM build/test processes
-# on Ubuntu 20.04.
+# on Ubuntu 20.04 for github actions workflow.
 #
 # Create the container like this:
 #   $ mkdir -p $HOME/work
@@ -9,18 +9,20 @@
 #   $ git clone https://github.com/jlinoff/pam.git
 #   $ cd pam
 #   $ make clean
-#   $ docker run -it --rm -h test1 --name test1 -v $HOME:$HOME ubuntu:20.04 bash
-#      > cd $HOME/work/pam
-#      > ubuntu-build.sh
+#   $ docker run -it --rm -h pam-test --name pam-test -v $HOME:/mnt/pam ubuntu:20.04 bash
+#      > cd /mnt/pam
+#      > ./ubuntu-build.sh
 #
 PS4='$(printf "\x1b[34;1mCOMMAND:%-10s \x1b[0m" "${LINENO}")'
 set -ex
+export SHELL=$(which bash)
+export PIPENV_VENV_IN_PROJECT=1
+export DEBIAN_FRONTEND=noninteractive
 
 # Install the basic packages.
 apt update
 apt upgrade -y
 apt install -y apt-utils
-export DEBIAN_FRONTEND=noninteractive
 apt install -y tzdata
 apt install software-properties-common -y
 apt install -y build-essential
@@ -57,8 +59,6 @@ apt-get --only-upgrade install google-chrome-stable
 chromedriver --version
 
 # Run PAM make build and test.
-export SHELL=/usr/bin/bash
-export PIPENV_VENV_IN_PROJECT=1
 cd /Users/jlinoff/work/pam
 rm -rf Pipfile .venv/
 make help

@@ -63,8 +63,7 @@ init: .init bs app-version app-help  ## very basic setup for python3 and jshint
 
 # The following setup works on MacOS and Ubuntu 20.04.
 # For some reason pipenv install did not work reliably on Ubuntu.
-# pytest-reportportal~=1.0 and webdriver_manager==3.7.0
-# are required for pylenium compatibility.
+# pytest-reportportal~=1.0 is required for pylenium compatibility.
 .venv/pylenium.json:
 	-rm -rf .venv
 	pipenv install --python $(PYTHON3_PATH)
@@ -73,7 +72,7 @@ init: .init bs app-version app-help  ## very basic setup for python3 and jshint
 	pipenv run python3 -m pip install mypy
 	pipenv run python3 -m pip install pytest
 	pipenv run python3 -m pip install pytest-reportportal~=1.0
-	pipenv run python3 -m pip install webdriver_manager==3.7.0
+	pipenv run python3 -m pip install webdriver_manager
 	pipenv run python3 -m pip install pyleniumio
 	pipenv run pylenium init
 

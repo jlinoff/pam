@@ -480,7 +480,7 @@ that can be found in freely available password dictionaries like the
 are _not_ strong and will _not_ protect your data because they are easy to guess.
 
 _Always_ use a strong password to make it hard to guess. Typically a strong
-password would at least 20 characters would not include any personally
+password would have at least 20 characters would not include any personally
 identifiable information (PII) like your name, birth date or address. Also
 _never, ever_ use the same password for two different sites. This is
 to protect you from hackers if a site you use to is attacked and your

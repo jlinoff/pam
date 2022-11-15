@@ -1,5 +1,6 @@
 # pam
-[![Releases](https://img.shields.io/github/release/jlinoff/pam?style)](https://github.com/jlinoff/pam/releases)
+[![Release](https://img.shields.io/github/release/jlinoff/pam?style)](https://github.com/jlinoff/pam/releases)
+![Workflow](https://github.com/jlinoff/pam/actions/workflows/main.yml/badge.svg)
 
 personal account manager webapp
 

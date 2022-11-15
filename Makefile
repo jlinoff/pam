@@ -191,8 +191,8 @@ www/help/index.html: Makefile README.md www/help/index.css \
 	sed -i "s/__GIT_BRANCH__/$$(git rev-parse --abbrev-ref HEAD | tr -d ' \n')/g" tmp.md
 	sed -i "s/<!-- PP: //g" tmp.md
 	sed -i "s/ PP: -->//g" tmp.md
-	grep -v '^# myVault' tmp.md > tmp1.md
-	grep -v '\[!\[Releases\](' tmp1.md > tmp.md
+	cat tmp.md | grep -v '\[!\[Release\](' | grep -v '!\[Workflow\](' > tmp1.md
+	mv tmp1.md tmp.md
 	pandoc -s --css index.css -s --metadata title='PAM - help' --html-q-tags -o $@ tmp.md
 	rm -f tmp*.md
 

@@ -318,7 +318,7 @@ function loadCallback(text) {
     xget('#x-num-records').xInnerHTML(num)
     //let now = new Date().toISOString()
     let now = new Date()
-    let thenDateString = json['meta']['date-saved']
+    let thenDateString = json.meta['date-saved']
     let thenDate = new Date(thenDateString)
     let elapsed = now.getTime() - thenDate.getTime() // ms
     let days = elapsed / (1000 * 3600 * 24)

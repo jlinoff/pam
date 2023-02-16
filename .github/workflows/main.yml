@@ -35,8 +35,8 @@ jobs:
           sudo apt-get install -y zip
           sudo apt-get install -y lsof
           sudo pip install pipenv
-	  pip --version
-	  pipenv --version
+          pip --version
+          pipenv --version
       - name: google-chrome
         run: |
           wget -vP /tmp/ https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb

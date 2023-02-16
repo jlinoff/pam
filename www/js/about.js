@@ -28,7 +28,7 @@ function mkAbout() {
                 xmk('div').xInnerHTML(`inner: ${window.innerWidth}x${window.innerHeight}`),
             ),
             xmk('p').xId('x-about-info').xInnerHTML(custom),
-            xmk('p').xClass('font-monospace', 'fs-6').xInnerHTML(`${COMMIT_ID} - ${COMMIT_DATE}`),
+            xmk('p').xClass('fs-6', 'fw-lighter').xId('x-about-file-info').xInnerHTML(''),
         )
     return body
 }
@@ -50,5 +50,9 @@ export function refreshAbout() {
     let oldAbout = xget('#about')
     let newAbout = mkAbout()
     oldAbout.replaceWith(newAbout)
+}
+
+export function setAboutFileInfo(string) {
+    document.getElementById('x-about-file-info').innerHTML = string
 }
 

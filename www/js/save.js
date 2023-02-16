@@ -6,6 +6,7 @@ import { icon, mkPopupModalDlgButton, mkPopupModalDlg } from './utils.js'
 import { findRecord } from './record.js'
 import { mkGeneratePasswordDlg, mkLoadSavePassword, setFilePass } from './password.js'
 import { encrypt } from './crypt.js'
+import { setAboutFileInfo } from './about.js'
 
 // Called from the top level menu.
 export function menuSaveDlg() {
@@ -151,6 +152,7 @@ function saveFile(filename, password) {
         }
         contents.records.push(rec)
     }
+    setAboutFileInfo(`Saved ${contents.records.length} records on ${now} to ${filename}.`)
     let text = JSON.stringify(contents, null, 0)
     encrypt(password, text, filename, saveCallback)
 }

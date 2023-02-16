@@ -9,6 +9,7 @@ import { decrypt } from './crypt.js'
 import { mkLoadSavePassword, setFilePass } from './password.js'
 import { initPrefs } from './prefs.js'
 import { enablePrinting } from './print.js'
+import { setAboutFileInfo } from './about.js'
 
 // load a file
 export function menuLoadDlg() {
@@ -315,6 +316,13 @@ function loadCallback(text) {
     }
     enablePrinting()
     xget('#x-num-records').xInnerHTML(num)
+    //let now = new Date().toISOString()
+    let now = new Date()
+    let thenDateString = json['meta']['date-saved']
+    let thenDate = new Date(thenDateString)
+    let elapsed = now.getTime() - thenDate.getTime() // ms
+    let days = elapsed / (1000 * 3600 * 24)
+    setAboutFileInfo(`Loaded ${num} records on ${now.toISOString()}.<br>Records were last updated on ${thenDate.toISOString()} (${days.toFixed(3)} days ago).`)
 }
 
 function invalidPasswordCallback(error) {

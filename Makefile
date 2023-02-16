@@ -15,7 +15,7 @@ DST  ?= www
 PORT ?= 8081
 FAVICON_SVG ?= bootstrap-icons/icons/box.svg
 # from https://getbootstrap.com/docs/versions/
-BS_VER ?= 5.2.2
+BS_VER ?= 5.2.3
 BS_DIST ?= bootstrap-$(BS_VER)-dist
 export PIPENV_VENV_IN_PROJECT := True
 PYTHON3_PATH ?= python3
@@ -51,7 +51,7 @@ init: .init bs app-version app-help  ## very basic setup for python3 and jshint
 
 .init: .venv/pylenium.json
 	$(call hdr,"$@-npm")
-	npm install -g jshint
+	sudo npm install -g jshint
 	@touch $@
 
 # URL: https://github.com/ElSnoMan/pyleniumio/tree/main/docs

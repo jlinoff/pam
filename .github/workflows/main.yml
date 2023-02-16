@@ -10,7 +10,7 @@ on:
 
 jobs:
   pam-build-test:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     env:
       DEBIAN_FRONTEND: noninteractive
       SHELL: /usr/bin/bash
@@ -24,7 +24,6 @@ jobs:
           sudo apt-get install -y tzdata
           sudo apt-get install -y software-properties-common
           sudo apt-get install -y build-essential
-          sudo apt-get install -y pipenv
           sudo apt-get install -y vim
           sudo apt-get install -y tree
           sudo apt-get install -y git
@@ -35,6 +34,9 @@ jobs:
           sudo apt-get install -y wget
           sudo apt-get install -y zip
           sudo apt-get install -y lsof
+          sudo pip install pipenv
+          pip --version
+          pipenv --version
       - name: google-chrome
         run: |
           wget -vP /tmp/ https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb

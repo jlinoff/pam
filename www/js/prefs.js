@@ -455,15 +455,15 @@ function prefSearchCaseInsensitive(labelClasses, inputClasses) {
                            inputClasses,
                            'searchCaseInsensitive',
                            'Case Insensitive Searches',
-                           'do case insensitiv searches')
+                           'do case insensitive searches')
 }
 
 function prefSearchRecordTitles(labelClasses, inputClasses) {
     return mkPrefsCheckBox(labelClasses,
                            inputClasses,
-                           'search record titles',
+                           'searchRecordTitles',	   
                            'Search Record Titles',
-                           'searchRecordTitles')
+                           'search record titles')
 }
 
 function prefSearchRecordFieldNames(labelClasses, inputClasses) {

@@ -177,10 +177,7 @@ function mkRecordFieldNameListItems(nameTypeMap) {
     return entries
 }
 
-// Make a record field.
-// textarea - has a known  bug: label aligns at bottom
-// password - generate not implemented.
-// all - move fields up and down (change order)
+// Make a record field based on the type that can be moved up or down.
 function mkRecordEditField(name, type, container, value) {
     let drag = '<i class="bi bi-grip-vertical"></i>'
 
@@ -487,7 +484,14 @@ export function copyRecordFieldsToEditDlg(title, body, clone) {
         case 'password':
         case 'textarea':
         case 'url':
-            value = valueDiv.getAttribute('data-fld-raw-value')
+	    // If the data-fld-raw-value is set use it, if not
+	    // then use the value because we can be sure that it
+	    // is not "hidden".
+	    if (valueDiv.hasAttribute('data-fld-raw-value')) {
+		value = valueDiv.getAttribute('data-fld-raw-value')
+	    } else {
+		value = valueDiv.getAttribute('value')
+	    }
             break
         default:
             break

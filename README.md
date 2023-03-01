@@ -144,11 +144,16 @@ page web application that is designed to help you conveniently and
 securely manage your confidential information inside the secure
 context of your web browser as dynamically configurable records that
 can be searched _without having to rely on services from a third party
-server_ because they are stored in a file that _you control_.
+server_ because they are stored in a file that _you control_ either on your
+local device or on a cloud based file server.
 
-The _PAM_ file is encrypted so the contents are safe from hackers
-if the file was stolen assuming, of course, _that the password you
-used to encrypt it was strong_.
+The _PAM_ file is encrypted both in transit and when stored so the contents are
+safe from hackers if the file was stolen assuming, of course, that the password
+you used to encrypt it _was strong_.
+
+The PAM file flow is shown in the figure below.
+
+<img src="www/help/pam-file-flow-screenshot.png" width="95%" alt="pam-file-flow">
 
 You can access _PAM_ from your own secure web server (including
 localhost) or from the public

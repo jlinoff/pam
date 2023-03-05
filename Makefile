@@ -51,7 +51,7 @@ init: .init bs app-version app-help  ## very basic setup for python3 and jshint
 
 .init: .venv/pylenium.json
 	$(call hdr,"$@-npm")
-	sudo npm install -g jshint
+	npm install -g jshint
 	@touch $@
 
 # URL: https://github.com/ElSnoMan/pyleniumio/tree/main/docs

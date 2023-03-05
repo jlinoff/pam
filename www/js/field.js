@@ -484,14 +484,14 @@ export function copyRecordFieldsToEditDlg(title, body, clone) {
         case 'password':
         case 'textarea':
         case 'url':
-	    // If the data-fld-raw-value is set use it, if not
-	    // then use the value because we can be sure that it
-	    // is not "hidden".
-	    if (valueDiv.hasAttribute('data-fld-raw-value')) {
-		value = valueDiv.getAttribute('data-fld-raw-value')
-	    } else {
-		value = valueDiv.getAttribute('value')
-	    }
+            // If the data-fld-raw-value is set use it, if not
+            // then use the value because we can be sure that it
+            // is not "hidden".
+            if (valueDiv.hasAttribute('data-fld-raw-value')) {
+                value = valueDiv.getAttribute('data-fld-raw-value')
+            } else {
+                value = valueDiv.getAttribute('value')
+            }
             break
         default:
             break

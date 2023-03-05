@@ -160,7 +160,7 @@ export function mkMenu() {
                         .xAppend(
                             icon('bi-printer', 'print records'),
                             xmk('span').xInnerHTML('&nbsp;Print'))
-                        .xAddEventListener('click', (event) => { 
+                        .xAddEventListener('click', (event) => {
                             printRecords()
                         }),
                 ),

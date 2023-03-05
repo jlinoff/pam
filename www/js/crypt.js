@@ -15,7 +15,7 @@ const decoder = new TextDecoder();
 const toBase64 = buffer => btoa(String.fromCharCode(...new Uint8Array(buffer)))
 const fromBase64 = buffer => Uint8Array.from(atob(buffer), c => c.charCodeAt(0))
 
-const PBKDF2 = async (password, salt, iterations, length, hash, algorithm =  'AES-CBC') => {
+const PBKDF2 = async (password, salt, iterations, length, hash, algorithm = 'AES-CBC') => {
         let keyMaterial = await window.crypto.subtle.importKey(
             'raw',
             encoder.encode(password),

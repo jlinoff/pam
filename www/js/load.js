@@ -71,16 +71,49 @@ export function menuLoadDlg() {
                                        console.log(el)
                                        return true
                                    })
-    let b2 = mkPopupModalDlgButton('Load',
-                                   'btn-primary',
-                                   'load using the password',
-                                   (el) => {
-                                       //console.log(el)
-                                       let password = el.xGet('#x-load-password').value.trim()
-                                       setFilePass(password)
-                                       loadFile(password)
-                                       return true
-                                })
+    let b2 = xmk('span').xAppendChild(
+        mkPopupModalDlgButton('Load',
+                              'btn-primary',
+                              'load using the password',
+                              (el) => {
+                                  //console.log(el)
+                                  let password = el.xGet('#x-load-password').value.trim()
+                                  let input = document.body.xGet('#x-load-file-select-input')
+                                  setFilePass(password)
+                                  input.focus()
+                                  input.click()
+                                  return true
+                              }),
+
+        xmk('input') // system file selection dialogue
+            .xId('x-load-file-select-input')
+            .xAttr('type', 'file')
+            .xAttr('value', 'unused.txt')
+            .xAttr('accept', '.js,.pam,.txt')
+            .xStyle({display: 'none'})
+            .xAddEventListener('change', (event1)=> {
+                let password = document.body.xGet('#x-load-password').value.trim()
+                setFilePass(password)
+                const fileList = event1.target.files
+                if (fileList.length === 1) {
+                    var file = fileList[0]
+                    const reader = new FileReader()
+                    reader.addEventListener('load', (event2) => {
+                        const text = event2.target.result
+                        let type = file.type ? file.type : '???'
+                        statusBlip(`loaded ${text.length} bytes from: "${file.name}" "<code>${type}</code>".`)
+                    })
+                    reader.readAsText(file)
+                    reader.onload = (event3) => {
+                        let content = event3.target.result
+                        //console.log('debug', content.slice(0,10))
+                        const filename = file.name
+                        let password = document.body.xGet('#x-load-password').value.trim()
+                        loadFileContent(filename, password, content)
+                    }
+                }
+            }),
+    )
     let e = mkPopupModalDlg('menuLoadDlg', 'Load Records From File', body, b1, b2)
     return e
 }
@@ -185,45 +218,6 @@ function loadExampleRecipe(event) {
         return
     }
     loadUrlContent(url)
-}
-
-function loadFile(password) {
-    // Create a hidden file input element element
-    let input = xmk('input')
-        .xAttr('type', 'file')
-        .xAttr('value', 'unused.txt')
-        .xAttr('accept', '.js,.pam,.txt')
-        .xStyle({display: 'none'})
-
-    // Respond to the system dialogue changes.
-    input.xAddEventListener('change', (event1)=> {
-        const fileList = event1.target.files
-        if (fileList.length === 1) {
-            var file = fileList[0]
-            const reader = new FileReader()
-            reader.addEventListener('load', (event2) => {
-                const text = event2.target.result
-                let type = file.type ? file.type : '???'
-                statusBlip(`loaded ${text.length} bytes from: "${file.name}" "<code>${type}</code>".`)
-            })
-            reader.readAsText(file)
-            reader.onload = (event3) => {
-                let content = event3.target.result
-                //console.log('debug', content.slice(0,10))
-                const filename = file.name
-                loadFileContent(filename, password, content)
-            }
-        }
-    })
-
-    // TODO: figure out how to handle input type="file" cancel events.
-    // was not able to see "focus" events or the cancel click event.
-    // for now, use a timeout hack
-    input.click()
-    setTimeout( () => {
-        //console.log('timeout: clean up')
-        input.remove()
-    }, 2000)
 }
 
 // Load the file content

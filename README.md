@@ -297,7 +297,7 @@ It would look like this when you _view_ it in _PAM_ in edit mode.
 
 <img src="www/help/pam-ice-cream-sundae-open.png" width="400" alt="ice-cream-sundae-example">
 
-As you can see, in this _"recipe"_ record, the title is `"Ice Cream
+In this _"recipe"_ record, the title is `"Ice Cream
 Sundae"` and the two fields "ingredients" and "instructions" contain
 the multiline (`textarea`) descriptions of what the ingredients and
 instructions are for this specific recipe. And, finally, there is an
@@ -349,7 +349,7 @@ _PAM_ always hides the contents of passwords by default.
 
 ##### Record Model Summary
 
-As you can see both records look quite different. Recipes records have
+Both records look quite different. Recipes records have
 fields for "ingredients" and "instructions" whereas account records
 have fields for the "url", "login" and "password". However, in both
 cases they have the same basic structure: a title and a set of fields
@@ -570,7 +570,7 @@ We start with the unexpanded view of all records as shown below.
 
 <img src="www/help/pam-example-records.png" width="400" alt="example-records">
 
-As you can see _PAM_ presents the records as an accordion. Each record
+_PAM_ presents the records as an accordion. Each record
 is one entry in the accordion that you can expand to view the record fields
 or [delete](#delete-record), [clone](#clone-record) or [edit](#edit-record)
 edit the record.
@@ -612,11 +612,11 @@ Passwords are correctly copied to the clipboard at all times even
 when the password is hidden.
 
 In addition there are three buttons at the bottom
-"<img src='./trash.svg' height='32' width='32' />&nbsp;Delete" to delete the record,
-"<img src='./files.svg' height='32' width='32' />&nbsp;Clone" to clone the record and
-"<img src='./pencil-square.svg' height='32' width='32' />&nbsp;Edit" to edit the record fields.
+"<img src="www/help/trash.svg" height='32' width='32' alt='trash'/>&nbsp;Delete" to delete the record,
+"<img src="www/help/files.svg" height='32' width='32' alt='files' />&nbsp;Clone" to clone the record and
+"<img src="www/help/pencil-square.svg" height='32' width='32' alt='pencil-square'/>&nbsp;Edit" to edit the record fields.
 
-As you can see here.
+As shown below.
 
 <img src="www/help/pam-record-expanded-fields2.png" width="400" alt="record-expanded">
 
@@ -632,7 +632,7 @@ and [Field Types](#field-types) sections for details.
 
 Fields are modified _in_ the record by editing them directly and they
 are deleted _from_ the record by clicking on the
-<img src='./trash.svg' height='32' width='32' /> icon.
+<img src="www/help/trash.svg" height='32' width='32' /> icon.
 
 <img src="www/help/pam-record-expanded-edit-facebook.png" width="400" alt="record-expanded">
 
@@ -793,7 +793,7 @@ The "url", "login" and "password" record fields are part of the default.
 This is what they will look like in the `"New Record"` pull down menu
 when creating or editing a record.
 
-<img src="pam-new-record-field-1-select.png" width="400" alt="new-record-field-1-select">
+<img src="www/help/pam-new-record-field-1-select.png" width="400" alt="new-record-field-1-select">
 
 ## Password Fields
 
@@ -875,14 +875,14 @@ This is what the password field dialogue looks like with no generator.
 
 <img src="www/help/pam-password-no-generator.png" width="400" alt="password-no-generator">
 
-When you click or tap on the <img src='./gear.svg' height='32' width='32' /> icon,
+When you click or tap on the <img src="www/help/gear.svg" height='32' width='32' /> icon,
 cryptic and memorable passwords are generated and the password
 generator dialogue appears.
 
 <img src="www/help/pam-password-generator.png" width="400" alt="password-generator">
 
-As you can see it always generates five memorable passwords to provide
-some choices. I found that more useful than the original
+It always generates five memorable passwords to provide
+choices. I found that more useful than the original
 implementation which only had a single choice.
 
 > The decision to present five memorable passwords was completely
@@ -893,14 +893,14 @@ This is what the password generator looks like with annotations.
 
 <img src="www/help/pam-password-generator-annotated.png" width="400" alt="password-generator-annotated">
 
-If you click or tap on the <img src='./gear.svg' height='32' width='32' /> icon
+If you click or tap on the <img src="www/help/gear.svg" height='32' width='32' /> icon
 a second time, new passwords will be generated.
 
-You must click or tap on the <img src='./x-circle.svg' height='32' width='32' /> icon
+You must click or tap on the <img src="www/help/x-circle.svg" height='32' width='32' /> icon
 to close the dialogue.
 
 I chose this approach because I wanted the
-<img src='./gear.svg' height='32' width='32' />
+<img src="www/help/gear.svg" height='32' width='32' />
 icon to be used to generate new passwords.
 
 > In retrospect, that choice may not have been the most intuitive way
@@ -982,20 +982,20 @@ As you can see, there are seven menu options:
 1. [Save File](#save-file)
 1. [Help](#get-help).
 
-Click or tap on the "<img src='./info-circle.svg' height='32' width='32' />&nbsp;About"
+Click or tap on the "<img src="www/help/info-circle.svg" height='32' width='32' />&nbsp;About"
 entry to see information about the app.
 See the [About](#about) section for more details.
 
-Click or tap on the "<img src='./gear.svg' height=' 32' width='32' />&nbsp;Preferences"
+Click or tap on the "<img src="www/help/gear.svg" height=' 32' width='32' />&nbsp;Preferences"
 entry to see the preferences dialogue which allows you
 to customize some of the app behavior. There is a lot of stuff so you might want
 to read the [Preferences](#preferences) section before trying it.
 
-Click or tap on the "<img src='./plus-circle-fill.svg' height='32' width='32' />&nbsp;New Record"
+Click or tap on the "<img src="www/help/plus-circle-fill.svg" height='32' width='32' />&nbsp;New Record"
 entry to create a new record.
 See the [Create New Record](#create-new-record) section for more details.
 
-Click or tap on the "<img src='./trash3-fill.svg' height='32' width='32' />&nbsp;Clear Records"
+Click or tap on the "<img src="www/help/trash3-fill.svg" height='32' width='32' />&nbsp;Clear Records"
 entry to delete all of the records.
 This is useful for times when you want to create a new collection of
 records that is saved in a separate file.  For example, if you wanted
@@ -1003,15 +1003,15 @@ to create a collection personal accounts in one file and a collection
 shared accounts for a group of folks (like a development team sharing
 AWS accounts).
 
-Click or tap on the "<img src='./file-arrow-up-fill.svg' height='32' width='32' />&nbsp;Load File"
+Click or tap on the "<img src="www/help/file-arrow-up-fill.svg" height='32' width='32' />&nbsp;Load File"
 entry to load a records file.
 See the [Load File](#load-file) section for more details.
 
-Click or tap on the "<img src='./file-arrow-down-fill.svg' height='32' width='32' />&nbsp;Save File" entry
+Click or tap on the "<img src="www/help/file-arrow-down-fill.svg" height='32' width='32' />&nbsp;Save File" entry
 to save all of the records to a file.
 See the [Save File](#save-file) section for more details.
 
-Click or tap on the "<img src='./question-circle.svg' height='32' width='32' />&nbsp;Help"
+Click or tap on the "<img src="www/help/question-circle.svg" height='32' width='32' />&nbsp;Help"
 entry to see this help message.
 
 ### Records Section
@@ -1028,7 +1028,7 @@ selected.
 
 <img src="www/help/pam-record-expanded.png" width="400" alt="record-expanded">
 
-As you can see the expanded "Facebook" record has three fields: "url",
+The expanded "Facebook" record has three fields: "url",
 "login" and "password".
 
 <img src="www/help/pam-record-expanded-fields.png" width="400" alt="record-expanded">
@@ -1128,7 +1128,7 @@ Record" menu option in the application, is probably the best way to
 create the first new record for a topic family. This is also known as
 the "menu" approach and is shown below.
 
-<img src="pam-create-new-record.png" width="400" alt="new-rec">
+<img src="www/help/pam-create-new-record.png" width="400" alt="new-rec">
 
 To show how it works, we will create a recipe record using
 "ingredients" and "instruction" fields. But first we need to define
@@ -1156,15 +1156,15 @@ one, they are easy to delete.
 
 Here is where you select "ingredients" for the first field.
 
-<img src="pam-new-record-field-1-select.png" width="400" alt="new-record-field-1-select">
+<img src="www/help/pam-new-record-field-1-select.png" width="400" alt="new-record-field-1-select">
 
 Populate it by typing into the _"textarea"_ box.
 
-<img src="pam-new-record-field-1.png" width="400" alt="new-record-field-1">
+<img src="www/help/pam-new-record-field-1.png" width="400" alt="new-record-field-1">
 
 Now do the same thing to create an "instructions" field.
 
-<img src="pam-new-record-field-2.png" width="400" alt="new-record-field-2">
+<img src="www/help/pam-new-record-field-2.png" width="400" alt="new-record-field-2">
 
 One interesting thing to understand is that you can _change the order
 of the fields_ by dragging them up or down. To do that select the
@@ -1173,7 +1173,7 @@ also be done when editing the record.
 
 Here is what it looks like when I dragged the "instructions" field up.
 
-<img src="pam-new-record-drag.png" width="400" alt="new-record-drag">
+<img src="www/help/pam-new-record-drag.png" width="400" alt="new-record-drag">
 
 I then dragged "instructions" field back down because it should appear after
 "ingredients" field.
@@ -1181,11 +1181,11 @@ I then dragged "instructions" field back down because it should appear after
 When you are finished click or tap on the `"Save"` button to save it and you
 will see it show up as a new record in the records part of the screen.
 
-<img src="pam-new-record-done.png" width="400" alt="new-record-done">
+<img src="www/help/pam-new-record-done.png" width="400" alt="new-record-done">
 
 You can click or tap on the record to expand it and see the fields you just defined.
 
-<img src="pam-new-record-done-expand.png" width="400" alt="new-record-done-expand">
+<img src="www/help/pam-new-record-done-expand.png" width="400" alt="new-record-done-expand">
 
 #### Method 2: Clone Approach
 
@@ -1195,7 +1195,7 @@ is a great way to guarantee uniformity. Although if the number of
 fields is small using the first method is also fine. Here is what
 the clone option looks like.
 
-<img src="pam-clone-google.png" width="400" alt="clone-rec">
+<img src="www/help/pam-clone-google.png" width="400" alt="clone-rec">
 
 Cloning a record is simple. Just expand a record and click or tap on the clone button
 and an edit dialogue pops up.
@@ -1203,9 +1203,9 @@ and an edit dialogue pops up.
 Using the record that was created in the previous section here is what happens when
 you click or tap the `"Clone"` button.
 
-<img src="pam-clone-record-popup.png" width="400" alt="clone-record-popup">
+<img src="www/help/pam-clone-record-popup.png" width="400" alt="clone-record-popup">
 
-As you can see, the clone operation created a new record with a
+The clone operation created a new record with a
 slightly modified title "Ice Cream Sundae Clone" _because the record
 title must be unique_ and the same fields as the original record.
 
@@ -1215,9 +1215,9 @@ the title is unique so it can be saved.
 
 Click or tap the `"Save"` button and you will see this.
 
-<img src="pam-clone-records-1.png" width="400" alt="clone-records-1">
+<img src="www/help/pam-clone-records-1.png" width="400" alt="clone-records-1">
 
-As you can see, _PAM_ still remembers that you had the original record
+_PAM_ still remembers that you had the original record
 open. Just below it you will see the new cloned record.
 
 The reason that the original record is left open is so that it is easy
@@ -1227,7 +1227,7 @@ records.
 In this case we only care about one record so you can click
 or tap on the new record to expand it.
 
-<img src="pam-clone-records-2.png" width="400" alt="clone-records-1">
+<img src="www/help/pam-clone-records-2.png" width="400" alt="clone-records-1">
 
 #### Method 3: JSON Approach
 
@@ -1473,14 +1473,14 @@ using the currently defined fields. Of course, you could simply delete
 all of the records manually but this is simpler.
 
 To clear all records choose the
-"<img src='./trash3-fill.svg' height='32' width='32' />&nbsp;Clear Records"
+"<img src="www/help//trash3-fill.svg" height='32' width='32' />&nbsp;Clear Records"
 option from the menu. See the [Menu](#menu) section for screenshots.
 
 This option will ask you to confirm.
 
 ### Save File
 To save records and preferences to a file by choose the
-"<img src='./file-arrow-down-fill.svg' height='32' width='32' />&nbsp;Save File"
+"<img src="www/help//file-arrow-down-fill.svg" height='32' width='32' />&nbsp;Save File"
 option from the menu. See the [Menu](#menu) section for screenshots.
 
 This is the save file dialogue.
@@ -1513,7 +1513,7 @@ the _PAM_ data is organized which can aid automation.
 
 ### Load File
 To load records and preferences from a file by choose the
-"<img src='./file-arrow-up-fill.svg' height='32' width='32' />&nbsp;Load File"
+"<img src="www/help/file-arrow-up-fill.svg" height='32' width='32' />&nbsp;Load File"
 option from the menu.  See the [Menu](#menu) section for screenshots.
 
 This is the load file dialogue.
@@ -2186,7 +2186,7 @@ To edit an existing record.
 
 1. Navigate to the app as described above.
 1. Click or tap on the record that contains the information.
-1. Click or tap on the edit <img src='./pencil-square.svg' height='32' width='32' /> icon.
+1. Click or tap on the edit <img src="www/help/pencil-square.svg" height='32' width='32' /> icon.
 1. Edit the record to make the necessary changes to the fields or title.
 1. Save the record.
 1. Make sure to save the file when you are done.
@@ -2196,7 +2196,7 @@ To delete an existing record.
 
 1. Navigate to the app as described above.
 1. Click or tap on the record that contains the information.
-1. Click or tap on the delete <img src='./trash.svg' height='32' width='32' /> icon.
+1. Click or tap on the delete <img src="www/help/trash.svg" height='32' width='32' /> icon.
 1. Make sure to save the file when you are done.
 
 #### Clone an Existing Record
@@ -2207,7 +2207,7 @@ To clone a record.
 
 1. Navigate to the app as described above.
 1. Click or tap on the record that contains the information.
-1. Click or tap on the edit <img src='./files.svg' height='32' width='32' /> icon.
+1. Click or tap on the edit <img src="www/help/files.svg" height='32' width='32' /> icon.
 1. Edit the record to update the fields.
 1. Save the record.
 1. Make sure to save the file when you are done.

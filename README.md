@@ -1528,7 +1528,7 @@ If you wish to load the example records file, click or tap on the
 "Load Example Records" button (#1) to load the following example
 records that can be used to get you started.
 
-<img src="www/help/pam-file-load-example-records.png" width="400" alt="file-load-example-records">
+<img src="www/help/pam-example-records.png" width="400" alt="file-load-example-records">
 
 ##### Load Example Recipe
 If you wish to load the example recipes file, click or tap on the

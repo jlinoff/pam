@@ -130,6 +130,7 @@ the on-line help is generated.
   * [Developer Notes](#developer-notes)
     * [License](#license)
     * [Build PAM](#build-pam)
+	* [Create Favicon](#create-favicon)
     * [Test PAM](#test-pam)
     * [Release PAM](#release-pam)
     * [History](#history)
@@ -2342,6 +2343,51 @@ Here are the steps to build PAM.
     * Runs the python server on port 8081 so
       that you can access the app locally from
       http://localhost:8081 in a secure context.
+
+### Create Favicon
+I could not automate this process because I used a web service.
+
+1. Created an image using [draw.io](https://draw.io).
+2. Uploaded the image to [https://favicon.io/favicon-converter/](https://favicon.io/favicon-converter/). It converted the image automatically when the "Download" button was clicked.
+3. Per the instructions on the site, then downloaded the following files into `pam/www`
+   * android-chrome-192x192.png
+   * android-chrome-512x512.png
+   * apple-touch-icon.png
+   * favicon-16x16.png
+   * favicon-32x32.png
+   * favicon.ico
+   * site.webmanifest
+4. Also per the instructions on the site, added the link tags to `pam/www/index.html`.
+5. Edited the newly added link tags in `pam/www/index.html` to make them relative by prepending a dot to the `href` path) like this.
+
+```javascript
+<link rel="apple-touch-icon" sizes="180x180" href="./apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="./favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="./favicon-16x16.png">
+<link rel="manifest" href="./site.webmanifest">
+```
+6. Edited the link tags in `pam/www/site.webmanifest` to make them relative as well by prepending a dot to the `src` path like this. Note that the original was not not formatted, I formatted here to make it easier to read.
+
+```json
+  "name": "",
+  "short_name": "",
+  "icons": [
+    {
+      "src": "./android-chrome-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "./android-chrome-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ],
+  "theme_color": "#ffffff",
+  "background_color": "#ffffff",
+  "display": "standalone"
+}
+```
 
 ### Test PAM
 Here are the steps to test PAM.

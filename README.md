@@ -130,7 +130,7 @@ the on-line help is generated.
   * [Developer Notes](#developer-notes)
     * [License](#license)
     * [Build PAM](#build-pam)
-	* [Create Favicon](#create-favicon)
+    * [Create Favicon](#create-favicon)
     * [Test PAM](#test-pam)
     * [Release PAM](#release-pam)
     * [History](#history)

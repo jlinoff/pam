@@ -58,12 +58,9 @@ export function encrypt(password, plaintext, filename, callback) {
         const encoded_plaintext = encoder.encode(plaintext)
         PBKDF2(password, salt, 100000, 256, 'SHA-256')
             .then( (key) => {
-                console.log('key', key)
                 window.crypto.subtle.encrypt(
                     {name: 'AES-CBC', iv: iv }, key, encoded_plaintext)
                     .then( (encrypted) => {
-                        console.log('encrypted', encrypted)
-                        //ciphertext = buf2hex(encrypted)
                         ciphertext = toBase64([...salt, ...iv, ...new Uint8Array(encrypted)])
                         statusBlip(`encrypted ${plaintext.length}B -> ${ciphertext.length}B ...`)
                         callback(ciphertext, filename)
@@ -105,11 +102,9 @@ export function decrypt(password, ciphertext, callback, callback2) {
         const data = encrypted.slice(salt_len + iv_len)
         PBKDF2(password, salt, 100000, 256, 'SHA-256')
             .then( (key) => {
-                console.log('key', key)
                 window.crypto.subtle.decrypt(
                     {name: 'AES-CBC', iv: iv }, key, data)
                     .then( (decrypted) => {
-                        console.log('decrypted', decrypted)
                         const base64 = decoder.decode(decrypted)
                         if (base64[0] === '{' ) {
                             plaintext = base64

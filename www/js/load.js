@@ -361,24 +361,24 @@ function formatTimeElapsed(ms) {
     let result = ''
     if (ed > 0) {
         result += `${ed} day`
-        if (ed !== 1) result += 's'
+        if (ed !== 1) { result += 's' }
     }
     if (teh > 0) {
-        if (result.length) result += ', '
+        if (result.length) { result += ', ' }
         result += `${teh} hour`
-        if (teh !== 1) result += 's'
+        if (teh !== 1) { result += 's' }
     }
     if (tem > 0) {
-        if (result.length) result += ', '
+        if (result.length) { result += ', ' }
         result += `${tem} minute`
-        if (tem !== 1) result += 's'
+        if (tem !== 1) { result += 's' }
     }
     if (tes > 0) {
-        if (result.length) result += ', '
+        if (result.length) { result += ', ' }
         result += `${tes} second`
-        if (tes !== 1) result += 's'
+        if (tes !== 1) { result += 's' }
     }
-    if (result.length == 0) {
+    if (result.length === 0) {
         result = '0 seconds'
     }
     return result

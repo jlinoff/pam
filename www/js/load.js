@@ -345,6 +345,11 @@ function invalidPasswordCallback(error) {
 
 // Format time elapsed.
 // More human readable than simply reporting seconds or milli-seconds or days.
+// The output looks something like:
+// 1 day, 10 seconds
+// 3 days, 1 hour, 5 minutes
+// It pluralizes values for day, hour, minute, and second that are greater than one.
+// It ignores zero values for day, hour, minute, second.
 function formatTimeElapsed(ms) {
     let es = Math.floor(ms / 1000)
     let em = Math.floor(es / 60)
@@ -359,22 +364,22 @@ function formatTimeElapsed(ms) {
         if (ed !== 1) result += 's'
     }
     if (teh > 0) {
-	if (result.length) result += ', '
-	result += `${teh} hour`
-	if (teh !== 1) result += 's'
+        if (result.length) result += ', '
+        result += `${teh} hour`
+        if (teh !== 1) result += 's'
     }
     if (tem > 0) {
-	if (result.length) result += ', '
-	result += `${tem} minute`
-	if (tem !== 1) result += 's'
+        if (result.length) result += ', '
+        result += `${tem} minute`
+        if (tem !== 1) result += 's'
     }
     if (tes > 0) {
-	if (result.length) result += ', '
-	result += `${tes} second`
-	if (tes !== 1) result += 's'
+        if (result.length) result += ', '
+        result += `${tes} second`
+        if (tes !== 1) result += 's'
     }
     if (result.length == 0) {
-	result = '0 seconds'
+        result = '0 seconds'
     }
     return result
 }

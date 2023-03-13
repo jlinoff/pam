@@ -94,9 +94,12 @@ backup:  ## create source backup
 	tar Jcf $$NAME .git $$(git ls-files) ; \
 	ls -lh $$NAME
 
+# The rg test looks for embedded tabs which cause debug format problems and trailing white space.
 .PHONY: lint
 lint:  ## lint the source code
 	$(call hdr,"$@")
+	@if rg '\t' www/js/*js ; then printf '\033[31;1mERROR: embedded tabs found\033[0m\n'; exit 1 ; fi
+	@if rg '\s$$' www/js/*js ; then printf '\033[31;1mERROR: trailing whitespace found\033[0m\n'; exit 1 ; fi
 	jshint --config jshint.json www
 	@printf '\033[35;1m$@: PASSED\033[0m\n'
 
@@ -222,12 +225,33 @@ www/js/version.js: Makefile $(SRC_FILES)
 .PHONY: web
 web: app-help app-version  ## create a web release in pam-www.tar
 	$(call hdr,"$@")
-	@-rm -rf pam
-	mkdir pam
-	cp -r www pam/www
-	rm -rf pam/www/.venv
-	find pam/www -type f -name '*~' -delete
-	tar Jcf pam-www.tar pam
+	@-rm -rf web pam-www.tar pam
+	mkdir -p web/pam
+	cp -r www web/pam/www
+	rm -rf web/pam/www/.venv
+	find web -type f -name '*~' -delete
+	@cd web && tar Jcf ../pam-www.tar pam
+	@ls -l pam-www.tar
+
+.PHONY: web-min
+web-min: app-help app-version  ## (EXPERIMENTAL) create a minimized web release in pam-www-min.tar
+	$(call hdr,"$@")
+	@-rm -rf web-min pam-www-min.tar pam
+	mkdir -p web-min/pam
+	cp -r www web-min/pam/www
+	node --version
+	minify --version
+	for js in $$(ls -1 web-min/pam/www/js/*.js) ; do \
+		mjs=$$(echo "$$js" | sed -e 's/\.js/.min.js/') ; \
+		printf "\033[35;1mminify $$js\033[0m\n" ; \
+		minify "$$js" > "$$mjs" ; \
+		rm "$$js" ; \
+		mv "$$mjs" "$$js" ; \
+	done
+	rm -rf web-min/pam/www/.venv
+	@find web-min -type f -name '*~' -delete
+	@cd web-min && tar Jcf ../pam-www-min.tar pam
+	@ls -l pam-www-min.tar
 
 # could replace
 #   awk -F'##' '{printf("%-16s %s\n",$1,$2)}'

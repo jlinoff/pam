@@ -10,7 +10,9 @@ function buf2hex(buffer) { // buffer is an ArrayBuffer
 
 // https://dev.to/halan/4-ways-of-symmetric-cryptography-and-javascript-how-to-aes-with-javascript-3o1b
 const encoder = new TextEncoder()
-const decoder = new TextDecoder();
+const decoder = new TextDecoder()
+
+const numIterations = 100000
 
 const toBase64 = buffer => btoa(String.fromCharCode(...new Uint8Array(buffer)))
 const fromBase64 = buffer => Uint8Array.from(atob(buffer), c => c.charCodeAt(0))
@@ -56,7 +58,7 @@ export function encrypt(password, plaintext, filename, callback) {
         const iv = window.crypto.getRandomValues(new Uint8Array(16))
         const salt = window.crypto.getRandomValues(new Uint8Array(16))
         const encoded_plaintext = encoder.encode(plaintext)
-        PBKDF2(password, salt, 100000, 256, 'SHA-256')
+        PBKDF2(password, salt, numIterations, 256, 'SHA-256')
             .then( (key) => {
                 window.crypto.subtle.encrypt(
                     {name: 'AES-CBC', iv: iv }, key, encoded_plaintext)
@@ -100,7 +102,7 @@ export function decrypt(password, ciphertext, callback, callback2) {
         const salt = encrypted.slice(0, salt_len)
         const iv = encrypted.slice(0+salt_len, salt_len+iv_len)
         const data = encrypted.slice(salt_len + iv_len)
-        PBKDF2(password, salt, 100000, 256, 'SHA-256')
+        PBKDF2(password, salt, numIterations, 256, 'SHA-256')
             .then( (key) => {
                 window.crypto.subtle.decrypt(
                     {name: 'AES-CBC', iv: iv }, key, data)

@@ -173,7 +173,7 @@ The records appear as accordion entries that expand when you click on them as sh
 <img src="www/help/pam-google-record.png" width="400" alt="google-account-example">
 
 Once the record is expanded you simply click on the
-<img src="www/help/clipboard.svg" height="32" width="32" alt="clipboard"/>
+<img src=www/icons/black/clipboard.svg" height="32" width="32" alt="clipboard"/>
 icon associated with the record field you are interested in (like the
 password) to copy its value to the system clipboard so that it can
 then be pasted them into the appropriate login field.
@@ -592,7 +592,7 @@ the "Facebook" record was tapped.
 
 You can see that there are three fields in the record: "url", "login" and "password",
 next to each field there is a icon that looks like a clipboard
-<img src="www/help/clipboard.svg" height="32" width="32" alt="clipboard"/>.
+<img src=www/icons/black/clipboard.svg" height="32" width="32" alt="clipboard"/>.
 
 <img src="www/help/pam-record-expanded-fields.png" width="400" alt="record-expanded">
 
@@ -602,20 +602,20 @@ dialogue.
 
 In addition to the clipboard icon there is another icon that looks like
 an eye
-<img src="www/help/eye.svg" height="32" width="32" alt="eye"/>
+<img src=www/icons/black/eye.svg" height="32" width="32" alt="eye"/>
 that shows up for password field. If you click or tap it, the
 password will be shown in plaintext and the icon will change to
 an eye with a slash through it
-<img src="www/help/eye-slash.svg" height="32" width="32" alt="eye-slash"/>.
+<img src=www/icons/black/eye-slash.svg" height="32" width="32" alt="eye-slash"/>.
 By default all passwords are hidden so that they are not visible to
 casual observers. Click or tap it again to re-hide the password.
 Passwords are correctly copied to the clipboard at all times even
 when the password is hidden.
 
 In addition there are three buttons at the bottom
-"<img src="www/help/trash.svg" height='32' width='32' alt='trash'/>&nbsp;Delete" to delete the record,
-"<img src="www/help/files.svg" height='32' width='32' alt='files' />&nbsp;Clone" to clone the record and
-"<img src="www/help/pencil-square.svg" height='32' width='32' alt='pencil-square'/>&nbsp;Edit" to edit the record fields.
+"<img src=www/icons/black/trash.svg" height='32' width='32' alt='trash'/>&nbsp;Delete" to delete the record,
+"<img src=www/icons/black/files.svg" height='32' width='32' alt='files' />&nbsp;Clone" to clone the record and
+"<img src=www/icons/black/pencil-square.svg" height='32' width='32' alt='pencil-square'/>&nbsp;Edit" to edit the record fields.
 
 As shown below.
 
@@ -633,7 +633,7 @@ and [Field Types](#field-types) sections for details.
 
 Fields are modified _in_ the record by editing them directly and they
 are deleted _from_ the record by clicking on the
-<img src="www/help/trash.svg" height='32' width='32' /> icon.
+<img src=www/icons/black/trash.svg" height='32' width='32' /> icon.
 
 <img src="www/help/pam-record-expanded-edit-facebook.png" width="400" alt="record-expanded">
 
@@ -751,7 +751,7 @@ can search the web for more details about
 | email | An email text string. Use it if you _only_ want to accept an email value. A typical usage might be the email address of a contact. |
 | html | Textarea data that is rendered directly as HTML. A typical usage might be to reference an image or to display formatted text. |
 | number | A numeric text string. Use it if you _only_ want to accept an number value. A typical usage might be a measurement like height or width or any other numeric value. |
-| password | A secret text string that is normally displayed as asterisks (`****`) with an eye (<img src="www/help/eye.svg" height="32" width="32" alt="eye"/>) button that can be clicked or tapped to show the value. |
+| password | A secret text string that is normally displayed as asterisks (`****`) with an eye (<img src=www/icons/black/eye.svg" height="32" width="32" alt="eye"/>) button that can be clicked or tapped to show the value. |
 | phone | A phone number text string. Use it if you _only_ want to accept a phone number value.  A typical usage might be a mobile phone number. |
 | text | A string, like a name or keyword. You can use this for any text but it is especially useful when a field can be multiple types like an email or a name. A typical usage might be a login name where the value might be a name like "wiley" or an email like "wcoyote@acme.io" or a number like "12345678". |
 | textarea | A multi-line text box. A typical usage might be a note or a list of recipe ingredients. |
@@ -852,11 +852,11 @@ Here is an example that shows a password in its standard hidden form.
 <img src="www/help/pam-record-expanded-fields.png" width="400" alt="record-expanded">
 
 To make the password visible, click or tap on the
-<img src="www/help/eye.svg" height="32" width="32" alt="eye"/> icon.
+<img src=www/icons/black/eye.svg" height="32" width="32" alt="eye"/> icon.
 
 The password can be copied to the clipboard when it is hidden by
 clicking on the
-<img src="www/help/clipboard.svg" height="32" width="32" alt="clipboard"/>
+<img src=www/icons/black/clipboard.svg" height="32" width="32" alt="clipboard"/>
 icon.
 
 ### Visible Password Representation
@@ -865,18 +865,18 @@ Here is an example that shows a password in its visible hidden form.
 <img src="www/help/pam-record-expanded-password.png" width="400" alt="record-expanded-password">
 
 The password can be copied to the clipboard by clicking on the
-<img src="www/help/clipboard.svg" height="32" width="32" alt="clipboard"/>
+<img src=www/icons/black/clipboard.svg" height="32" width="32" alt="clipboard"/>
 icon.
 
 To hide the password, click or tap on the
-<img src="www/help/eye-slash.svg" height="32" width="32" alt="eye"/> icon.
+<img src=www/icons/black/eye-slash.svg" height="32" width="32" alt="eye"/> icon.
 
 ### Password Generator
 This is what the password field dialogue looks like with no generator.
 
 <img src="www/help/pam-password-no-generator.png" width="400" alt="password-no-generator">
 
-When you click or tap on the <img src="www/help/gear.svg" height='32' width='32' /> icon,
+When you click or tap on the <img src=www/icons/black/gear.svg" height='32' width='32' /> icon,
 cryptic and memorable passwords are generated and the password
 generator dialogue appears.
 
@@ -894,14 +894,14 @@ This is what the password generator looks like with annotations.
 
 <img src="www/help/pam-password-generator-annotated.png" width="400" alt="password-generator-annotated">
 
-If you click or tap on the <img src="www/help/gear.svg" height='32' width='32' /> icon
+If you click or tap on the <img src=www/icons/black/gear.svg" height='32' width='32' /> icon
 a second time, new passwords will be generated.
 
-You must click or tap on the <img src="www/help/x-circle.svg" height='32' width='32' /> icon
+You must click or tap on the <img src=www/icons/black/x-circle.svg" height='32' width='32' /> icon
 to close the dialogue.
 
 I chose this approach because I wanted the
-<img src="www/help/gear.svg" height='32' width='32' />
+<img src=www/icons/black/gear.svg" height='32' width='32' />
 icon to be used to generate new passwords.
 
 > In retrospect, that choice may not have been the most intuitive way
@@ -983,20 +983,20 @@ As you can see, there are seven menu options:
 1. [Save File](#save-file)
 1. [Help](#get-help).
 
-Click or tap on the "<img src="www/help/info-circle.svg" height='32' width='32' />&nbsp;About"
+Click or tap on the "<img src=www/icons/black/info-circle.svg" height='32' width='32' />&nbsp;About"
 entry to see information about the app.
 See the [About](#about) section for more details.
 
-Click or tap on the "<img src="www/help/gear.svg" height=' 32' width='32' />&nbsp;Preferences"
+Click or tap on the "<img src=www/icons/black/gear.svg" height=' 32' width='32' />&nbsp;Preferences"
 entry to see the preferences dialogue which allows you
 to customize some of the app behavior. There is a lot of stuff so you might want
 to read the [Preferences](#preferences) section before trying it.
 
-Click or tap on the "<img src="www/help/plus-circle-fill.svg" height='32' width='32' />&nbsp;New Record"
+Click or tap on the "<img src=www/icons/black/plus-circle-fill.svg" height='32' width='32' />&nbsp;New Record"
 entry to create a new record.
 See the [Create New Record](#create-new-record) section for more details.
 
-Click or tap on the "<img src="www/help/trash3-fill.svg" height='32' width='32' />&nbsp;Clear Records"
+Click or tap on the "<img src=www/icons/black/trash3-fill.svg" height='32' width='32' />&nbsp;Clear Records"
 entry to delete all of the records.
 This is useful for times when you want to create a new collection of
 records that is saved in a separate file.  For example, if you wanted
@@ -1004,15 +1004,15 @@ to create a collection personal accounts in one file and a collection
 shared accounts for a group of folks (like a development team sharing
 AWS accounts).
 
-Click or tap on the "<img src="www/help/file-arrow-up-fill.svg" height='32' width='32' />&nbsp;Load File"
+Click or tap on the "<img src=www/icons/black/file-arrow-up-fill.svg" height='32' width='32' />&nbsp;Load File"
 entry to load a records file.
 See the [Load File](#load-file) section for more details.
 
-Click or tap on the "<img src="www/help/file-arrow-down-fill.svg" height='32' width='32' />&nbsp;Save File" entry
+Click or tap on the "<img src=www/icons/black/file-arrow-down-fill.svg" height='32' width='32' />&nbsp;Save File" entry
 to save all of the records to a file.
 See the [Save File](#save-file) section for more details.
 
-Click or tap on the "<img src="www/help/question-circle.svg" height='32' width='32' />&nbsp;Help"
+Click or tap on the "<img src=www/icons/black/question-circle.svg" height='32' width='32' />&nbsp;Help"
 entry to see this help message.
 
 ### Records Section
@@ -1474,14 +1474,14 @@ using the currently defined fields. Of course, you could simply delete
 all of the records manually but this is simpler.
 
 To clear all records choose the
-"<img src="www/help/trash3-fill.svg" height='32' width='32' />&nbsp;Clear Records"
+"<img src=www/icons/black/trash3-fill.svg" height='32' width='32' />&nbsp;Clear Records"
 option from the menu. See the [Menu](#menu) section for screenshots.
 
 This option will ask you to confirm.
 
 ### Save File
 To save records and preferences to a file by choose the
-"<img src="www/help/file-arrow-down-fill.svg" height='32' width='32' />&nbsp;Save File"
+"<img src=www/icons/black/file-arrow-down-fill.svg" height='32' width='32' />&nbsp;Save File"
 option from the menu. See the [Menu](#menu) section for screenshots.
 
 This is the save file dialogue.
@@ -1514,7 +1514,7 @@ the _PAM_ data is organized which can aid automation.
 
 ### Load File
 To load records and preferences from a file by choose the
-"<img src="www/help/file-arrow-up-fill.svg" height='32' width='32' />&nbsp;Load File"
+"<img src=www/icons/black/file-arrow-up-fill.svg" height='32' width='32' />&nbsp;Load File"
 option from the menu.  See the [Menu](#menu) section for screenshots.
 
 This is the load file dialogue.
@@ -1854,11 +1854,11 @@ See the [Fields](#fields) section for more information about record
 fields.
 
 At the top of the section there is
-<img src="www/help/plus-circle.svg" height="32" width="32" alt="add"/>
+<img src=www/icons/black/plus-circle.svg" height="32" width="32" alt="add"/>
 icon that is used to create a new record field.
 
 Each default record field has a name, a type (from a pulldown menu) and
-a delete button (<img src="www/help/trash3-fill.svg" height="32" width="32" alt="trash"/>)
+a delete button (<img src=www/icons/black/trash3-fill.svg" height="32" width="32" alt="trash"/>)
 that you click to delete the record field.
 
 The record field names must be unique but you can modify them.
@@ -2174,10 +2174,10 @@ To use the data to log into a site.
 1. Click or tap on the record that contains the information.
 1. Click or tap on the "url" link so that the site opens up in a different tab.
 1. Enter the login name or email by clicking or tapping on the
-   <img src="www/help/clipboard.svg" height="32" width="32" alt="clipboard"/> icon
+   <img src=www/icons/black/clipboard.svg" height="32" width="32" alt="clipboard"/> icon
    next to the login name and paste into the site.
 1. Enter the password by clicking or tapping on the
-   <img src="www/help/clipboard.svg" height="32" width="32" alt="clipboard"/> icon
+   <img src=www/icons/black/clipboard.svg" height="32" width="32" alt="clipboard"/> icon
    next to the password and paste into the site.
    1. You do _not_ need to make the password visible to do this.
    1. It picks up the correct password even when it is hidden.
@@ -2187,7 +2187,7 @@ To edit an existing record.
 
 1. Navigate to the app as described above.
 1. Click or tap on the record that contains the information.
-1. Click or tap on the edit <img src="www/help/pencil-square.svg" height='32' width='32' /> icon.
+1. Click or tap on the edit <img src=www/icons/black/pencil-square.svg" height='32' width='32' /> icon.
 1. Edit the record to make the necessary changes to the fields or title.
 1. Save the record.
 1. Make sure to save the file when you are done.
@@ -2197,7 +2197,7 @@ To delete an existing record.
 
 1. Navigate to the app as described above.
 1. Click or tap on the record that contains the information.
-1. Click or tap on the delete <img src="www/help/trash.svg" height='32' width='32' /> icon.
+1. Click or tap on the delete <img src=www/icons/black/trash.svg" height='32' width='32' /> icon.
 1. Make sure to save the file when you are done.
 
 #### Clone an Existing Record
@@ -2208,7 +2208,7 @@ To clone a record.
 
 1. Navigate to the app as described above.
 1. Click or tap on the record that contains the information.
-1. Click or tap on the edit <img src="www/help/files.svg" height='32' width='32' /> icon.
+1. Click or tap on the edit <img src=www/icons/black/files.svg" height='32' width='32' /> icon.
 1. Edit the record to update the fields.
 1. Save the record.
 1. Make sure to save the file when you are done.
@@ -2267,13 +2267,13 @@ defined.
 
 1. Open the preferences dialogue from the menu.
 1. Add the new fields by clicking or tapping on the
-   <img src="www/help/plus-circle.svg" height="32" width="32" alt="trash"/>
+   <img src=www/icons/black/plus-circle.svg" height="32" width="32" alt="trash"/>
    icon in the `"Record Fields"` in the preferences section.
    1. `"ingredients"` of type "textarea".
    1. `"instructions"` of type "textarea".
 1. Delete all of the other record fields defined in the preferences by
    clicking or tapping on the
-   <img src="www/help/trash3-fill.svg" height="32" width="32" alt="trash"/>
+   <img src=www/icons/black/trash3-fill.svg" height="32" width="32" alt="trash"/>
    icon because there is no need for them.
 
 To search by an ingredient, set the "Search Record Field Values" preference

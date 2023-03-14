@@ -1474,14 +1474,14 @@ using the currently defined fields. Of course, you could simply delete
 all of the records manually but this is simpler.
 
 To clear all records choose the
-"<img src="www/help//trash3-fill.svg" height='32' width='32' />&nbsp;Clear Records"
+"<img src="www/help/trash3-fill.svg" height='32' width='32' />&nbsp;Clear Records"
 option from the menu. See the [Menu](#menu) section for screenshots.
 
 This option will ask you to confirm.
 
 ### Save File
 To save records and preferences to a file by choose the
-"<img src="www/help//file-arrow-down-fill.svg" height='32' width='32' />&nbsp;Save File"
+"<img src="www/help/file-arrow-down-fill.svg" height='32' width='32' />&nbsp;Save File"
 option from the menu. See the [Menu](#menu) section for screenshots.
 
 This is the save file dialogue.

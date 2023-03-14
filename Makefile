@@ -101,7 +101,21 @@ lint:  ## lint the source code
 	@if rg '\t' www/js/*js ; then printf '\033[31;1mERROR: embedded tabs found\033[0m\n'; exit 1 ; fi
 	@if rg '\s$$' www/js/*js ; then printf '\033[31;1mERROR: trailing whitespace found\033[0m\n'; exit 1 ; fi
 	jshint --config jshint.json www
+	diff <(ls -1 www/icons/black/) <(ls -1 www/icons/blue)
 	@printf '\033[35;1m$@: PASSED\033[0m\n'
+
+# Make sure that the icons in www/icons/black and icons/blue/blue are the same.
+.PHONY: update-blue-icons
+update-blue-icons:  ## Idempotent update of www/icons/blue from www/icons/black.
+	$(call hdr,"$@")
+	@rm -f www/icons/blue/*svg
+	@for IFN in $$(find www/icons/black -type f -name '*.svg') ; do \
+		OFN=$$(echo "$$IFN" | sed -e 's@/black/@/blue/@') ; \
+		printf '\033[35;1m%s\033[0m\n' "$$IFN --> $$OFN" ; \
+		rg 'fill="[^"]*"' "$$IFN" ; \
+		sed -e 's/fill="[^"]*"/fill="'"blue"'"/g' "$$IFN" > "$$OFN" ; \
+		rg 'fill="[^"]*"' "$$OFN" ; \
+	done
 
 .PHONY: bs
 bs: .bs ## install bootstrap locally
@@ -182,7 +196,7 @@ app-help: www/help/index.html  ## generate the pam help
 # requires sed 4.8 or later
 www/help/index.html: Makefile README.md www/help/index.css \
 		$(shell ls -1 www/help/*png) \
-		$(shell ls -1 www/help/*svg)
+		$(shell ls -1 www/icons/*/*svg)
 	$(call hdr,"app-help")
 	sed --version
 	cp README.md tmp.md
@@ -270,7 +284,7 @@ help:  ## this help message
 		grep -E -v '^ *#' | \
 	        grep -E -v "egrep|sort|sed|MAKEFILE" | \
 		sed -e 's/: .*##/##/' -e 's/^[^:#]*://' | \
-		awk -F'##' '{printf("%-16s %s\n",$$1,$$2)}' | \
+		awk -F'##' '{printf("%-18s %s\n",$$1,$$2)}' | \
 		sort -f | \
 		sed -e 's@^@   @'
 	@printf "\n\033[35;1m%s\n" "Variables"

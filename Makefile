@@ -187,6 +187,7 @@ www/help/index.html: Makefile README.md www/help/index.css \
 	sed --version
 	cp README.md tmp.md
 	sed -i 's@<img src="www/help/@<img src="./@' tmp.md
+	sed -i 's@<img src="www/icons/blue/@<img src="../icons/black/@' tmp.md
 	sed -i "s/__VERSION__/$$(cat VERSION | tr -d ' \n')/g" tmp.md
 	sed -i "s/__BOOTSTRAP_VERSION__/$(BS_VER)/g" tmp.md
 	sed -i "s/__BUILD__/$$(git show -s --format=%ci $$(git rev-parse --short HEAD | tr -d ' \n'))/g" tmp.md

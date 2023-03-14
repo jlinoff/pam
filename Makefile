@@ -106,7 +106,7 @@ lint:  ## lint the source code
 
 # Make sure that the icons in www/icons/black and icons/blue/blue are the same.
 .PHONY: update-blue-icons
-update-blue-icons:  ## Update www/icons/blue from www/icons/black.
+update-blue-icons:  ## Idempotent update of www/icons/blue from www/icons/black.
 	$(call hdr,"$@")
 	@rm -f www/icons/blue/*svg
 	@for IFN in $$(find www/icons/black -type f -name '*.svg') ; do \
@@ -284,7 +284,7 @@ help:  ## this help message
 		grep -E -v '^ *#' | \
 	        grep -E -v "egrep|sort|sed|MAKEFILE" | \
 		sed -e 's/: .*##/##/' -e 's/^[^:#]*://' | \
-		awk -F'##' '{printf("%-16s %s\n",$$1,$$2)}' | \
+		awk -F'##' '{printf("%-18s %s\n",$$1,$$2)}' | \
 		sort -f | \
 		sed -e 's@^@   @'
 	@printf "\n\033[35;1m%s\n" "Variables"

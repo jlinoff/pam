@@ -35,6 +35,12 @@ endef
 .PHONY: default
 default: init
 
+# Make a release.
+.PHONY: all
+all: clean default test web  ## Make a release: make clean && make && make test && make web
+	$(call hdr,"$@")
+	@ls -lh pam-www.tar
+
 .PHONY: clean
 clean:   # clean up
 	$(call hdr,"$@")

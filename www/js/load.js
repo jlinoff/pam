@@ -88,7 +88,7 @@ export function menuLoadDlg() {
         xmk('input') // system file selection dialogue
             .xId('x-load-file-select-input')
             .xAttr('type', 'file')
-            .xAttr('value', 'unused.txt')
+            .xAttr('value', '')
             .xAttr('accept', '.js,.pam,.txt')
             .xStyle({display: 'none'})
             .xAddEventListener('change', (event1)=> {

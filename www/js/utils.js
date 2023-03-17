@@ -248,11 +248,12 @@ export function toggleDarkTheme() {
 
 /**
  * Replace the "from" class with the "to" class on each element.
+ * This is tricky because the list is live - it changes as the classes are replaced.
  */
 function replaceClass(from, to) {
-    var elements = Array.from(document.body.getElementsByClassName(from))
+    let elements = Array.from(document.body.getElementsByClassName(from))
     console.log(elements)
-    for (let i = elements.length - 1; i >= 0; i--) {
+    for (let i = elements.length-1; i >= 0; i--) {
         let element = elements[i]
         try {
             element.classList.replace(from, to)

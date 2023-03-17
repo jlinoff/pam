@@ -74,15 +74,14 @@ function topLayout() {
     for (let i=1; i<=50; i++) {
         lines += `line ${i}<br />`
     }
-    document.body.xClass('bg-dark')
     document.body.xAppendChild(
         xmk('header')
             .xId('top-section')
             .xClass('fixed-top',
                     'border',
                     'p-2',
-                    'bg-dark',
                     'fs-5',
+		    window.prefs.themeBgClass,
                     'text-center',
                     'text-light')
             .xAppendChild(createSearchInputAndMenuEntry()),
@@ -100,24 +99,26 @@ function topLayout() {
             .xClass('fixed-bottom',
                     'border',
                     'p-2',
-                    'bg-dark',
+		    window.prefs.themeBgClass,
                     'fs-5',
                     'text-left',
                     'text-info',
                    )
             .xAppend(
-		xmk('button')
-		    .xId('x-toggle-light-dark')
-		    .xClass('btn', 'btn-light', 'btn-small')
-		    .xAttrs({'title': 'toggle'})
-		    .xAddEventListener('click', (event) => {
-			toggleDarkTheme()
-		    })
-		    .xInnerHTML('Toggle'),
                 xmk('span')
-                    .xId('status')
-                    .xStyle({'width': '80%'})
-                    .xAttrs({'title': 'dynamic status messages appear here'}),
+		    .xAppend(
+			xmk('button')
+			    .xId('x-toggle-light-dark')
+			    .xClass('btn', 'btn-small', window.prefs.themeBgClass)
+			    .xAttrs({'title': 'toggle'})
+			    .xAddEventListener('click', (event) => {
+				toggleDarkTheme()
+			    }),
+			xmk('span')
+			    .xId('status')
+			    .xStyle({'width': '80%'})
+			    .xAttrs({'title': 'dynamic status messages appear here'}),
+		    ),
             )
     )
 }

@@ -271,8 +271,8 @@ export function setDarkLightTheme(theme) {
     if (theme === "light" ) {
         // let there be light!
         document.body.setAttribute('data-bs-theme', 'light')
-        window.prefs.NgClass = 'bg-light'
-        window.prefs.ButtonClass = 'btn-light'
+        window.prefs.themeBgClass = 'bg-light'
+        window.prefs.themeBtnClass = 'btn-light'
         replaceClass('btn-dark', 'btn-light')
         replaceClass('bg-dark', 'bg-light')
         let button = document.getElementById('x-toggle-light-dark')
@@ -284,8 +284,8 @@ export function setDarkLightTheme(theme) {
         console.log(button)
     } else if (theme === "dark") {
         document.body.setAttribute('data-bs-theme', 'dark')
-        window.prefs.NgClass = 'bg-dark'
-        window.prefs.ButtonClass = 'btn-dark'
+        window.prefs.themeBgClass = 'bg-dark'
+        window.prefs.themeBtnClass = 'btn-dark'
         replaceClass('btn-light', 'btn-dark')
         replaceClass('bg-light', 'bg-dark')
         let button = document.getElementById('x-toggle-light-dark')

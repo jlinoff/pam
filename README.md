@@ -164,7 +164,9 @@ In addition, _PAM_ is designed to be mobile friendly so you can access
 it from your laptop browser as well as your mobile phone and tablet.
 
 It looks something like this on my iphone for some fictitious example
-records.
+records. This is approximate because it shows the view before support
+for dark mode was added. You can switch between light and dark modes
+by tapping or clicking the button in the lower left hand corner.
 
 <img src="www/help/pam-iphone-screenshot.png" alt="iphone-screenshot" width="400">
 

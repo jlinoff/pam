@@ -277,7 +277,7 @@ export function setDarkLightTheme(theme) {
         replaceClass('bg-dark', 'bg-light')
         if (!!setLightModeButton && !! setDarkModeButton) {
             setLightModeButton.xStyle({'display' : 'none'})
-            setDarkModeButton.xStyle({'display' : 'inline'})
+            setDarkModeButton.xStyle({'display' : 'inline', 'color': 'black'})
         }
     } else if (theme === "dark") {
         document.body.setAttribute('data-bs-theme', 'dark')
@@ -286,7 +286,7 @@ export function setDarkLightTheme(theme) {
         replaceClass('btn-light', 'btn-dark')
         replaceClass('bg-light', 'bg-dark')
         if (!!setLightModeButton && !! setDarkModeButton) {
-            setLightModeButton.xStyle({'display' : 'inline'})
+            setLightModeButton.xStyle({'display' : 'inline', color: 'white'})
             setDarkModeButton.xStyle({'display' : 'none'})
         }
     } else {

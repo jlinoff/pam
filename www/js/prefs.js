@@ -34,8 +34,8 @@ export function initPrefs() {
     window.prefs = {
         // Use the '.txt' extension because the '.pam' extension
         // does not work on some mobile devices.
-	themeBgClass: 'bg-dark',
-	themeBtnClass: 'btn-dark',
+        themeBgClass: 'bg-dark',
+        themeBtnClass: 'btn-dark',
         enablePrinting: false,
         fileName: 'example.txt',
         filePass: '',

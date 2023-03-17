@@ -319,9 +319,9 @@ function loadCallback(text) {
     let fet = formatTimeElapsed(elapsed)
 
     if (window.prefs.themeBgClass.includes('dark')) {
-	setDarkLightTheme('dark')
+        setDarkLightTheme('dark')
     } else {
-	setDarkLightTheme('light')
+        setDarkLightTheme('light')
     }
     setAboutFileInfo(`Loaded ${num} records on ${now.toISOString()}.<br>Records were last updated on ${thenDate.toISOString()} (${fet}).`)
 }

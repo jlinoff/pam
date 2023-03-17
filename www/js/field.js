@@ -76,7 +76,7 @@ function mkRecordFldElement(name, type, fieldValue, rawValue, ...buttons) {
 function mkRecordFieldCopyToClipboardButton(raw_value) {
     const value = raw_value
     return xmk('button')
-        .xClass('btn', 'btn-lg', 'p-0', 'ms-2')
+        .xClass('btn', 'btn-lg', window.prefs.themeBtnClass, 'p-0', 'ms-2')
         .xAttrs({'type': 'button'})
         .xAppend(icon('bi-clipboard', 'copy to clipboard')) // also bi-files
         .xAddEventListener('click', (event) => {
@@ -115,7 +115,7 @@ function mkRecordFieldPasswordShowHideButton(showValueIn, hideValueIn) {
     const showValue = showValueIn
     const hideValue = hideValueIn
     return xmk('button')
-        .xClass('btn', 'btn-lg', 'p-0', 'ms-2')
+        .xClass('btn', 'btn-lg', window.prefs.themeBtnClass, 'p-0', 'ms-2')
         .xAppend(icon('bi-eye', 'show password'))
         .xAddEventListener('click', (event) => {
             let row = event.target.xGetParentWithClass('row')

@@ -81,7 +81,7 @@ function topLayout() {
                     'border',
                     'p-2',
                     'fs-5',
-		    window.prefs.themeBgClass,
+                    window.prefs.themeBgClass,
                     'text-center',
                     'text-light')
             .xAppendChild(createSearchInputAndMenuEntry()),
@@ -90,6 +90,7 @@ function topLayout() {
             .xClass('h-100',
                     //'border', 'border-2', 'border-danger', // debugging
                     'overflow-auto',
+                    window.prefs.themeBgClass,
                     'pt-5',
                     'pb-5',
                     'p-2',
@@ -99,27 +100,33 @@ function topLayout() {
             .xClass('fixed-bottom',
                     'border',
                     'p-2',
-		    window.prefs.themeBgClass,
+                    window.prefs.themeBgClass,
                     'fs-5',
                     'text-left',
                     'text-info',
                    )
             .xAppend(
+                xmk('button')
+                    .xId('x-dark-mode-button')
+                    .xClass('btn', window.prefs.themeBgClass)
+                    .xAttrs({'title': 'set dark mode'})
+                    .xAppend(icon('bi-moon', 'set dark mode'))  // in light mode
+                    .xAddEventListener('click', (event) => {
+                        setDarkLightTheme('dark')
+                    }),
+                xmk('button')
+                    .xId('x-light-mode-button')
+                    .xClass('btn', window.prefs.themeBgClass)
+                    .xAttrs({'title': 'set light mode'})
+                    .xAppend(icon('bi-sun', 'set light mode'))  // in dark mode
+                    .xAddEventListener('click', (event) => {
+                        setDarkLightTheme('light')
+                    }),
                 xmk('span')
-		    .xAppend(
-			xmk('button')
-			    .xId('x-toggle-light-dark')
-			    .xClass('btn', 'btn-small', window.prefs.themeBgClass)
-			    .xAttrs({'title': 'toggle'})
-			    .xAddEventListener('click', (event) => {
-				toggleDarkTheme()
-			    }),
-			xmk('span')
-			    .xId('status')
-			    .xStyle({'width': '80%'})
-			    .xAttrs({'title': 'dynamic status messages appear here'}),
-		    ),
-            )
+                    .xId('status')
+                    .xStyle({'width': '80%'})
+                    .xAttrs({'title': 'dynamic status messages appear here'})
+            ),
     )
 }
 

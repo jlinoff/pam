@@ -239,7 +239,6 @@ export function mkPopupModalDlgButton(text, type, tooltip, callback) {
  */
 export function toggleDarkTheme() {
     let curTheme = document.body.getAttribute('data-bs-theme')
-    console.log(curTheme)
     if (curTheme === "dark" ) {
         setDarkLightTheme('light')
     } else {
@@ -251,11 +250,10 @@ export function toggleDarkTheme() {
  * Replace the "from" class with the "to" class on each element.
  */
 function replaceClass(from, to) {
-    let elements = document.body.getElementsByClassName(from)
-    // live list! Work backwards to avoid collisions
-    for (let i=elements.length-1; i>0; i--) {
+    var elements = Array.from(document.body.getElementsByClassName(from))
+    console.log(elements)
+    for (let i = elements.length - 1; i >= 0; i--) {
         let element = elements[i]
-        console.log(element)
         try {
             element.classList.replace(from, to)
         } catch (error) {
@@ -268,6 +266,8 @@ function replaceClass(from, to) {
  * set the dark/light theme explicitly
  */
 export function setDarkLightTheme(theme) {
+    let setDarkModeButton = document.getElementById('x-dark-mode-button')
+    let setLightModeButton = document.getElementById('x-light-mode-button')
     if (theme === "light" ) {
         // let there be light!
         document.body.setAttribute('data-bs-theme', 'light')
@@ -275,26 +275,20 @@ export function setDarkLightTheme(theme) {
         window.prefs.themeBtnClass = 'btn-light'
         replaceClass('btn-dark', 'btn-light')
         replaceClass('bg-dark', 'bg-light')
-        let button = document.getElementById('x-toggle-light-dark')
-        button.xInnerHTML('Set Dark Mode')
-        button.classList.replace('btn-dark', 'btn-light')
-	button.replaceChildren(
-	    icon('bi-moon', 'switch to dark mode')
-	)
-        console.log(button)
+        if (!!setLightModeButton && !! setDarkModeButton) {
+            setLightModeButton.xStyle({'display' : 'none'})
+            setDarkModeButton.xStyle({'display' : 'inline'})
+        }
     } else if (theme === "dark") {
         document.body.setAttribute('data-bs-theme', 'dark')
         window.prefs.themeBgClass = 'bg-dark'
         window.prefs.themeBtnClass = 'btn-dark'
         replaceClass('btn-light', 'btn-dark')
         replaceClass('bg-light', 'bg-dark')
-        let button = document.getElementById('x-toggle-light-dark')
-        button.xInnerHTML('Set Light Mode')
-        button.classList.replace('btn-light', 'btn-dark')
-	button.replaceChildren(
-	    icon('bi-sun', 'switch to light mode')
-	)
-        console.log(button)
+        if (!!setLightModeButton && !! setDarkModeButton) {
+            setLightModeButton.xStyle({'display' : 'inline'})
+            setDarkModeButton.xStyle({'display' : 'none'})
+        }
     } else {
         alert(`invalid theme: '${theme}, expected 'dark' or 'light'`)
     }

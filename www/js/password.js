@@ -96,7 +96,10 @@ function saveGeneratedPassword(event) {
     //console.log('x-fld-value', e1)
     //console.log('x-fld-value-length', e2)
     e2.value = event.target.innerHTML
-    e1.innerHTML = event.target.innerHTML.length
+    if (!!e1) {
+        // does not exist in the save dialogue
+        e1.innerHTML = event.target.innerHTML.length
+    }
 }
 
 // make the generate password dialogue for record fields and
@@ -178,13 +181,17 @@ export function mkGeneratePasswordDlg(event) {
                         // Allow text to be selected in a draggable parent.
                         // Disable dragging.
                         let row = event.target.xGetParentWithClass('x-new-rec-fld')
-                        row.setAttribute('draggable', false)
+                        if (!!row) {
+                            row.setAttribute('draggable', false)
+                        }
                     })
                     .xAddEventListener('blur', (event) => {
                         // Allow text to be selected in a draggable parent.
                         // Re-enable dragging.
                         let row = event.target.xGetParentWithClass('x-new-rec-fld')
-                        row.setAttribute('draggable', true)
+                        if (!!row) {
+                            row.setAttribute('draggable', true)
+                        }
                     })
                     .xAddEventListener('input', (event) => {
                         //console.log(event.target.value)

@@ -671,7 +671,7 @@ function mkPrefsCheckBox(labelClasses, inputClasses, id, title, popup) {
         xmk('div').xClass(...inputClasses).xAppend(
             xmk('div').xClass('input-group').xAppend(
                 xmk('button')
-                    .xClass('form-control', 'btn', 'btn-lg')
+                    .xClass('form-control', 'btn', 'btn-lg', window.prefs.themeBtnClass)
                     .xAttrs({'type': 'button',
                              'title': popup,
                              'data-pref-id': id,

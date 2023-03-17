@@ -108,7 +108,7 @@ function topLayout() {
             .xAppend(
                 xmk('button')
                     .xId('x-dark-mode-button')
-                    .xClass('btn', window.prefs.themeBgClass)
+                    .xClass('btn', window.prefs.themeBtnClass)
                     .xAttrs({'title': 'set dark mode'})
                     .xAppend(icon('bi-moon', 'set dark mode'))  // in light mode
                     .xAddEventListener('click', (event) => {
@@ -116,7 +116,7 @@ function topLayout() {
                     }),
                 xmk('button')
                     .xId('x-light-mode-button')
-                    .xClass('btn', window.prefs.themeBgClass)
+                    .xClass('btn', window.prefs.themeBtnClass)
                     .xAttrs({'title': 'set light mode'})
                     .xAppend(icon('bi-sun', 'set light mode'))  // in dark mode
                     .xAddEventListener('click', (event) => {

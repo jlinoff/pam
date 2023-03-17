@@ -263,6 +263,21 @@ function replaceClass(from, to) {
 }
 
 /**
+ * Set style for elements in a class.
+ */
+function setStylesByClass(className, styles) {
+    let elements = Array.from(document.body.getElementsByClassName(className))
+    for (let i = elements.length-1; i >= 0; i--) {
+        let element = elements[i]
+        try {
+            element.xStyle(styles)
+        } catch (error) {
+            console.log(error)
+        }
+    }
+}
+
+/**
  * set the dark/light theme explicitly
  */
 export function setDarkLightTheme(theme) {
@@ -277,8 +292,9 @@ export function setDarkLightTheme(theme) {
         replaceClass('bg-dark', 'bg-light')
         if (!!setLightModeButton && !! setDarkModeButton) {
             setLightModeButton.xStyle({'display' : 'none'})
-            setDarkModeButton.xStyle({'display' : 'inline', 'color': 'black'})
+            setDarkModeButton.xStyle({'display' : 'inline', 'color': 'black'}) // make sure it it visible
         }
+        setStylesByClass('bi-list', {'color': 'black'}) // fix the pull down menu
     } else if (theme === "dark") {
         document.body.setAttribute('data-bs-theme', 'dark')
         window.prefs.themeBgClass = 'bg-dark'
@@ -286,9 +302,10 @@ export function setDarkLightTheme(theme) {
         replaceClass('btn-light', 'btn-dark')
         replaceClass('bg-light', 'bg-dark')
         if (!!setLightModeButton && !! setDarkModeButton) {
-            setLightModeButton.xStyle({'display' : 'inline', color: 'white'})
+            setLightModeButton.xStyle({'display' : 'inline', color: 'white'}) // make sure it it visible
             setDarkModeButton.xStyle({'display' : 'none'})
         }
+        setStylesByClass('bi-list', {'color': 'white'}) // fix the pull down menu
     } else {
         alert(`invalid theme: '${theme}, expected 'dark' or 'light'`)
     }

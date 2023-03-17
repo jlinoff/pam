@@ -139,7 +139,7 @@ export function mkRecord(title, ...recordFields) {
                                                 .xClass('col-12', 'align-self-start')
                                                 .xAppend(
                                                     xmk('button')
-                                                        .xClass('btn', 'fs-6', 'm-1')
+                                                        .xClass('btn', window.prefs.themeBtnClass, 'fs-6', 'm-1')
                                                         .xAttrs({'title': 'delete this record'})
                                                         .xAppend(
                                                             icon('bi-trash', 'delete this record'),
@@ -150,7 +150,7 @@ export function mkRecord(title, ...recordFields) {
                                                             setNumRecords()
                                                         }),
                                                     xmk('button')
-                                                        .xClass('btn', 'fs-6', 'm-1')
+                                                        .xClass('btn', window.prefs.themeBtnClass, 'fs-6', 'm-1')
                                                         .xAttrs({'title': 'duplicate this record'})
                                                         .xAppend(
                                                             icon('bi-files', 'duplicated this record'),
@@ -169,7 +169,7 @@ export function mkRecord(title, ...recordFields) {
                                                             myModal.show()
                                                         }),
                                                     xmk('button')
-                                                        .xClass('btn', 'fs-6', 'm-1')
+                                                        .xClass('btn', window.prefs.themeBtnClass, 'fs-6', 'm-1')
                                                         .xAttrs({'title': 'edit this record'})
                                                         .xAppend(
                                                             icon('bi-pencil-square', 'edit this record'),

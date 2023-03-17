@@ -5,7 +5,7 @@
 import { xmk, xget, xgetn, enableFunctionChaining } from './lib.js'
 import { statusBlip } from './status.js'
 import { words } from './en_words.js'
-import { icon } from './utils.js'
+import { icon, toggleDarkTheme, setDarkLightTheme } from './utils.js'
 import { initPrefs } from './prefs.js'
 import { mkMenu } from './menu.js'
 import { mkSearchInputElement, searchRecords } from './search.js'
@@ -38,6 +38,7 @@ export function main() {
     initialize()
     adjust()
     enablePrinting()
+    setDarkLightTheme('dark')
     //setTimeout(() => {adjust()}, 1000)
     const secure = window.isSecureContext? '(secure)' : ''
     statusBlip(`initializing PAM... ${secure} ${window.screen.width}x${window.screen.height}`)
@@ -105,6 +106,14 @@ function topLayout() {
                     'text-info',
                    )
             .xAppend(
+		xmk('button')
+		    .xId('x-toggle-light-dark')
+		    .xClass('btn', 'btn-light', 'btn-small')
+		    .xAttrs({'title': 'toggle'})
+		    .xAddEventListener('click', (event) => {
+			toggleDarkTheme()
+		    })
+		    .xInnerHTML('Toggle'),
                 xmk('span')
                     .xId('status')
                     .xStyle({'width': '80%'})

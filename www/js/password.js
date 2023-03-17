@@ -133,7 +133,7 @@ export function mkGeneratePasswordDlg(event) {
             xmk('div').xClass('col-12', 'x-fld-pw-gen', 'mt-1').xAppend(
                 xmk('hr'),
                 xmk('button')
-                    .xClass('btn', 'btn-small', 'w-100')
+                    .xClass('btn', 'btn-small', window.prefs.themeBtnClass, 'w-100')
                     .xAppend(
                         icon('bi-x-circle', 'close the section'),
                         xmk('span').xInnerHTML('&nbsp;Close Password Generator'))

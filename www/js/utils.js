@@ -138,7 +138,9 @@ export function mkPopupModalDlg(id, title, body, ...buttons) {
         )
 }
 
-// Make draggable row
+/*
+ * Make draggable row
+ */
 export function mkDraggableRow(type) {
     return xmk('row')
         .xClass('row', 'x-new-rec-fld')
@@ -206,7 +208,9 @@ export function mkDraggableRow(type) {
         })
 }
 
-// Make a modal record button (usually Quit or Save).
+/*
+ * Make a modal record button (usually Quit or Save).
+ */
 export function mkPopupModalDlgButton(text, type, tooltip, callback) {
     let xcls = 'x-fld-record-' + text.toLowerCase()
     return xmk('button')
@@ -229,3 +233,70 @@ export function mkPopupModalDlgButton(text, type, tooltip, callback) {
         })
         .xInnerHTML(text)
 }
+
+/**
+ * Toggle the light/dark, theme based on the data-bs-theme-value
+ */
+export function toggleDarkTheme() {
+    let curTheme = document.body.getAttribute('data-bs-theme')
+    console.log(curTheme)
+    if (curTheme === "dark" ) {
+        setDarkLightTheme('light')
+    } else {
+        setDarkLightTheme('dark')
+    }
+}
+
+/**
+ * Replace the "from" class with the "to" class on each element.
+ */
+function replaceClass(from, to) {
+    let elements = document.body.getElementsByClassName(from)
+    // live list! Work backwards to avoid collisions
+    for (let i=elements.length-1; i>0; i--) {
+        let element = elements[i]
+        console.log(element)
+        try {
+            element.classList.replace(from, to)
+        } catch (error) {
+            console.log(error)
+        }
+    }
+}
+
+/**
+ * set the dark/light theme explicitly
+ */
+export function setDarkLightTheme(theme) {
+    if (theme === "light" ) {
+        // let there be light!
+        document.body.setAttribute('data-bs-theme', 'light')
+        window.prefs.NgClass = 'bg-light'
+        window.prefs.ButtonClass = 'btn-light'
+        replaceClass('btn-dark', 'btn-light')
+        replaceClass('bg-dark', 'bg-light')
+        let button = document.getElementById('x-toggle-light-dark')
+        button.xInnerHTML('Set Dark Mode')
+        button.classList.replace('btn-dark', 'btn-light')
+	button.replaceChildren(
+	    icon('bi-moon', 'switch to dark mode')
+	)
+        console.log(button)
+    } else if (theme === "dark") {
+        document.body.setAttribute('data-bs-theme', 'dark')
+        window.prefs.NgClass = 'bg-dark'
+        window.prefs.ButtonClass = 'btn-dark'
+        replaceClass('btn-light', 'btn-dark')
+        replaceClass('bg-light', 'bg-dark')
+        let button = document.getElementById('x-toggle-light-dark')
+        button.xInnerHTML('Set Light Mode')
+        button.classList.replace('btn-light', 'btn-dark')
+	button.replaceChildren(
+	    icon('bi-sun', 'switch to light mode')
+	)
+        console.log(button)
+    } else {
+        alert(`invalid theme: '${theme}, expected 'dark' or 'light'`)
+    }
+}
+ 

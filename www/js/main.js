@@ -5,7 +5,7 @@
 import { xmk, xget, xgetn, enableFunctionChaining } from './lib.js'
 import { statusBlip } from './status.js'
 import { words } from './en_words.js'
-import { icon } from './utils.js'
+import { icon, toggleDarkTheme, setDarkLightTheme } from './utils.js'
 import { initPrefs } from './prefs.js'
 import { mkMenu } from './menu.js'
 import { mkSearchInputElement, searchRecords } from './search.js'
@@ -38,6 +38,7 @@ export function main() {
     initialize()
     adjust()
     enablePrinting()
+    setDarkLightTheme('dark')
     //setTimeout(() => {adjust()}, 1000)
     const secure = window.isSecureContext? '(secure)' : ''
     statusBlip(`initializing PAM... ${secure} ${window.screen.width}x${window.screen.height}`)
@@ -73,15 +74,14 @@ function topLayout() {
     for (let i=1; i<=50; i++) {
         lines += `line ${i}<br />`
     }
-    document.body.xClass('bg-dark')
     document.body.xAppendChild(
         xmk('header')
             .xId('top-section')
             .xClass('fixed-top',
                     'border',
                     'p-2',
-                    'bg-dark',
                     'fs-5',
+                    window.prefs.themeBgClass,
                     'text-center',
                     'text-light')
             .xAppendChild(createSearchInputAndMenuEntry()),
@@ -90,6 +90,7 @@ function topLayout() {
             .xClass('h-100',
                     //'border', 'border-2', 'border-danger', // debugging
                     'overflow-auto',
+                    window.prefs.themeBgClass,
                     'pt-5',
                     'pb-5',
                     'p-2',
@@ -99,17 +100,33 @@ function topLayout() {
             .xClass('fixed-bottom',
                     'border',
                     'p-2',
-                    'bg-dark',
+                    window.prefs.themeBgClass,
                     'fs-5',
                     'text-left',
                     'text-info',
                    )
             .xAppend(
+                xmk('button')
+                    .xId('x-dark-mode-button')
+                    .xClass('btn', window.prefs.themeBtnClass)
+                    .xAttrs({'title': 'set dark mode'})
+                    .xAppend(icon('bi-moon', 'set dark mode'))  // in light mode
+                    .xAddEventListener('click', (event) => {
+                        setDarkLightTheme('dark')
+                    }),
+                xmk('button')
+                    .xId('x-light-mode-button')
+                    .xClass('btn', window.prefs.themeBtnClass)
+                    .xAttrs({'title': 'set light mode'})
+                    .xAppend(icon('bi-sun', 'set light mode'))  // in dark mode
+                    .xAddEventListener('click', (event) => {
+                        setDarkLightTheme('light')
+                    }),
                 xmk('span')
                     .xId('status')
                     .xStyle({'width': '80%'})
-                    .xAttrs({'title': 'dynamic status messages appear here'}),
-            )
+                    .xAttrs({'title': 'dynamic status messages appear here'})
+            ),
     )
 }
 

@@ -1,7 +1,7 @@
 // Load file.
 import { xmk, xget, xgetn, enableFunctionChaining } from './lib.js'
 import { statusBlip } from './status.js'
-import { icon, mkPopupModalDlg, mkPopupModalDlgButton } from './utils.js'
+import { icon, mkPopupModalDlg, mkPopupModalDlgButton, setDarkLightTheme } from './utils.js'
 import { clearRecords, deleteRecord, findRecord, insertRecord, mkRecord } from './record.js'
 import { mkRecordField } from './field.js'
 import { menuPrefsDlg } from './prefs.js'
@@ -317,6 +317,12 @@ function loadCallback(text) {
     let elapsed = now.getTime() - thenDate.getTime() // ms
     //let days = elapsed / (1000 * 3600 * 24)
     let fet = formatTimeElapsed(elapsed)
+
+    if (window.prefs.themeBgClass.includes('dark')) {
+        setDarkLightTheme('dark')
+    } else {
+        setDarkLightTheme('light')
+    }
     setAboutFileInfo(`Loaded ${num} records on ${now.toISOString()}.<br>Records were last updated on ${thenDate.toISOString()} (${fet}).`)
 }
 

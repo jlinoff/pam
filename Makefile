@@ -15,7 +15,8 @@ DST  ?= www
 PORT ?= 8081
 FAVICON_SVG ?= bootstrap-icons/icons/box.svg
 # from https://getbootstrap.com/docs/versions/
-BS_VER ?= 5.2.3
+#BS_VER ?= 5.2.3
+BS_VER ?= 5.3.0-alpha1
 BS_DIST ?= bootstrap-$(BS_VER)-dist
 export PIPENV_VENV_IN_PROJECT := True
 PYTHON3_PATH ?= python3
@@ -294,6 +295,7 @@ help:  ## this help message
 		sort -f | \
 		sed -e 's@^@   @'
 	@printf "\n\033[35;1m%s\n" "Variables"
-	@printf '    DST  : %s\n' $(DST)
-	@printf '    PORT : %s\n' $(PORT)
+	@printf '    BOOTSTRAP : %s\n' $(BS_DIST)
+	@printf '    DST       : %s\n' $(DST)
+	@printf '    PORT      : %s\n' $(PORT)
 	@printf "\033[0m\n"

@@ -138,7 +138,9 @@ export function mkPopupModalDlg(id, title, body, ...buttons) {
         )
 }
 
-// Make draggable row
+/*
+ * Make draggable row
+ */
 export function mkDraggableRow(type) {
     return xmk('row')
         .xClass('row', 'x-new-rec-fld')
@@ -206,7 +208,9 @@ export function mkDraggableRow(type) {
         })
 }
 
-// Make a modal record button (usually Quit or Save).
+/*
+ * Make a modal record button (usually Quit or Save).
+ */
 export function mkPopupModalDlgButton(text, type, tooltip, callback) {
     let xcls = 'x-fld-record-' + text.toLowerCase()
     return xmk('button')
@@ -228,4 +232,81 @@ export function mkPopupModalDlgButton(text, type, tooltip, callback) {
             }
         })
         .xInnerHTML(text)
+}
+
+/**
+ * Toggle the light/dark, theme based on the data-bs-theme-value
+ */
+export function toggleDarkTheme() {
+    let curTheme = document.body.getAttribute('data-bs-theme')
+    if (curTheme === "dark" ) {
+        setDarkLightTheme('light')
+    } else {
+        setDarkLightTheme('dark')
+    }
+}
+
+/**
+ * Replace the "from" class with the "to" class on each element.
+ * This is tricky because the list is live - it changes as the classes are replaced.
+ */
+function replaceClass(from, to) {
+    let elements = Array.from(document.body.getElementsByClassName(from))
+    for (let i = elements.length-1; i >= 0; i--) {
+        let element = elements[i]
+        try {
+            element.classList.replace(from, to)
+        } catch (error) {
+            console.log(error)
+        }
+    }
+}
+
+/**
+ * Set style for elements in a class.
+ */
+function setStylesByClass(className, styles) {
+    let elements = Array.from(document.body.getElementsByClassName(className))
+    for (let i = elements.length-1; i >= 0; i--) {
+        let element = elements[i]
+        try {
+            element.xStyle(styles)
+        } catch (error) {
+            console.log(error)
+        }
+    }
+}
+
+/**
+ * set the dark/light theme explicitly
+ */
+export function setDarkLightTheme(theme) {
+    let setDarkModeButton = document.getElementById('x-dark-mode-button')
+    let setLightModeButton = document.getElementById('x-light-mode-button')
+    if (theme === "light" ) {
+        // let there be light!
+        document.body.setAttribute('data-bs-theme', 'light')
+        window.prefs.themeBgClass = 'bg-light'
+        window.prefs.themeBtnClass = 'btn-light'
+        replaceClass('btn-dark', 'btn-light')
+        replaceClass('bg-dark', 'bg-light')
+        if (!!setLightModeButton && !! setDarkModeButton) {
+            setLightModeButton.xStyle({'display' : 'none'})
+            setDarkModeButton.xStyle({'display' : 'inline', 'color': 'black'}) // make sure it it visible
+        }
+        setStylesByClass('bi-list', {'color': 'black'}) // fix the pull down menu
+    } else if (theme === "dark") {
+        document.body.setAttribute('data-bs-theme', 'dark')
+        window.prefs.themeBgClass = 'bg-dark'
+        window.prefs.themeBtnClass = 'btn-dark'
+        replaceClass('btn-light', 'btn-dark')
+        replaceClass('bg-light', 'bg-dark')
+        if (!!setLightModeButton && !! setDarkModeButton) {
+            setLightModeButton.xStyle({'display' : 'inline', color: 'white'}) // make sure it it visible
+            setDarkModeButton.xStyle({'display' : 'none'})
+        }
+        setStylesByClass('bi-list', {'color': 'white'}) // fix the pull down menu
+    } else {
+        alert(`invalid theme: '${theme}, expected 'dark' or 'light'`)
+    }
 }

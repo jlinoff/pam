@@ -76,7 +76,7 @@ function mkRecordFldElement(name, type, fieldValue, rawValue, ...buttons) {
 function mkRecordFieldCopyToClipboardButton(raw_value) {
     const value = raw_value
     return xmk('button')
-        .xClass('btn', 'btn-lg', 'p-0', 'ms-2')
+        .xClass('btn', 'btn-lg', window.prefs.themeBtnClass, 'p-0', 'ms-2')
         .xAttrs({'type': 'button'})
         .xAppend(icon('bi-clipboard', 'copy to clipboard')) // also bi-files
         .xAddEventListener('click', (event) => {
@@ -115,7 +115,7 @@ function mkRecordFieldPasswordShowHideButton(showValueIn, hideValueIn) {
     const showValue = showValueIn
     const hideValue = hideValueIn
     return xmk('button')
-        .xClass('btn', 'btn-lg', 'p-0', 'ms-2')
+        .xClass('btn', 'btn-lg', window.prefs.themeBtnClass, 'p-0', 'ms-2')
         .xAppend(icon('bi-eye', 'show password'))
         .xAddEventListener('click', (event) => {
             let row = event.target.xGetParentWithClass('row')
@@ -261,7 +261,7 @@ function mkRecordEditField(name, type, container, value) {
     // define delete button
     let recordDeleteButton = xmk('button')
         .xAttrs({'type': 'button', 'title': `delete field`})
-        .xClass('btn', 'btn-lg', 'ms-0')
+        .xClass('btn', 'btn-lg', window.prefs.themeBtnClass, 'ms-0')
         .xAppend(icon('bi-trash3-fill', 'delete'),
                  xmk('span').xInnerHTML('&nbsp;Delete Field '))
         .xAddEventListener('click', (event) => {
@@ -275,7 +275,7 @@ function mkRecordEditField(name, type, container, value) {
         passwordShowHide = xmk('button')
             .xAttrs({'type': 'button',
                      'title': 'show or hide password'})
-            .xClass('btn', 'btn-lg', 'px-0', 'ms-3')
+            .xClass('btn', 'btn-lg', window.prefs.themeBtnClass, 'px-0', 'ms-3')
             .xAppend(icon('bi-eye', 'show or hide password'))
             .xAddEventListener('click', (event) => {
                 let button = event.target.parentElement
@@ -298,7 +298,7 @@ function mkRecordEditField(name, type, container, value) {
         // password generate button
         passwordGenerate = xmk('button')
             .xAttrs({'type': 'button'})
-            .xClass('btn', 'btn-lg', 'px-0', 'ms-3')
+            .xClass('btn', 'btn-lg', window.prefs.themeBtnClass, 'px-0', 'ms-3')
             .xAppend(icon('bi-gear', 'generate a password'))
             .xAddEventListener('click', (event) => {
                 mkGeneratePasswordDlg(event)
@@ -327,7 +327,7 @@ function mkRecordEditField(name, type, container, value) {
                     }),
                 xmk('span').xClass('input-group-append').xAppend(
                     xmk('button')
-                        .xClass('btn', 'btn-lg', 'px-0', 'ms-2')
+                        .xClass('btn', 'btn-light', 'btn-lg', window.prefs.themeBtnClass, 'px-0', 'ms-2')
                         .xAttr('type', 'button')
                         .xAddEventListener('click', (event) => {
                             let row = event.target.xGetParentWithClass('row')
@@ -352,7 +352,7 @@ function mkRecordEditField(name, type, container, value) {
                 ...inputs,
                 xmk('span').xClass('input-group-append').xAppend(
                     xmk('button')
-                        .xClass('btn', 'btn-lg', 'px-0', 'ms-2')
+                        .xClass('btn', 'btn-lg', window.prefs.themeBtnClass, 'px-0', 'ms-2')
                         .xAttr('type', 'button')
                         .xAddEventListener('click', (event) => {
                             let row = event.target.xGetParentWithClass('row')

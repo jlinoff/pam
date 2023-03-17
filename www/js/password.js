@@ -96,7 +96,10 @@ function saveGeneratedPassword(event) {
     //console.log('x-fld-value', e1)
     //console.log('x-fld-value-length', e2)
     e2.value = event.target.innerHTML
-    e1.innerHTML = event.target.innerHTML.length
+    if (!!e1) {
+        // does not exist in the save dialogue
+        e1.innerHTML = event.target.innerHTML.length
+    }
 }
 
 // make the generate password dialogue for record fields and
@@ -133,7 +136,7 @@ export function mkGeneratePasswordDlg(event) {
             xmk('div').xClass('col-12', 'x-fld-pw-gen', 'mt-1').xAppend(
                 xmk('hr'),
                 xmk('button')
-                    .xClass('btn', 'btn-small', 'w-100')
+                    .xClass('btn', 'btn-small', window.prefs.themeBtnClass, 'w-100')
                     .xAppend(
                         icon('bi-x-circle', 'close the section'),
                         xmk('span').xInnerHTML('&nbsp;Close Password Generator'))
@@ -178,13 +181,17 @@ export function mkGeneratePasswordDlg(event) {
                         // Allow text to be selected in a draggable parent.
                         // Disable dragging.
                         let row = event.target.xGetParentWithClass('x-new-rec-fld')
-                        row.setAttribute('draggable', false)
+                        if (!!row) {
+                            row.setAttribute('draggable', false)
+                        }
                     })
                     .xAddEventListener('blur', (event) => {
                         // Allow text to be selected in a draggable parent.
                         // Re-enable dragging.
                         let row = event.target.xGetParentWithClass('x-new-rec-fld')
-                        row.setAttribute('draggable', true)
+                        if (!!row) {
+                            row.setAttribute('draggable', true)
+                        }
                     })
                     .xAddEventListener('input', (event) => {
                         //console.log(event.target.value)
@@ -244,7 +251,7 @@ export function mkLoadSavePassword(xid) {
             }),
         xmk('span').xClass('input-group-append').xAppend(
             xmk('button')
-                .xClass('btn', 'btn-lg', 'px-0', 'ms-2')
+                .xClass('btn', 'btn-lg',  window.prefs.themeBtnClass, 'px-0', 'ms-2')
                 .xAttr('type', 'button')
                 .xAddEventListener('click', (event) => {
                     let row = event.target.xGetParentWithClass('row')
@@ -254,7 +261,7 @@ export function mkLoadSavePassword(xid) {
                     icon('bi-x-circle', 'delete password')
                 ),
             xmk('button')
-                .xClass('btn', 'btn-lg', 'px-0', 'ms-2')
+                .xClass('btn', 'btn-lg', window.prefs.themeBtnClass, 'px-0', 'ms-2')
                 .xAttr('type', 'button')
                 .xAddEventListener('click', (event) => {
                     let button = event.target.parentElement

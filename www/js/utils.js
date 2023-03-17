@@ -252,7 +252,6 @@ export function toggleDarkTheme() {
  */
 function replaceClass(from, to) {
     let elements = Array.from(document.body.getElementsByClassName(from))
-    console.log(elements)
     for (let i = elements.length-1; i >= 0; i--) {
         let element = elements[i]
         try {

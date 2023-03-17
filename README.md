@@ -163,11 +163,12 @@ localhost) or from the public
 In addition, _PAM_ is designed to be mobile friendly so you can access
 it from your laptop browser as well as your mobile phone and tablet.
 
-It looks something like this on my iphone for some fictitious example
-records. This is approximate because it shows the view _before_ support
-for dark mode was added. You can switch between light and dark modes
-by tapping or clicking the button in the lower left hand corner. Everything
-is the same, except for the mode colors and the button on the lower left.
+It looks _something_ like this on my iphone for some fictitious
+example records. This view is approximate because it shows the v1.0 view,
+_before_ support for dark mode was added in v1.1. PAM now allow you to
+switch between light and dark modes by tapping or clicking the button
+in the lower left hand corner in the status bar. Everything is the
+same, except for the mode colors and the mode button on the lower left.
 
 <img src="www/help/pam-iphone-screenshot.png" alt="iphone-screenshot" width="400">
 

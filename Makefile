@@ -203,6 +203,7 @@ app-help: www/help/index.html  ## generate the pam help
 # requires sed 4.8 or later
 www/help/index.html: Makefile README.md www/help/index.css \
 		$(shell ls -1 www/help/*png) \
+		$(shell ls -1 www/help/*jpg) \
 		$(shell ls -1 www/icons/*/*svg)
 	$(call hdr,"app-help")
 	sed --version

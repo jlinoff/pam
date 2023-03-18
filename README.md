@@ -189,11 +189,15 @@ The records appear as accordion entries that expand when you click on them as sh
 
 <img src="www/help/pam-google-record.png" width="400" alt="google-account-example">
 
-Once the record is expanded you simply click on the
+Once the record is expanded you simply click on the clipboard
 <img src="www/icons/blue/clipboard.svg" height="32" width="32" alt="clipboard"/>
 icon associated with the record field you are interested in (like the
 password) to copy its value to the system clipboard so that it can
-then be pasted them into the appropriate login field.
+then be pasted them into the appropriate login field. You can click on the eye
+<img src="www/icons/blue/eye.svg" height="32" width="32" alt="eye"/>
+icon to see the password in plaintext. By default all record fields containing
+sensitive information,like passwords, are masked so that a casual observer
+cannot see it.
 
 You can even include images as shown in this example which is also provided
 by PAM to practice with and, like the examples above, is also described in
@@ -393,12 +397,17 @@ to make it easier to see the matching records visually.
 The availability of fast interactive searching makes finding records
 easy.
 
-This is what search/filtering looks like for all example records
-that contain a "g".
+This is what search/filtering looks like for all example records that
+contain a "g" in them. Note that, by default, search operations are
+case insensitive but that can be changed in the preferences.
 
 <img src="www/help/pam-search-g.png" width="400" alt="search-g"/>
 
-Note that regular expressions can be used as well.
+Note that regular expressions can be used as well as shown in the
+example below that looks for records that start with "g".
+
+<img src="www/help/pam-search-g-re.png" width="400" alt="search-g-re"/>
+
 See [Search](#search) for more details.
 
 #### Reason 4: Automatic Password Generation

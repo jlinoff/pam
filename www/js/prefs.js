@@ -848,7 +848,7 @@ function mkRecordFields(recordFields) {
     let newfld = xmk('div').xClass('row').xAppend(
          xmk('div').xClass('col', 'col-12').xAppend(
              xmk('button')
-                 .xClass('btn', 'btn-lg', 'form-control', 'text-center', 'fs-5')
+                 .xClass('btn', 'btn-lg', window.prefs.themeBtnClass, 'form-control', 'text-center', 'fs-5')
                  .xAttrs({
                      'type': 'button',
                      'title': tooltip,

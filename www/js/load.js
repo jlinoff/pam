@@ -68,7 +68,7 @@ export function menuLoadDlg() {
                                    'btn-secondary',
                                    'close the dialogue with no changes',
                                    (el) => {
-                                       console.log(el)
+                                       //console.log(el)
                                        return true
                                    })
     let b2 = xmk('span').xAppendChild(

@@ -285,9 +285,10 @@ export function setDarkLightTheme(theme) {
     let setLightModeButton = document.getElementById('x-light-mode-button')
     if (theme === "light" ) {
         // let there be light!
-        document.body.setAttribute('data-bs-theme', 'light')
+        window.prefs.themeName = theme
         window.prefs.themeBgClass = 'bg-light'
         window.prefs.themeBtnClass = 'btn-light'
+        document.body.setAttribute('data-bs-theme', 'light')
         replaceClass('btn-dark', 'btn-light')
         replaceClass('bg-dark', 'bg-light')
         if (!!setLightModeButton && !! setDarkModeButton) {
@@ -296,9 +297,10 @@ export function setDarkLightTheme(theme) {
         }
         setStylesByClass('bi-list', {'color': 'black'}) // fix the pull down menu
     } else if (theme === "dark") {
-        document.body.setAttribute('data-bs-theme', 'dark')
+        window.prefs.themeName = theme
         window.prefs.themeBgClass = 'bg-dark'
         window.prefs.themeBtnClass = 'btn-dark'
+        document.body.setAttribute('data-bs-theme', 'dark')
         replaceClass('btn-light', 'btn-dark')
         replaceClass('bg-light', 'bg-dark')
         if (!!setLightModeButton && !! setDarkModeButton) {
@@ -307,6 +309,6 @@ export function setDarkLightTheme(theme) {
         }
         setStylesByClass('bi-list', {'color': 'white'}) // fix the pull down menu
     } else {
-        alert(`invalid theme: '${theme}, expected 'dark' or 'light'`)
+        alert(`ERROR: invalid theme: '${theme}, expected 'dark' or 'light'`)
     }
 }

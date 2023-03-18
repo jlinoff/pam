@@ -4,6 +4,7 @@ import { convertDictKeys2List, icon, mkPopupModalDlgButton, mkPopupModalDlg, sor
 import { updateRecordFieldTypes }  from './field.js'
 import { refreshAbout } from './about.js'
 import { enablePrinting } from './print.js'
+import { setDarkLightTheme } from './utils.js'
 
 // These are the input types that the tool knows how to handle.
 export const VALID_FIELD_TYPES = {
@@ -34,6 +35,7 @@ export function initPrefs() {
     window.prefs = {
         // Use the '.txt' extension because the '.pam' extension
         // does not work on some mobile devices.
+        themeName: 'dark', // choices are dark or light
         themeBgClass: 'bg-dark',
         themeBtnClass: 'btn-dark',
         enablePrinting: false,
@@ -257,6 +259,7 @@ function savePrefs(el) {
     window.prefs.predefinedRecordFields = sorted
     refreshAbout()
     enablePrinting()
+    setDarkLightTheme(window.prefs.themeName)
     return true
 }
 

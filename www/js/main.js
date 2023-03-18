@@ -38,7 +38,7 @@ export function main() {
     initialize()
     adjust()
     enablePrinting()
-    setDarkLightTheme('dark')
+    setDarkLightTheme(window.prefs.themeName)
     //setTimeout(() => {adjust()}, 1000)
     const secure = window.isSecureContext? '(secure)' : ''
     statusBlip(`initializing PAM... ${secure} ${window.screen.width}x${window.screen.height}`)

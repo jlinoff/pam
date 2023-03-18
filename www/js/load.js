@@ -317,12 +317,7 @@ function loadCallback(text) {
     let elapsed = now.getTime() - thenDate.getTime() // ms
     //let days = elapsed / (1000 * 3600 * 24)
     let fet = formatTimeElapsed(elapsed)
-
-    if (window.prefs.themeBgClass.includes('dark')) {
-        setDarkLightTheme('dark')
-    } else {
-        setDarkLightTheme('light')
-    }
+    setDarkLightTheme(window.prefs.themeName)
     setAboutFileInfo(`Loaded ${num} records on ${now.toISOString()}.<br>Records were last updated on ${thenDate.toISOString()} (${fet}).`)
 }
 

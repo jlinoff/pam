@@ -291,6 +291,7 @@ export function setDarkLightTheme(theme) {
         document.body.setAttribute('data-bs-theme', 'light')
         replaceClass('btn-dark', 'btn-light')
         replaceClass('bg-dark', 'bg-light')
+        replaceClass('border-light', 'border-dark')
         if (!!setLightModeButton && !! setDarkModeButton) {
             setLightModeButton.xStyle({'display' : 'none'})
             setDarkModeButton.xStyle({'display' : 'inline', 'color': 'black'}) // make sure it it visible
@@ -303,6 +304,7 @@ export function setDarkLightTheme(theme) {
         document.body.setAttribute('data-bs-theme', 'dark')
         replaceClass('btn-light', 'btn-dark')
         replaceClass('bg-light', 'bg-dark')
+        replaceClass('border-dark', 'border-light')
         if (!!setLightModeButton && !! setDarkModeButton) {
             setLightModeButton.xStyle({'display' : 'inline', color: 'white'}) // make sure it it visible
             setDarkModeButton.xStyle({'display' : 'none'})

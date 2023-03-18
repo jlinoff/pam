@@ -163,20 +163,23 @@ localhost) or from the public
 In addition, _PAM_ is designed to be mobile friendly so you can access
 it from your laptop browser as well as your mobile phone and tablet.
 
-It looks _something_ like this on my iphone for some fictitious
-example records in dark mode.
+It looks _something_ like this on my iphone in dark mode for the fictitious
+example records that are provided by PAM to practice with, as described
+in the [Load File](#load-file) section later on.
 
 <img src="www/help/pam-iphone-screenshot-dark.jpg" alt="iphone-screenshot-light-mode" width="400">
 
-And like this in light mode.
+And _something_ like this in light mode.
 
 <img src="www/help/pam-iphone-screenshot-light.jpg" alt="iphone-screenshot-dark-mode" width="400">
 
-At the bottom right of the screen there is a button that allows you to toggle between light and dark mode
-. It looks like a sun (switch to light) in dark mode:
+At the bottom left of the screen there is a button that allows you to toggle between
+light and dark mode. It looks like a sun (switch to light) in dark mode:
 <img src="www/icons/blue/sun.svg" height="32" width="32" alt="clipboard"/>
 and like a moon (switch to dark) in light mode:
 <img src="www/icons/blue/moon.svg" height="32" width="32" alt="clipboard"/>.
+
+Dark and light mode examples will be intermixed throughout this document.
 
 The records appear as accordion entries that expand when you click on them as shown below.
 
@@ -188,7 +191,9 @@ icon associated with the record field you are interested in (like the
 password) to copy its value to the system clipboard so that it can
 then be pasted them into the appropriate login field.
 
-You can even include images like this.
+You can even include images as shown in this example which is also provided
+by PAM to practice with and, like the examples above, is also described in
+the [Load File](#load-file) section later on.
 
 <img src="www/help/pam-ice-cream-sundae-open.png" width="400" alt="ice-cream-sundae-example">
 

@@ -142,23 +142,27 @@ the on-line help is generated.
 ## Introduction
 _PAM_ or Personal Account Manager is a free and open source, single
 page web application that is designed to help you conveniently and
-securely manage your confidential information inside the secure
-context of your web browser as dynamically configurable records that
-can be searched _without having to rely on services from a third party
-server_ because they are stored in a file that _you control_ either on your
-local device or on a cloud based file server.
+securely manage your confidential information _like passwords_ inside
+the secure context of your web browser as dynamically configurable
+records that can be searched _without having to rely on services from
+a third party server_ because they are stored in a file that _you
+control_ either on your local device or on a cloud based file server.
 
 The _PAM_ file is encrypted both in transit and when stored so the contents are
 safe from hackers if the file was stolen assuming, of course, that the password
 you used to encrypt it _was strong_.
 
-The PAM file flow is shown in the figure below.
+The PAM file flow is shown in the figure below. Note that the _save_ device and
+the _load_ device could be _the same device_.
 
 <img src="www/help/pam-file-flow-screenshot.png" width="95%" alt="pam-file-flow">
 
 You can access _PAM_ from your own secure web server (including
 localhost) or from the public
 [github.io server](https://jlinoff.github.io/pam/www/index.html).
+In either case, once the application is loaded into your browser
+_there is no other communication_ with the web server which you can
+verify by monitoring outbound network traffic.
 
 In addition, _PAM_ is designed to be mobile friendly so you can access
 it from your laptop browser as well as your mobile phone and tablet.

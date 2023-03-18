@@ -164,14 +164,19 @@ In addition, _PAM_ is designed to be mobile friendly so you can access
 it from your laptop browser as well as your mobile phone and tablet.
 
 It looks _something_ like this on my iphone for some fictitious
-example records. This view is approximate because it shows the v1.0 view
-_before_ support for dark mode was added in v1.1. PAM which allows you to
-switch between light and dark modes by tapping or clicking the button
-in the lower left hand corner in the status bar. Everything is the
-same, except for the light/dark mode colors and the light/dark mode button
-on the lower left.
+example records in dark mode.
 
-<img src="www/help/pam-iphone-screenshot.png" alt="iphone-screenshot" width="400">
+<img src="www/help/pam-iphone-screenshot-dark.jpg" alt="iphone-screenshot-light-mode" width="400">
+
+And like this in light mode.
+
+<img src="www/help/pam-iphone-screenshot-light.jpg" alt="iphone-screenshot-dark-mode" width="400">
+
+At the bottom right of the screen there is a button that allows you to toggle between light and dark mode
+. It looks like a sun (switch to light) in dark mode:
+<img src="www/icons/blue/sun.svg" height="32" width="32" alt="clipboard"/>
+and like a moon (switch to dark) in light mode:
+<img src="www/icons/blue/moon.svg" height="32" width="32" alt="clipboard"/>.
 
 The records appear as accordion entries that expand when you click on them as shown below.
 

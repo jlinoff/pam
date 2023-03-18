@@ -388,7 +388,7 @@ function mkRecordEditField(name, type, container, value) {
 
     // Create the field name/value sub-dialogue on the fly.
     let draggableRow = mkDraggableRow(type)
-    let borderTheme = window.prefs.themeName == 'dark' ? 'border-light' : 'border-dark'
+    let borderTheme = window.prefs.themeName === 'dark' ? 'border-light' : 'border-dark'
     draggableRow.xAppend(
         xmk('form').xClass('x-fld-form').xAppend(
             xmk('fieldset').xClass('border', borderTheme, 'p-2').xAppend(

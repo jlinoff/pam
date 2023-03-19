@@ -142,48 +142,66 @@ the on-line help is generated.
 ## Introduction
 _PAM_ or Personal Account Manager is a free and open source, single
 page web application that is designed to help you conveniently and
-securely manage your confidential information inside the secure
-context of your web browser as dynamically configurable records that
-can be searched _without having to rely on services from a third party
-server_ because they are stored in a file that _you control_ either on your
-local device or on a cloud based file server.
+securely manage your confidential information _like passwords_ inside
+the secure context of your web browser as dynamically configurable
+records that can be searched _without having to rely on services from
+a third party server_ because they are stored in a file that _you
+control_ either on your local device or on a cloud based file server.
 
 The _PAM_ file is encrypted both in transit and when stored so the contents are
 safe from hackers if the file was stolen assuming, of course, that the password
 you used to encrypt it _was strong_.
 
-The PAM file flow is shown in the figure below.
+The PAM file flow is shown in the figure below. Note that the _save_ device and
+the _load_ device could be _the same device_.
 
 <img src="www/help/pam-file-flow-screenshot.png" width="95%" alt="pam-file-flow">
 
 You can access _PAM_ from your own secure web server (including
 localhost) or from the public
 [github.io server](https://jlinoff.github.io/pam/www/index.html).
+In either case, once the application is loaded into your browser
+_there is no other communication_ with the web server which you can
+verify by monitoring outbound network traffic.
 
 In addition, _PAM_ is designed to be mobile friendly so you can access
 it from your laptop browser as well as your mobile phone and tablet.
 
-It looks _something_ like this on my iphone for some fictitious
-example records. This view is approximate because it shows the v1.0 view
-_before_ support for dark mode was added in v1.1. PAM which allows you to
-switch between light and dark modes by tapping or clicking the button
-in the lower left hand corner in the status bar. Everything is the
-same, except for the light/dark mode colors and the light/dark mode button
-on the lower left.
+It looks _something_ like this on my iphone in dark mode for the fictitious
+example records that are provided by PAM to practice with, as described
+in the [Load File](#load-file) section later on.
 
-<img src="www/help/pam-iphone-screenshot.png" alt="iphone-screenshot" width="400">
+<img src="www/help/pam-iphone-screenshot-dark.jpg" alt="iphone-screenshot-light-mode" width="400">
+
+And _something_ like this in light mode.
+
+<img src="www/help/pam-iphone-screenshot-light.jpg" alt="iphone-screenshot-dark-mode" width="400">
+
+At the bottom left of the screen there is a button that allows you to toggle between
+light and dark mode. It looks like a sun (switch to light) in dark mode:
+<img src="www/icons/blue/sun.svg" height="32" width="32" alt="clipboard"/>
+and like a moon (switch to dark) in light mode:
+<img src="www/icons/blue/moon.svg" height="32" width="32" alt="clipboard"/>.
+
+Dark and light mode examples will be intermixed throughout this document.
 
 The records appear as accordion entries that expand when you click on them as shown below.
 
 <img src="www/help/pam-google-record.png" width="400" alt="google-account-example">
 
-Once the record is expanded you simply click on the
+Once the record is expanded you simply click on the clipboard
 <img src="www/icons/blue/clipboard.svg" height="32" width="32" alt="clipboard"/>
 icon associated with the record field you are interested in (like the
 password) to copy its value to the system clipboard so that it can
-then be pasted them into the appropriate login field.
+then be pasted them into the appropriate login field. You can click on the eye
+<img src="www/icons/blue/eye.svg" height="32" width="32" alt="eye"/>
+icon to see the password in plaintext. By default all record fields containing
+sensitive information,like passwords, are masked so that a casual observer
+cannot see it.
 
-You can even include images like this.
+You can even include images as shown in this example which is also provided
+by PAM to practice with and, like the examples above, is also described in
+the [Load File](#load-file) section later on.
 
 <img src="www/help/pam-ice-cream-sundae-open.png" width="400" alt="ice-cream-sundae-example">
 
@@ -379,12 +397,17 @@ to make it easier to see the matching records visually.
 The availability of fast interactive searching makes finding records
 easy.
 
-This is what search/filtering looks like for all example records
-that contain a "g".
+This is what search/filtering looks like for all example records that
+contain a "g" in them. Note that, by default, search operations are
+case insensitive but that can be changed in the preferences.
 
 <img src="www/help/pam-search-g.png" width="400" alt="search-g"/>
 
-Note that regular expressions can be used as well.
+Note that regular expressions can be used as well as shown in the
+example below that looks for records that start with "g".
+
+<img src="www/help/pam-search-g-re.png" width="400" alt="search-g-re"/>
+
 See [Search](#search) for more details.
 
 #### Reason 4: Automatic Password Generation

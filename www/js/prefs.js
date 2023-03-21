@@ -231,6 +231,7 @@ function savePrefs(el) {
             if (key === 'customAboutInfo') {
                 let about = document.body.xGet('#x-about-info')
                 about.innerHTML = pref.value
+                window.prefs.customAboutInfo = pref.value
             } else {
                 window.prefs[key] = pref.value
                 //console.log(`${type} - window.prefs["${key}"] = "${value}"`)

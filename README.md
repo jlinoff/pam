@@ -65,7 +65,8 @@ the on-line help is generated.
       * [Menu](#menu)
     * [Records Section](#records-section)
     * [Status Section](#status-section)
-  * [Functions](#functions)
+  * [Menu Functions](#menu-functions)
+    * [About](#about)
     * [Create New Record](#create-new-record)
       * [Method 1: Menu Approach](#method-1-menu-approach)
       * [Method 2: Clone Approach](#method-2-clone-approach)
@@ -1089,8 +1090,8 @@ clicked or tapped as shown in the example below.
 
 <img src="www/help/pam-status-msg.png" width="400" alt="status-message">
 
-## Functions
-The following sections will go over the basic functions that _PAM_
+## Menu Functions
+The following sections will go over the basic menu functions that _PAM_
 provides.
 
 In a nutshell they are:
@@ -1112,19 +1113,24 @@ top level section in this document.
 
 ### About
 
-Click or tap on the "About" menu entry to get information about _PAM_.
+click or tap on the "About" menu entry to get information about _PAM_.
 You can even add custom HTML through the preferences that is stored
 for each _PAM_ file.
 
-Here is a screen shot of what you would see.
+Here is a screen shot of what you would normally see with no customization.
+Of course details will vary, like the Commit, Branch or Version fields.
 
 <img src="www/help/pam-about.png" width="400" alt="about">
 
-Here is an about dialogue with a simple custom message.
+Here is the "About" dialogue with a simple custom message that uses
+bootstrap formatting classes.
 
 <img src="www/help/pam-about-custom.png" width="400" alt="about-custom">
 
-Custom messages are defined in preferences as follows.
+Custom messages are defined in the "Custom About" field in the
+[Preferences](#preferences)
+as shown below. You can used plain HTML or bootstrap 5 classes (as
+shown in this example).
 
 <img src="www/help/pam-about-custom-pref.png" width="400" alt="about-custom-pref">
 

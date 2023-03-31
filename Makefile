@@ -16,7 +16,7 @@ PORT ?= 8081
 FAVICON_SVG ?= bootstrap-icons/icons/box.svg
 # from https://getbootstrap.com/docs/versions/
 #BS_VER ?= 5.2.3
-BS_VER ?= 5.3.0-alpha1
+BS_VER ?= 5.3.0-alpha2
 BS_DIST ?= bootstrap-$(BS_VER)-dist
 export PIPENV_VENV_IN_PROJECT := True
 PYTHON3_PATH ?= python3

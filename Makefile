@@ -16,7 +16,7 @@ PORT ?= 8081
 FAVICON_SVG ?= bootstrap-icons/icons/box.svg
 # from https://getbootstrap.com/docs/versions/
 #BS_VER ?= 5.2.3
-BS_VER ?= 5.3.0-alpha2
+BS_VER ?= 5.3.0-alpha3
 BS_DIST ?= bootstrap-$(BS_VER)-dist
 export PIPENV_VENV_IN_PROJECT := True
 PYTHON3_PATH ?= python3
@@ -78,7 +78,7 @@ init: .init bs app-version app-help  ## very basic setup for python3 and jshint
 	pipenv run python3 -m pip install pylint
 	pipenv run python3 -m pip install mypy
 	pipenv run python3 -m pip install pytest
-	pipenv run python3 -m pip install pytest-reportportal~=1.0
+	pipenv run python3 -m pip install pytest-reportportal
 	pipenv run python3 -m pip install webdriver_manager
 	pipenv run python3 -m pip install pyleniumio
 	pipenv run pylenium init

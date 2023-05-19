@@ -195,7 +195,7 @@ test: init lint | tests/test_pam.py ## Run local tests
 	( cd www && pipenv run python -m http.server $(PORT) ) &
 	sleep 2
 	lsof -i :$(PORT)
-	pipenv run python3 -m pytest --options='headless, incognito, no-sandbox, disable-extensions' tests/test_pam.py targ
+	pipenv run python3 -m pytest --options='headless, incognito, no-sandbox, disable-extensions' tests/test_pam.py
 	$(KILL_SERVER)
 
 # This is an example to build off of for debugging

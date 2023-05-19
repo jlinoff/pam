@@ -195,10 +195,10 @@ test: init lint | tests/test_pam.py ## Run local tests
 	( cd www && pipenv run python -m http.server $(PORT) ) &
 	sleep 2
 	lsof -i :$(PORT)
-	pipenv run python3 -m pytest --options='headless, incognito, no-sandbox, disable-extensions' tests/test_pam.py
+	pipenv run python3 -m pytest --options='headless, incognito, no-sandbox, disable-extensions' tests/test_pam.py targ
 	$(KILL_SERVER)
 
-# This is an example to build off of
+# This is an example to build off of for debugging
 run-single-test: init lint | tests/test_pam.py
 	$(call hdr,"$@")
 	-google-chrome --version && chromedriver --version && chromium-browser --version

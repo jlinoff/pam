@@ -1,6 +1,27 @@
 import inspect
 import os
 import time
+from typing import Any
+from pylenium.driver import Pylenium  # type: ignore
+
+# Allow the user to specify the location of the web driver
+# for their setup. It defaults to the web driver for chrome.
+# This was implemented as a hack to work around patch version mismatch
+# problem for chrome.
+#    google-chrome : 113.0.5672.92
+#    chromedriver  : 113.0.5672.63
+# Pylenium would fail with a version mismatch even though .63 was
+# the officially sanctioned version.
+# Note that on MacOs one cannot create links in /usr/bin without disabling
+# system protection so /usr/local/bin is the next best choice.
+# To install chromedriver on linux:
+#    VERSION=$(curl -s "https://chromedriver.storage.googleapis.com/LATEST_RELEASE")
+#    wget -vP /tmp/ "https://chromedriver.storage.googleapis.com/${VERSION}/chromedriver_linux64.zip"
+#    sudo unzip -o /tmp/chromedriver_linux64.zip -d /usr/local/bin
+#    chromedriver --version
+# To install chromedriver on MacOs:
+#    brew install chromedriver
+WEBDRIVER = os.getenv('WEBDRIVER', '/usr/local/bin/chromedriver')
 
 # pause for a bit to let things settle
 NOMINAL_SLEEP_TIME = 0.25
@@ -16,7 +37,7 @@ def debug(msg: str, level: int = 1):
     print(f'\x1b[35mDEBUG:{fname}:{lineno}: {msg}\x1b[0m')
 
 
-def ei(element, level: int=2, idx: int=-1):
+def ei(element : Any, level: int=2, idx: int=-1):
     '''
     Report element information in debug mode.
     '''
@@ -49,10 +70,12 @@ def ei(element, level: int=2, idx: int=-1):
         attr = attrs[i]
         debug(f'element.attr[{i}]: {attr["name"]}: {attr["value"]}', level)
 
-def preamble(py):
+def preamble(py: Pylenium):
     '''
     preamble for all tests
     '''
+    if os.path.exists(WEBDRIVER):
+        py.config.driver.local_path = WEBDRIVER
     width = 1280
     height = 800
     debug('test_mystuff')
@@ -63,8 +86,9 @@ def preamble(py):
     py.visit('http://localhost:8081')
 
 
-def test_basic_menu_options(py):
+def test_basic_menu_options(py: Pylenium):
     # https://docs.pylenium.io/pylenium-commands/viewport
+    ##breakpoint()
     preamble(py)
     menu = py.get('#menu')
     menu.click()
@@ -144,7 +168,7 @@ def test_basic_menu_options(py):
     assert 'Save File' in  span.get_property('innerHTML')
 
 
-def test_about(py):
+def test_about(py: Pylenium):
     preamble(py)
     # Now check the About modal dialogue
     menu = py.get('#menu')
@@ -172,7 +196,7 @@ def test_about(py):
     time.sleep(NOMINAL_SLEEP_TIME)
 
 
-def test_prefs(py):
+def test_prefs(py: Pylenium):
     preamble(py)
     # Check the Preferences modal dialogue
     menu = py.get('#menu')
@@ -205,7 +229,7 @@ def test_prefs(py):
     close_button.click()
     time.sleep(FINAL_TIMEOUT)
 
-def test_record_create(py):
+def test_record_create(py: Pylenium):
     preamble(py)
     py.get('#menu').click()
     dropdown = py.get('#menu').parent().get('.dropdown-menu')
@@ -246,7 +270,7 @@ def test_record_create(py):
     assert close_button.tag_name() == 'button'
 
 
-def test_new_record_delete(py):
+def test_new_record_delete(py: Pylenium):
     preamble(py)
     # Check the New Record modal dialogue field delete operation
     py.get('#menu').click()
@@ -324,7 +348,7 @@ def test_new_record_delete(py):
     assert len(dlg.find('.x-fld-value-div', 1)) == 0
 
 
-def test_create_simple_record_with_fields(py):
+def test_create_simple_record_with_fields(py: Pylenium):
     preamble(py)
     # Check the New Record modal dialogue field delete operation
     py.get('#menu').click()

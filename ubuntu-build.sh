@@ -40,9 +40,7 @@ apt install -y lsof
 
 # Install google chrome for pylenium/selenium.
 if [ ! -f ./keep/google-chrome-stable_current_amd64.deb ] ; then
-    cd keep
     wget -vP keep/ https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
-    cd ..
 fi
 ls -l ./keep/google-chrome-stable_current_amd64.deb
 apt install -y --allow-downgrades ./keep/google-chrome-stable_current_amd64.deb

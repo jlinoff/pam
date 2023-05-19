@@ -4,6 +4,24 @@ import time
 from typing import Any
 from pylenium.driver import Pylenium  # type: ignore
 
+# Allow the user to specify the location of the web driver
+# for their setup. It defaults to the web driver for chrome.
+# This was implemented as a hack to work around patch version mismatch
+# problem for chrome.
+#    google-chrome : 113.0.5672.92
+#    chromedriver  : 113.0.5672.63
+# Pylenium would fail with a version mismatch even though .63 was
+# the officially sanctioned version.
+# Note that on MacOs one cannot create links in /usr/bin without disabling
+# system protection so /usr/local/bin is the next best choice.
+# To install chromedriver on linux:
+#    VERSION=$(curl -s "https://chromedriver.storage.googleapis.com/LATEST_RELEASE")
+#    wget -vP /tmp/ "https://chromedriver.storage.googleapis.com/${VERSION}/chromedriver_linux64.zip"
+#    sudo unzip -o /tmp/chromedriver_linux64.zip -d /usr/local/bin
+#    chromedriver --version
+# To install chromedriver on MacOs:
+#    brew install chromedriver
+WEBDRIVER = os.getenv('WEBDRIVER', '/usr/local/bin/chromedriver')
 
 # pause for a bit to let things settle
 NOMINAL_SLEEP_TIME = 0.25
@@ -56,13 +74,8 @@ def preamble(py: Pylenium):
     '''
     preamble for all tests
     '''
-    # Hack to work around patch version mismatch problem.
-    # google-chrome : 113.0.5672.92
-    # chromdriver   : 113.0.5672.63
-    if py.config.driver.browser == 'chrome':
-        driver = '/usr/bin/chromedriver'
-        if os.path.exists(driver):
-            py.config.driver.local_path = driver
+    if os.path.exists(WEBDRIVER):
+        py.config.driver.local_path = WEBDRIVER
     width = 1280
     height = 800
     debug('test_mystuff')

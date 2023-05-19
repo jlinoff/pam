@@ -60,7 +60,7 @@ def preamble(py: Pylenium):
     # google-chrome : 113.0.5672.92
     # chromdriver   : 113.0.5672.63
     if py.config.driver.browser == 'chrome':
-        driver = '/usr/local/bin/chromedriver'
+        driver = '/usr/bin/chromedriver'
         if os.path.exists(driver):
             py.config.driver.local_path = driver
     width = 1280

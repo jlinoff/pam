@@ -2,7 +2,7 @@ import inspect
 import os
 import time
 from typing import Any
-from pylenium.driver import Pylenium
+from pylenium.driver import Pylenium  # type: ignore
 
 
 # pause for a bit to let things settle
@@ -56,12 +56,13 @@ def preamble(py: Pylenium):
     '''
     preamble for all tests
     '''
-    # hack to work around patch version mismatch problem.
+    # Hack to work around patch version mismatch problem.
     # google-chrome : 113.0.5672.92
     # chromdriver   : 113.0.5672.63
-    driver = '/usr/local/bin/chromedriver'
-    if os.path.exists(driver):
-        py.config.driver.local_path = driver
+    if py.config.driver.browser == 'chrome':
+        driver = '/usr/local/bin/chromedriver'
+        if os.path.exists(driver):
+            py.config.driver.local_path = driver
     width = 1280
     height = 800
     debug('test_mystuff')

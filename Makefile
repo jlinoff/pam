@@ -16,7 +16,8 @@ PORT ?= 8081
 FAVICON_SVG ?= bootstrap-icons/icons/box.svg
 # from https://getbootstrap.com/docs/versions/
 #BS_VER ?= 5.2.3
-BS_VER ?= 5.3.0-alpha3
+BS_VER ?= 5.3.0-alpha2
+#BS_VER ?= 5.3.0-alpha3
 BS_DIST ?= bootstrap-$(BS_VER)-dist
 export PIPENV_VENV_IN_PROJECT := True
 PYTHON3_PATH ?= python3
@@ -196,6 +197,13 @@ test: init lint | tests/test_pam.py ## Run local tests
 	lsof -i :$(PORT)
 	pipenv run python3 -m pytest --options='headless, incognito, no-sandbox, disable-extensions' tests/test_pam.py
 	$(KILL_SERVER)
+
+# This is an example to build off of
+run-single-test: init lint | tests/test_pam.py
+	$(call hdr,"$@")
+	-google-chrome --version && chromedriver --version && chromium-browser --version
+	pipenv run python3 --version
+	pipenv run python3 -m pytest -k test_basic_menu_options tests/test_pam.py
 
 .PHONY: app-help
 app-help: www/help/index.html  ## generate the pam help

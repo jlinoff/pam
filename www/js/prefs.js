@@ -818,6 +818,7 @@ function mkRecordFields(recordFields) {
                 xmk('div').xClass('col', 'col-4').xAppend(
                     xmk('input').xClass('form-control', 'bg-light', 'text-dark', 'x-fld-name').xAttrs({'value': key})
                 ),
+		xmk('span').xInnerHTML('&nbsp;&nbsp;'),
                 xmk('div').xClass('col', 'col-4').xAppend(
                     dropdown
                     //xmk('input').xClass('form-control', 'bg-light', 'text-dark', 'x-fld-value').xAttrs({'value': value})

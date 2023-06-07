@@ -173,9 +173,9 @@ export function menuPrefsDlg() {
     e.xAddEventListener('show.bs.modal', (event) => {
         // do this each time the prefs modal popup pops up
         let div = document.body.xGet('#x-prefs-fld-div')
-	let flds = mkRecordFields(window.prefs.predefinedRecordFields)
+        let flds = mkRecordFields(window.prefs.predefinedRecordFields)
         div.replaceWith(flds)
-	setDarkLightTheme(window.prefs.themeName) // fix the new DOM elements
+        setDarkLightTheme(window.prefs.themeName) // fix the new DOM elements
     })
     return e
 }

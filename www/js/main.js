@@ -75,60 +75,60 @@ function topLayout() {
         lines += `line ${i}<br />`
     }
     document.body.xClass('bg-light')
-	.xAppendChild(
+        .xAppendChild(
             xmk('header')
-		.xId('top-section')
-		.xClass('fixed-top',
-			'border',
-			'p-2',
-			'fs-5',
-			'bg-light',
-			'text-center',
-			'text-light')
-		.xAppendChild(createSearchInputAndMenuEntry()),
+                .xId('top-section')
+                .xClass('fixed-top',
+                        'border',
+                        'p-2',
+                        'fs-5',
+                        'bg-light',
+                        'text-center',
+                        'text-light')
+                .xAppendChild(createSearchInputAndMenuEntry()),
             xmk('div')
-		.xId('mid-section')
-		.xClass('h-100',
-			//'border', 'border-2', 'border-danger', // debugging
-			'overflow-auto',
-			'pt-5',
-			'pb-5',
-			'p-2',
-			'bg-light',
+                .xId('mid-section')
+                .xClass('h-100',
+                        //'border', 'border-2', 'border-danger', // debugging
+                        'overflow-auto',
+                        'pt-5',
+                        'pb-5',
+                        'p-2',
+                        'bg-light',
                        )
-		.xAppend( xmk('div').xClass('accordion').xId('records-accordion') ),
+                .xAppend( xmk('div').xClass('accordion').xId('records-accordion') ),
             xmk('footer')
-		.xClass('fixed-bottom',
-			'border',
-			'p-2',
-			'fs-5',
-			'bg-light',
-			'text-left',
-			'text-info',
+                .xClass('fixed-bottom',
+                        'border',
+                        'p-2',
+                        'fs-5',
+                        'bg-light',
+                        'text-left',
+                        'text-info',
                        )
-		.xAppend(
+                .xAppend(
                     xmk('button')
-			.xId('x-dark-mode-button')
-			.xClass('btn', 'btn-light')
-			.xAttrs({'title': 'set dark mode'})
-			.xAppend(icon('bi-moon', 'set dark mode'))  // in light mode
-			.xAddEventListener('click', (event) => {
+                        .xId('x-dark-mode-button')
+                        .xClass('btn', 'btn-light')
+                        .xAttrs({'title': 'set dark mode'})
+                        .xAppend(icon('bi-moon', 'set dark mode'))  // in light mode
+                        .xAddEventListener('click', (event) => {
                             setDarkLightTheme('dark')
-			}),
+                        }),
                     xmk('button')
-			.xId('x-light-mode-button')
-			.xClass('btn', 'btn-light')
-			.xAttrs({'title': 'set light mode'})
-			.xAppend(icon('bi-sun', 'set light mode'))  // in dark mode
-			.xAddEventListener('click', (event) => {
+                        .xId('x-light-mode-button')
+                        .xClass('btn', 'btn-light')
+                        .xAttrs({'title': 'set light mode'})
+                        .xAppend(icon('bi-sun', 'set light mode'))  // in dark mode
+                        .xAddEventListener('click', (event) => {
                             setDarkLightTheme('light')
-			}),
+                        }),
                     xmk('span')
-			.xId('status')
-			.xStyle({'width': '80%'})
-			.xAttrs({'title': 'dynamic status messages appear here'})
-		),
-	)
+                        .xId('status')
+                        .xStyle({'width': '80%'})
+                        .xAttrs({'title': 'dynamic status messages appear here'})
+                ),
+        )
 }
 
 // Create the search input and the menu at the top.

@@ -48,24 +48,24 @@ function mkRecordFldElement(name, type, fieldValue, rawValue, ...buttons) {
         .xAppend(
             xmk('div')
                 //.xClass('col-12', 'col-sm-3', 'text-start')
- 		.xClass('col-12', 'text-start')
-		.xAppend(
+                .xClass('col-12', 'text-start')
+                .xAppend(
                     xmk('div')
                     //.xClass('border', 'fst-italic', 'x-fld-name')
-			.xClass('x-fld-name', 'overflow-auto', 'text-secondary')
-			.xInnerHTML(name),
-		),
+                        .xClass('x-fld-name', 'overflow-auto', 'text-secondary')
+                        .xInnerHTML(name),
+                ),
             xmk('div')
                 //.xClass('col-12', 'col-sm-7', 'text-start').xAppend(
-		.xClass('col-12', 'text-start').xAppend(
+                .xClass('col-12', 'text-start').xAppend(
                     xmk('div')
-			.xClass('x-fld-value', 'border', 'bg-light', 'text-dark', 'font-monospace', 'overflow-auto')
-			.xAttrs({
+                        .xClass('x-fld-value', 'border', 'bg-light', 'text-dark', 'font-monospace', 'overflow-auto')
+                        .xAttrs({
                             'title': `type: ${type}`,
                             'data-fld-type': type,
                             'data-fld-raw-value': rawValue,
-			})
-			.xInnerHTML(fieldValue)
+                        })
+                        .xInnerHTML(fieldValue)
             ),
         xmk('div')
             //.xClass('col-12', 'col-sm-2', 'text-end').xAppend(...buttons)

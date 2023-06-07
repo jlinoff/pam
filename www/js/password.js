@@ -155,7 +155,7 @@ export function mkGeneratePasswordDlg(event) {
                 xmk('p').xClass('m-1', 'fs-6').xInnerHTML('Click on the generated password to select it. ' +
                                                           'Click the Generate button or use the length slider ' +
                                                           'to generate new passwords. ' +
-							  'Characteristics of the memorable passwords can be changed in the Preferences.'),
+                                                          'Characteristics of the memorable passwords can be changed in the Preferences.'),
                 xmk('p').xClass('m-1', 'fs-5').xInnerHTML('Cryptic Password'),
                 xmk('button')
                     .xClass('btn', 'btn-light', 'btn-secondary', 'border-dark', 'x-fld-pw-cp0', 'm-2', 'font-monospace')

@@ -840,6 +840,7 @@ function mkRecordFields(recordFields) {
                             delete_occurred = true
                             let div = document.body.xGet('#x-prefs-fld-div')
                             div.replaceWith(mkRecordFields(newRecordFields))
+			    setDarkLightTheme(window.prefs.themeName) // fix the new DOM elements
                         }),
                 ),
             ),
@@ -874,6 +875,7 @@ function mkRecordFields(recordFields) {
                      newRecordFields[new_key] = new_value
                      let div = document.body.xGet('#x-prefs-fld-div')
                      div.replaceWith(mkRecordFields(newRecordFields))
+		     setDarkLightTheme(window.prefs.themeName) // fix the new DOM elements
                  }),
          ),
     )

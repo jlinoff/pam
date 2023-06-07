@@ -102,7 +102,7 @@ export function convertDictKeys2List(dict) {
 // Create a popup modal dialogue.
 export function mkPopupModalDlg(id, title, body, ...buttons) {
     let lid = id + 'Label'
-    return xmk('div')
+    let dlg = xmk('div')
         .xId(id)
         .xClass('modal', 'fade')
         .xAttrs({
@@ -114,13 +114,13 @@ export function mkPopupModalDlg(id, title, body, ...buttons) {
         })
         .xAppend(
             xmk('div')
-                .xClass('modal-dialog', 'modal-dialog-centered', 'modal-lg')
+                .xClass('modal-dialog', 'modal-dialog-centered', 'modal-lg', 'bg-light', 'text-dark')
                 .xAppend(
                     xmk('div')
                         .xClass('modal-content')
                         .xAppend(
                             xmk('div')
-                                .xClass('modal-header')
+                                .xClass('modal-header', 'bg-light', 'text-dark')
                                 .xAppend(
                                     xmk('span')
                                         .xId(lid)
@@ -128,14 +128,18 @@ export function mkPopupModalDlg(id, title, body, ...buttons) {
                                         .xInnerHTML(title)
                                 ),
                             xmk('div')
-                                .xClass('modal-body')
+                                .xClass('modal-body', 'bg-light', 'text-dark')
                                 .xAppendChild(body),
                             xmk('div')
-                                .xClass('modal-footer')
+                                .xClass('modal-footer', 'bg-light', 'text-dark')
                                 .xAppend(...buttons),
                         )
                 )
         )
+    dlg.xAddEventListener('show.bs.modal', (event) => {
+	setDarkLightTheme(window.prefs.themeName) // fix the new DOM elements
+    })
+    return dlg
 }
 
 /*
@@ -213,8 +217,8 @@ export function mkDraggableRow(type) {
  */
 export function mkPopupModalDlgButton(text, type, tooltip, callback) {
     let xcls = 'x-fld-record-' + text.toLowerCase()
-    return xmk('button')
-        .xClass('btn', type, 'btn-lg', xcls) // btn-secondary
+    let dlg = xmk('button')
+        .xClass('btn', 'btn-light', type, 'btn-lg', xcls) // btn-secondary
         .xAttrs({
             'type': 'button',
             'title': tooltip,
@@ -232,6 +236,7 @@ export function mkPopupModalDlgButton(text, type, tooltip, callback) {
             }
         })
         .xInnerHTML(text)
+    return dlg
 }
 
 /**
@@ -252,6 +257,8 @@ export function toggleDarkTheme() {
  */
 function replaceClass(from, to) {
     let elements = Array.from(document.body.getElementsByClassName(from))
+    //let ea = [].slice.call(document.querySelectorAll(`.${from}`),0)
+    //let elements = [].slice.call(Array.from(document.body.getElementsByClassName(from)), 0)
     for (let i = elements.length-1; i >= 0; i--) {
         let element = elements[i]
         try {
@@ -286,30 +293,36 @@ export function setDarkLightTheme(theme) {
     if (theme === "light" ) {
         // let there be light!
         window.prefs.themeName = theme
-        window.prefs.themeBgClass = 'bg-light'
-        window.prefs.themeBtnClass = 'btn-light'
-        document.body.setAttribute('data-bs-theme', 'light')
+        //window.prefs.themeBgClass = 'bg-light'
+        //window.prefs.themeBtnClass = 'btn-light'
+        //document.body.setAttribute('data-bs-theme', 'light')
+        document.documentElement.setAttribute('data-bs-theme', 'light')
+        document.body.classList.replace('bg-dark', 'bg-light')
         replaceClass('btn-dark', 'btn-light')
         replaceClass('bg-dark', 'bg-light')
+        replaceClass('text-light', 'text-dark')
         replaceClass('border-light', 'border-dark')
-        if (!!setLightModeButton && !! setDarkModeButton) {
+        if (!!setLightModeButton && !!setDarkModeButton) {
             setLightModeButton.xStyle({'display' : 'none'})
             setDarkModeButton.xStyle({'display' : 'inline', 'color': 'black'}) // make sure it it visible
         }
-        setStylesByClass('bi-list', {'color': 'black'}) // fix the pull down menu
+        //setStylesByClass('bi-list', {'color': 'black'}) // fix the pull down menu
     } else if (theme === "dark") {
         window.prefs.themeName = theme
-        window.prefs.themeBgClass = 'bg-dark'
-        window.prefs.themeBtnClass = 'btn-dark'
-        document.body.setAttribute('data-bs-theme', 'dark')
+        //window.prefs.themeBgClass = 'bg-dark'
+        //window.prefs.themeBtnClass = 'btn-dark'
+        //document.body.setAttribute('data-bs-theme', 'dark')
+        document.documentElement.setAttribute('data-bs-theme', 'dark')
+        document.body.classList.replace('bg-light', 'bg-dark')
         replaceClass('btn-light', 'btn-dark')
         replaceClass('bg-light', 'bg-dark')
+        replaceClass('text-dark', 'text-light')
         replaceClass('border-dark', 'border-light')
-        if (!!setLightModeButton && !! setDarkModeButton) {
+        if (!!setLightModeButton && !!setDarkModeButton) {
             setLightModeButton.xStyle({'display' : 'inline', color: 'white'}) // make sure it it visible
             setDarkModeButton.xStyle({'display' : 'none'})
         }
-        setStylesByClass('bi-list', {'color': 'white'}) // fix the pull down menu
+        //setStylesByClass('bi-list', {'color': 'white'}) // fix the pull down menu
     } else {
         alert(`ERROR: invalid theme: '${theme}, expected 'dark' or 'light'`)
     }

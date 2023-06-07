@@ -102,7 +102,7 @@ export function mkRecord(title, ...recordFields) {
     return xmk('div').xAppend(
         xmk('div').xClass('accordion-item').xAppend(
             xmk('div').xId(rid1).xClass('accordion-header').xAppend(
-                xmk('button').xClass('accordion-button', 'fs-4', 'collapsed')
+                xmk('button').xClass('accordion-button', 'fs-4', 'collapsed', 'text-dark', 'bg-light')
                     .xAttrs({
                         'type': 'button',
                         'data-bs-toggle': 'collapse',
@@ -121,7 +121,7 @@ export function mkRecord(title, ...recordFields) {
                 .xClass('accordion-collapse', 'collapse')
                 .xAppend(
                     xmk('div')
-                        .xClass('accordion-body', 'fs-5')
+                        .xClass('accordion-body', 'fs-5', 'text-dark', 'bg-light')
                         .xAppend(
                             // The record fields with clipboard copy buttons and other stuff.
                             xmk('div')
@@ -139,7 +139,7 @@ export function mkRecord(title, ...recordFields) {
                                                 .xClass('col-12', 'align-self-start')
                                                 .xAppend(
                                                     xmk('button')
-                                                        .xClass('btn', window.prefs.themeBtnClass, 'fs-6', 'm-1')
+                                                        .xClass('btn', 'btn-light', 'fs-6', 'm-1')
                                                         .xAttrs({'title': 'delete this record'})
                                                         .xAppend(
                                                             icon('bi-trash', 'delete this record'),
@@ -150,7 +150,7 @@ export function mkRecord(title, ...recordFields) {
                                                             setNumRecords()
                                                         }),
                                                     xmk('button')
-                                                        .xClass('btn', window.prefs.themeBtnClass, 'fs-6', 'm-1')
+                                                        .xClass('btn', 'btn-light', 'fs-6', 'm-1')
                                                         .xAttrs({'title': 'duplicate this record'})
                                                         .xAppend(
                                                             icon('bi-files', 'duplicated this record'),
@@ -169,7 +169,7 @@ export function mkRecord(title, ...recordFields) {
                                                             myModal.show()
                                                         }),
                                                     xmk('button')
-                                                        .xClass('btn', window.prefs.themeBtnClass, 'fs-6', 'm-1')
+                                                        .xClass('btn', 'btn-light', 'fs-6', 'm-1')
                                                         .xAttrs({'title': 'edit this record'})
                                                         .xAppend(
                                                             icon('bi-pencil-square', 'edit this record'),

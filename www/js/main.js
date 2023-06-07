@@ -74,60 +74,61 @@ function topLayout() {
     for (let i=1; i<=50; i++) {
         lines += `line ${i}<br />`
     }
-    document.body.xAppendChild(
-        xmk('header')
-            .xId('top-section')
-            .xClass('fixed-top',
-                    'border',
-                    'p-2',
-                    'fs-5',
-                    window.prefs.themeBgClass,
-                    'text-center',
-                    'text-light')
-            .xAppendChild(createSearchInputAndMenuEntry()),
-        xmk('div')
-            .xId('mid-section')
-            .xClass('h-100',
-                    //'border', 'border-2', 'border-danger', // debugging
-                    'overflow-auto',
-                    window.prefs.themeBgClass,
-                    'pt-5',
-                    'pb-5',
-                    'p-2',
-                   )
-            .xAppend( xmk('div').xClass('accordion').xId('records-accordion') ),
-        xmk('footer')
-            .xClass('fixed-bottom',
-                    'border',
-                    'p-2',
-                    window.prefs.themeBgClass,
-                    'fs-5',
-                    'text-left',
-                    'text-info',
-                   )
-            .xAppend(
-                xmk('button')
-                    .xId('x-dark-mode-button')
-                    .xClass('btn', window.prefs.themeBtnClass)
-                    .xAttrs({'title': 'set dark mode'})
-                    .xAppend(icon('bi-moon', 'set dark mode'))  // in light mode
-                    .xAddEventListener('click', (event) => {
-                        setDarkLightTheme('dark')
-                    }),
-                xmk('button')
-                    .xId('x-light-mode-button')
-                    .xClass('btn', window.prefs.themeBtnClass)
-                    .xAttrs({'title': 'set light mode'})
-                    .xAppend(icon('bi-sun', 'set light mode'))  // in dark mode
-                    .xAddEventListener('click', (event) => {
-                        setDarkLightTheme('light')
-                    }),
-                xmk('span')
-                    .xId('status')
-                    .xStyle({'width': '80%'})
-                    .xAttrs({'title': 'dynamic status messages appear here'})
-            ),
-    )
+    document.body.xClass('bg-light')
+	.xAppendChild(
+            xmk('header')
+		.xId('top-section')
+		.xClass('fixed-top',
+			'border',
+			'p-2',
+			'fs-5',
+			'bg-light',
+			'text-center',
+			'text-light')
+		.xAppendChild(createSearchInputAndMenuEntry()),
+            xmk('div')
+		.xId('mid-section')
+		.xClass('h-100',
+			//'border', 'border-2', 'border-danger', // debugging
+			'overflow-auto',
+			'pt-5',
+			'pb-5',
+			'p-2',
+			'bg-light',
+                       )
+		.xAppend( xmk('div').xClass('accordion').xId('records-accordion') ),
+            xmk('footer')
+		.xClass('fixed-bottom',
+			'border',
+			'p-2',
+			'fs-5',
+			'bg-light',
+			'text-left',
+			'text-info',
+                       )
+		.xAppend(
+                    xmk('button')
+			.xId('x-dark-mode-button')
+			.xClass('btn', 'btn-light')
+			.xAttrs({'title': 'set dark mode'})
+			.xAppend(icon('bi-moon', 'set dark mode'))  // in light mode
+			.xAddEventListener('click', (event) => {
+                            setDarkLightTheme('dark')
+			}),
+                    xmk('button')
+			.xId('x-light-mode-button')
+			.xClass('btn', 'btn-light')
+			.xAttrs({'title': 'set light mode'})
+			.xAppend(icon('bi-sun', 'set light mode'))  // in dark mode
+			.xAddEventListener('click', (event) => {
+                            setDarkLightTheme('light')
+			}),
+                    xmk('span')
+			.xId('status')
+			.xStyle({'width': '80%'})
+			.xAttrs({'title': 'dynamic status messages appear here'})
+		),
+	)
 }
 
 // Create the search input and the menu at the top.
@@ -146,7 +147,7 @@ function createSearchInputAndMenuEntry() {
                 .xClass('col-auto', 'text-start')
                 .xAppendChild(
                     xmk('button')
-                        .xClass('btn', 'btn-lg', 'px-0', 'ms-0', 'text-light')
+                        .xClass('btn', 'btn-light', 'btn-lg', 'px-0', 'ms-0', 'text-light')
                         .xAttrs({
                             'type': 'button',
                             'title': popup,

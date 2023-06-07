@@ -20,7 +20,7 @@ export function menuLoadDlg() {
             xmk('ol').xAppend(
                 xmk('li').xAppend(
                     xmk('button')
-                        .xClass('btn', 'btn-sm', 'btn-secondary', 'p-1', 'ms-2')
+                        .xClass('btn', 'btn-light', 'btn-sm', 'btn-secondary', 'p-1', 'ms-2')
                         .xAttrs({'type': 'button'})
                         .xStyle({'margin-bottom': '3px'})
                         .xAddEventListener('click', (event) => {setTimeout(() => loadExampleRecords(event), 500)})
@@ -28,7 +28,7 @@ export function menuLoadDlg() {
                 ),
                 xmk('li').xAppend(
                     xmk('button')
-                        .xClass('btn', 'btn-sm', 'btn-secondary', 'p-1', 'ms-2')
+                        .xClass('btn', 'btn-light', 'btn-sm', 'btn-secondary', 'p-1', 'ms-2')
                         .xStyle({'margin-bottom': '3px'})
                         .xAttrs({'type': 'button'})
                         .xAddEventListener('click', (event) => loadExampleRecipe(event))
@@ -36,7 +36,7 @@ export function menuLoadDlg() {
                 ),
                 xmk('li').xAppend(
                     xmk('button')
-                        .xClass('btn', 'btn-sm', 'btn-secondary', 'p-1', 'ms-2')
+                        .xClass('btn', 'btn-light', 'btn-sm', 'btn-secondary', 'p-1', 'ms-2')
                         .xStyle({'margin-bottom': '3px'})
                         .xAttrs({'type': 'button'})
                         .xAddEventListener('click', (event) => loadUrl(event))
@@ -44,7 +44,7 @@ export function menuLoadDlg() {
                 ),
                 xmk('li').xAppend(
                     xmk('button')
-                        .xClass('btn', 'btn-sm', 'btn-secondary', 'p-1', 'ms-2')
+                        .xClass('btn', 'btn-light', 'btn-sm', 'btn-secondary', 'p-1', 'ms-2')
                         .xStyle({'margin-bottom': '3px'})
                         .xAttrs({'type': 'button'})
                         .xAddEventListener('click', (event) => loadClipboardContent(event))

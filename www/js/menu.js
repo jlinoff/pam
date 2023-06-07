@@ -50,7 +50,7 @@ function menuClearDlg() {
                     xmk('div').xClass('col', 'ml-3')
                         .xAppend(
                             xmk('span').xInnerHTML('Click&nbsp;'),
-                            xmk('button').xClass('btn', 'btn-primary', 'btn-sm', 'disabled')
+                            xmk('button').xClass('btn', 'btn-light', 'btn-primary', 'btn-sm', 'disabled')
                                 .xInnerHTML('Clear'),
                             xmk('span')
                                 .xInnerHTML('&nbsp;to really do it. This is operation is NOT reversible!')
@@ -63,7 +63,7 @@ function menuClearDlg() {
                     xmk('div').xClass('col', 'ml-3')
                         .xAppend(
                             xmk('span').xInnerHTML('Click&nbsp;'),
-                            xmk('button').xClass('btn', 'btn-secondary', 'btn-sm', 'disabled')
+                            xmk('button').xClass('btn', 'btn-light', 'btn-secondary', 'btn-sm', 'disabled')
                                 .xInnerHTML('Close&nbsp;'),
                             xmk('span')
                                 .xInnerHTML('&nbsp;to exit this dialogue with no changes.')
@@ -98,7 +98,7 @@ export function mkMenu() {
         .xAppend(
             xmk('button')
                 .xId('menu')
-                .xClass('btn', 'btn-lg', 'dropdown-toggle', 'text-info')
+                .xClass('btn', 'btn-light', 'btn-lg', 'dropdown-toggle', 'text-info')
                 .xAttrs({
                     'aria-expanded': 'false',
                     'data-bs-toggle': 'dropdown',

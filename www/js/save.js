@@ -26,7 +26,7 @@ export function menuSaveDlg() {
                                 .xAttrs({'type': 'text', 'value': window.prefs.fileName}),
                             xmk('span').xClass('input-group-append').xAppend(
                                 xmk('button')
-                                    .xClass('btn', 'btn-lg', window.prefs.themeBtnClass, 'px-0', 'ms-2')
+                                    .xClass('btn', 'btn-light', 'btn-lg', 'px-0', 'ms-2')
                                     .xAttr('type', 'button')
                                     .xAddEventListener('click', (event) => {
                                         let row = event.target.xGetParentWithClass('row')
@@ -56,7 +56,7 @@ export function menuSaveDlg() {
     let input_group_append = input_group.xGet('.input-group-append')
     input_group_append.xAppend(
             xmk('button')
-            .xClass('btn', 'btn-lg', window.prefs.themeBtnClass, 'px-0', 'ms-2')
+            .xClass('btn', 'btn-light', 'btn-lg', 'px-0', 'ms-2')
             .xAttr('type', 'button')
             .xAddEventListener('click', (event) => {
                 mkGeneratePasswordDlg(event)

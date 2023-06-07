@@ -137,7 +137,7 @@ export function mkPopupModalDlg(id, title, body, ...buttons) {
                 )
         )
     dlg.xAddEventListener('show.bs.modal', (event) => {
-	setDarkLightTheme(window.prefs.themeName) // fix the new DOM elements
+        setDarkLightTheme(window.prefs.themeName) // fix the new DOM elements
     })
     return dlg
 }

@@ -82,7 +82,7 @@ def preamble(py: Pylenium):
     debug(f'width: {width}')
     debug(f'height: {height}')
     debug(f'FINAL_TIMEOUT: {FINAL_TIMEOUT}')
-    py.viewport(1280, 800)
+    py.viewport(width, height)
     py.visit('http://localhost:8081')
 
 

@@ -2,7 +2,7 @@
 import { xmk } from './lib.js'
 import { statusBlip } from './status.js'
 import { words } from './en_words.js'
-import { icon } from './utils.js'
+import { icon, setDarkLightTheme } from './utils.js'
 
 export const ALPHA_LOWER = "abcdefghijklmnopqrstuvwxyz"
 export const ALPHA_UPPER = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
@@ -123,7 +123,7 @@ export function mkGeneratePasswordDlg(event) {
             const pwd = getMemorablePassword(len)
             const rowElement = row
             let button = xmk('button')
-                .xClass('btn', 'btn-light', 'btn-secondary', 'x-fld-pw-mp', 'm-2', 'font-monospace')
+                .xClass('btn', 'btn-light', 'btn-secondary', 'border-dark', 'x-fld-pw-mp', 'm-2', 'font-monospace')
                 .xAttrs({'title': 'click to save this memorable password'})
                 .xInnerHTML(pwd)
                 .xAddEventListener('click', (event) => { /* jshint ignore:line */
@@ -136,7 +136,7 @@ export function mkGeneratePasswordDlg(event) {
             xmk('div').xClass('col-12', 'x-fld-pw-gen', 'mt-1').xAppend(
                 xmk('hr'),
                 xmk('button')
-                    .xClass('btn', 'btn-light', 'btn-small', 'w-100')
+                    .xClass('btn', 'btn-light', 'border-dark', 'btn-small', 'w-100')
                     .xAppend(
                         icon('bi-x-circle', 'close the section'),
                         xmk('span').xInnerHTML('&nbsp;Close Password Generator'))
@@ -154,10 +154,11 @@ export function mkGeneratePasswordDlg(event) {
                 xmk('p').xClass('m-1', 'fs-3').xInnerHTML('Password Generator'),
                 xmk('p').xClass('m-1', 'fs-6').xInnerHTML('Click on the generated password to select it. ' +
                                                           'Click the Generate button or use the length slider ' +
-                                                          'to generate new passwords.'),
+                                                          'to generate new passwords. ' +
+							  'Characteristics of the memorable passwords can be changed in the Preferences.'),
                 xmk('p').xClass('m-1', 'fs-5').xInnerHTML('Cryptic Password'),
                 xmk('button')
-                    .xClass('btn', 'btn-light', 'btn-secondary', 'x-fld-pw-cp0', 'm-2', 'font-monospace')
+                    .xClass('btn', 'btn-light', 'btn-secondary', 'border-dark', 'x-fld-pw-cp0', 'm-2', 'font-monospace')
                     .xAttrs({'title': 'click to save cryptic password'})
                     .xInnerHTML(cp0)
                     .xAddEventListener('click', (event) => {
@@ -236,14 +237,15 @@ export function mkGeneratePasswordDlg(event) {
             })
         }
     }
+    setDarkLightTheme(window.prefs.themeName) // fix the new DOM elements
 }
 
-// Make load/save password with clear and show/hide.
+// Make load/save password input for fields with clear and show/hide.
 export function mkLoadSavePassword(xid) {
     return xmk('div').xClass('input-group').xAppend(
         xmk('input')
             .xId(xid)
-            .xClass('form-control', 'x-fld-value', 'ps-1')
+            .xClass('form-control', 'x-fld-value', 'bg-light', 'text-dark', 'ps-1')
             .xAttrs({
                 'type': 'password',
                 'autocomplete': 'new-password',

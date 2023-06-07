@@ -45,6 +45,7 @@ jobs:
           wget -vP /tmp/ https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
           ls -l /tmp/google-chrome-stable_current_amd64.deb
           sudo apt-get install -y --allow-downgrades /tmp/google-chrome-stable_current_amd64.deb
+          which google-chrome
           google-chrome --version
       - name: chromedriver
         run: |
@@ -52,7 +53,8 @@ jobs:
           echo "VERSION=${VERSION}"
           wget -vP /tmp/ "https://chromedriver.storage.googleapis.com/${VERSION}/chromedriver_linux64.zip"
           ls -l /tmp/chromedriver_linux64.zip
-          sudo unzip -o /tmp/chromedriver_linux64.zip -d /usr/local/bin
+          sudo unzip -o /tmp/chromedriver_linux64.zip -d /usr/bin
+          which chromedriver
           chromedriver --version
       - name: checkout-pam
         uses: actions/checkout@v2

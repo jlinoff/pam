@@ -21,7 +21,7 @@ from pylenium.driver import Pylenium  # type: ignore
 #    chromedriver --version
 # To install chromedriver on MacOs:
 #    brew install chromedriver
-WEBDRIVER = os.getenv('WEBDRIVER', '/usr/local/bin/chromedriver')
+WEBDRIVER = os.getenv('WEBDRIVER', '/usr/bin/chromedriver')
 
 # pause for a bit to let things settle
 NOMINAL_SLEEP_TIME = 0.25

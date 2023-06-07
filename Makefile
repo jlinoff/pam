@@ -199,6 +199,10 @@ test: init lint | tests/test_pam.py ## Run local tests
 	$(KILL_SERVER)
 
 # This is an example to build off of for debugging
+browser-versions:
+	$(call hdr,"$@")
+	-google-chrome --version && chromedriver --version && chromium-browser --version
+
 run-single-test: init lint | tests/test_pam.py
 	$(call hdr,"$@")
 	-google-chrome --version && chromedriver --version && chromium-browser --version

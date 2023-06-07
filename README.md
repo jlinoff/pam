@@ -162,6 +162,8 @@ You can access _PAM_ from your own secure web server (including
 localhost) or from the public
 [github.io server](https://jlinoff.github.io/pam/www/index.html).
 In either case, once the application is loaded into your browser
+or run as a local web app 
+([PWA](https://developer.mozilla.org/en-US/docs/Web/Progressive_web_apps/Installing))
 _there is no other communication_ with the web server which you can
 verify by monitoring outbound network traffic.
 

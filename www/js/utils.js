@@ -114,7 +114,7 @@ export function mkPopupModalDlg(id, title, body, ...buttons) {
         })
         .xAppend(
             xmk('div')
-                .xClass('modal-dialog', 'modal-dialog-centered', 'modal-lg', 'bg-light', 'text-dark')
+                .xClass('modal-dialog', 'modal-lg', 'bg-light', 'text-dark')
                 .xAppend(
                     xmk('div')
                         .xClass('modal-content')

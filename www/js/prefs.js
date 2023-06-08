@@ -36,8 +36,6 @@ export function initPrefs() {
         // Use the '.txt' extension because the '.pam' extension
         // does not work on some mobile devices.
         themeName: 'dark', // choices are dark or light
-        themeBgClass: 'bg-dark',
-        themeBtnClass: 'btn-dark',
         enablePrinting: false,
         fileName: 'example.txt',
         filePass: '',
@@ -279,7 +277,7 @@ function prefCustomAboutInfo(labelClasses, inputClasses) {
         xmk('div').xClass(...inputClasses).xAppend(
             xmk('div').xClass('input-group').xAppend(
                 xmk('textarea')
-                    .xClass('form-control', 'bg-light', 'text-dark')
+                    .xClass('form-control')
                     .xAttrs({'type': 'button',
                              'title': 'custom about information',
                              'placeholder': 'HTML custom about information',
@@ -297,7 +295,7 @@ function prefStatusMsgDurationMS(labelClasses, inputClasses) {
             xmk('div').xClass('input-group').xAppend(
                 xmk('input')
                     .xId('x-prefs-status-msg-duration-ms')
-                    .xClass('form-control', 'bg-light', 'text-dark', 'text-end')
+                    .xClass('form-control', 'text-end')
                     .xAttrs({'type': 'number',
                              'value': window.prefs.statusMsgDurationMS,
                              'min': 500,
@@ -335,7 +333,7 @@ function prefLoadDupStrategy(labelClasses, inputClasses) {
             xmk('div').xClass('dropdown').xAppend(
                 xmk('button')
                     .xId('x-prefs-load-dup-button')
-                    .xClass('btn', 'btn-light', 'dropdown-toggle')
+                    .xClass('btn', 'dropdown-toggle')
                     .xAttrs({
                         'data-bs-toggle': 'dropdown',
                         'aria-expanded': 'false',
@@ -440,7 +438,7 @@ function prefFilePassCacheStrategy(labelClasses, inputClasses) {
                 'data-bs-toggle': 'dropdown',
                 'aria-expanded': false,
             })
-            .xClass('btn', 'btn-light', 'btn-secondary', 'dropdown-toggle', 'bg-light', 'text-dark')
+            .xClass('btn', 'btn-secondary', 'dropdown-toggle')
             .xInnerHTML(value),
         xmk('ul')
             .xAttrs({'aria-labelledby': dropdown_id})
@@ -497,7 +495,7 @@ function prefPasswordRangeMinLength(labelClasses, inputClasses) {
             xmk('div').xClass('input-group').xAppend(
                 xmk('input')
                     .xId('x-prefs-password-length-minimum')
-                    .xClass('form-control', 'bg-light', 'text-dark', 'text-end')
+                    .xClass('form-control', 'text-end')
                     .xAttrs({'type': 'number',
                              'value': window.prefs.passwordRangeMinLength,
                              'min': 4,
@@ -527,7 +525,7 @@ function prefPasswordRangeMaxLength(labelClasses, inputClasses) {
             xmk('div').xClass('input-group').xAppend(
                 xmk('input')
                     .xId('x-prefs-password-length-maximum')
-                    .xClass('form-control', 'bg-light', 'text-dark', 'text-end')
+                    .xClass('form-control', 'text-end')
                     .xAttrs({'type': 'number',
                              'value': window.prefs.passwordRangeMaxLength,
                              'min': 5,
@@ -556,7 +554,7 @@ function prefMemorablePasswordMinWordLength(labelClasses, inputClasses) {
         xmk('div').xClass(...inputClasses).xAppend(
             xmk('div').xClass('input-group').xAppend(
                 xmk('input')
-                    .xClass('form-control', 'bg-light', 'text-dark', 'text-end')
+                    .xClass('form-control', 'text-end')
                     .xAttrs({'type': 'number',
                              'value': window.prefs.memorablePasswordMinWordLength,
                              'title': 'minimum word length in memorable passwords',
@@ -573,7 +571,7 @@ function prefMemorablePasswordWordSeparator(labelClasses, inputClasses) {
         xmk('div').xClass(...inputClasses).xAppend(
             xmk('div').xClass('input-group').xAppend(
                 xmk('input')
-                    .xClass('form-control', 'bg-light', 'text-dark', 'text-start')
+                    .xClass('form-control', 'text-start')
                     .xAttrs({'type': 'text',
                              'value': window.prefs.memorablePasswordWordSeparator,
                              'title': 'string used to separate words in memorable passwords',
@@ -590,7 +588,7 @@ function prefMemorablePasswordMinWords(labelClasses, inputClasses) {
         xmk('div').xClass(...inputClasses).xAppend(
             xmk('div').xClass('input-group').xAppend(
                 xmk('input')
-                    .xClass('form-control', 'bg-light', 'text-dark', 'text-end')
+                    .xClass('form-control', 'text-end')
                     .xAttrs({'type': 'number',
                              'value': window.prefs.memorablePasswordMinWords,
                              'title': 'minimum number of words in memorable passwords',
@@ -607,7 +605,7 @@ function prefMemorablePasswordMaxWords(labelClasses, inputClasses) {
         xmk('div').xClass(...inputClasses).xAppend(
             xmk('div').xClass('input-group').xAppend(
                 xmk('input')
-                    .xClass('form-control', 'bg-light', 'text-dark', 'text-end')
+                    .xClass('form-control', 'text-end')
                     .xAttrs({'type': 'number',
                              'value': window.prefs.memorablePasswordMaxWords,
                              'title': 'maximum number of words in memorable passwords',
@@ -624,7 +622,7 @@ function prefMemorablePasswordMaxTries(labelClasses, inputClasses) {
         xmk('div').xClass(...inputClasses).xAppend(
             xmk('div').xClass('input-group').xAppend(
                 xmk('input')
-                    .xClass('form-control', 'bg-light', 'text-dark', 'text-end')
+                    .xClass('form-control', 'text-end')
                     .xAttrs({'type': 'number',
                              'value': window.prefs.memorablePasswordMaxTries,
                              'title': 'maximum number of tries to generate a memorable password',
@@ -641,7 +639,7 @@ function prefMemorablePasswordPrefix(labelClasses, inputClasses) {
         xmk('div').xClass(...inputClasses).xAppend(
             xmk('div').xClass('input-group').xAppend(
                 xmk('input')
-                    .xClass('form-control', 'bg-light', 'text-dark', 'text-start')
+                    .xClass('form-control', 'text-start')
                     .xAttrs({'type': 'text',
                              'value': window.prefs.memorablePasswordPrefix,
                              'title': 'common prefix for memorable passwords',
@@ -658,7 +656,7 @@ function prefMemorablePasswordSuffix(labelClasses, inputClasses) {
         xmk('div').xClass(...inputClasses).xAppend(
             xmk('div').xClass('input-group').xAppend(
                 xmk('input')
-                    .xClass('form-control', 'bg-light', 'text-dark', 'text-start')
+                    .xClass('form-control', 'text-start')
                     .xAttrs({'type': 'text',
                              'value': window.prefs.memorablePasswordSuffix,
                              'title': 'common suffix for memorable passwords',
@@ -677,7 +675,7 @@ function mkPrefsCheckBox(labelClasses, inputClasses, id, title, popup) {
         xmk('div').xClass(...inputClasses).xAppend(
             xmk('div').xClass('input-group').xAppend(
                 xmk('button')
-                    .xClass('form-control', 'bg-light', 'text-dark', 'btn', 'btn-lg')
+                    .xClass('form-control', 'btn', 'btn-lg')
                     .xAttrs({'type': 'button',
                              'title': popup,
                              'data-pref-id': id,
@@ -715,7 +713,7 @@ function prefHelpLink(labelClasses, inputClasses) {
         xmk('div').xClass(...inputClasses).xAppend(
             xmk('div').xClass('input-group').xAppend(
                 xmk('input')
-                    .xClass('form-control', 'bg-light', 'text-dark', 'text-start')
+                    .xClass('form-control', 'text-start')
                     .xAttrs({'type': 'text',
                              'value': window.prefs.helpLink,
                              'title': 'link to help',
@@ -732,7 +730,7 @@ function prefProjectLink(labelClasses, inputClasses) {
         xmk('div').xClass(...inputClasses).xAppend(
             xmk('div').xClass('input-group').xAppend(
                 xmk('input')
-                    .xClass('form-control', 'bg-light', 'text-dark', 'text-start')
+                    .xClass('form-control', 'text-start')
                     .xAttrs({'type': 'text',
                              'value': window.prefs.projectLink,
                              'title': 'link to project',
@@ -774,7 +772,7 @@ function mkRecordFields(recordFields) {
         Object.entries(VALID_FIELD_TYPES).forEach(([key1,value1]) => {
             let a  = xmk('a')
                 .xAttrs({'href': '#'})
-                .xClass('dropdown-item', 'bg-light', 'text-dark')
+                .xClass('dropdown-item')
                 .xInnerHTML(key1)
                 .xAddEventListener('click', (event) => {
                     setActive(event)
@@ -804,7 +802,7 @@ function mkRecordFields(recordFields) {
                     'data-bs-toggle': 'dropdown',
                     'aria-expanded': false,
                 })
-                .xClass('btn', 'btn-light', 'btn-secondary', 'dropdown-toggle', 'bg-light', 'text-dark')
+                .xClass('btn', 'btn-secondary', 'dropdown-toggle')
                 .xInnerHTML(value),
             xmk('ul')
                 .xAttrs({'aria-labelledby': dropdown_id})
@@ -816,16 +814,16 @@ function mkRecordFields(recordFields) {
         let fld = xmk('div').xClass('row','x-pref-fld-row').xAppend(
             xmk('div').xClass('input-group').xAppend(
                 xmk('div').xClass('col', 'col-4').xAppend(
-                    xmk('input').xClass('form-control', 'bg-light', 'text-dark', 'x-fld-name').xAttrs({'value': key})
+                    xmk('input').xClass('form-control', 'x-fld-name').xAttrs({'value': key})
                 ),
                 xmk('span').xInnerHTML('&nbsp;&nbsp;'),
                 xmk('div').xClass('col', 'col-4').xAppend(
                     dropdown
-                    //xmk('input').xClass('form-control', 'bg-light', 'text-dark', 'x-fld-value').xAttrs({'value': value})
+                    //xmk('input').xClass('form-control', 'x-fld-value').xAttrs({'value': value})
                 ),
                 xmk('div').xClass('col', 'col-1').xAppend(
                     xmk('button')
-                        .xClass('btn', 'btn-light', 'btn-lg', 'form-control', 'bg-light', 'text-dark', 'text-start')
+                        .xClass('btn', 'btn-lg', 'form-control', 'text-start')
                         .xAttrs({
                             'type': 'button',
                             'title': tooltip,
@@ -840,7 +838,7 @@ function mkRecordFields(recordFields) {
                             delete_occurred = true
                             let div = document.body.xGet('#x-prefs-fld-div')
                             div.replaceWith(mkRecordFields(newRecordFields))
-			    setDarkLightTheme(window.prefs.themeName) // fix the new DOM elements
+                            setDarkLightTheme(window.prefs.themeName) // fix the new DOM elements
                         }),
                 ),
             ),
@@ -853,7 +851,7 @@ function mkRecordFields(recordFields) {
     let newfld = xmk('div').xClass('row').xAppend(
          xmk('div').xClass('col', 'col-12').xAppend(
              xmk('button')
-                 .xClass('btn', 'btn-light', 'btn-lg', 'form-control', 'bg-light', 'text-dark', 'text-center', 'fs-5')
+                 .xClass('btn', 'btn-lg', 'form-control', 'text-center', 'fs-5')
                  .xAttrs({
                      'type': 'button',
                      'title': tooltip,
@@ -875,7 +873,7 @@ function mkRecordFields(recordFields) {
                      newRecordFields[new_key] = new_value
                      let div = document.body.xGet('#x-prefs-fld-div')
                      div.replaceWith(mkRecordFields(newRecordFields))
-		     setDarkLightTheme(window.prefs.themeName) // fix the new DOM elements
+                     setDarkLightTheme(window.prefs.themeName) // fix the new DOM elements
                  }),
          ),
     )

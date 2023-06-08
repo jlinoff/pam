@@ -15,9 +15,7 @@ DST  ?= www
 PORT ?= 8081
 FAVICON_SVG ?= bootstrap-icons/icons/box.svg
 # from https://getbootstrap.com/docs/versions/
-BS_VER ?= 5.2.3
-#BS_VER ?= 5.3.0-alpha2
-#BS_VER ?= 5.3.0-alpha3
+BS_VER ?= 5.3.0
 BS_DIST ?= bootstrap-$(BS_VER)-dist
 export PIPENV_VENV_IN_PROJECT := True
 PYTHON3_PATH ?= python3
@@ -125,47 +123,48 @@ update-blue-icons:  ## Idempotent update of www/icons/blue from www/icons/black.
 		rg 'fill="[^"]*"' "$$OFN" ; \
 	done
 
-.PHONY: bs
-bs: .bs ## install bootstrap locally
-
-.PHONY: .bs
-.bs: 	$(DST)/js/bootstrap.bundle.js \
+.PHONY: bs ## install bootstrap locally
+bs: 	$(DST)/js/bootstrap.bundle.js \
 	$(DST)/js/bootstrap.bundle.js.map \
-	$(DST)/css/bootstrap.css \
-	$(DST)/css/bootstrap.css.map \
+	$(DST)/css/bootstrap.min.css \
+	$(DST)/css/bootstrap.min.css.map \
 	$(DST)/font/bootstrap-icons.css \
 	$(DST)/favicon.ico
-	tree www
-	@touch $@
 
 $(DST)/js/bootstrap.bundle.js: $(BS_DIST)/js/bootstrap.bundle.js
+	$(call hdr,"$@")
 	@-mkdir -p $(dir $@)
 	cp $< $@
 
 $(DST)/js/bootstrap.bundle.js.map: $(BS_DIST)/js/bootstrap.bundle.js.map
+	$(call hdr,"$@")
 	@-mkdir -p $(dir $@)
 	cp $< $@
 
-$(DST)/css/bootstrap.css: $(BS_DIST)/css/bootstrap.css
+$(DST)/css/bootstrap.min.css: $(BS_DIST)/css/bootstrap.min.css
+	$(call hdr,"$@")
 	@-mkdir -p $(dir $@)
 	cp $< $@
 
-$(DST)/css/bootstrap.css.map: $(BS_DIST)/css/bootstrap.css.map
+$(DST)/css/bootstrap.min.css.map: $(BS_DIST)/css/bootstrap.min.css.map
+	$(call hdr,"$@")
 	@-mkdir -p $(dir $@)
 	cp $< $@
 
 $(DST)/font/bootstrap-icons.css: bootstrap-icons/font/bootstrap-icons.css
+	$(call hdr,"$@")
 	@-mkdir -p $(dir $@)
 	cp -r bootstrap-icons/font $(DST)/
 
 $(DST)/favicon.ico:
+	$(call hdr,"$@")
 	@-mkdir -p $(dir $@)
 	convert -density 256x256 -background transparent $(FAVICON_SVG) -define icon:auto-resize -colors 256 $@
 
 $(BS_DIST)/js/bootstrap.bundle.js \
 $(BS_DIST)/js/bootstrap.bundle.js.map \
-$(BS_DIST)/css/bootstrap.css \
-$(BS_DIST)/css/bootstrap.css.map: bootstrap-dist.zip
+$(BS_DIST)/css/bootstrap.min.css \
+$(BS_DIST)/css/bootstrap.min.css.map: bootstrap-dist.zip
 
 bootstrap-dist.zip:
 	curl -L https://github.com/twbs/bootstrap/releases/download/v$(BS_VER)/$(BS_DIST).zip -o bootstrap-dist.zip

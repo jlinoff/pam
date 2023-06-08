@@ -114,13 +114,13 @@ export function mkPopupModalDlg(id, title, body, ...buttons) {
         })
         .xAppend(
             xmk('div')
-                .xClass('modal-dialog', 'modal-lg', 'bg-light', 'text-dark')
+                .xClass('modal-dialog', 'modal-lg')
                 .xAppend(
                     xmk('div')
                         .xClass('modal-content')
                         .xAppend(
                             xmk('div')
-                                .xClass('modal-header', 'bg-light', 'text-dark')
+                                .xClass('modal-header')
                                 .xAppend(
                                     xmk('span')
                                         .xId(lid)
@@ -128,10 +128,10 @@ export function mkPopupModalDlg(id, title, body, ...buttons) {
                                         .xInnerHTML(title)
                                 ),
                             xmk('div')
-                                .xClass('modal-body', 'bg-light', 'text-dark')
+                                .xClass('modal-body')
                                 .xAppendChild(body),
                             xmk('div')
-                                .xClass('modal-footer', 'bg-light', 'text-dark')
+                                .xClass('modal-footer')
                                 .xAppend(...buttons),
                         )
                 )
@@ -218,7 +218,7 @@ export function mkDraggableRow(type) {
 export function mkPopupModalDlgButton(text, type, tooltip, callback) {
     let xcls = 'x-fld-record-' + text.toLowerCase()
     let dlg = xmk('button')
-        .xClass('btn', 'btn-light', type, 'btn-lg', xcls) // btn-secondary
+        .xClass('btn', type, 'btn-lg', xcls) // btn-secondary
         .xAttrs({
             'type': 'button',
             'title': tooltip,
@@ -248,6 +248,21 @@ export function toggleDarkTheme() {
         setDarkLightTheme('light')
     } else {
         setDarkLightTheme('dark')
+    }
+}
+
+/**
+ * Update attribute value.
+ */
+function updateAttributeValue(attr, value) {
+    let elements = Array.from(document.querySelectorAll(`[${attr}]`))
+    for (let i = elements.length-1; i >= 0; i--) {
+        let element = elements[i]
+        try {
+            element.setAttribute(attr, value)
+        } catch (error) {
+            console.log(error)
+        }
     }
 }
 
@@ -290,39 +305,21 @@ function setStylesByClass(className, styles) {
 export function setDarkLightTheme(theme) {
     let setDarkModeButton = document.getElementById('x-dark-mode-button')
     let setLightModeButton = document.getElementById('x-light-mode-button')
+    window.prefs.themeName = theme
+    updateAttributeValue('data-bs-theme', theme)
     if (theme === "light" ) {
         // let there be light!
-        window.prefs.themeName = theme
-        //window.prefs.themeBgClass = 'bg-light'
-        //window.prefs.themeBtnClass = 'btn-light'
-        //document.body.setAttribute('data-bs-theme', 'light')
-        document.documentElement.setAttribute('data-bs-theme', 'light')
-        document.body.classList.replace('bg-dark', 'bg-light')
-        replaceClass('btn-dark', 'btn-light')
-        replaceClass('bg-dark', 'bg-light')
-        replaceClass('text-light', 'text-dark')
-        replaceClass('border-light', 'border-dark')
+        replaceClass('bg-dark', 'bg-light') // for the footer
         if (!!setLightModeButton && !!setDarkModeButton) {
             setLightModeButton.xStyle({'display' : 'none'})
             setDarkModeButton.xStyle({'display' : 'inline', 'color': 'black'}) // make sure it it visible
         }
-        //setStylesByClass('bi-list', {'color': 'black'}) // fix the pull down menu
     } else if (theme === "dark") {
-        window.prefs.themeName = theme
-        //window.prefs.themeBgClass = 'bg-dark'
-        //window.prefs.themeBtnClass = 'btn-dark'
-        //document.body.setAttribute('data-bs-theme', 'dark')
-        document.documentElement.setAttribute('data-bs-theme', 'dark')
-        document.body.classList.replace('bg-light', 'bg-dark')
-        replaceClass('btn-light', 'btn-dark')
         replaceClass('bg-light', 'bg-dark')
-        replaceClass('text-dark', 'text-light')
-        replaceClass('border-dark', 'border-light')
         if (!!setLightModeButton && !!setDarkModeButton) {
             setLightModeButton.xStyle({'display' : 'inline', color: 'white'}) // make sure it it visible
             setDarkModeButton.xStyle({'display' : 'none'})
         }
-        //setStylesByClass('bi-list', {'color': 'white'}) // fix the pull down menu
     } else {
         alert(`ERROR: invalid theme: '${theme}, expected 'dark' or 'light'`)
     }

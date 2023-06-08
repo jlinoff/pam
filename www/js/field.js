@@ -59,7 +59,7 @@ function mkRecordFldElement(name, type, fieldValue, rawValue, ...buttons) {
                 //.xClass('col-12', 'col-sm-7', 'text-start').xAppend(
                 .xClass('col-12', 'text-start').xAppend(
                     xmk('div')
-                        .xClass('x-fld-value', 'border', 'bg-light', 'text-dark', 'font-monospace', 'overflow-auto')
+                        .xClass('x-fld-value', 'border', 'font-monospace', 'overflow-auto')
                         .xAttrs({
                             'title': `type: ${type}`,
                             'data-fld-type': type,
@@ -77,7 +77,7 @@ function mkRecordFldElement(name, type, fieldValue, rawValue, ...buttons) {
 function mkRecordFieldCopyToClipboardButton(raw_value) {
     const value = raw_value
     return xmk('button')
-        .xClass('btn', 'btn-light', 'btn-lg', 'p-0', 'ms-2')
+        .xClass('btn', 'btn-lg', 'p-0', 'ms-2')
         .xAttrs({'type': 'button'})
         .xAppend(icon('bi-clipboard', 'copy to clipboard')) // also bi-files
         .xAddEventListener('click', (event) => {
@@ -116,7 +116,7 @@ function mkRecordFieldPasswordShowHideButton(showValueIn, hideValueIn) {
     const showValue = showValueIn
     const hideValue = hideValueIn
     return xmk('button')
-        .xClass('btn', 'btn-light', 'btn-lg', 'p-0', 'ms-2')
+        .xClass('btn', 'btn-lg', 'p-0', 'ms-2')
         .xAppend(icon('bi-eye', 'show password'))
         .xAddEventListener('click', (event) => {
             let row = event.target.xGetParentWithClass('row')
@@ -244,7 +244,7 @@ function mkRecordEditField(name, type, container, value) {
 
     // These are the same for all inputs.
     inputs[0]
-        .xClass('x-fld-value', 'form-control', 'bg-light', 'text-dark', 'font-monospace')
+        .xClass('x-fld-value', 'form-control', 'font-monospace')
         .xAttr('data-fld-type', type)
         .xAddEventListener('focus', (event) => {
             // Allow text to be selected in a draggable parent.
@@ -262,7 +262,7 @@ function mkRecordEditField(name, type, container, value) {
     // define delete button
     let recordDeleteButton = xmk('button')
         .xAttrs({'type': 'button', 'title': `delete field`})
-        .xClass('btn', 'btn-light', 'btn-lg', 'ms-0')
+        .xClass('btn', 'btn-lg', 'ms-0')
         .xAppend(icon('bi-trash3-fill', 'delete'),
                  xmk('span').xInnerHTML('&nbsp;Delete Field '))
         .xAddEventListener('click', (event) => {
@@ -276,7 +276,7 @@ function mkRecordEditField(name, type, container, value) {
         passwordShowHide = xmk('button')
             .xAttrs({'type': 'button',
                      'title': 'show or hide password'})
-            .xClass('btn', 'btn-light', 'btn-lg', 'px-0', 'ms-3')
+            .xClass('btn', 'btn-lg', 'px-0', 'ms-3')
             .xAppend(icon('bi-eye', 'show or hide password'))
             .xAddEventListener('click', (event) => {
                 let button = event.target.parentElement
@@ -299,7 +299,7 @@ function mkRecordEditField(name, type, container, value) {
         // password generate button
         passwordGenerate = xmk('button')
             .xAttrs({'type': 'button'})
-            .xClass('btn', 'btn-light', 'btn-lg', 'px-0', 'ms-3')
+            .xClass('btn', 'btn-lg', 'px-0', 'ms-3')
             .xAppend(icon('bi-gear', 'generate a password'))
             .xAddEventListener('click', (event) => {
                 mkGeneratePasswordDlg(event)
@@ -328,7 +328,7 @@ function mkRecordEditField(name, type, container, value) {
                     }),
                 xmk('span').xClass('input-group-append').xAppend(
                     xmk('button')
-                        .xClass('btn', 'btn-light', 'btn-lg', 'px-0', 'ms-2')
+                        .xClass('btn', 'btn-lg', 'px-0', 'ms-2')
                         .xAttr('type', 'button')
                         .xAddEventListener('click', (event) => {
                             let row = event.target.xGetParentWithClass('row')
@@ -353,7 +353,7 @@ function mkRecordEditField(name, type, container, value) {
                 ...inputs,
                 xmk('span').xClass('input-group-append').xAppend(
                     xmk('button')
-                        .xClass('btn', 'btn-light', 'btn-lg', 'px-0', 'ms-2')
+                        .xClass('btn', 'btn-lg', 'px-0', 'ms-2')
                         .xAttr('type', 'button')
                         .xAddEventListener('click', (event) => {
                             let row = event.target.xGetParentWithClass('row')
@@ -427,7 +427,7 @@ export function mkRecordEditDlg(title) {
             // Title input
             xmk('div').xClass('col-12').xAppend(
                 xmk('input')
-                    .xClass('w-100', 'fs-5', 'm-2', 'x-record-title', 'bg-light', 'text-dark')
+                    .xClass('w-100', 'fs-5', 'm-2', 'x-record-title')
                     .xAttrs({
                         'value': title,
                         'placeholder': 'Record Title',
@@ -446,7 +446,7 @@ export function mkRecordEditDlg(title) {
                     // This is the field types button that displays the field name pulldown.
                     xmk('button')
                         .xId('x-new-field-type')
-                        .xClass('btn', 'btn-light', 'btn-secondary', 'dropdown-toggle')
+                        .xClass('btn', 'btn-secondary', 'dropdown-toggle')
                         .xAttrs({
                             'aria-expanded': 'false',
                             'data-bs-toggle': 'dropdown',

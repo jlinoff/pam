@@ -123,7 +123,7 @@ export function mkGeneratePasswordDlg(event) {
             const pwd = getMemorablePassword(len)
             const rowElement = row
             let button = xmk('button')
-                .xClass('btn', 'btn-light', 'btn-secondary', 'border-dark', 'x-fld-pw-mp', 'm-2', 'font-monospace')
+                .xClass('btn', 'btn-secondary', 'border-dark', 'x-fld-pw-mp', 'm-2', 'font-monospace')
                 .xAttrs({'title': 'click to save this memorable password'})
                 .xInnerHTML(pwd)
                 .xAddEventListener('click', (event) => { /* jshint ignore:line */
@@ -136,7 +136,7 @@ export function mkGeneratePasswordDlg(event) {
             xmk('div').xClass('col-12', 'x-fld-pw-gen', 'mt-1').xAppend(
                 xmk('hr'),
                 xmk('button')
-                    .xClass('btn', 'btn-light', 'border-dark', 'btn-small', 'w-100')
+                    .xClass('btn', 'border-dark', 'btn-small', 'w-100')
                     .xAppend(
                         icon('bi-x-circle', 'close the section'),
                         xmk('span').xInnerHTML('&nbsp;Close Password Generator'))
@@ -158,7 +158,7 @@ export function mkGeneratePasswordDlg(event) {
                                                           'Characteristics of the memorable passwords can be changed in the Preferences.'),
                 xmk('p').xClass('m-1', 'fs-5').xInnerHTML('Cryptic Password'),
                 xmk('button')
-                    .xClass('btn', 'btn-light', 'btn-secondary', 'border-dark', 'x-fld-pw-cp0', 'm-2', 'font-monospace')
+                    .xClass('btn', 'btn-secondary', 'border-dark', 'x-fld-pw-cp0', 'm-2', 'font-monospace')
                     .xAttrs({'title': 'click to save cryptic password'})
                     .xInnerHTML(cp0)
                     .xAddEventListener('click', (event) => {
@@ -245,7 +245,7 @@ export function mkLoadSavePassword(xid) {
     return xmk('div').xClass('input-group').xAppend(
         xmk('input')
             .xId(xid)
-            .xClass('form-control', 'x-fld-value', 'bg-light', 'text-dark', 'ps-1')
+            .xClass('form-control', 'x-fld-value', 'ps-1')
             .xAttrs({
                 'type': 'password',
                 'autocomplete': 'new-password',
@@ -253,7 +253,7 @@ export function mkLoadSavePassword(xid) {
             }),
         xmk('span').xClass('input-group-append').xAppend(
             xmk('button')
-                .xClass('btn', 'btn-light', 'btn-lg', 'px-0', 'ms-2')
+                .xClass('btn', 'btn-lg', 'px-0', 'ms-2')
                 .xAttr('type', 'button')
                 .xAddEventListener('click', (event) => {
                     let row = event.target.xGetParentWithClass('row')
@@ -263,7 +263,7 @@ export function mkLoadSavePassword(xid) {
                     icon('bi-x-circle', 'delete password')
                 ),
             xmk('button')
-                .xClass('btn', 'btn-light', 'btn-lg', 'px-0', 'ms-2')
+                .xClass('btn', 'btn-lg', 'px-0', 'ms-2')
                 .xAttr('type', 'button')
                 .xAddEventListener('click', (event) => {
                     let button = event.target.parentElement

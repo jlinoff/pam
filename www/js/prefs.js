@@ -821,9 +821,9 @@ function mkRecordFields(recordFields) {
                     dropdown
                     //xmk('input').xClass('form-control', 'x-fld-value').xAttrs({'value': value})
                 ),
-                xmk('div').xClass('col', 'col-1').xAppend(
+                xmk('div').xClass('col', 'col-1', 'ms-auto').xAppend(
                     xmk('button')
-                        .xClass('btn', 'btn-lg', 'form-control', 'text-start')
+                        .xClass('btn', 'btn-lg', 'form-control')
                         .xAttrs({
                             'type': 'button',
                             'title': tooltip,

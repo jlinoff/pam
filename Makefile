@@ -186,7 +186,7 @@ run: init  ## Run the server on port PORT
 # example usage: make test PORT=8088
 KILL_SERVER := lsof -i :$(PORT) && kill -9 $$(lsof -F pcuftDsin -i :$(PORT) | grep ^p | sed -e 's/^p//')
 .PHONY: test
-test: init lint | tests/test_pam.py ## Run local tests
+test: init lint | tests/test_chrome.py ## Run local tests
 	$(call hdr,"$@")
 	pipenv run python3 --version
 	lsof -v
@@ -194,8 +194,8 @@ test: init lint | tests/test_pam.py ## Run local tests
 	( cd www && pipenv run python -m http.server $(PORT) ) &
 	sleep 2
 	lsof -i :$(PORT)
-	pipenv run python3 -m pytest --options='headless, incognito, no-sandbox, disable-extensions' tests/test_pam.py
-	$(KILL_SERVER)
+	pipenv run python3 -m pytest --options='headless, incognito, no-sandbox, disable-extensions' tests/test_chrome.py
+	$(KILL_SERVER)te
 
 # This is an example to build off of for debugging
 browser-versions:
@@ -206,7 +206,7 @@ run-single-test: init lint | tests/test_pam.py
 	$(call hdr,"$@")
 	-google-chrome --version && chromedriver --version && chromium-browser --version
 	pipenv run python3 --version
-	pipenv run python3 -m pytest -k test_basic_menu_options tests/test_pam.py
+	pipenv run python3 -m pytest -k test_basic_setup tests/test_chrome.py
 
 .PHONY: app-help
 app-help: www/help/index.html  ## generate the pam help

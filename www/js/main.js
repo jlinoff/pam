@@ -85,7 +85,7 @@ function topLayout() {
                         'fs-5',
                         'text-center',
                         'bg-light',  // because it needs to be opaque to hide the overflow
-		       )
+                       )
                 .xAppendChild(createSearchInputAndMenuEntry()),
             xmk('div')
                 .xId('mid-section')

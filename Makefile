@@ -65,6 +65,7 @@ init: .init bs app-version app-help  ## very basic setup for python3 and jshint
 	pipenv run python3 -m pip install pytest-reportportal
 	pipenv run python3 -m pip install webdriver_manager
 	pipenv run python3 -m pip install selenium types-selenium
+	npm install -g jshint
 	@touch $@
 
 # to copy to icloud:

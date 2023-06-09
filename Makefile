@@ -55,22 +55,7 @@ spell-check:  ## Spell check the README.md file using aspell.
 .PHONY: init
 init: .init bs app-version app-help  ## very basic setup for python3 and jshint
 
-.init: .venv/pylenium.json
-	$(call hdr,"$@-npm")
-	npm install -g jshint
-	@touch $@
-
-# URL: https://github.com/ElSnoMan/pyleniumio/tree/main/docs
-# $ /Applications/Google\ Chrome.app/Contents/MacOS/Google\ Chrome --version
-# https://github.com/ElSnoMan/pyleniumio/issues/278
-# to fix
-#   ERROR:: --system is intended to be used for pre-existing Pipfile installation
-#   $ rm -rf ~/.local/share/virtualenvs/*
-
-# The following setup works on MacOS and Ubuntu 20.04.
-# For some reason pipenv install did not work reliably on Ubuntu.
-# pytest-reportportal~=1.0 is required for pylenium compatibility.
-.venv/pylenium.json:
+.init:
 	-rm -rf .venv
 	pipenv install --python $(PYTHON3_PATH)
 	pipenv run python3 -m pip install -U pip
@@ -79,8 +64,9 @@ init: .init bs app-version app-help  ## very basic setup for python3 and jshint
 	pipenv run python3 -m pip install pytest
 	pipenv run python3 -m pip install pytest-reportportal
 	pipenv run python3 -m pip install webdriver_manager
-	pipenv run python3 -m pip install pyleniumio
-	pipenv run pylenium init
+	pipenv run python3 -m pip install selenium types-selenium
+	npm install -g jshint
+	@touch $@
 
 # to copy to icloud:
 # $ make backup
@@ -186,7 +172,7 @@ run: init  ## Run the server on port PORT
 # example usage: make test PORT=8088
 KILL_SERVER := lsof -i :$(PORT) && kill -9 $$(lsof -F pcuftDsin -i :$(PORT) | grep ^p | sed -e 's/^p//')
 .PHONY: test
-test: init lint | tests/test_pam.py ## Run local tests
+test: init lint | tests/test_chrome.py ## Run local tests
 	$(call hdr,"$@")
 	pipenv run python3 --version
 	lsof -v
@@ -194,7 +180,7 @@ test: init lint | tests/test_pam.py ## Run local tests
 	( cd www && pipenv run python -m http.server $(PORT) ) &
 	sleep 2
 	lsof -i :$(PORT)
-	pipenv run python3 -m pytest --options='headless, incognito, no-sandbox, disable-extensions' tests/test_pam.py
+	pipenv run python3 -m pytest tests/test_chrome.py
 	$(KILL_SERVER)
 
 # This is an example to build off of for debugging
@@ -206,7 +192,7 @@ run-single-test: init lint | tests/test_pam.py
 	$(call hdr,"$@")
 	-google-chrome --version && chromedriver --version && chromium-browser --version
 	pipenv run python3 --version
-	pipenv run python3 -m pytest -k test_basic_menu_options tests/test_pam.py
+	pipenv run python3 -m pytest -k test_pam_setup tests/test_chrome.py
 
 .PHONY: app-help
 app-help: www/help/index.html  ## generate the pam help

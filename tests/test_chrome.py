@@ -13,21 +13,23 @@ def get_driver():
     options = Options()
     options.add_argument("--no-sandbox");
     options.add_argument("--disable-dev-shm-usage");
-    options.add_argument("--disable-renderer-backgrounding");
-    options.add_argument("--disable-background-timer-throttling");
-    options.add_argument("--disable-backgrounding-occluded-windows");
-    options.add_argument("--disable-client-side-phishing-detection");
-    options.add_argument("--disable-crash-reporter");
-    options.add_argument("--disable-oopr-debug-crash-dump");
-    options.add_argument("--no-crash-upload");
+    #options.add_argument("--disable-renderer-backgrounding");
+    #options.add_argument("--disable-background-timer-throttling");
+    #options.add_argument("--disable-backgrounding-occluded-windows");
+    #options.add_argument("--disable-client-side-phishing-detection");
+    #options.add_argument("--disable-crash-reporter");
+    #options.add_argument("--disable-oopr-debug-crash-dump");
+    #options.add_argument("--no-crash-upload");
     options.add_argument("--disable-gpu");
     options.add_argument("--disable-extensions");
-    options.add_argument("--disable-low-res-tiling");
+    #options.add_argument("--disable-low-res-tiling");
     options.add_argument("--log-level=3");
     options.add_argument("--silent");
-    #options.binary_location = WEBDRIVER
-    driver = webdriver.Chrome(WEBDRIVER, chrome_options=options)
+    options.add_argument("--headless");
+    #options.binary_location = WEBDRIVER  # this fails!
+    driver = webdriver.Chrome(options=options)
     return driver
+    #return webdriver.Chrome()
 
 
 def get_parent(element):
@@ -60,24 +62,23 @@ def set_theme(driver, requested_theme):
 
 
 # https://www.selenium.dev/documentation/webdriver/getting_started/first_script/
-#def test_basic_setup():
-#    '''Verify that chrome works in selenium.
-#    '''
-#    driver = get_driver()
-#    driver.get('https://www.google.com/');
-#    time.sleep(2) # Let the user actually see something!
-#    search_box = driver.find_element(By.NAME, 'q')
-#    #search_box = driver.find_element_by_name('q')
-#    search_box.send_keys('ChromeDriver')
-#    search_box.submit()
-#    time.sleep(2) # Let the user actually see something!
-#    driver.quit()
+def test_basic_setup():
+    '''Verify that chrome works in selenium.
+    '''
+    driver = get_driver()
+    driver.get('https://www.google.com/');
+    time.sleep(2) # Let the user actually see something!
+    search_box = driver.find_element(By.NAME, 'q')
+    search_box.send_keys('ChromeDriver')
+    search_box.submit()
+    time.sleep(2) # Let the user actually see something!
+    driver.quit()
 
 
 def test_pam_setup():
     '''Verify that chrome works in selenium for PAM on port 8081.
     '''
-    driver = webdriver.Chrome()
+    driver = get_driver()
     driver.get('http://localhost:8081/');
     time.sleep(2) # Let the user actually see something!
     menu = driver.find_element(By.ID, 'menu')

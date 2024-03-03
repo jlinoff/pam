@@ -12,7 +12,7 @@ import { menuAboutDlg } from './about.js'
 import { menuPrefsDlg } from './prefs.js'
 import { menuSaveDlg } from './save.js'
 import { menuLoadDlg } from './load.js'
-import { printRecords } from './print.js'
+import { printRecords, enablePrinting } from './print.js'
 
 function menuEntryDivider() {
     return xmk('li').xAppend(xmk('hr').xClass('dropdown-divider'))
@@ -137,6 +137,16 @@ export function mkMenu() {
                               'Save File',
                               'bi-file-arrow-down-fill',
                               'save records to a file'),
+                    xmk('li').xAppend(xmk('hr').xClass('dropdown-divider', 'x-print')),
+                    xmk('button') // Print
+                        .xAttrs({'type': 'button'})
+                        .xClass('dropdown-item', 'x-print')
+                        .xAppend(
+                            icon('bi-printer', 'report'),
+                            xmk('span').xInnerHTML('&nbsp;Print'))
+                        .xAddEventListener('click', (event) => {
+                            printRecords()
+                        }),
                     menuEntryDivider(),
                     xmk('button') // Help
                         .xAttrs({'type': 'button'})
@@ -146,18 +156,6 @@ export function mkMenu() {
                             xmk('span').xInnerHTML('&nbsp;Help'))
                         .xAddEventListener('click', (event) => {
                             window.open(window.prefs.helpLink, '_blank')
-                        }),
-                    xmk('li')
-                        .xAppend(xmk('hr')
-                                 .xClass('dropdown-divider', 'x-print')),
-                    xmk('button') // Print
-                        .xAttrs({'type': 'button'})
-                        .xClass('dropdown-item', 'x-print')
-                        .xAppend(
-                            icon('bi-printer', 'print records'),
-                            xmk('span').xInnerHTML('&nbsp;Print'))
-                        .xAddEventListener('click', (event) => {
-                            printRecords()
                         }),
                 ),
         )

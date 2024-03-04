@@ -14,7 +14,19 @@ const decoder = new TextDecoder()
 
 const numIterations = 100000
 
-const toBase64 = buffer => btoa(String.fromCharCode(...new Uint8Array(buffer)))
+const toBase64 = buffer => {
+    // handle very large buffers
+    let binstr = ''
+    let bytes = new Uint8Array(buffer)
+    let len = bytes.length
+    for(let i=0; i < len; i++) {
+        binstr += String.fromCharCode(bytes[i])
+    }
+    return binstr
+    // The following call is subject to limitations based on the
+    // maximum number of function arguments.
+    //return btoa(String.fromCharCode(...new Uint8Array(buffer)))
+}
 const fromBase64 = buffer => Uint8Array.from(atob(buffer), c => c.charCodeAt(0))
 
 const PBKDF2 = async (password, salt, iterations, length, hash, algorithm = 'AES-CBC') => {

@@ -16,13 +16,13 @@ const numIterations = 100000
 
 const toBase64 = buffer => {
     // handle very large buffers
-    let binstr = ''
+    let ascii = []
     let bytes = new Uint8Array(buffer)
     let len = bytes.length
     for(let i=0; i < len; i++) {
-        binstr += String.fromCharCode(bytes[i])
+        ascii.push(String.fromCharCode(bytes[i]))
     }
-    return binstr
+    return ascii
     // The following call is subject to limitations based on the
     // maximum number of function arguments.
     //return btoa(String.fromCharCode(...new Uint8Array(buffer)))

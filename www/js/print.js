@@ -111,19 +111,22 @@ function genRecordsDocument() {
         html += `
       <p>&nbsp;</p>
       <table border="1" cellpadding="1" cellspacing="0" width="90%" style="${tstyle}">
-          <tr>
-           <th valign="middle" bgcolor="lightgray" colspan="2" style="${tpad1}">
-             <b>&nbsp;${title}&nbsp;</b>
-           </th>
-         </tr>
-         <tr>
-           <td valign="middle" align="right" style="${fstyle}">
-             &nbsp;<i>__index__</i>:&nbsp;
-           </td>
-           <td valign="middle" align="left" style="${vstyle}">
-             ${j}
-           </td>
-         </tr>
+          <thead>
+            <tr>
+             <th valign="middle" bgcolor="lightgray" colspan="2" style="${tpad1}">
+               <b>&nbsp;${title}&nbsp;</b>
+             </th>
+           </tr>
+         </thead>
+         <tbody>
+           <tr>
+             <td valign="middle" align="right" style="${fstyle}">
+               &nbsp;<i>__index__</i>:&nbsp;
+             </td>
+             <td valign="middle" align="left" style="${vstyle}">
+               ${j}
+             </td>
+           </tr>
 `
         let rows = accordionItem.xGetN('.row')
         for (let i=0; i<rows.length; i++) {
@@ -150,26 +153,27 @@ function genRecordsDocument() {
             value = sanitize(value)
             // row prefix and name
             html += `
-         <tr>
-           <td valign="middle" align="right" style="${fstyle}">
-             &nbsp;${name}:&nbsp;
-           </td>
-           <td valign="middle" align="left" style="${vstyle}">
+           <tr>
+             <td valign="middle" align="right" style="${fstyle}">
+               &nbsp;${name}:&nbsp;
+             </td>
+             <td valign="middle" align="left" style="${vstyle}">
 `
             // row value
             if (type === 'textarea') {
-                html += `             <pre>${value}</pre>`
+                html += `               <pre>${value}</pre>`
             } else {
-                html += `             ${value}`
+                html += `               ${value}`
             }
 
             // row suffix
             html += `
-           </td>
-         </tr>
+             </td>
+           </tr>
 `
         }
         html += `
+         </tbody>
        </table>
 `
     }

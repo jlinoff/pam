@@ -28,6 +28,11 @@ export function printRecords() {
     pwin.close()
 }
 
+// The new Sanitizer API is not yet widely available.
+function sanitize(html) {
+    return html.replace('&', '&nbsp;').replace('<', '&lt;').replace('>', '&gt;').replace("'", '&apos;').replace('"', '&quot;')
+}
+
 function genRecordsDocument() {
     let recordsContainer = document.body.xGet('#records-accordion') // middle part of the document.
     if (!recordsContainer) {
@@ -70,20 +75,21 @@ function genRecordsDocument() {
   <body>
     <center>
 `
-    html += '<h2>PAM Records Report</h2>'
-    html += '<h4>'
+    html += '      <h2>PAM Records Report</h2>\n'
+    html += '      <h4>\n'
     if (!!search) {
+        search = sanitize(search)
         html += `Found ${count} Records Containing "${search}"<br />`
     }
     if (window.prefs.lastUpdated) {
-        html += `Last Updated: ${window.prefs.lastUpdated}<br />`
+        html += `Last Updated: ${sanitize(window.prefs.lastUpdated)}<br />`
     } else {
         let now = new Date()
         let dts = now.toISOString()
-        html += `Last Updated: ${dts}<br />`
+        html += `Last Updated: ${sanitize(dts)}<br />`
     }
-    html += `Total Records: ${accordionItems.length}`
-    html += '</h4>'
+    html += `Total Records: ${accordionItems.length}\n`
+    html += '      </h4>'
 
     // Get the record data and build the HTML contents.
     let twidth = '90%'
@@ -103,15 +109,21 @@ function genRecordsDocument() {
         let title = button.innerHTML
         j += 1
         html += `
-<p>&nbsp;</p>
-<table border="1" cellpadding="1" cellspacing="0" width="90%" style="${tstyle}">
-   <tr>
-     <th valign="middle" bgcolor="lightgray" colspan="2" style="${tpad1}"><b>&nbsp;${title}&nbsp;</b></th>
-   </tr>
-   <tr>
-     <td valign="middle" align="right" style="${fstyle}">&nbsp;<i>__index__</i>:&nbsp;</td>
-     <td valign="middle" align="left" style="${vstyle}">${j}</td>
-   </tr>
+      <p>&nbsp;</p>
+      <table border="1" cellpadding="1" cellspacing="0" width="90%" style="${tstyle}">
+          <tr>
+           <th valign="middle" bgcolor="lightgray" colspan="2" style="${tpad1}">
+             <b>&nbsp;${title}&nbsp;</b>
+           </th>
+         </tr>
+         <tr>
+           <td valign="middle" align="right" style="${fstyle}">
+             &nbsp;<i>__index__</i>:&nbsp;
+           </td>
+           <td valign="middle" align="left" style="${vstyle}">
+             ${j}
+           </td>
+         </tr>
 `
         let rows = accordionItem.xGetN('.row')
         for (let i=0; i<rows.length; i++) {
@@ -134,23 +146,32 @@ function genRecordsDocument() {
             default:
                 break
             }
+            name = sanitize(name)
+            value = sanitize(value)
+            // row prefix and name
+            html += `
+         <tr>
+           <td valign="middle" align="right" style="${fstyle}">
+             &nbsp;${name}:&nbsp;
+           </td>
+           <td valign="middle" align="left" style="${vstyle}">
+`
+            // row value
             if (type === 'textarea') {
-                html += `
-   <tr>
-     <td valign="middle" align="right" style="${fstyle}">&nbsp;${name}:&nbsp;</td>
-     <td valign="middle" align="left" style="${vstyle}"> <pre>${value}</pre></td>
-   </tr>
-`
+                html += `             <pre>${value}</pre>`
             } else {
-                html += `
-   <tr>
-     <td valign="middle" align="right" style="${fstyle}">&nbsp;${name}:&nbsp;</td>
-     <td valign="middle" align="left" style="${vstyle}">${value}</td>
-   </tr>
-`
+                html += `             ${value}`
             }
+
+            // row suffix
+            html += `
+           </td>
+         </tr>
+`
         }
-        html += '</table>\n'
+        html += `
+       </table>
+`
     }
     html += `
     </center>

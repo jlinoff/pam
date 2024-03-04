@@ -165,7 +165,7 @@ function genRecordsDocument() {
 `
             // row value
             if (type === 'textarea') {
-                html += `               <pre>${value}</pre>`
+                html += `               <pre style="white-space: pre-wrap;word-break: keep-all;">${value}</pre>`
             } else {
                 html += `               ${value}`
             }

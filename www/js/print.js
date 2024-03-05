@@ -154,7 +154,11 @@ function genRecordsDocument() {
                 break
             }
             name = sanitize(name)
-            value = sanitize(value)
+            if (type !== 'html') {
+                // Don't try to sanitize HTML elements.
+                value = sanitize(value)
+            }
+
             // row prefix and name
             html += `
            <tr>

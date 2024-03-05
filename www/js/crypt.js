@@ -16,18 +16,25 @@ const numIterations = 100000
 
 const toBase64 = buffer => {
     // handle very large buffers
-    let ascii = []
+    let raw = ''
     let bytes = new Uint8Array(buffer)
     let len = bytes.length
-    for(let i=0; i < len; i++) {
-        ascii.push(String.fromCharCode(bytes[i]))
+    for (let i=0; i < len ; i++) {
+        raw += String.fromCharCode( bytes[ i ] )
     }
-    return ascii
+    let binstr = btoa(raw)
+    return binstr
     // The following call is subject to limitations based on the
     // maximum number of function arguments.
     //return btoa(String.fromCharCode(...new Uint8Array(buffer)))
 }
-const fromBase64 = buffer => Uint8Array.from(atob(buffer), c => c.charCodeAt(0))
+const fromBase64 = buffer => {
+    try {
+        return Uint8Array.from(atob(buffer), c => c.charCodeAt(0))
+    } catch (e) {
+        alert(`ERROR: decryption conversion failed!\n${e}`)
+    }
+}
 
 const PBKDF2 = async (password, salt, iterations, length, hash, algorithm = 'AES-CBC') => {
         let keyMaterial = await window.crypto.subtle.importKey(

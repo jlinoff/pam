@@ -141,8 +141,7 @@ def test_pam_setup():
     assert 'Clear Records' in menu_items[3].text
     assert 'Load File' in menu_items[4].text
     assert 'Save File' in menu_items[5].text
-    assert 'Help' in menu_items[6].text
-    assert menu_items[7].text.strip() == ''
+    assert 'Help' in menu_items[7].text # 6 is reserved for Print
 
     # toggle dark/light mode
     time.sleep(1)

@@ -50,26 +50,26 @@ jobs:
           google-chrome --version
       - name: chromedriver
         run: |
-          CVER=$(/Applications/Google\ Chrome.app/Contents/MacOS/Google\ Chrome --version)
+          CVER=$(google-chrome --version)
           VERSION=$(echo "$CVER" | awk '{print $NF}')
           echo "VERSION=$VERSION"
           MAJOR=$(echo "$VERSION" | tr '.' ' ' | awk '{print $1}')
           MINOR=$(echo "$VERSION" | tr '.' ' ' | awk '{print $2}')
-          URL=$(wget https://googlechromelabs.github.io/chrome-for-testing/known-good-versions-with-downloads.json -O - -o /dev/null | jq . | rg "https://.*chromedriver-mac-x64" | tr '"' '\n' | grep "$MAJOR.$MINOR" | tail -1)
+          URL=$(wget https://googlechromelabs.github.io/chrome-for-testing/known-good-versions-with-downloads.json -O - -o /dev/null | jq . | rg "https://.*chromedriver-linux64" | tr '"' '\n' | grep "$MAJOR.$MINOR" | tail -1)
           echo "URL: $URL"
           wget "$URL" -O /tmp/x.zip
           unzip -l /tmp/x.zip
-          ls -l /usr/local/bin/chromedriver
-          sum /usr/local/bin/chromedriver
+          ls -l /usr/bin/chromedriver
+          sum /usr/bin/chromedriver
           rm -f /tmp/chromedriver
           unzip -p /tmp/x.zip '*/chromedriver' > /tmp/chromedriver
-          sudo cp /tmp/chromedriver /usr/local/bin/chromedriver
-          sudo chmod a+x /usr/local/bin/chromedriver
-          /usr/local/bin/chromedriver --version
+          sudo cp /tmp/chromedriver /usr/bin/chromedriver
+          sudo chmod a+x /usr/bin/chromedriver
+          /usr/bin/chromedriver --version
           rm -f /tmp/chromedriver
-          ls -l /usr/local/bin/chromedriver
-          sum /usr/local/bin/chromedriver
-          /usr/local/bin/chromedriver --version
+          ls -l /usr/bin/chromedriver
+          sum /usr/bin/chromedriver
+          /usr/bin/chromedriver --version
           rm -f /tmp/x.zip
           which chromedriver
           chromedriver --version

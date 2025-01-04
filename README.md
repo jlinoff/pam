@@ -122,7 +122,7 @@ the on-line help is generated.
     * [Personal Account Records](#personal-account-records)
       * [Create Record File](#create-record-file)
       * [Use Record Data to Log into a Site](#use-record-data-to-log-into-a-site)
-      * [Edit an Existing Record](#edit an-existing-record)
+      * [Edit an Existing Record](#edit-an-existing-record)
       * [Delete an Existing Record](#delete-an-existing-record)
       * [Clone an Existing Record](#clone-an-existing-record)
     * [Share Credentials for a Small Group](#share-credentials-for-a-small-group)
@@ -2218,7 +2218,7 @@ To use the data to log into a site.
    1. You do _not_ need to make the password visible to do this.
    1. It picks up the correct password even when it is hidden.
 
-### Edit an Existing Record
+#### Edit an Existing Record
 To edit an existing record.
 
 1. Navigate to the app as described above.

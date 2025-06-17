@@ -96,7 +96,7 @@ export function clearRecords() {
 // accordion idiom.
 export function mkRecord(title, ...recordFields) {
     // Create the accordion item with all of the record information.
-    // Accordions in bootstrap only allow one to item to be expanded at a time.
+    // Accordions in bootstrap only allow one item to be expanded at a time.
     let rid1 = mkid('rid') // unique record id for accordion entry header
     let rid2 = mkid('rid') // unique record id for accordion entry collapsable body
     return xmk('div').xAppend(

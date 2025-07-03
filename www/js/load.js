@@ -261,6 +261,7 @@ function loadCallback(text) {
         let newMenuPrefsDlg = menuPrefsDlg() // make the new menuPrefsDlg
         oldMenuPrefsDlg.replaceWith(newMenuPrefsDlg)
     }
+
     let warned = 0
     let num = 0
     for (let i=0; i<json.records.length; i++) {
@@ -300,12 +301,26 @@ function loadCallback(text) {
             }
         }
         num +=1
+
+        // Create the record.
+        // It is a very simple record that is basically an array of
+        // fields with a few properties.
         let recordFields = []
+
+        // Add data fields to the record.
+        // Each field is converted to DOM objects so there is only
+        // a single source of truth for the data.
         for (let j=0; j<row.fields.length; j++ ) {
             let field = row.fields[j]
             recordFields.push( mkRecordField(field.name, field.type, field.value) )
         }
-        let newRecord = mkRecord(title, ...recordFields)
+
+        // Create the record in the DOM.
+        // All of the necessary information is embedded in the DOM.
+        if (! row.hasOwnProperty('active') ) {
+            row.active = true
+        }
+        let newRecord = mkRecord(title, row.active, ...recordFields)
         insertRecord(newRecord, title)
     }
     enablePrinting()

@@ -94,11 +94,61 @@ export function clearRecords() {
 
 // Create the DOM structure for the new record using the bootstrap
 // accordion idiom.
-export function mkRecord(title, ...recordFields) {
+// The data for each record is embedded in the DOM elements that
+// compose the fields. Each record is an array of fields.
+//
+// The name of a field is found by:
+//   recordFields[i].getElementsByClassName('x-fld-name')[0].childNodes[0].textContent;
+//
+// The type of a field is found by:
+//   recordFields[i].querySelectorAll('[data-fld-raw-value]')[0].dataset.fldType;
+//
+// The true value of a field is found by:
+//   recordFields[i].querySelectorAll('[data-fld-raw-value]')[0].dataset.fldRawValue;
+//
+// The display value of a field used for passwords or secrets is found by:
+//   recordFields[i].getElementsByClassName('[x-fld-value]')[0].childNodes[0].textContent;
+//
+// Note to future self:
+//   Should the recordFields array have a custom property for the title
+//   and other properties?
+export function mkRecord(title, active, ...recordFields) {
     // Create the accordion item with all of the record information.
     // Accordions in bootstrap only allow one item to be expanded at a time.
     let rid1 = mkid('rid') // unique record id for accordion entry header
     let rid2 = mkid('rid') // unique record id for accordion entry collapsable body
+
+    let activateCheckBoxElement = xmk('input')
+        .xClass('form-check-input', 'fs-6', 'm-2')
+        .xAttrs({'title': 'click to toggle the activation this record',
+                 'type': 'checkbox',
+                 'value': '',
+                 'style': 'height: 1.5em; width: 1.5em',
+                })
+        .xAddEventListener('click', (event) => {
+            console.log(event.target.checked)
+            console.log(event.target)
+            if (event.target.checked) {
+                let item = event.target.xGetParentWithClass('accordion-item')
+                let button = item.xGet('.accordion-button')
+                button.setAttribute('x-active', 'true')
+            } else {
+                let item = event.target.xGetParentWithClass('accordion-item')
+                let button = item.xGet('.accordion-button')
+                button.setAttribute('x-active', 'false')
+            }
+        })
+
+    if (active){
+        // Always active for the time being.
+        activateCheckBoxElement.xAttrs({'checked': 'checked'})
+    }
+
+    let toggleActivateButton = xmk('span') // probably s/b toggleActivateCheckbox
+        .xAppend(
+            activateCheckBoxElement,
+            xmk('span').xInnerHTML('&nbsp;Active'))
+
     return xmk('div').xAppend(
         xmk('div').xClass('accordion-item').xAppend(
             xmk('div').xId(rid1).xClass('accordion-header').xAppend(
@@ -108,7 +158,8 @@ export function mkRecord(title, ...recordFields) {
                         'data-bs-toggle': 'collapse',
                         'data-bs-target': '#' + rid2,
                         'aria-expanded': 'false',
-                        'aria-controls': rid2
+                        'aria-controls': rid2,
+                        'x-active': active.toString()
                     })
                     .xInnerHTML(title)
             ),
@@ -187,7 +238,8 @@ export function mkRecord(title, ...recordFields) {
                                                             dlg = document.body.xGet('#editRecordDlg')
                                                             let myModal = new bootstrap.Modal(dlg)
                                                             myModal.show()
-                                                        })
+                                                        }),
+                                                    toggleActivateButton
                                                 ),
                                         ),
                                 ),
@@ -367,7 +419,7 @@ export function saveRecordEditDlg(event) {
     // Create the accordion item with all of the record information.
     // Accordions in bootstrap only allow one to item to be expanded at a time.
     let recordFields = mkRecordFields(container)
-    let newRecord = mkRecord(title, ...recordFields)
+    let newRecord = mkRecord(title, true, ...recordFields)
     insertRecord(newRecord, title)
 }
 

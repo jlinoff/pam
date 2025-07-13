@@ -39,7 +39,7 @@ export function searchRecords(value) {
         let accordionItem = accordionItems[i]
         let button = accordionItem.xGet('.accordion-button')
         let title = button.innerHTML
-        let active = button.getAttribute('x-active') == 'true'
+        let active = button.getAttribute('x-active') === 'true'
         let matched = false
 
         // ignore inactive records

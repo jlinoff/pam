@@ -167,21 +167,21 @@ export function mkRecord(title, active, created, ...recordFields) {
             activateCheckBoxElement,
             xmk('span')
                 .xClass('fs-6', 'm-1')
-                .xAttrs({'title': 'click to toggle the activation of this record, inactive records can be hidden'})
+                .xAttrs({'title': 'toggle between active and inactive, inactive records can be hidden in prefernces'})
                 .xInnerHTML('&nbsp;Active'))
 
     let deleteButton = xmk('button')
         .xClass('btn', 'fs-6', 'm-1')
-        .xAttrs({'title': 'delete this record'})
+        .xAttrs({'title': 'delete this record permanently'})
         .xAppend(
-            icon('bi-trash', 'delete this record'),
+            icon('bi-trash', 'delete this record permanently'),
             xmk('span').xInnerHTML('&nbsp;Delete'))
         .xAddEventListener('click', (event) => {
             let ai = event.target.xGetParentWithClass('accordion-item')
             ai.remove()
             setNumRecords()
         })
-    
+
     let cloneButton = xmk('button')
         .xClass('btn', 'fs-6', 'm-1')
         .xAttrs({'title': 'duplicate this record'})

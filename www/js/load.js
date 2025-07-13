@@ -321,11 +321,11 @@ function loadCallback(text) {
         if ( !row.hasOwnProperty('active') ) {
             row.active = true
         }
-	if (row.active) {
-	    numActive += 1
-	} else {
-	    numInactive += 1
-	}
+        if (row.active) {
+            numActive += 1
+        } else {
+            numInactive += 1
+        }
 
         if ( !row.hasOwnProperty('created') ) {
             // Use a bogus date so that folks will know it is a placeholder
@@ -345,7 +345,7 @@ function loadCallback(text) {
     window.prefs.lastUpdated = now.toISOString()  // for use in reporting
     setDarkLightTheme(window.prefs.themeName)
     setAboutFileInfo(`Loaded ${numActive} active and ${numInactive} inactive records on ${now.toISOString()}.<br>` +
-		     `Records were last updated on ${thenDate.toISOString()} (${fet}).`)
+                     `Records were last updated on ${thenDate.toISOString()} (${fet}).`)
     searchRecords('.')
 }
 

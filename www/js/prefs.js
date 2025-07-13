@@ -264,7 +264,7 @@ function savePrefs(el) {
     refreshAbout()
     enablePrinting()
     setDarkLightTheme(window.prefs.themeName)
-    searchRecords('.')
+    searchRecords()  // refresh
     return true
 }
 

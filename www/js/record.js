@@ -1,6 +1,9 @@
 import { xmk, xgetn } from './lib.js'
 import { icon, isURL, mkid,  mkPopupModalDlg, mkPopupModalDlgButton } from './utils.js'
 import { copyRecordFieldsToEditDlg, mkRecordEditDlg, mkRecordField } from './field.js'
+import { searchRecords } from './search.js'
+
+let INACTIVE = '<i>*INACTIVE*</i>&nbsp;'
 
 // find record by title.
 // it does a case insensitive O(N) lookup so "Xyx" will be equal "xyz".
@@ -120,7 +123,7 @@ export function mkRecord(title, active, ...recordFields) {
 
     let activateCheckBoxElement = xmk('input')
         .xClass('form-check-input', 'fs-6', 'm-2')
-        .xAttrs({'title': 'click to toggle the activation this record',
+        .xAttrs({'title': 'click to toggle the activation this record, inactive records can be hidden',
                  'type': 'checkbox',
                  'value': '',
                  'style': 'height: 1.5em; width: 1.5em',
@@ -131,11 +134,22 @@ export function mkRecord(title, active, ...recordFields) {
             if (event.target.checked) {
                 let item = event.target.xGetParentWithClass('accordion-item')
                 let button = item.xGet('.accordion-button')
+                let accordionItem = event.target.xGetParentWithClass('accordion-item')
+                let titleElem = accordionItem.getElementsByClassName('accordion-button')[0]
+                let title = titleElem.innerHTML
+                titleElem.innerHTML = title.replace(INACTIVE, '')
                 button.setAttribute('x-active', 'true')
+                searchRecords('.')
             } else {
                 let item = event.target.xGetParentWithClass('accordion-item')
                 let button = item.xGet('.accordion-button')
+                let accordionItem = event.target.xGetParentWithClass('accordion-item')
+                let titleElem = accordionItem.getElementsByClassName('accordion-button')[0]
+                let title = titleElem.innerHTML
+                titleElem.innerHTML = title.replace(INACTIVE, '')
+                titleElem.innerHTML = INACTIVE + title
                 button.setAttribute('x-active', 'false')
+                searchRecords('.')
             }
         })
 
@@ -144,10 +158,13 @@ export function mkRecord(title, active, ...recordFields) {
         activateCheckBoxElement.xAttrs({'checked': 'checked'})
     }
 
-    let toggleActivateButton = xmk('span') // probably s/b toggleActivateCheckbox
+    let toggleActivateButton = xmk('span')
         .xAppend(
             activateCheckBoxElement,
-            xmk('span').xInnerHTML('&nbsp;Active'))
+            xmk('span')
+                .xClass('fs-6', 'm-1')
+                .xAttrs({'title': 'click to toggle the activation of this record, inactive records can be hidden'})
+                .xInnerHTML('&nbsp;Active'))
 
     return xmk('div').xAppend(
         xmk('div').xClass('accordion-item').xAppend(
@@ -420,7 +437,9 @@ export function saveRecordEditDlg(event) {
     // Accordions in bootstrap only allow one to item to be expanded at a time.
     let recordFields = mkRecordFields(container)
     let newRecord = mkRecord(title, true, ...recordFields)
-    insertRecord(newRecord, title)
+    if (row.active === true || !window.prefs.hideInactiveRecords) {
+        insertRecord(newRecord, title);
+    }
 }
 
 // edit an existing record.

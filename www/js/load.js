@@ -10,6 +10,7 @@ import { mkLoadSavePassword, setFilePass } from './password.js'
 import { initPrefs } from './prefs.js'
 import { enablePrinting } from './print.js'
 import { setAboutFileInfo } from './about.js'
+import { searchRecords } from './search.js'
 
 // load a file
 export function menuLoadDlg() {
@@ -300,7 +301,6 @@ function loadCallback(text) {
                 continue
             }
         }
-        num +=1
 
         // Create the record.
         // It is a very simple record that is basically an array of
@@ -317,11 +317,11 @@ function loadCallback(text) {
 
         // Create the record in the DOM.
         // All of the necessary information is embedded in the DOM.
-        if (! row.hasOwnProperty('active') ) {
+        if ( !row.hasOwnProperty('active') ) {
             row.active = true
         }
         let newRecord = mkRecord(title, row.active, ...recordFields)
-        insertRecord(newRecord, title)
+        insertRecord(newRecord, title);
     }
     enablePrinting()
     xget('#x-num-records').xInnerHTML(num)
@@ -335,6 +335,7 @@ function loadCallback(text) {
     window.prefs.lastUpdated = now.toISOString()  // for use in reporting
     setDarkLightTheme(window.prefs.themeName)
     setAboutFileInfo(`Loaded ${num} records on ${now.toISOString()}.<br>Records were last updated on ${thenDate.toISOString()} (${fet}).`)
+    searchRecords('.')
 }
 
 function invalidPasswordCallback(error) {

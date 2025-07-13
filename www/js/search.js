@@ -1,5 +1,7 @@
 import { xmk, xget } from './lib.js'
 
+let CACHED_SEARCH_VALUE = ''
+
 // define search input element
 export function mkSearchInputElement() {
     let e = xmk('input')
@@ -20,6 +22,10 @@ export function mkSearchInputElement() {
 
 export function searchRecords(value) {
     if (!value) {
+        // Allow the caller to use the last (cached) search value.
+        value = CACHED_SEARCH_VALUE
+    }
+    if (value === '') {
         value = '.'
     }
     let regex = null
@@ -42,16 +48,10 @@ export function searchRecords(value) {
         let active = button.getAttribute('x-active') === 'true'
         let matched = false
 
-        // ignore inactive records
-        if (active === false) {
-            if (window.prefs.hideInactiveRecords) {
-                if (!accordionItem.classList.contains('d-none')) {
-                    accordionItem.classList.add('d-none')
-                }
-            } else {
-                if (accordionItem.classList.contains('d-none')) {
-                    accordionItem.classList.remove('d-none')
-                }
+        // ignore inactive records if the hide inactive records pref is set.
+        if (active === false && window.prefs.hideInactiveRecords) {
+            if (!accordionItem.classList.contains('d-none')) {
+                accordionItem.classList.add('d-none')
             }
             continue
         }
@@ -102,4 +102,5 @@ export function searchRecords(value) {
         }
     }
     xget('#x-num-records').xInnerHTML(num)
+    CACHED_SEARCH_VALUE = value
 }

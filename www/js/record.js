@@ -144,7 +144,7 @@ export function mkRecord(title, active, created, ...recordFields) {
                 let title = titleElem.innerHTML
                 titleElem.innerHTML = title.replace(INACTIVE, '')
                 button.setAttribute('x-active', 'true')
-                searchRecords('.')
+                searchRecords()
             } else {
                 let item = event.target.xGetParentWithClass('accordion-item')
                 let button = item.xGet('.accordion-button')
@@ -153,7 +153,7 @@ export function mkRecord(title, active, created, ...recordFields) {
                 titleElem.innerHTML = title.replace(INACTIVE, '')
                 titleElem.innerHTML = INACTIVE + title
                 button.setAttribute('x-active', 'false')
-                searchRecords('.')
+                searchRecords()
             }
         })
 

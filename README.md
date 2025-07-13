@@ -73,6 +73,7 @@ the on-line help is generated.
       * [Method 3: JSON Approach](#method-3-json-approach)
     * [Edit Record](#edit-record)
     * [Delete Record](#delete-record)
+    * [Deactivate Record](#deactivate-record)
     * [Clone Record](#clone-record)
     * [Clear Records](#clear-records)
     * [Save File](#save-file)
@@ -85,6 +86,7 @@ the on-line help is generated.
       * [Search Record Field Names](#search-record-field-names)
       * [Search Record Field Names](#search-record-field-names)
       * [Search Record Field Values](#search-record-field-values)
+	  * [Hide Inactive Records](#hide-inactive-records)
     * [Password Preferences](#password-preferences)
       * [Minimum Password Length](#minimum-password-length)
       * [Maximum Password Length](#maximum-password-length)
@@ -162,7 +164,7 @@ You can access _PAM_ from your own secure web server (including
 localhost) or from the public
 [github.io server](https://jlinoff.github.io/pam/www/index.html).
 In either case, once the application is loaded into your browser
-or run as a local web app 
+or run as a local web app
 ([PWA](https://developer.mozilla.org/en-US/docs/Web/Progressive_web_apps/Installing))
 _there is no other communication_ with the web server which you can
 verify by monitoring outbound network traffic.
@@ -604,8 +606,9 @@ We start with the unexpanded view of all records as shown below.
 
 _PAM_ presents the records as an accordion. Each record
 is one entry in the accordion that you can expand to view the record fields
-or [delete](#delete-record), [clone](#clone-record) or [edit](#edit-record)
-edit the record.
+or [delete](#delete-record),  [deactivate](#deactivate-record), [clone](#clone-record) or
+[edit](#edit-record)
+ the record.
 
 To get the information for an account you click or tap the button.
 
@@ -1102,6 +1105,7 @@ In a nutshell they are:
 1. [Create New Record](#create-new-record)
 1. [Edit Record](#edit-record)
 1. [Delete Record](#delete-record)
+1. [Deactivate Record](#deactivate-record)
 1. [Clone Record](#clone-record)
 1. [Clear Records](#clear-records)
 1. [Save Records](#save-records)
@@ -1487,10 +1491,23 @@ understand how to change or add new fields.
 ### Delete Record
 To delete a record, select it from the records list and click or tap on the `"Delete"` button.
 
-**Beware!!! PAM trusts you!!**
+**Beware the record is deleted permanently!!! PAM trusts you!!**
 
 _PAM_ will not ask you if you _really_ want to delete the
 record. It will just go ahead and delete it without fanfare _so be careful_.
+
+### Deactivate Record
+To deactivate a record click on the Active checkbox to make the record inactive.
+Inactive records are considered deactivated.
+
+Deactivated records are the same as deleted records because they do not show up in the
+records list but they can always be recovered by going to
+[Preferences](#Preferences)
+and unchecking the
+[Hide Inactive Records](#hide-inactive-records)
+entry.
+Each deactivated record will be labeled with
+a <small>*INACTIVE*</small> prefix.
 
 ### Clone Record
 To clone a record, select it from the records list and click or tap on the `"Clone"` button.
@@ -1640,6 +1657,16 @@ The default is not enabled.
 
 You would want to enable this you wanted to see records that contained a specific field
 value like an obsolete email or really old password.
+
+### Hide Inactive Records
+Each record in PAM allows you to set it as Active or Inactive.
+Inactive records are also called deactivate.
+
+If this checkbox is set those inactive records invisible.
+
+When disabled this checkbox allows you to view all of the inactive records.
+
+Note that each inactive record will have a <small>*INACTIVE*</small> prefix.
 
 ### Password Preferences
 <img src="www/help/pam-prefs-password.png" width="400" alt="pam-prefs-password">

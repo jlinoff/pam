@@ -274,7 +274,7 @@ export function mkRecord(title, active, created, ...recordFields) {
                                                     xmk('span')
                                                         .xClass('btn', 'fs-6', 'm-1')
                                                         .xAttrs({'title': 'creation date'})
-                                                        .xInnerHTML('&nbsp;<small>'+created+'</small>')
+                                                        .xInnerHTML('&nbsp;Created: <small>'+created+'</small>')
                                                 ),
                                         ),
                                 ),

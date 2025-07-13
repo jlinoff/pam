@@ -264,7 +264,8 @@ function loadCallback(text) {
     }
 
     let warned = 0
-    let num = 0
+    let numActive = 0
+    let numInactive = 0
     for (let i=0; i<json.records.length; i++) {
         let row = json.records[i]
         let title = row.title
@@ -320,6 +321,11 @@ function loadCallback(text) {
         if ( !row.hasOwnProperty('active') ) {
             row.active = true
         }
+	if (row.active) {
+	    numActive += 1
+	} else {
+	    numInactive += 1
+	}
 
         if ( !row.hasOwnProperty('created') ) {
             // Use a bogus date so that folks will know it is a placeholder
@@ -330,8 +336,6 @@ function loadCallback(text) {
         insertRecord(newRecord, title);
     }
     enablePrinting()
-    xget('#x-num-records').xInnerHTML(num)
-    //let now = new Date().toISOString()
     let now = new Date()
     let thenDateString = json.meta['date-saved']
     let thenDate = new Date(thenDateString)
@@ -340,7 +344,8 @@ function loadCallback(text) {
     let fet = formatTimeElapsed(elapsed)
     window.prefs.lastUpdated = now.toISOString()  // for use in reporting
     setDarkLightTheme(window.prefs.themeName)
-    setAboutFileInfo(`Loaded ${num} records on ${now.toISOString()}.<br>Records were last updated on ${thenDate.toISOString()} (${fet}).`)
+    setAboutFileInfo(`Loaded ${numActive} active and ${numInactive} inactive records on ${now.toISOString()}.<br>` +
+		     `Records were last updated on ${thenDate.toISOString()} (${fet}).`)
     searchRecords('.')
 }
 

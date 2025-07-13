@@ -5,6 +5,7 @@ import { updateRecordFieldTypes }  from './field.js'
 import { refreshAbout } from './about.js'
 import { enablePrinting } from './print.js'
 import { setDarkLightTheme } from './utils.js'
+import { searchRecords } from './search.js'
 
 // These are the input types that the tool knows how to handle.
 export const VALID_FIELD_TYPES = {
@@ -45,6 +46,7 @@ export function initPrefs() {
         searchRecordTitles: true,
         searchRecordFieldNames: false,
         searchRecordFieldValues: false,
+        hideInactiveRecords: false, // hide inactive records if true
         passwordRangeLengthDefault: 20,
         passwordRangeMinLength: 12,
         passwordRangeMaxLength: 32,
@@ -113,6 +115,7 @@ export function menuPrefsDlg() {
             prefSearchRecordTitles(labelClasses, inputClasses),
             prefSearchRecordFieldNames(labelClasses, inputClasses),
             prefSearchRecordFieldValues(labelClasses, inputClasses),
+            prefHideInactiveRecords(labelClasses, inputClasses),
         ),
         mkFieldset('Passwords').xAppend(
             prefPasswordRangeMinLength(labelClasses, inputClasses),
@@ -261,6 +264,7 @@ function savePrefs(el) {
     refreshAbout()
     enablePrinting()
     setDarkLightTheme(window.prefs.themeName)
+    searchRecords('.')
     return true
 }
 
@@ -486,6 +490,14 @@ function prefSearchRecordFieldValues(labelClasses, inputClasses) {
                            'searchRecordFieldValues',
                            'Search Record Field Values',
                            'search record field values')
+}
+
+function prefHideInactiveRecords(labelClasses, inputClasses) {
+    return mkPrefsCheckBox(labelClasses,
+                           inputClasses,
+                           'hideInactiveRecords',
+                           'Hide Inactive Records',
+                           'hide inactive records')
 }
 
 function prefPasswordRangeMinLength(labelClasses, inputClasses) {

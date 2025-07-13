@@ -15,7 +15,7 @@ DST  ?= www
 PORT ?= 8081
 FAVICON_SVG ?= bootstrap-icons/icons/box.svg
 # from https://getbootstrap.com/docs/versions/
-BS_VER ?= 5.3.6
+BS_VER ?= 5.3.7
 BS_DIST ?= bootstrap-$(BS_VER)-dist
 export PIPENV_VENV_IN_PROJECT := True
 PYTHON3_PATH ?= python3
@@ -99,6 +99,7 @@ lint:  ## lint the source code
 	@printf '\033[35;1m$@: PASSED\033[0m\n'
 
 # Make sure that the icons in www/icons/black and icons/blue/blue are the same.
+# The blue icons are used in the README and other help.
 .PHONY: update-blue-icons
 update-blue-icons:  ## Idempotent update of www/icons/blue from www/icons/black.
 	$(call hdr,"$@")

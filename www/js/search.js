@@ -39,7 +39,24 @@ export function searchRecords(value) {
         let accordionItem = accordionItems[i]
         let button = accordionItem.xGet('.accordion-button')
         let title = button.innerHTML
+        let active = button.getAttribute('x-active') === 'true'
         let matched = false
+
+        // ignore inactive records
+        if (active === false) {
+            if (window.prefs.hideInactiveRecords) {
+                if (!accordionItem.classList.contains('d-none')) {
+                    accordionItem.classList.add('d-none')
+                }
+            } else {
+                if (accordionItem.classList.contains('d-none')) {
+                    accordionItem.classList.remove('d-none')
+                }
+            }
+            continue
+        }
+
+        // Search by record title
         if (title.match(regex) && window.prefs.searchRecordTitles) {
             if (accordionItem.classList.contains('d-none')) {
                 accordionItem.classList.remove('d-none')
@@ -51,10 +68,11 @@ export function searchRecords(value) {
                 accordionItem.classList.add('d-none')
             }
         }
+
+        // Search by field names
         if (!matched && window.prefs.searchRecordFieldNames) {
             let names = accordionItem.xGetN('.x-fld-name')
             for (let element of names) {
-            //names.forEach( (element) => {
                 let name = element.innerHTML
                 if (name.match(regex)) {
                     num += 1
@@ -63,13 +81,13 @@ export function searchRecords(value) {
                         accordionItem.classList.remove('d-none')
                     }
                 }
-                //})
             }
         }
+
+        // Search by field values
         if (!matched && window.prefs.searchRecordFieldValues) {
             let values = accordionItem.xGetN('.x-fld-value')
             for (let element of values) {
-            //values.forEach( (element) => {
                 let type = element.getAttribute('data-fld-type')
                 // how should passwords be managed? using the raw value
                 let value = element.getAttribute('data-fld-raw-value')
@@ -80,7 +98,6 @@ export function searchRecords(value) {
                         accordionItem.classList.remove('d-none')
                     }
                 }
-                //})
             }
         }
     }

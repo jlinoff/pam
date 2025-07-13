@@ -10,6 +10,7 @@ import { mkLoadSavePassword, setFilePass } from './password.js'
 import { initPrefs } from './prefs.js'
 import { enablePrinting } from './print.js'
 import { setAboutFileInfo } from './about.js'
+import { searchRecords } from './search.js'
 
 // load a file
 export function menuLoadDlg() {
@@ -261,8 +262,10 @@ function loadCallback(text) {
         let newMenuPrefsDlg = menuPrefsDlg() // make the new menuPrefsDlg
         oldMenuPrefsDlg.replaceWith(newMenuPrefsDlg)
     }
+
     let warned = 0
-    let num = 0
+    let numActive = 0
+    let numInactive = 0
     for (let i=0; i<json.records.length; i++) {
         let row = json.records[i]
         let title = row.title
@@ -299,18 +302,40 @@ function loadCallback(text) {
                 continue
             }
         }
-        num +=1
+
+        // Create the record.
+        // It is a very simple record that is basically an array of
+        // fields with a few properties.
         let recordFields = []
+
+        // Add data fields to the record.
+        // Each field is converted to DOM objects so there is only
+        // a single source of truth for the data.
         for (let j=0; j<row.fields.length; j++ ) {
             let field = row.fields[j]
             recordFields.push( mkRecordField(field.name, field.type, field.value) )
         }
-        let newRecord = mkRecord(title, ...recordFields)
-        insertRecord(newRecord, title)
+
+        // Create the record in the DOM.
+        // All of the necessary information is embedded in the DOM.
+        if ( !row.hasOwnProperty('active') ) {
+            row.active = true
+        }
+        if (row.active) {
+            numActive += 1
+        } else {
+            numInactive += 1
+        }
+
+        if ( !row.hasOwnProperty('created') ) {
+            // Use a bogus date so that folks will know it is a placeholder
+            row.created = new Date('1999-01-01T00:00:00Z').toISOString()
+        }
+
+        let newRecord = mkRecord(title, row.active, row.created, ...recordFields)
+        insertRecord(newRecord, title);
     }
     enablePrinting()
-    xget('#x-num-records').xInnerHTML(num)
-    //let now = new Date().toISOString()
     let now = new Date()
     let thenDateString = json.meta['date-saved']
     let thenDate = new Date(thenDateString)
@@ -319,7 +344,9 @@ function loadCallback(text) {
     let fet = formatTimeElapsed(elapsed)
     window.prefs.lastUpdated = now.toISOString()  // for use in reporting
     setDarkLightTheme(window.prefs.themeName)
-    setAboutFileInfo(`Loaded ${num} records on ${now.toISOString()}.<br>Records were last updated on ${thenDate.toISOString()} (${fet}).`)
+    setAboutFileInfo(`Loaded ${numActive} active and ${numInactive} inactive records on ${now.toISOString()}.<br>` +
+                     `Records were last updated on ${thenDate.toISOString()} (${fet}).`)
+    searchRecords('.')
 }
 
 function invalidPasswordCallback(error) {

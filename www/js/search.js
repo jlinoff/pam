@@ -49,10 +49,10 @@ export function searchRecords(value) {
                     accordionItem.classList.add('d-none')
                 }
             } else {
-		if (accordionItem.classList.contains('d-none')) {
+                if (accordionItem.classList.contains('d-none')) {
                     accordionItem.classList.remove('d-none')
-		}
-	    }
+                }
+            }
             continue
         }
 

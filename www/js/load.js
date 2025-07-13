@@ -320,7 +320,13 @@ function loadCallback(text) {
         if ( !row.hasOwnProperty('active') ) {
             row.active = true
         }
-        let newRecord = mkRecord(title, row.active, ...recordFields)
+
+        if ( !row.hasOwnProperty('created') ) {
+            // Use a bogus date so that folks will know it is a placeholder
+            row.created = new Date('1999-01-01T00:00:00Z').toISOString()
+        }
+        
+        let newRecord = mkRecord(title, row.active, row.created, ...recordFields)
         insertRecord(newRecord, title);
     }
     enablePrinting()

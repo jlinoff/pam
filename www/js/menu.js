@@ -201,7 +201,9 @@ export function menuNewDlg() {
                                                  container.removeAttribute('data-check-failed')
                                                  return false
                                              } else {
-                                                 saveRecordEditDlg(event)
+                                                 let active = true
+                                                 let created = new Date().toISOString()
+                                                 saveRecordEditDlg(event, active, created)
                                                  cleanRecordEditDlg(event)
                                                  return true
                                      }

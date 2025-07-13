@@ -119,9 +119,14 @@ function saveFile(filename, password) {
         let button = accordionItem.xGet('.accordion-button')
         let title = button.innerHTML
         let active = button.getAttribute('x-active') == 'true'
+        let created = now
+        if (button.hasAttribute('x-created')) {
+            created = button.getAttribute('x-created')
+        }
         let rec = {
             'title': title,
             'active': active,
+            'created': created,
             'fields': []
         }
         let rows = accordionItem.xGetN('.row')

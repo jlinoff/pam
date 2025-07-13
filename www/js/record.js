@@ -3,7 +3,7 @@ import { icon, isURL, mkid,  mkPopupModalDlg, mkPopupModalDlgButton } from './ut
 import { copyRecordFieldsToEditDlg, mkRecordEditDlg, mkRecordField } from './field.js'
 import { searchRecords } from './search.js'
 
-let INACTIVE = '<i>*INACTIVE*</i>&nbsp;'
+let INACTIVE = '<small>*INACTIVE*</small>&nbsp;'
 
 // find record by title.
 // it does a case insensitive O(N) lookup so "Xyx" will be equal "xyz".
@@ -97,6 +97,12 @@ export function clearRecords() {
 
 // Create the DOM structure for the new record using the bootstrap
 // accordion idiom.
+//
+// title - is the unique record title
+// active - is the boolean active flag
+// created - is the creation date string
+// recordFields - are the record fields
+//
 // The data for each record is embedded in the DOM elements that
 // compose the fields. Each record is an array of fields.
 //
@@ -115,7 +121,7 @@ export function clearRecords() {
 // Note to future self:
 //   Should the recordFields array have a custom property for the title
 //   and other properties?
-export function mkRecord(title, active, ...recordFields) {
+export function mkRecord(title, active, created, ...recordFields) {
     // Create the accordion item with all of the record information.
     // Accordions in bootstrap only allow one item to be expanded at a time.
     let rid1 = mkid('rid') // unique record id for accordion entry header
@@ -134,8 +140,7 @@ export function mkRecord(title, active, ...recordFields) {
             if (event.target.checked) {
                 let item = event.target.xGetParentWithClass('accordion-item')
                 let button = item.xGet('.accordion-button')
-                let accordionItem = event.target.xGetParentWithClass('accordion-item')
-                let titleElem = accordionItem.getElementsByClassName('accordion-button')[0]
+                let titleElem = item.getElementsByClassName('accordion-button')[0]
                 let title = titleElem.innerHTML
                 titleElem.innerHTML = title.replace(INACTIVE, '')
                 button.setAttribute('x-active', 'true')
@@ -143,8 +148,7 @@ export function mkRecord(title, active, ...recordFields) {
             } else {
                 let item = event.target.xGetParentWithClass('accordion-item')
                 let button = item.xGet('.accordion-button')
-                let accordionItem = event.target.xGetParentWithClass('accordion-item')
-                let titleElem = accordionItem.getElementsByClassName('accordion-button')[0]
+                let titleElem = item.getElementsByClassName('accordion-button')[0]
                 let title = titleElem.innerHTML
                 titleElem.innerHTML = title.replace(INACTIVE, '')
                 titleElem.innerHTML = INACTIVE + title
@@ -166,6 +170,62 @@ export function mkRecord(title, active, ...recordFields) {
                 .xAttrs({'title': 'click to toggle the activation of this record, inactive records can be hidden'})
                 .xInnerHTML('&nbsp;Active'))
 
+    let deleteButton = xmk('button')
+        .xClass('btn', 'fs-6', 'm-1')
+        .xAttrs({'title': 'delete this record'})
+        .xAppend(
+            icon('bi-trash', 'delete this record'),
+            xmk('span').xInnerHTML('&nbsp;Delete'))
+        .xAddEventListener('click', (event) => {
+            let ai = event.target.xGetParentWithClass('accordion-item')
+            ai.remove()
+            setNumRecords()
+        })
+    
+    let cloneButton = xmk('button')
+        .xClass('btn', 'fs-6', 'm-1')
+        .xAttrs({'title': 'duplicate this record'})
+        .xAppend(
+            icon('bi-files', 'duplicated this record'),
+            xmk('span').xInnerHTML('&nbsp;Clone'))
+        .xAddEventListener('click', (event) => {
+            // bring up the edit record modal dialogue
+            let dlg = document.body.xGet('#menuCloneDlg')
+            if (dlg) {
+                // we replace it each time because the fields are
+                // different.
+                dlg.remove()
+            }
+            let now = new Date().toISOString()
+            let newDlg = menuCloneDlg(title, active, now)  // cloned records have a new creation date
+            document.body.xAppendChild(newDlg)
+            dlg = document.body.xGet('#menuCloneDlg')
+            let myModal = new bootstrap.Modal(dlg)
+            myModal.show()
+        })
+
+    let editButton = xmk('button')
+        .xClass('btn', 'fs-6', 'm-1')
+        .xAttrs({'title': 'edit this record'})
+        .xAppend(
+            icon('bi-pencil-square', 'edit this record'),
+            xmk('span').xInnerHTML('&nbsp;Edit')
+        )
+        .xAddEventListener('click', (event) => {
+            // bring up the edit record modal dialogue
+            let dlg = document.body.xGet('#editRecordDlg')
+            if (dlg) {
+                // we replace it each time because the fields are
+                // different.
+                dlg.remove()
+            }
+            let newDlg = editRecordDlg(title, active, created)
+            document.body.xAppendChild(newDlg)
+            dlg = document.body.xGet('#editRecordDlg')
+            let myModal = new bootstrap.Modal(dlg)
+            myModal.show()
+        })
+
     return xmk('div').xAppend(
         xmk('div').xClass('accordion-item').xAppend(
             xmk('div').xId(rid1).xClass('accordion-header').xAppend(
@@ -176,7 +236,8 @@ export function mkRecord(title, active, ...recordFields) {
                         'data-bs-target': '#' + rid2,
                         'aria-expanded': 'false',
                         'aria-controls': rid2,
-                        'x-active': active.toString()
+                        'x-active': active.toString(),
+                        'x-created': created,
                     })
                     .xInnerHTML(title)
             ),
@@ -202,61 +263,18 @@ export function mkRecord(title, active, ...recordFields) {
                                     xmk('div')
                                         .xClass('row', 'align-items-center')
                                         .xAppend(
-                                            // the record Delete button.
+                                            // the record buttons.
                                             xmk('div')
                                                 .xClass('col-12', 'align-self-start')
                                                 .xAppend(
-                                                    xmk('button')
+                                                    deleteButton,
+                                                    cloneButton,
+                                                    editButton,
+                                                    toggleActivateButton,
+                                                    xmk('span')
                                                         .xClass('btn', 'fs-6', 'm-1')
-                                                        .xAttrs({'title': 'delete this record'})
-                                                        .xAppend(
-                                                            icon('bi-trash', 'delete this record'),
-                                                            xmk('span').xInnerHTML('&nbsp;Delete'))
-                                                        .xAddEventListener('click', (event) => {
-                                                            let ai = event.target.xGetParentWithClass('accordion-item')
-                                                            ai.remove()
-                                                            setNumRecords()
-                                                        }),
-                                                    xmk('button')
-                                                        .xClass('btn', 'fs-6', 'm-1')
-                                                        .xAttrs({'title': 'duplicate this record'})
-                                                        .xAppend(
-                                                            icon('bi-files', 'duplicated this record'),
-                                                            xmk('span').xInnerHTML('&nbsp;Clone'))
-                                                        .xAddEventListener('click', (event) => {
-                                                            // bring up the edit record modal dialogue
-                                                            let dlg = document.body.xGet('#menuCloneDlg')
-                                                            if (dlg) {
-                                                                // we replace it each time because the fields are
-                                                                // different.
-                                                                dlg.remove()
-                                                            }
-                                                            document.body.xAppendChild(menuCloneDlg(title))
-                                                            dlg = document.body.xGet('#menuCloneDlg')
-                                                            let myModal = new bootstrap.Modal(dlg)
-                                                            myModal.show()
-                                                        }),
-                                                    xmk('button')
-                                                        .xClass('btn', 'fs-6', 'm-1')
-                                                        .xAttrs({'title': 'edit this record'})
-                                                        .xAppend(
-                                                            icon('bi-pencil-square', 'edit this record'),
-                                                            xmk('span').xInnerHTML('&nbsp;Edit')
-                                                        )
-                                                        .xAddEventListener('click', (event) => {
-                                                            // bring up the edit record modal dialogue
-                                                            let dlg = document.body.xGet('#editRecordDlg')
-                                                            if (dlg) {
-                                                                // we replace it each time because the fields are
-                                                                // different.
-                                                                dlg.remove()
-                                                            }
-                                                            document.body.xAppendChild(editRecordDlg(title))
-                                                            dlg = document.body.xGet('#editRecordDlg')
-                                                            let myModal = new bootstrap.Modal(dlg)
-                                                            myModal.show()
-                                                        }),
-                                                    toggleActivateButton
+                                                        .xAttrs({'title': 'creation date'})
+                                                        .xInnerHTML('&nbsp;<small>'+created+'</small>')
                                                 ),
                                         ),
                                 ),
@@ -267,7 +285,7 @@ export function mkRecord(title, active, ...recordFields) {
 }
 
 // Clone an existing record
-function menuCloneDlg(title) {
+function menuCloneDlg(title, active, created) {
     let body = mkRecordEditDlg(title + ' Clone')
     copyRecordFieldsToEditDlg(title, body, true)
     let closeButton = mkPopupModalDlgButton('Close',
@@ -293,7 +311,7 @@ function menuCloneDlg(title) {
                                              } else {
                                                  let newTitle = container.xGet('.x-record-title').value.trim()
                                                  // do not delete the old record!
-                                                 saveRecordEditDlg(event)
+                                                 saveRecordEditDlg(event, active, created)
                                                  cleanRecordEditDlg(event)
                                                  return true
                                      }
@@ -426,7 +444,7 @@ function mkRecordFields(container) {
 }
 
 // save the record
-export function saveRecordEditDlg(event) {
+export function saveRecordEditDlg(event, active, created) {
     let container = event.xGet('.container')
     //console.log('save', container)
     let rows = container.xGetN('.row')
@@ -436,8 +454,8 @@ export function saveRecordEditDlg(event) {
     // Create the accordion item with all of the record information.
     // Accordions in bootstrap only allow one to item to be expanded at a time.
     let recordFields = mkRecordFields(container)
-    let newRecord = mkRecord(title, true, ...recordFields)
-    if (row.active === true || !window.prefs.hideInactiveRecords) {
+    let newRecord = mkRecord(title, active, created, ...recordFields)
+    if (active === true || !window.prefs.hideInactiveRecords) {
         insertRecord(newRecord, title);
     }
 }
@@ -478,8 +496,12 @@ function editRecordDlg(title) {
                                                  let newTitle = container.xGet('.x-record-title').value.trim()
                                                  // Delete the old one before adding the new one.
                                                  let old = findRecord(title)
-                                                 old.remove()
-                                                 saveRecordEditDlg(event)
+                                                 if (!!old) {
+                                                     old.remove()
+                                                 }
+                                                 let active = true
+                                                 let created = new Date().toISOString()
+                                                 saveRecordEditDlg(event, active, created)
                                                  cleanRecordEditDlg(event)
                                                  return true
                                      }

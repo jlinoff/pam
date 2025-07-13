@@ -154,7 +154,7 @@ function createSearchInputAndMenuEntry() {
                         })
                         .xAddEventListener('click', (event) => {
                             document.body.xGet('#search').value = ''
-                            searchRecords('')
+                            searchRecords('.')
                         })
                         .xAppend(
                             icon('bi-x-circle', popup),

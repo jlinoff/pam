@@ -144,7 +144,7 @@ export function mkRecord(title, active, created, ...recordFields) {
                 let title = titleElem.innerHTML
                 titleElem.innerHTML = title.replace(INACTIVE, '')
                 button.setAttribute('x-active', 'true')
-                searchRecords()
+                searchRecords() // refresh
             } else {
                 let item = event.target.xGetParentWithClass('accordion-item')
                 let button = item.xGet('.accordion-button')
@@ -153,7 +153,7 @@ export function mkRecord(title, active, created, ...recordFields) {
                 titleElem.innerHTML = title.replace(INACTIVE, '')
                 titleElem.innerHTML = INACTIVE + title
                 button.setAttribute('x-active', 'false')
-                searchRecords()
+                searchRecords() // refresh
             }
         })
 
@@ -180,6 +180,7 @@ export function mkRecord(title, active, created, ...recordFields) {
             let ai = event.target.xGetParentWithClass('accordion-item')
             ai.remove()
             setNumRecords()
+            searchRecords() // refresh
         })
 
     let cloneButton = xmk('button')
@@ -313,6 +314,7 @@ function menuCloneDlg(title, active, created) {
                                                  // do not delete the old record!
                                                  saveRecordEditDlg(event, active, created)
                                                  cleanRecordEditDlg(event)
+                                                 searchRecords() // refresh
                                                  return true
                                      }
     })
@@ -503,6 +505,7 @@ function editRecordDlg(title) {
                                                  let created = new Date().toISOString()
                                                  saveRecordEditDlg(event, active, created)
                                                  cleanRecordEditDlg(event)
+                                                 searchRecords() // refresh
                                                  return true
                                      }
     })

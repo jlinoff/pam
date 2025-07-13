@@ -46,7 +46,7 @@ export function initPrefs() {
         searchRecordTitles: true,
         searchRecordFieldNames: false,
         searchRecordFieldValues: false,
-        hideInactiveRecords: false, // hide inactive records if true
+        hideInactiveRecords: true, // hide inactive records if true
         passwordRangeLengthDefault: 20,
         passwordRangeMinLength: 12,
         passwordRangeMaxLength: 32,

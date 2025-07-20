@@ -2,6 +2,7 @@ import { xmk, xgetn } from './lib.js'
 import { icon, isURL, mkid,  mkPopupModalDlg, mkPopupModalDlgButton } from './utils.js'
 import { copyRecordFieldsToEditDlg, mkRecordEditDlg, mkRecordField } from './field.js'
 import { searchRecords } from './search.js'
+import { clearAbout } from './about.js'
 
 let INACTIVE = '<small>*INACTIVE*</small>&nbsp;'
 
@@ -93,6 +94,7 @@ export function clearRecords() {
     }
     nodeList.forEach((n) => { n.remove() })
     document.body.xGet('#x-num-records').xInnerHTML('0')
+    clearAbout()
 }
 
 // Create the DOM structure for the new record using the bootstrap

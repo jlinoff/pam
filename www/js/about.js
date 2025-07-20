@@ -49,6 +49,14 @@ export function menuAboutDlg() {
 
 export function refreshAbout() {
     let oldAbout = xget('#about')
+    let loadInfo = oldAbout.xGet('#x-about-file-info').innerHTML
+    let newAbout = mkAbout()
+    newAbout.xGet('#x-about-file-info').xInnerHTML(loadInfo)
+    oldAbout.replaceWith(newAbout)
+}
+
+export function clearAbout() {
+    let oldAbout = xget('#about')
     let newAbout = mkAbout()
     oldAbout.replaceWith(newAbout)
 }
@@ -56,4 +64,3 @@ export function refreshAbout() {
 export function setAboutFileInfo(string) {
     document.getElementById('x-about-file-info').innerHTML = string
 }
-

@@ -102,6 +102,21 @@ export function enableFunctionChaining() {
     }
 
     /**
+     * Add text to an element.
+     * Escape any HTML.
+     * Wrapper for textContent.
+     * @example
+     * xmk('p').xTextContent('<i>text here</i>').xAddClass('x-foo')
+     * @param {string} The HTML.
+     * @returns {element} The caller element to enable chaining.
+     * @global
+     */
+    Element.prototype.xTextContent = function(text) {
+        this.textContent = text;
+        return this;
+    }
+
+    /**
      * Add an event listener to an element.
      * Wrapper for addEventListener.
      * @example
@@ -165,7 +180,6 @@ export function enableFunctionChaining() {
      */
     Element.prototype.xAppend = Element.prototype.xAppendChild
 
-
     /**
      * Prepend a list of one or more children to this node.
      * Wrapper for prependChild.
@@ -194,6 +208,7 @@ export function enableFunctionChaining() {
         }
         return this;
     }
+
     /**
      * Synonym for xPrepentToChild.
      */

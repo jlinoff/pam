@@ -80,30 +80,30 @@ function genRecordsDocument() {
     <center>
 `
     html += '      <h2>PAM Records Report</h2>\n'
-    html += '      <h4>\n'
+    html += '      <h4 style="margin-top:-1em;">\n'
     if (!!search) {
         search = sanitize(search)
         html += `Found ${count} Records Containing "${search}"<br />`
+    } else {
+        html += `All ${count} Records<br />`
     }
+
     if (window.prefs.lastUpdated) {
         html += `Last Updated: ${sanitize(window.prefs.lastUpdated)}<br />`
-    } else {
-        let now = new Date()
-        let dts = now.toISOString()
-        html += `Last Updated: ${sanitize(dts)}<br />`
     }
-    html += `Total Records: ${accordionItems.length}\n`
     html += '      </h4>'
 
     // Get the record data and build the HTML contents.
     let twidth = '90%'
-    let tpad = 'font-size:larger;padding-left:10px;padding-right:10px'
-    let tpad1 = 'font-size:x-large;padding-left:10px;padding-right:10px;'
+    let cpad = 'padding-left:0.5em;padding-right:0.5em;padding-top:0.25em;padding-bottom:0.25em'
+    let tpad = 'font-size:larger;' + cpad
+    let tpad1 = 'font-size:x-large;' + cpad
+    tpad1 += 'background-color:lightgray !important;print-color-adjust: exact;' // title only
     let tstyle = 'font-size:larger;page-break-inside:avoid'
-    //let vstyle = `margin:0;${tpad}`
     let vstyle = `${tpad}`
     let fstyle = tpad
-    let j = 0
+    let pstyle = 'white-space: pre-wrap;word-break: keep-all; margin-top:0; margin-bottom:0'
+    let index = 0
     for (let i=0; i<accordionItems.length; i++) {
         let accordionItem = accordionItems[i]
         if (accordionItem.classList.contains('d-none') ===true) {
@@ -111,10 +111,11 @@ function genRecordsDocument() {
         }
         let button = accordionItem.xGet('.accordion-button')
         let title = button.innerHTML
-        j += 1
+        index += 1
         html += `
-      <p>&nbsp;</p>
-      <table border="1" cellpadding="1" cellspacing="0" width="90%" style="${tstyle}">
+      <!-- <p>&nbsp;</p> -->
+      <br />
+      <table border="1" cellpadding="0" cellspacing="0" width="90%" style="${tstyle}">
           <thead>
             <tr>
              <th valign="middle" bgcolor="lightgray" colspan="2" style="${tpad1}">
@@ -128,7 +129,7 @@ function genRecordsDocument() {
                &nbsp;<i>__index__</i>:&nbsp;
              </td>
              <td valign="middle" align="left" style="${vstyle}">
-               ${j}
+               <pre style="${pstyle}">${index}</pre>
              </td>
            </tr>
 `
@@ -168,11 +169,12 @@ function genRecordsDocument() {
              <td valign="middle" align="left" style="${vstyle}">
 `
             // row value
-            if (type === 'textarea') {
-                html += `               <pre style="white-space: pre-wrap;word-break: keep-all;">${value}</pre>`
+            html += `               <pre style="${pstyle}">${value}</pre>`
+            /*if (type === 'textarea') {
+                html += `               <pre style="${pstyle}">${value}</pre>`
             } else {
                 html += `               ${value}`
-            }
+            }*/
 
             // row suffix
             html += `

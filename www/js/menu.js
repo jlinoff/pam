@@ -133,10 +133,22 @@ export function mkMenu() {
                               'Load File',
                               'bi-file-arrow-up-fill',
                               'load records from a file'),
-                    menuEntry('menuSaveDlg',
+                    /*menuEntry('menuSaveDlg',
                               'Save File',
                               'bi-file-arrow-down-fill',
-                              'save records to a file'),
+                              'save records to a file'),*/
+                    xmk('button')
+                        .xClass('dropdown-item', 'x-save-file-menu-item')
+                        .xAttrs({
+                            'data-bs-target': '#menuSaveDlg',
+                            'data-bs-toggle' : 'modal',
+                            'type': 'button',
+                            'title': 'save records to a file',
+                        })
+                        .xAppend(
+                            icon('bi-file-arrow-down-fill'),
+                            xmk('span').xInnerHTML('&nbsp;' + 'Save File'),
+                        ),
                     xmk('li').xAppend(xmk('hr').xClass('dropdown-divider', 'x-print')),
                     xmk('button') // Print
                         .xAttrs({'type': 'button'})

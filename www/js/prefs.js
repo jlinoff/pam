@@ -4,6 +4,7 @@ import { convertDictKeys2List, icon, mkPopupModalDlgButton, mkPopupModalDlg, sor
 import { updateRecordFieldTypes }  from './field.js'
 import { refreshAbout } from './about.js'
 import { enablePrinting } from './print.js'
+import { enableSaveFile } from './save.js'
 import { setDarkLightTheme } from './utils.js'
 import { searchRecords } from './search.js'
 
@@ -38,6 +39,7 @@ export function initPrefs() {
         // does not work on some mobile devices.
         themeName: 'dark', // choices are dark or light
         enablePrinting: false,
+        enableSaveFile: true,
         fileName: 'example.txt',
         filePass: '',
         filePassCache: 'local',  // options: none, global, local, session
@@ -134,6 +136,7 @@ export function menuPrefsDlg() {
             prefStatusMsgDurationMS(labelClasses, inputClasses),
             prefLogStatusToConsole(labelClasses, inputClasses),
             prefEnablePrinting(labelClasses, inputClasses),
+            prefEnableSaveFile(labelClasses, inputClasses),
             prefClearBeforeLoad(labelClasses, inputClasses),
             prefLoadDupStrategy(labelClasses, inputClasses),
             prefCloneFieldValues(labelClasses, inputClasses),
@@ -263,6 +266,7 @@ function savePrefs(el) {
     window.prefs.predefinedRecordFields = sorted
     refreshAbout()
     enablePrinting()
+    enableSaveFile()
     setDarkLightTheme(window.prefs.themeName)
     searchRecords()  // refresh
     return true
@@ -408,6 +412,14 @@ function prefEnablePrinting(labelClasses, inputClasses) {
                            'enablePrinting',
                            'Enable Printing',
                            'enable printing')
+}
+
+function prefEnableSaveFile(labelClasses, inputClasses) {
+    return mkPrefsCheckBox(labelClasses,
+                           inputClasses,
+                           'enableSaveFile',
+                           'Enable Save File',
+                           'enable save file')
 }
 
 function prefFilePassCacheStrategy(labelClasses, inputClasses) {

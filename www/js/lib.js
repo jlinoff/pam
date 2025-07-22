@@ -64,8 +64,10 @@ export function enableFunctionChaining() {
     Element.prototype.xClass = function(...className) {
         for (let i=0; i<className.length; i++) {
             let c = className[i]
+            if (c !== null) {
                 this.classList.add(c);
             }
+        }
         return this;
     }
 

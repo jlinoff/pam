@@ -12,7 +12,7 @@ import { menuAboutDlg } from './about.js'
 import { menuPrefsDlg } from './prefs.js'
 import { menuSaveDlg } from './save.js'
 import { menuLoadDlg } from './load.js'
-import { printRecords, enablePrinting } from './print.js'
+import { printRecords } from './print.js'
 
 function menuEntryDivider() {
     return xmk('li').xAppend(xmk('hr').xClass('dropdown-divider'))

@@ -28,6 +28,10 @@ export function searchRecords(value) {
     if (value === '') {
         value = '.'
     }
+    if (value === '.') {
+        // This means means clear the old typed in search terms.
+        clearSearch()
+    }
     let regex = null
     try {
         regex = window.prefs.searchCaseInsensitive ? new RegExp(value, 'i') : new RegExp(value)
@@ -103,4 +107,9 @@ export function searchRecords(value) {
     }
     xget('#x-num-records').xInnerHTML(num)
     CACHED_SEARCH_VALUE = value
+}
+
+export function clearSearch() {
+    document.body.xGet('#search').value = ''
+    CACHED_SEARCH_VALUE = ''
 }

@@ -9,6 +9,7 @@ import { decrypt } from './crypt.js'
 import { mkLoadSavePassword, setFilePass } from './password.js'
 import { initPrefs } from './prefs.js'
 import { enablePrinting } from './print.js'
+import { enableSaveFile } from './save.js'
 import { setAboutFileInfo } from './about.js'
 import { searchRecords } from './search.js'
 
@@ -336,6 +337,7 @@ function loadCallback(text) {
         insertRecord(newRecord, title);
     }
     enablePrinting()
+    enableSaveFile()
     let now = new Date()
     let thenDateString = json.meta['date-saved']
     let thenDate = new Date(thenDateString)

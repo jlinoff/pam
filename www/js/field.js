@@ -26,7 +26,7 @@ export function mkRecordField(name, type, value) {
         fldButtons.push( mkRecordFieldPasswordShowHideButton(rawValue, fieldValue) )
         break
     case 'textarea':
-        fieldValue = `<pre>${rawValue}</pre>` // needed to keep line breaks in HTML
+        fieldValue = `<pre style='resize:both;overflow:auto'>${rawValue}</pre>` // needed to keep line breaks in HTML
         break
     case 'html':
         fieldValue = `${rawValue}` // user HTML

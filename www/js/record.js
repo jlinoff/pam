@@ -349,7 +349,6 @@ export function cleanRecordEditDlg(event) {
     xgetn('.x-new-rec-fld').forEach((n) => {n.remove()})
 }
 
-
 // check the record edit dialogue before saving.
 // event - event listener event
 export function checkRecordEditDlg(event, allowCloneTitle) {

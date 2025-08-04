@@ -1,7 +1,7 @@
 // preferences stuff
 import { xmk, xget, xgetn, enableFunctionChaining } from './lib.js'
 import { convertDictKeys2List, icon, mkPopupModalDlgButton, mkPopupModalDlg, sortDictByKey } from './utils.js'
-import { updateRecordFieldTypes }  from './field.js'
+import { updateRecordFieldTypes, mkRecordEditField }  from './field.js'
 import { refreshAbout } from './about.js'
 import { enablePrinting } from './print.js'
 import { enableSaveFile } from './save.js'
@@ -90,6 +90,8 @@ export function initPrefs() {
         },
         predefinedRecordFieldsDefault: 'text',
         requireRecordFields: false,
+        lockPreferencesPassword: '',
+        defaultRecordFields: '',
     }
     setHelpLinks()
 }
@@ -111,7 +113,6 @@ export function menuPrefsDlg() {
     let fldsList = mkRecordFields(window.prefs.predefinedRecordFields)
     let body = xmk('span').xAppendChild(
         xmk('p').xInnerHTML(`See the ${helpLink} documentation for detailed information.`),
-        // miscellaneous
         mkFieldset('Search').xAppend(
             prefSearchCaseInsensitive(labelClasses, inputClasses),
             prefSearchRecordTitles(labelClasses, inputClasses),
@@ -149,6 +150,20 @@ export function menuPrefsDlg() {
         mkFieldset('Record Fields').xAppend(
             xmk('p').xInnerHTML('These are the fields pre-defined to simplify creating a new record.'),
             fldsList),
+        // Administration stuff - at the very end to make it somewhat non-obvious
+        mkFieldset('Administration').xAppend(
+            prefLockPreferencesPassword(labelClasses, inputClasses),
+            xmk('p')
+                .xStyle({'margin-left': '5em', 'margin-right': '5em'})
+                .xInnerHTML('Setting this password will lock the preferences so that '+
+                            'users who do not know this password cannot change them.'),
+            prefDefaultFields(labelClasses, inputClasses),
+            xmk('p')
+                .xStyle({'margin-left': '5em', 'margin-right': '5em'})
+                .xInnerHTML('These are the default fields defined for each record '+
+                            'entered as a comma separated list of field names. '+
+                            'An example would be: url,login,password'),
+        ),
     )
 
     let b1 = mkPopupModalDlgButton('Close',
@@ -171,7 +186,11 @@ export function menuPrefsDlg() {
                                  'save using the preferences',
                                    (el) => {
                                        delete_occurred = false
-                                       return savePrefs(el)
+                                       let flag = savePrefs(el)
+                                       if (!checkDefaultRecordFields(true)) {
+                                           flag = false
+                                       }
+                                       return flag
                                    })
     let e = mkPopupModalDlg('menuPrefsDlg', 'Preferences', body, b1, b2)
     e.xAddEventListener('show.bs.modal', (event) => {
@@ -182,6 +201,56 @@ export function menuPrefsDlg() {
         setDarkLightTheme(window.prefs.themeName) // fix the new DOM elements
     })
     return e
+}
+
+function addDefaultRecordFields() {
+    if (!!window.prefs.defaultRecordFields) {
+        // Create the default record fields.
+        let menu = document.getElementById('menuNewDlg')
+        let body = menu.getElementsByClassName('container')[0]
+        while (body.length > 0) { // clear the container
+            body[0].parentNode.removeChild(body[0])
+        }
+        let items = window.prefs.defaultRecordFields.split(',')
+        for (let i=0; i<items.length; i++) {
+            let name = items[i].trim()
+            if (window.prefs.predefinedRecordFields.hasOwnProperty(name)) {
+                let type = window.prefs.predefinedRecordFields[name]
+                let value = ''
+                let fld = mkRecordEditField(name, type, body, value)
+                body.xAppend(fld)
+            }
+        }
+    }
+}
+
+function checkDefaultRecordFields(show) {
+    let valid = ''
+    let missing = false
+    if (!!window.prefs.defaultRecordFields) {
+        let items = window.prefs.defaultRecordFields.split(',')
+        for (let i=0; i<items.length; i++) {
+            let name = items[i].trim()
+            if (!window.prefs.predefinedRecordFields.hasOwnProperty(name)) {
+                missing = true
+                alert(`ERROR: Default record field "${name}"\n`+
+                      'is not a valid field it will be ignored.')
+            } else {
+                if (valid.length > 0) {
+                    valid += ',' + name
+                } else  {
+                    valid = name
+                                                   }
+            }
+        }
+        if (missing) {
+            window.prefs.defaultRecordFields = valid
+        }
+    }
+    if( valid.length > 0 ) {
+        addDefaultRecordFields()
+    }
+    return !missing
 }
 
 // set the help links
@@ -269,6 +338,7 @@ function savePrefs(el) {
     enableSaveFile()
     setDarkLightTheme(window.prefs.themeName)
     searchRecords()  // refresh
+
     return true
 }
 
@@ -277,6 +347,40 @@ function setActive(event) {
     let ppa = dm.xGet('.active')
     ppa.classList.remove('active')
     event.target.classList.add('active')
+}
+
+function prefDefaultFields(labelClasses, inputClasses) {
+    return xmk('div').xClass('row').xAppend(
+        prefLabel(labelClasses, 'Default Record Fields'),
+        xmk('div').xClass(...inputClasses).xAppend(
+            xmk('div').xClass('input-group').xAppend(
+                xmk('input')
+                    .xClass('form-control', 'text-start')
+                    .xAttrs({'type': 'text',
+                             'value': window.prefs.lockPreferencesPassword,
+                             'title': 'list of default fields',
+                             'data-pref-id': 'defaultRecordFields',
+                            }),
+            ),
+        ),
+    )
+}
+
+function prefLockPreferencesPassword(labelClasses, inputClasses) {
+    return xmk('div').xClass('row').xAppend(
+        prefLabel(labelClasses, 'Lock Preferences Password'),
+        xmk('div').xClass(...inputClasses).xAppend(
+            xmk('div').xClass('input-group').xAppend(
+                xmk('input')
+                    .xClass('form-control', 'text-start')
+                    .xAttrs({'type': 'text',
+                             'value': window.prefs.lockPreferencesPassword,
+                             'title': 'password that locks preferences',
+                             'data-pref-id': 'lockPreferencesPassword',
+                            }),
+            ),
+        ),
+    )
 }
 
 function prefCustomAboutInfo(labelClasses, inputClasses) {

@@ -167,7 +167,7 @@ function mkRecordFieldNameListItems(nameTypeMap) {
     // Create the type select list entries from window.prefs.predefinedRecordFields.
     let sorted = sortDictByKey(nameTypeMap)
     let entries = []
-    Object.entries(sorted).forEach(([key,value]) => {
+    Object.entries(sorted).forEach(([key, value]) => {
         let e =  xmk('li').xAppend(mkRecordFieldNameListEntry(key, value))
         if (key === window.prefs.predefinedRecordFieldsDefault) {
             e.xClass('active')
@@ -179,7 +179,7 @@ function mkRecordFieldNameListItems(nameTypeMap) {
 }
 
 // Make a record field based on the type that can be moved up or down.
-function mkRecordEditField(name, type, container, value) {
+export function mkRecordEditField(name, type, container, value) {
     let drag = '<i class="bi bi-grip-vertical"></i>'
 
     // See if name was already used, if so, append a number to the name to make it unique.

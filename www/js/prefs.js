@@ -153,16 +153,12 @@ export function menuPrefsDlg() {
         // Administration stuff - at the very end to make it somewhat non-obvious
         mkFieldset('Administration').xAppend(
             prefLockPreferencesPassword(labelClasses, inputClasses),
-            xmk('p')
-                .xStyle({'margin-left': '5em', 'margin-right': '5em'})
-                .xInnerHTML('Setting this password will lock the preferences so that '+
-                            'users who do not know this password cannot change them.'),
+            prefPromptDesc('Setting this password will lock the preferences so that '+
+                           'users who do not know this password cannot change them.'),
             prefDefaultFields(labelClasses, inputClasses),
-            xmk('p')
-                .xStyle({'margin-left': '5em', 'margin-right': '5em'})
-                .xInnerHTML('These are the default fields defined for each record '+
-                            'entered as a comma separated list of field names. '+
-                            'An example would be: url,login,password'),
+            prefPromptDesc('These are the default fields defined for each record '+
+                           'entered as a comma separated list of field names. '+
+                           'An example would be: <code>url,login,password</code>'),
         ),
     )
 
@@ -201,6 +197,12 @@ export function menuPrefsDlg() {
         setDarkLightTheme(window.prefs.themeName) // fix the new DOM elements
     })
     return e
+}
+
+function prefPromptDesc(msg) {
+    return xmk('p')
+        .xStyle({'margin-left': '5em', 'margin-right': '5em', 'font-size':'smaller'})
+        .xInnerHTML(msg)
 }
 
 function addDefaultRecordFields() {

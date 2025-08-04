@@ -201,7 +201,7 @@ function prefPromptDesc(msg) {
         .xInnerHTML(msg)
 }
 
-function addDefaultRecordFields() {
+export function addDefaultRecordFields() {
     if (!!window.prefs.defaultRecordFields) {
         // Create the default record fields.
         let menu = document.getElementById('menuNewDlg')

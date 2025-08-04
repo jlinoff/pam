@@ -4,7 +4,7 @@ import { statusBlip } from './status.js'
 import { icon, mkPopupModalDlg, mkPopupModalDlgButton, setDarkLightTheme } from './utils.js'
 import { clearRecords, deleteRecord, findRecord, insertRecord, mkRecord } from './record.js'
 import { mkRecordField } from './field.js'
-import { menuPrefsDlg } from './prefs.js'
+import { menuPrefsDlg, addDefaultRecordFields } from './prefs.js'
 import { decrypt } from './crypt.js'
 import { mkLoadSavePassword, setFilePass } from './password.js'
 import { initPrefs } from './prefs.js'
@@ -262,6 +262,7 @@ function loadCallback(text) {
         let oldMenuPrefsDlg = document.body.xGet('#menuPrefsDlg')
         let newMenuPrefsDlg = menuPrefsDlg() // make the new menuPrefsDlg
         oldMenuPrefsDlg.replaceWith(newMenuPrefsDlg)
+        addDefaultRecordFields()
     }
 
     let warned = 0

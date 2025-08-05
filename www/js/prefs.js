@@ -201,7 +201,6 @@ export function menuPrefsDlg() {
                                          old_div.replaceWith(new_div)
                                      }
                                      delete_occurred = false
-                                     addDefaultRecordFields() // restore the default fields
                                      return true
                                  })
     let b2 = mkPopupModalDlgButton('Save',
@@ -240,9 +239,6 @@ export function addDefaultRecordFields() {
                 let child = body.children[i]
                 body.parentNode.removeChild(child)
             }
-        }
-        while (body.length > 0) { // clear the container
-            body[0].parentNode.removeChild(body[0])
         }
         let items = window.prefs.defaultRecordFields.split(',')
         for (let i=0; i<items.length; i++) {

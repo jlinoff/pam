@@ -112,13 +112,18 @@ export function menuPrefsDlg() {
     let helpLink = `<a href="window.prefs.helpLink" target="_blank">Help</a>`
     let fldsList = mkRecordFields(window.prefs.predefinedRecordFields)
     let body = xmk('span').xAppendChild(
-        xmk('p').xInnerHTML(`See the ${helpLink} documentation for detailed information.`),
+        prefPromptDesc(`See the ${helpLink} documentation for detailed information. `+
+                       'No changes are saved until you <code>Save</code> at the bottom of the page. '+
+                       'Choose <code>Close</code> to quit without saving changes.'),
         mkFieldset('Search').xAppend(
             prefSearchCaseInsensitive(labelClasses, inputClasses),
             prefSearchRecordTitles(labelClasses, inputClasses),
             prefSearchRecordFieldNames(labelClasses, inputClasses),
             prefSearchRecordFieldValues(labelClasses, inputClasses),
-            prefHideInactiveRecords(labelClasses, inputClasses),
+            prefPromptDesc('Use caution when enabling this option because '+
+                           'if you search for something like <code>ttp</code> '+
+                           'every record that has <code>https://</code> in the '+
+                           'url field will be displayed.'),
         ),
         mkFieldset('Passwords').xAppend(
             prefPasswordRangeMinLength(labelClasses, inputClasses),
@@ -134,31 +139,52 @@ export function menuPrefsDlg() {
             //prefHelpLink(['col-2'],['col-10']),  // user cannot change this
         ),
         mkFieldset('Miscellaneous').xAppend(
+            prefPromptDesc('The preferences in this section probably do not '+
+                           'need to be changed unless you really know what you are doing.'),
             prefStatusMsgDurationMS(labelClasses, inputClasses),
             prefLogStatusToConsole(labelClasses, inputClasses),
-            prefEnablePrinting(labelClasses, inputClasses),
-            prefEnableSaveFile(labelClasses, inputClasses),
             prefClearBeforeLoad(labelClasses, inputClasses),
             prefLoadDupStrategy(labelClasses, inputClasses),
             prefCloneFieldValues(labelClasses, inputClasses),
             prefRequireRecordFields(labelClasses, inputClasses),
             prefEditableFieldName(labelClasses, inputClasses),
             prefFilePassCacheStrategy(labelClasses, inputClasses),
-            prefCustomAboutInfo(['col-2'],['col-10']),
         ),
         // record fields
         mkFieldset('Record Fields').xAppend(
-            xmk('p').xInnerHTML('These are the fields pre-defined to simplify creating a new record.'),
+            prefPromptDesc('These are the fields pre-defined to simplify creating a new record. '+
+                           'It is unlikely that you would want to change these unless you want '+
+                           'a set of unique fields for a custom environment.'),
+            xmk('p').xInnerHTML(),
             fldsList),
         // Administration stuff - at the very end to make it somewhat non-obvious
         mkFieldset('Administration').xAppend(
-            prefLockPreferencesPassword(labelClasses, inputClasses),
+            //prefLockPreferencesPassword(labelClasses, inputClasses),
+            prefLockPreferencesPassword(['col-4'],['col-8']),
             prefPromptDesc('Setting this password will lock the preferences so that '+
-                           'users who do not know this password cannot change them.'),
-            prefDefaultRecordFields(labelClasses, inputClasses),
-            prefPromptDesc('These are the default fields defined for each record '+
+                           'users who do not know this password cannot change them. '+
+                           'This allows an administrator to disable printing and saving. '+
+                           'This password is encrypted but it is stored in the PAM file '+
+                           'so it is not as secure as the master password. '+
+                           'Only set it in a secure environment.'),
+            prefDefaultRecordFields(['col-4'],['col-8']),
+            prefPromptDesc('These are the default fields defined for each new record '+
                            'entered as a comma separated list of field names. '+
-                           'An example would be: <code>url,login,password</code>'),
+                           'A common example would be: <code>url,login,password</code>.'),
+            prefEnablePrinting(labelClasses, inputClasses),
+            prefPromptDesc('Disable the menu <code>Print</code> operation. Being able to print records '+
+                           'could be a security risk because all of the data is plaintext.'),
+            prefEnableSaveFile(labelClasses, inputClasses),
+            prefPromptDesc('Disable the menu <code>Save File</code> operation. Being able to save a copy of the records '+
+                           'could be a security risk because if could be transported.'),
+            prefHideInactiveRecords(labelClasses, inputClasses),
+            prefPromptDesc('Making records inactive is very much like deleting them. '+
+                           'The only difference is that even though they are no longer visible '+
+                           'a historical record of them is kept if this preference is enabled.'),
+            prefCustomAboutInfo(['col-2'],['col-10']),
+            prefPromptDesc('This allows you to add custom information to the <code>About</code> page. '+
+                           'Typically you might add something like administrator contact information. '+
+                           'An example would be <code>This implementation supported by admin@example.com</code>.')
         ),
     )
 
@@ -388,7 +414,7 @@ function prefCustomAboutInfo(labelClasses, inputClasses) {
                     .xClass('form-control')
                     .xAttrs({'type': 'button',
                              'title': 'custom about information',
-                             'placeholder': 'HTML custom about information',
+                             'placeholder': 'HTML custom information that shows up in the About page',
                              'data-pref-id': 'customAboutInfo',
                             })
             ),

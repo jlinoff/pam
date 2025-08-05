@@ -234,18 +234,20 @@ function prefPromptDesc(msg) {
 }
 
 export function addDefaultRecordFields() {
-    if (!!window.prefs.defaultRecordFields) {
-        // Create the default record fields.
-        let menu = document.getElementById('menuNewDlg')
-        let body = menu.getElementsByClassName('container')[0]
-        // Clear the existing default record fields before adding new ones.
-        // This is quite specific because we want to keep the first two entries.
-        if (body.children.length > 2) {
-            for( let i=2; i<body.children.length; i++ ) {
-                let child = body.children[i]
-                body.removeChild(child)
-            }
+    // Create the default record fields.
+    let menu = document.getElementById('menuNewDlg')
+    let body = menu.getElementsByClassName('container')[0]
+    // Clear the existing default record fields before adding new ones.
+    // This is quite specific because we want to keep the first two entries.
+    if (body.children.length > 2) {
+        // Reverse iteration is required because the list changes are dynamic.
+        for (let i=body.children.length-1; i>1; i--) {
+            let child = body.children[i]
+            body.removeChild(child)
         }
+    }
+    // Now add the default record fields.
+    if (!!window.prefs.defaultRecordFields) {
         let items = window.prefs.defaultRecordFields.split(',')
         for (let i=0; i<items.length; i++) {
             let name = items[i].trim()
@@ -281,9 +283,7 @@ function checkDefaultRecordFields(show) {
         // Used the list built up list with the trimmed entries
         window.prefs.defaultRecordFields = valid
     }
-    if( valid.length > 0 ) {
-        addDefaultRecordFields()
-    }
+    addDefaultRecordFields()
     return !missing
 }
 

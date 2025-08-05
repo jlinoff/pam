@@ -20,6 +20,18 @@ export function mkSearchInputElement() {
     return e
 }
 
+function showRecord(accordionItem) {
+    if (accordionItem.classList.contains('d-none')) {
+        accordionItem.classList.remove('d-none')
+    }
+}
+
+function hideRecord(accordionItem) {
+    if (!accordionItem.classList.contains('d-none')) {
+        accordionItem.classList.add('d-none')
+    }
+}
+
 export function searchRecords(value) {
     if (!value) {
         // Allow the caller to use the last (cached) search value.
@@ -54,55 +66,48 @@ export function searchRecords(value) {
 
         // ignore inactive records if the hide inactive records pref is set.
         if (active === false && window.prefs.hideInactiveRecords) {
-            if (!accordionItem.classList.contains('d-none')) {
-                accordionItem.classList.add('d-none')
-            }
+            hideRecord(accordionItem)
             continue
         }
 
-        // Search by record title
+        // This record is a candidate for matching.
+        // First try to match the title.
         if (title.match(regex) && window.prefs.searchRecordTitles) {
-            if (accordionItem.classList.contains('d-none')) {
-                accordionItem.classList.remove('d-none')
-            }
-            num += 1
             matched = true
         } else {
-            if (!accordionItem.classList.contains('d-none')) {
-                accordionItem.classList.add('d-none')
+            // title didn't match: search by field names
+            if (!matched && window.prefs.searchRecordFieldNames) {
+                let names = accordionItem.xGetN('.x-fld-name')
+                for (let element of names) {
+                    let name = element.innerHTML
+                    if (name.match(regex)) {
+                        matched = true
+                        break
+                    }
+                }
             }
-        }
 
-        // Search by field names
-        if (!matched && window.prefs.searchRecordFieldNames) {
-            let names = accordionItem.xGetN('.x-fld-name')
-            for (let element of names) {
-                let name = element.innerHTML
-                if (name.match(regex)) {
-                    num += 1
-                    matched = true
-                    if (accordionItem.classList.contains('d-none')) {
-                        accordionItem.classList.remove('d-none')
+            // title and field name did not match: search by field values
+            if (!matched && window.prefs.searchRecordFieldValues) {
+                let values = accordionItem.xGetN('.x-fld-value')
+                for (let element of values) {
+                    let type = element.getAttribute('data-fld-type')
+                    // how should passwords be managed? using the raw value
+                    let value = element.getAttribute('data-fld-raw-value')
+                    if (value.match(regex)) {
+                        matched = true
+                        break
                     }
                 }
             }
         }
 
-        // Search by field values
-        if (!matched && window.prefs.searchRecordFieldValues) {
-            let values = accordionItem.xGetN('.x-fld-value')
-            for (let element of values) {
-                let type = element.getAttribute('data-fld-type')
-                // how should passwords be managed? using the raw value
-                let value = element.getAttribute('data-fld-raw-value')
-                if (value.match(regex)) {
-                    num += 1
-                    matched = true
-                    if (accordionItem.classList.contains('d-none')) {
-                        accordionItem.classList.remove('d-none')
-                    }
-                }
-            }
+        // Cleanup. If the record matched, display it otherwise hide it.
+        if (matched) {
+            num += 1
+            showRecord(accordionItem)
+        } else {
+            hideRecord(accordionItem)
         }
     }
     xget('#x-num-records').xInnerHTML(num)

@@ -8,6 +8,16 @@ import { mkGeneratePasswordDlg, mkLoadSavePassword, setFilePass } from './passwo
 import { encrypt } from './crypt.js'
 import { setAboutFileInfo } from './about.js'
 
+export function enableSaveFile() {
+    let eps = document.body.xGetN('.x-save-file-menu-item')
+    for (let ep of eps) {
+        if ( window.prefs.enableSaveFile ) {
+            ep.xStyle({'display': 'block'})
+        } else {
+            ep.xStyle({'display': 'none'})
+        }
+    }
+}
 // Called from the top level menu.
 export function menuSaveDlg() {
     let body = xmk('span')

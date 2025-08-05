@@ -1,9 +1,10 @@
 // preferences stuff
 import { xmk, xget, xgetn, enableFunctionChaining } from './lib.js'
 import { convertDictKeys2List, icon, mkPopupModalDlgButton, mkPopupModalDlg, sortDictByKey } from './utils.js'
-import { updateRecordFieldTypes }  from './field.js'
+import { updateRecordFieldTypes, mkRecordEditField }  from './field.js'
 import { refreshAbout } from './about.js'
 import { enablePrinting } from './print.js'
+import { enableSaveFile } from './save.js'
 import { setDarkLightTheme } from './utils.js'
 import { searchRecords } from './search.js'
 
@@ -38,6 +39,7 @@ export function initPrefs() {
         // does not work on some mobile devices.
         themeName: 'dark', // choices are dark or light
         enablePrinting: false,
+        enableSaveFile: true,
         fileName: 'example.txt',
         filePass: '',
         filePassCache: 'local',  // options: none, global, local, session
@@ -88,6 +90,8 @@ export function initPrefs() {
         },
         predefinedRecordFieldsDefault: 'text',
         requireRecordFields: false,
+        lockPreferencesPassword: '',
+        defaultRecordFields: '',
     }
     setHelpLinks()
 }
@@ -108,14 +112,18 @@ export function menuPrefsDlg() {
     let helpLink = `<a href="window.prefs.helpLink" target="_blank">Help</a>`
     let fldsList = mkRecordFields(window.prefs.predefinedRecordFields)
     let body = xmk('span').xAppendChild(
-        xmk('p').xInnerHTML(`See the ${helpLink} documentation for detailed information.`),
-        // miscellaneous
+        prefPromptDesc(`See the ${helpLink} documentation for detailed information. `+
+                       'No changes are saved until you <code>Save</code> at the bottom of the page. '+
+                       'Choose <code>Close</code> to quit without saving changes.'),
         mkFieldset('Search').xAppend(
             prefSearchCaseInsensitive(labelClasses, inputClasses),
             prefSearchRecordTitles(labelClasses, inputClasses),
             prefSearchRecordFieldNames(labelClasses, inputClasses),
             prefSearchRecordFieldValues(labelClasses, inputClasses),
-            prefHideInactiveRecords(labelClasses, inputClasses),
+            prefPromptDesc('Use caution when enabling this option because '+
+                           'if you search for something like <code>ttp</code> '+
+                           'every record that has <code>https://</code> in the '+
+                           'url field will be displayed.'),
         ),
         mkFieldset('Passwords').xAppend(
             prefPasswordRangeMinLength(labelClasses, inputClasses),
@@ -131,21 +139,53 @@ export function menuPrefsDlg() {
             //prefHelpLink(['col-2'],['col-10']),  // user cannot change this
         ),
         mkFieldset('Miscellaneous').xAppend(
+            prefPromptDesc('The preferences in this section probably do not '+
+                           'need to be changed unless you really know what you are doing.'),
             prefStatusMsgDurationMS(labelClasses, inputClasses),
             prefLogStatusToConsole(labelClasses, inputClasses),
-            prefEnablePrinting(labelClasses, inputClasses),
             prefClearBeforeLoad(labelClasses, inputClasses),
             prefLoadDupStrategy(labelClasses, inputClasses),
             prefCloneFieldValues(labelClasses, inputClasses),
             prefRequireRecordFields(labelClasses, inputClasses),
             prefEditableFieldName(labelClasses, inputClasses),
             prefFilePassCacheStrategy(labelClasses, inputClasses),
-            prefCustomAboutInfo(['col-2'],['col-10']),
         ),
         // record fields
         mkFieldset('Record Fields').xAppend(
-            xmk('p').xInnerHTML('These are the fields pre-defined to simplify creating a new record.'),
+            prefPromptDesc('These are the fields pre-defined to simplify creating a new record. '+
+                           'It is unlikely that you would want to change these unless you want '+
+                           'a set of unique fields for a custom environment.'),
+            xmk('p').xInnerHTML(),
             fldsList),
+        // Administration stuff - at the very end to make it somewhat non-obvious
+        mkFieldset('Administration').xAppend(
+            //prefLockPreferencesPassword(labelClasses, inputClasses),
+            prefLockPreferencesPassword(['col-4'],['col-8']),
+            prefPromptDesc('Setting this password will lock the preferences so that '+
+                           'users who do not know this password cannot change them. '+
+                           'This allows an administrator to disable printing and saving. '+
+                           'This password is encrypted but it is stored in the PAM file '+
+                           'so it is not as secure as the master password. '+
+                           'Only set it in a secure environment.'),
+            prefDefaultRecordFields(['col-4'],['col-8']),
+            prefPromptDesc('These are the default fields defined for each new record '+
+                           'entered as a comma separated list of field names. '+
+                           'A common example would be: <code>url,login,password</code>.'),
+            prefEnablePrinting(labelClasses, inputClasses),
+            prefPromptDesc('Disable the menu <code>Print</code> operation. Being able to print records '+
+                           'could be a security risk because all of the data is plaintext.'),
+            prefEnableSaveFile(labelClasses, inputClasses),
+            prefPromptDesc('Disable the menu <code>Save File</code> operation. Being able to save a copy of the records '+
+                           'could be a security risk because if could be transported.'),
+            prefHideInactiveRecords(labelClasses, inputClasses),
+            prefPromptDesc('Making records inactive is very much like deleting them. '+
+                           'The only difference is that even though they are no longer visible '+
+                           'a historical record of them is kept if this preference is enabled.'),
+            prefCustomAboutInfo(['col-2'],['col-10']),
+            prefPromptDesc('This allows you to add custom information to the <code>About</code> page. '+
+                           'Typically you might add something like administrator contact information. '+
+                           'An example would be <code>This implementation supported by admin@example.com</code>.')
+        ),
     )
 
     let b1 = mkPopupModalDlgButton('Close',
@@ -179,6 +219,61 @@ export function menuPrefsDlg() {
         setDarkLightTheme(window.prefs.themeName) // fix the new DOM elements
     })
     return e
+}
+
+function prefPromptDesc(msg) {
+    return xmk('p')
+        .xStyle({'margin-left': '5em', 'margin-right': '5em', 'font-size':'smaller'})
+        .xInnerHTML(msg)
+}
+
+export function addDefaultRecordFields() {
+    if (!!window.prefs.defaultRecordFields) {
+        // Create the default record fields.
+        let menu = document.getElementById('menuNewDlg')
+        let body = menu.getElementsByClassName('container')[0]
+        while (body.length > 0) { // clear the container
+            body[0].parentNode.removeChild(body[0])
+        }
+        let items = window.prefs.defaultRecordFields.split(',')
+        for (let i=0; i<items.length; i++) {
+            let name = items[i].trim()
+            if (window.prefs.predefinedRecordFields.hasOwnProperty(name)) {
+                let type = window.prefs.predefinedRecordFields[name]
+                let value = ''
+                let fld = mkRecordEditField(name, type, body, value)
+                body.xAppend(fld)
+            }
+        }
+    }
+}
+
+function checkDefaultRecordFields(show) {
+    let valid = ''
+    let missing = false
+    if (!!window.prefs.defaultRecordFields) {
+        let items = window.prefs.defaultRecordFields.split(',')
+        for (let i=0; i<items.length; i++) {
+            let name = items[i].trim()
+            if (!window.prefs.predefinedRecordFields.hasOwnProperty(name)) {
+                missing = true
+                alert(`ERROR: Default record field "${name}"\n`+
+                      'is not a valid field it will be ignored.')
+            } else {
+                if (valid.length > 0) {
+                    valid += ',' + name
+                } else  {
+                    valid = name
+                                                   }
+            }
+        }
+        // Used the list built up list with the trimmed entries
+        window.prefs.defaultRecordFields = valid
+    }
+    if( valid.length > 0 ) {
+        addDefaultRecordFields()
+    }
+    return !missing
 }
 
 // set the help links
@@ -263,9 +358,10 @@ function savePrefs(el) {
     window.prefs.predefinedRecordFields = sorted
     refreshAbout()
     enablePrinting()
+    enableSaveFile()
     setDarkLightTheme(window.prefs.themeName)
     searchRecords()  // refresh
-    return true
+    return checkDefaultRecordFields(true)
 }
 
 function setActive(event) {
@@ -273,6 +369,40 @@ function setActive(event) {
     let ppa = dm.xGet('.active')
     ppa.classList.remove('active')
     event.target.classList.add('active')
+}
+
+function prefDefaultRecordFields(labelClasses, inputClasses) {
+    return xmk('div').xClass('row').xAppend(
+        prefLabel(labelClasses, 'Default Record Fields'),
+        xmk('div').xClass(...inputClasses).xAppend(
+            xmk('div').xClass('input-group').xAppend(
+                xmk('input')
+                    .xClass('form-control', 'text-start')
+                    .xAttrs({'type': 'text',
+                             'value': window.prefs.defaultRecordFields,
+                             'title': 'list of default fields',
+                             'data-pref-id': 'defaultRecordFields',
+                            }),
+            ),
+        ),
+    )
+}
+
+function prefLockPreferencesPassword(labelClasses, inputClasses) {
+    return xmk('div').xClass('row').xAppend(
+        prefLabel(labelClasses, 'Lock Preferences Password'),
+        xmk('div').xClass(...inputClasses).xAppend(
+            xmk('div').xClass('input-group').xAppend(
+                xmk('input')
+                    .xClass('form-control', 'text-start')
+                    .xAttrs({'type': 'text',
+                             'value': window.prefs.lockPreferencesPassword,
+                             'title': 'password that locks preferences',
+                             'data-pref-id': 'lockPreferencesPassword',
+                            }),
+            ),
+        ),
+    )
 }
 
 function prefCustomAboutInfo(labelClasses, inputClasses) {
@@ -284,7 +414,7 @@ function prefCustomAboutInfo(labelClasses, inputClasses) {
                     .xClass('form-control')
                     .xAttrs({'type': 'button',
                              'title': 'custom about information',
-                             'placeholder': 'HTML custom about information',
+                             'placeholder': 'HTML custom information that shows up in the About page',
                              'data-pref-id': 'customAboutInfo',
                             })
             ),
@@ -408,6 +538,14 @@ function prefEnablePrinting(labelClasses, inputClasses) {
                            'enablePrinting',
                            'Enable Printing',
                            'enable printing')
+}
+
+function prefEnableSaveFile(labelClasses, inputClasses) {
+    return mkPrefsCheckBox(labelClasses,
+                           inputClasses,
+                           'enableSaveFile',
+                           'Enable Save File',
+                           'enable save file')
 }
 
 function prefFilePassCacheStrategy(labelClasses, inputClasses) {

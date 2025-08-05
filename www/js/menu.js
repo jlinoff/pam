@@ -132,7 +132,7 @@ export function mkMenu() {
                                                 let dlg = document.getElementById('menuPrefsDlg')
                                                 let modal = bootstrap.Modal.getInstance(dlg)
                                                 modal.hide()
-                                            }, 0)
+                                            }, 500)
                                         }
                                     })
 

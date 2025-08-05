@@ -9,7 +9,7 @@ import { checkRecordEditDlg,
          saveRecordEditDlg } from './record.js'
 import { mkRecordEditDlg } from './field.js'
 import { menuAboutDlg } from './about.js'
-import { menuPrefsDlg } from './prefs.js'
+import { menuPrefsDlg, addDefaultRecordFields } from './prefs.js'
 import { menuSaveDlg } from './save.js'
 import { menuLoadDlg } from './load.js'
 import { printRecords } from './print.js'
@@ -226,6 +226,7 @@ export function menuNewDlg() {
                                           (event) => {
                                               //console.log(event)
                                               cleanRecordEditDlg(event)
+                                              addDefaultRecordFields()
                                               return true
                                           })
     let saveButton = mkPopupModalDlgButton('Save',
@@ -239,15 +240,17 @@ export function menuNewDlg() {
                                                  let msg = container.getAttribute('data-check-failed')
                                                  alert(`ERROR! ${msg}\nCANNOT SAVE RECORD`)
                                                  container.removeAttribute('data-check-failed')
+                                                 addDefaultRecordFields()
                                                  return false
                                              } else {
                                                  let active = true
                                                  let created = new Date().toISOString()
                                                  saveRecordEditDlg(event, active, created)
                                                  cleanRecordEditDlg(event)
+                                                 addDefaultRecordFields()
                                                  return true
-                                     }
-    })
+                                             }
+                                         })
     let e = mkPopupModalDlg('menuNewDlg', 'New Record', body, closeButton, saveButton)
     return e
 }

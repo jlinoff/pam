@@ -318,12 +318,11 @@ function menuCloneDlg(title, active, created) {
                                                  cleanRecordEditDlg(event)
                                                  searchRecords() // refresh
                                                  return true
-                                     }
-    })
+                                             }
+                                         })
     let e = mkPopupModalDlg('menuCloneDlg', 'Clone Record', body, closeButton, saveButton)
     return e
 }
-
 
 // Clean up the drop down.
 // Reset the active to the default.

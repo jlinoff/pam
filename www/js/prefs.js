@@ -172,11 +172,17 @@ export function menuPrefsDlg() {
                            'entered as a comma separated list of field names. '+
                            'A common example would be: <code>url,login,password</code>.'),
             prefEnablePrinting(labelClasses, inputClasses),
-            prefPromptDesc('Disable the menu <code>Print</code> operation. Being able to print records '+
-                           'could be a security risk because all of the data is plaintext.'),
+            prefPromptDesc('Enable or disable the menu <code>Print</code> operation. Being able to print records '+
+                           'could be a security risk because all of the printed information is decrypted.'),
             prefEnableSaveFile(labelClasses, inputClasses),
-            prefPromptDesc('Disable the menu <code>Save File</code> operation. Being able to save a copy of the records '+
-                           'could be a security risk because if could be transported.'),
+            prefPromptDesc('Enable or disable the menu <code>Save File</code> operation. '+
+                           'Being able to save a private copy of the records '+
+                           'could be a security risk. When the user disables this preference it does '+
+                           'not remove the <code>Save File</code> entry from the menu '+
+                           'immediately after the preferences are saved. '+
+                           'If it did, you would never be able to save it persistently in the file. '+
+                           'Instead it allows the file save operation to succeed but the next time the file '+
+                           'is loaded the <code>Save File</code> will <i>not<i> appear in the menu.'),
             prefHideInactiveRecords(labelClasses, inputClasses),
             prefPromptDesc('Making records inactive is very much like deleting them. '+
                            'The only difference is that even though they are no longer visible '+
@@ -370,11 +376,11 @@ function savePrefs(el) {
     // immediately after it is set in preferences. The reason for this
     // is that disabling it immediately makes it impossible to
     // actually save the file but you also want to be able to enable it
-    // immediately.
-    // if (window.prefs.enableSaveFile) {
-    //    enableSaveFile()
-    //
-    enableSaveFile()
+    // immediately. So the idea is to defer the disable operation but not
+    // the enable operation.
+    if (window.prefs.enableSaveFile) {
+        enableSaveFile()
+    }
 
     setDarkLightTheme(window.prefs.themeName)
     searchRecords()  // refresh

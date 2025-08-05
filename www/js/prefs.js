@@ -201,6 +201,7 @@ export function menuPrefsDlg() {
                                          old_div.replaceWith(new_div)
                                      }
                                      delete_occurred = false
+                                     addDefaultRecordFields() // restore the default fields
                                      return true
                                  })
     let b2 = mkPopupModalDlgButton('Save',
@@ -232,6 +233,14 @@ export function addDefaultRecordFields() {
         // Create the default record fields.
         let menu = document.getElementById('menuNewDlg')
         let body = menu.getElementsByClassName('container')[0]
+        // Clear the existing default record fields before adding new ones.
+        // This is quite specific because we want to keep the first two entries.
+        if (body.children.length > 2) {
+            for( let i=2; i<body.children.length; i++ ) {
+                let child = body.children[i]
+                body.parentNode.removeChild(child)
+            }
+        }
         while (body.length > 0) { // clear the container
             body[0].parentNode.removeChild(body[0])
         }

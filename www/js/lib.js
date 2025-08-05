@@ -344,8 +344,8 @@ export function enableFunctionChaining() {
      */
     Element.prototype.xRemoveChildren = function() {
         let parent = this
-        while (parent.firstChild) {
-            parent.removeChild(parent.lastChild);
+        while (parent.children.length > 0) {
+            parent.removeChild(parent.children[0]);
         }
     }
 

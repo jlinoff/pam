@@ -237,7 +237,7 @@ export function addDefaultRecordFields() {
         if (body.children.length > 2) {
             for( let i=2; i<body.children.length; i++ ) {
                 let child = body.children[i]
-                body.parentNode.removeChild(child)
+                body.removeChild(child)
             }
         }
         let items = window.prefs.defaultRecordFields.split(',')
@@ -363,7 +363,19 @@ function savePrefs(el) {
     window.prefs.predefinedRecordFields = sorted
     refreshAbout()
     enablePrinting()
+
+    // WIP:
+    // The logic is here is a bit tricky.
+    // The idea is to only disable the "Save File" entry on load not
+    // immediately after it is set in preferences. The reason for this
+    // is that disabling it immediately makes it impossible to
+    // actually save the file but you also want to be able to enable it
+    // immediately.
+    // if (window.prefs.enableSaveFile) {
+    //    enableSaveFile()
+    //
     enableSaveFile()
+
     setDarkLightTheme(window.prefs.themeName)
     searchRecords()  // refresh
     return checkDefaultRecordFields(true)

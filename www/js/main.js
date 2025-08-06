@@ -11,6 +11,7 @@ import { mkMenu } from './menu.js'
 import { mkSearchInputElement, searchRecords } from './search.js'
 import { refreshAbout } from './about.js'
 import { printRecords, enablePrinting } from './print.js'
+import { mkGeneratePasswordDlg } from './password.js'
 
 /**
  * Actions to take when the window is loaded.
@@ -126,7 +127,50 @@ function topLayout() {
                     xmk('span')
                         .xId('status')
                         .xStyle({'width': '80%'})
-                        .xAttrs({'title': 'dynamic status messages appear here'})
+                        .xAttrs({'title': 'dynamic status messages appear here'}),
+                    xmk('button')
+                        .xId('x-generate-password')
+                        .xClass('btn')
+                        .xAttrs({'title': 'generate password'})
+                        .xAppend(icon('bi-key', 'generate password'))  // in dark mode
+                        .xAddEventListener('click', (event) => {
+                            // Probably have to create a fake password field
+                            let bgColor = 'white'
+                            let fgColor = 'red'
+                            if (window.prefs.themeName === 'dark') {
+                                bgColor = 'red'
+                                fgColor = 'white'
+                            }
+                            let search = document.getElementById('search')
+                            let top = 10
+                            if (!!search ) {
+                                top = search.offsetHeight + 0
+                            }
+                            let x = document.getElementById('fakeRow')
+                            if (!!x) {
+                                x.remove()
+                            }
+                            let fakeRow = xmk('div')
+                                .xClass('row')
+                                .xId('fakeRow')
+                                .xStyle({'margin-left':'5em',
+                                         'margin-right':'5em',
+                                         'top': top,
+                                         'position':'fixed',
+                                         'background-color': bgColor,
+                                         'color': fgColor,
+                                         'z-index': '1000 !important'})
+                                .xAppend(
+                                    xmk('div').xClass('x-fld-value-div').xAppend(
+                                        xmk('span').xClass('x-fld-value'),
+                                        xmk('span').xClass('x-fld-value-length'),
+                                    )
+                            )
+                            let fakeEvent = {'target': {'parentElement':fakeRow}}
+                            document.body.appendChild(fakeRow)
+                            mkGeneratePasswordDlg(fakeEvent)
+                            //alert('generate password')
+                        }),
                 ),
         )
 }
@@ -167,3 +211,6 @@ function createSearchInputAndMenuEntry() {
         )
     return e
 }
+
+// make the generate password dialogue for record fields and
+// reuse it if it already exists

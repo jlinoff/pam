@@ -107,12 +107,10 @@ function saveGeneratedPassword(event) {
 export function mkGeneratePasswordDlg(event) {
     let button = event.target.parentElement
     let row = button.xGetParentWithClass('row')
-    let passwordInput = row.xGet('.x-fld-value')
     // has it already been created?
     let genSection = row.xGet('.x-fld-pw-gen')
     if (!genSection) {
         // Create the generation section and add it.
-        //let topdiv = row.xGet('fieldset')
         let topdiv = row.xGet('.x-fld-value-div')
         let len = 20
         let cp0 = getCrypticPassword(len, ALPHABET)

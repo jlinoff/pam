@@ -74,7 +74,7 @@ function mkRecordFldElement(name, type, fieldValue, rawValue, ...buttons) {
 }
 
 // Make a button whose action is to copy to the clipboard
-function mkRecordFieldCopyToClipboardButton(raw_value) {
+export function mkRecordFieldCopyToClipboardButton(raw_value) {
     const value = raw_value
     return xmk('button')
         .xClass('btn', 'btn-lg', 'p-0', 'ms-2')

@@ -21,15 +21,6 @@ import { mkRecordEditField } from './field.js'
 window.onload = () => { initPrefs(); main() }
 window.onresize = () => { refreshAbout() }
 
-// https://developer.mozilla.org/en-US/docs/Web/API/Window#events
-/**
- * Clean up actions to take when the window is unloaded.
- * @global
- */
-window.addEventListener('beforeunload', () => {/*console.log('beforeunload')*/})
-window.addEventListener('unload', () => {/*console.log('unload')*/})
-window.addEventListener('load', () => {/*console.log('load')*/})
-
 /**
  * Main entry point for the application.
  */
@@ -135,12 +126,12 @@ function topLayout() {
                         .xStyle({'float': 'right', 'margin-right': '1em'})
                         .xAttrs({'title': 'generate password'})
                         .xAppend(icon('bi-key', 'generate password'))  // in dark mode
-                        .xAddEventListener('click', (event) => {mainGeneratePasswords()})
+                        .xAddEventListener('click', (event) => {mkMainPasswordGenerator()})
                 ),
         )
 }
 
-function mainGeneratePasswords() {
+function mkMainPasswordGenerator() {
     // Create fake scafolding for the password generation logic on the main page.
 
     // If records are displayed, hide them.
@@ -156,6 +147,7 @@ function mainGeneratePasswords() {
     }
 
     // Create the fake row scafolding, including a fake event.
+    let fakeTopdiv = xmk('div')
     let fakeRow = xmk('div')
         .xClass('row', 'x-fake')
         .xId('fakeRow')
@@ -164,11 +156,49 @@ function mainGeneratePasswords() {
                  'position':'fixed',
                  'top': '0',
                  'z-index': '1000 !important'})
-    let fakePassword =  mkRecordEditField(' Password', 'password', fakeRow, '')
-    fakeRow.xAppend(fakePassword)
+    let fakePassword = mkRecordEditField('Password', 'password', fakeRow, '')
+    let fakeCliboardCopyButton = xmk('button')
+        .xClass('btn', 'btn-lg', 'p-0', 'ms-2')
+        .xAttrs({'type': 'button'})
+        .xAppend(icon('bi-clipboard', 'copy to clipboard')) // also bi-files
+        .xAddEventListener('click', (event) => {
+            if (navigator.clipboard) {
+                let input = event.target.xGetParentWithClass('row').getElementsByClassName('x-fld-value')[0]
+                let value = input.value
+                input.focus()
+                navigator.clipboard.writeText(value)
+                    .then(
+                        (text) => {
+                            // succeeded
+                            statusBlip(`copied ${value.length} bytes to clipboard`)
+                        },
+                        (error) => {
+                            // failed
+                            const msg = `internal error:\nnavigator.clipboard.writeText() error:\n${error}`
+                            statusBlip(msg)
+                            alert(msg)
+                        }
+                    )
+                    .catch((error) => {
+                        const msg = `internal error:\nnavigator.clipboard.writeText() exception:\n${error}`
+                        statusBlip(msg)
+                        alert(msg)
+                    })
+            } else {
+                const msg = `internal error:\nnavigator.clipboard not found\ncould be a permissions problem`
+                statusBlip(msg)
+                alert(msg)
+            }
+        })
+
+    // Insert the clipboard copy button.
+    let div = fakePassword.getElementsByClassName('bi-gear')[0].parentElement.parentElement
+    div.xAppend(xmk('span').xInnerHTML('&nbsp;&nbsp;'), fakeCliboardCopyButton)
     let fakeEvent = {'target': {'parentElement': fakeRow}}
 
     // Now make the password generation dialogue.
+    fakeTopdiv.xAppend(fakeRow)
+    fakeRow.xAppend(fakePassword)
     document.body.appendChild(fakeRow)
     mkGeneratePasswordDlg(fakeEvent)
 

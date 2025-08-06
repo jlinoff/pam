@@ -12,6 +12,7 @@ import { mkSearchInputElement, searchRecords } from './search.js'
 import { refreshAbout } from './about.js'
 import { printRecords, enablePrinting } from './print.js'
 import { mkGeneratePasswordDlg } from './password.js'
+import { mkRecordEditField } from './field.js'
 
 /**
  * Actions to take when the window is loaded.
@@ -135,40 +136,67 @@ function topLayout() {
                         .xAppend(icon('bi-key', 'generate password'))  // in dark mode
                         .xAddEventListener('click', (event) => {
                             // Probably have to create a fake password field
-                            let bgColor = 'white'
-                            let fgColor = 'red'
-                            if (window.prefs.themeName === 'dark') {
-                                bgColor = 'red'
-                                fgColor = 'white'
-                            }
                             let search = document.getElementById('search')
                             let top = 10
                             if (!!search ) {
-                                top = search.offsetHeight + 0
+                                top = search.offsetHeight
                             }
-                            let x = document.getElementById('fakeRow')
+                            let x = document.getElementById('x-fake-password')
                             if (!!x) {
                                 x.remove()
                             }
+                            let records = document.getElementById('records-accordion')
+                            if (!!records) {
+                                records.xStyle({display: 'none'})
+                            }
                             let fakeRow = xmk('div')
-                                .xClass('row')
+                                .xClass('row', 'x-fake')
                                 .xId('fakeRow')
                                 .xStyle({'margin-left':'5em',
                                          'margin-right':'5em',
                                          'top': top,
                                          'position':'fixed',
-                                         'background-color': bgColor,
-                                         'color': fgColor,
                                          'z-index': '1000 !important'})
-                                .xAppend(
-                                    xmk('div').xClass('x-fld-value-div').xAppend(
-                                        xmk('span').xClass('x-fld-value'),
-                                        xmk('span').xClass('x-fld-value-length'),
-                                    )
-                            )
-                            let fakeEvent = {'target': {'parentElement':fakeRow}}
+                            let fakePassword =  mkRecordEditField(' Password', 'password', fakeRow, '')
+                                .xId('x-fake-password')
+                            fakeRow.xAppend(fakePassword)
+                            let fakeEvent = {'target': {'parentElement': fakeRow}}
                             document.body.appendChild(fakeRow)
                             mkGeneratePasswordDlg(fakeEvent)
+                            let button1 = null
+                            let button2 = null
+                            let btns = fakeRow.getElementsByClassName('btn')
+                            for (let i=0; i<btns.length; i++) {
+                                let b = btns[i]
+                                if (b.innerHTML.includes('Close Password Generator')) {
+                                    button1 = b
+                                }
+                                if (b.innerHTML.includes('Delete Field')) {
+                                    button2 = b
+                                }
+                            }
+                            //})
+                            // close everything.
+                            button1.addEventListener('click', (event) => {
+                                button2.click()
+                                let fakes = document.body.getElementsByClassName('x-fake')
+                                for (let j=0;j<fakes.length; j++ ) {
+                                    fakes[j].remove()
+                                }
+                                if (!!records) {
+                                    records.xStyle({display: 'block'})
+                                }
+                            })
+                            button2.addEventListener('click', (event) => {
+                                button1.click()
+                                let fakes = document.body.getElementsByClassName('x-fake')
+                                for (let j=0;j<fakes.length; j++ ) {
+                                    fakes[j].remove()
+                                }
+                                if (!!records) {
+                                    records.xStyle({display: 'block'})
+                                }
+                            })
                             //alert('generate password')
                         }),
                 ),

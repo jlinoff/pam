@@ -132,10 +132,11 @@ function topLayout() {
                     xmk('button')
                         .xId('x-generate-password')
                         .xClass('btn')
+                        .xStyle({'float': 'right', 'margin-right': '1em'})
                         .xAttrs({'title': 'generate password'})
                         .xAppend(icon('bi-key', 'generate password'))  // in dark mode
                         .xAddEventListener('click', (event) => {
-                            // Probably have to create a fake password field
+                            // Create fake scafolding for the password.
                             let search = document.getElementById('search')
                             let top = 10
                             if (!!search ) {

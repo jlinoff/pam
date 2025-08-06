@@ -141,7 +141,7 @@ function topLayout() {
 }
 
 function mainGeneratePasswords() {
-    // Create fake scafolding for the password.
+    // Create fake scafolding for the password generation logic on the main page.
 
     // If records are displayed, hide them.
     let records = document.getElementById('records-accordion')

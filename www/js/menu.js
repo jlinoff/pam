@@ -10,7 +10,7 @@ import { checkRecordEditDlg,
 import { mkRecordEditDlg } from './field.js'
 import { menuAboutDlg } from './about.js'
 import { menuPrefsDlg, addDefaultRecordFields } from './prefs.js'
-import { menuSaveDlg } from './save.js'
+import { menuSaveDlg, enableSaveFile } from './save.js'
 import { menuLoadDlg } from './load.js'
 import { printRecords } from './print.js'
 
@@ -128,23 +128,21 @@ export function mkMenu() {
                                     .then(pw => {
                                         pw = (!!pw) ? pw : ''
                                         if (pw !== window.prefs.lockPreferencesPassword) {
+                                            // password was invalid, hide the preferences dialog
                                             setTimeout(() => {
                                                 let dlg = document.getElementById('menuPrefsDlg')
                                                 let modal = bootstrap.Modal.getInstance(dlg)
                                                 modal.hide()
                                             }, 500)
+                                        } else {
+                                            // password was valid, this is an administrator
+                                            // make sure that the "Save File" option is visible.
+                                            let tmp = window.prefs.enableSaveFile
+                                            window.prefs.enableSaveFile = true
+                                            enableSaveFile()
+                                            window.prefs.enableSaveFile = tmp
                                         }
                                     })
-
-                                /*let pw = window.prompt('Please enter the Preferences Password', '')
-                                pw = (!!pw) ? pw : ''
-                                if (pw !== window.prefs.lockPreferencesPassword) {
-                                    setTimeout(() => {
-                                        let dlg = document.getElementById('menuPrefsDlg')
-                                        let modal = bootstrap.Modal.getInstance(dlg)
-                                        modal.hide()
-                                    }, 200)
-                                }*/
                             }
                         }),
                     menuEntryDivider(),

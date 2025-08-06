@@ -135,73 +135,74 @@ function topLayout() {
                         .xStyle({'float': 'right', 'margin-right': '1em'})
                         .xAttrs({'title': 'generate password'})
                         .xAppend(icon('bi-key', 'generate password'))  // in dark mode
-                        .xAddEventListener('click', (event) => {
-                            // Create fake scafolding for the password.
-                            let search = document.getElementById('search')
-                            let top = 10
-                            if (!!search ) {
-                                top = search.offsetHeight
-                            }
-                            let x = document.getElementById('x-fake-password')
-                            if (!!x) {
-                                x.remove()
-                            }
-                            let records = document.getElementById('records-accordion')
-                            if (!!records) {
-                                records.xStyle({display: 'none'})
-                            }
-                            let fakeRow = xmk('div')
-                                .xClass('row', 'x-fake')
-                                .xId('fakeRow')
-                                .xStyle({'margin-left':'5em',
-                                         'margin-right':'5em',
-                                         'top': top,
-                                         'position':'fixed',
-                                         'z-index': '1000 !important'})
-                            let fakePassword =  mkRecordEditField(' Password', 'password', fakeRow, '')
-                                .xId('x-fake-password')
-                            fakeRow.xAppend(fakePassword)
-                            let fakeEvent = {'target': {'parentElement': fakeRow}}
-                            document.body.appendChild(fakeRow)
-                            mkGeneratePasswordDlg(fakeEvent)
-                            let button1 = null
-                            let button2 = null
-                            let btns = fakeRow.getElementsByClassName('btn')
-                            for (let i=0; i<btns.length; i++) {
-                                let b = btns[i]
-                                if (b.innerHTML.includes('Close Password Generator')) {
-                                    button1 = b
-                                }
-                                if (b.innerHTML.includes('Delete Field')) {
-                                    button2 = b
-                                }
-                            }
-                            //})
-                            // close everything.
-                            button1.addEventListener('click', (event) => {
-                                button2.click()
-                                let fakes = document.body.getElementsByClassName('x-fake')
-                                for (let j=0;j<fakes.length; j++ ) {
-                                    fakes[j].remove()
-                                }
-                                if (!!records) {
-                                    records.xStyle({display: 'block'})
-                                }
-                            })
-                            button2.addEventListener('click', (event) => {
-                                button1.click()
-                                let fakes = document.body.getElementsByClassName('x-fake')
-                                for (let j=0;j<fakes.length; j++ ) {
-                                    fakes[j].remove()
-                                }
-                                if (!!records) {
-                                    records.xStyle({display: 'block'})
-                                }
-                            })
-                            //alert('generate password')
-                        }),
+                        .xAddEventListener('click', (event) => {mainGeneratePasswords()})
                 ),
         )
+}
+
+function mainGeneratePasswords() {
+    // Create fake scafolding for the password.
+
+    // If records are displayed, hide them.
+    let records = document.getElementById('records-accordion')
+    if (!!records) {
+        records.xStyle({display: 'none'})
+    }
+
+    // If the search bar is present, hide it.
+    let search = document.getElementById('top-section')
+    if (!!search ) {
+        search.xStyle({display: 'none'})
+    }
+
+    // Create the fake row scafolding, including a fake event.
+    let fakeRow = xmk('div')
+        .xClass('row', 'x-fake')
+        .xId('fakeRow')
+        .xStyle({'margin-left':'5em',
+                 'margin-right':'5em',
+                 'position':'fixed',
+                 'top': '0',
+                 'z-index': '1000 !important'})
+    let fakePassword =  mkRecordEditField(' Password', 'password', fakeRow, '')
+    fakeRow.xAppend(fakePassword)
+    let fakeEvent = {'target': {'parentElement': fakeRow}}
+
+    // Now make the password generation dialogue.
+    document.body.appendChild(fakeRow)
+    mkGeneratePasswordDlg(fakeEvent)
+
+    // Find the buttons needed for the event overlays.
+    let button1 = null
+    let button2 = null
+    let btns = fakeRow.getElementsByClassName('btn')
+    for (let i=0; i<btns.length; i++) {
+        let b = btns[i]
+        if (b.innerHTML.includes('Close Password Generator')) {
+            button1 = b
+        }
+        if (b.innerHTML.includes('Delete Field')) {
+            button2 = b
+        }
+    }
+    // Add the additional event handlers to clean up.
+    button1.addEventListener('click', (event) => {
+        button2.click()
+        let fakes = document.body.getElementsByClassName('x-fake')
+    })
+    button2.addEventListener('click', (event) => {
+        button1.click()
+        let fakes = document.body.getElementsByClassName('x-fake')
+        for (let j=0;j<fakes.length; j++ ) {
+            fakes[j].remove()
+        }
+        if (!!records) {
+            records.xStyle({display: 'block'})
+        }
+        if (!!search ) {
+            search.xStyle({display: 'block'})
+        }
+    })
 }
 
 // Create the search input and the menu at the top.

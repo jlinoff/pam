@@ -50,7 +50,7 @@ def toggle_dark_light_mode(driver):
     '''
     footer = driver.find_element(By.TAG_NAME, 'footer')
     buttons = footer.find_elements(By.TAG_NAME, 'button')
-    assert len(buttons) == 2
+    assert len(buttons) == 3 # we now have a password generator button
     if buttons[0].is_displayed():
         assert buttons[1].is_displayed() is False
         buttons[0].click()

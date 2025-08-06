@@ -182,7 +182,11 @@ export function menuPrefsDlg() {
                            'immediately after the preferences are saved. '+
                            'If it did, you would never be able to save it persistently in the file. '+
                            'Instead it allows the file save operation to succeed but the next time the file '+
-                           'is loaded the <code>Save File</code> will <i>not<i> appear in the menu.'),
+                           'is loaded the <code>Save File</code> will <i>not</i> appear in the menu. '+
+                           'When an administrator logs in by successfully entering the '+
+                           '<code>Lock Preferences Password</code>, '+
+                           'the <code>Save File</code> menu option is <i>always</i> displayed, '+
+                           'even when <code>Enable Save File</code> is false.'),
             prefHideInactiveRecords(labelClasses, inputClasses),
             prefPromptDesc('Making records inactive is very much like deleting them. '+
                            'The only difference is that even though they are no longer visible '+

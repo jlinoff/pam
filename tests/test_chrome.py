@@ -7,6 +7,9 @@ import time
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+
 
 # Use this when testing interactively or debugging (NO_OPTIONS=1).
 #NO_OPTIONS = False if not os.getenv('NO_OPTIONS') else True
@@ -24,8 +27,10 @@ def get_driver():
     options.add_argument("--disable-dev-shm-usage")
     options.add_argument("--disable-gpu")
     options.add_argument("--disable-extensions")
+    options.add_argument("--disable-popup-blocking")
     options.add_argument("--log-level=3")
     options.add_argument("--silent")
+    options.add_argument("--start-maximized")
     options.add_argument("--headless")
     return webdriver.Chrome(options=options)
 
@@ -84,10 +89,14 @@ def choose_menu_option(driver, option):
     assert len(children) == 2
     menu_items = children[1].find_elements(By.CLASS_NAME, 'dropdown-item')
     assert len(menu_items) == 8
+    #breakpoint()
     for menu_item in menu_items:
         if option in menu_item.text:
+            driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", menu_item)
+            time.sleep(0.5)
             menu_item.click()
             break
+    #click_menu_option(driver, option)
     time.sleep(0.5)
     dlgs = driver.find_elements(By.CLASS_NAME, 'modal-dialog')
     modal = None
@@ -356,7 +365,11 @@ def test_help_dlg():
     # Save File (dark)
     set_theme(driver, 'dark')
     choose_menu_option(driver, 'Help')
-    time.sleep(2)
+
+    # Best Practice: Wait for the new window to open
+    wait = WebDriverWait(driver, 10)
+    wait.until(EC.number_of_windows_to_be(2))
+
     # switch to the new help window so it can be closed
     assert len(driver.window_handles) == 2
     help_window_handle = None

@@ -169,7 +169,10 @@ function mkMainPasswordGenerator() {
     }
 
     // Create the fake row scafolding, including a fake event.
-    let fakeTopdiv = xmk('div')
+    let fakeTopdiv = xmk('div').xId('fakeTopdiv')
+        .xStyle({'padding-left':'1em',
+                 'padding-top':'0',
+                 'margin-top': '0'})
     let fakeRow = xmk('div')
         .xClass('row', 'x-fake')
         .xId('fakeRow')
@@ -214,9 +217,11 @@ function mkMainPasswordGenerator() {
     let fakeEvent = {'target': {'parentElement': fakeRow}}
 
     // Now make the password generation dialogue.
-    fakeTopdiv.xAppend(fakeRow)
+    fakeTopdiv.xAppend(fakeRow,
+                       xmk('div').xStyle({'height': '80px'}) // for scrolling
+                      )
     fakeRow.xAppend(fakePassword)
-    document.body.appendChild(fakeRow)
+    document.body.appendChild(fakeTopdiv)
     mkGeneratePasswordDlg(fakeEvent)
 
     // Find the buttons needed for the event overlays.
@@ -235,13 +240,12 @@ function mkMainPasswordGenerator() {
     // Add the additional event handlers to clean up.
     button1.addEventListener('click', (event) => {
         button2.click()
-        let fakes = document.body.getElementsByClassName('x-fake')
     })
     button2.addEventListener('click', (event) => {
         button1.click()
-        let fakes = document.body.getElementsByClassName('x-fake')
-        for (let j=0;j<fakes.length; j++ ) {
-            fakes[j].remove()
+        let fakeTopdiv = document.getElementById('fakeTopdiv')
+        if (!!fakeTopdiv) {
+            fakeTopdiv.remove()
         }
         if (!!records) {
             records.xStyle({display: 'block'})

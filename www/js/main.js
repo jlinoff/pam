@@ -126,9 +126,31 @@ function topLayout() {
                         .xStyle({'float': 'right', 'margin-right': '1em'})
                         .xAttrs({'title': 'generate password'})
                         .xAppend(icon('bi-key', 'generate password'))  // in dark mode
-                        .xAddEventListener('click', (event) => {mkMainPasswordGenerator()})
+                        .xAddEventListener('click', (event) => {toggleMainPasswordGenerator()})
                 ),
         )
+}
+
+function toggleMainPasswordGenerator() {
+    let fakeRow = document.getElementById('fakeRow')
+    if (!!fakeRow) {
+        // The password generator is present, turn it off.
+        let btns = fakeRow.getElementsByClassName('btn')
+        for (let i=0; i<btns.length; i++) {
+            let b = btns[i]
+            if (b.innerHTML.includes('Close Password Generator')) {
+                b.click()
+                break
+            }
+            if (b.innerHTML.includes('Delete Field')) {
+                b.click()
+                break
+            }
+        }
+    } else {
+        // The password generator is not present, turn it on.
+        mkMainPasswordGenerator()
+    }
 }
 
 function mkMainPasswordGenerator() {

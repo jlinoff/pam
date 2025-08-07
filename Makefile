@@ -22,13 +22,13 @@ PYTHON3_PATH ?= python3
 
 # Macros
 define hdr
-        @printf '\033[35;1m\n'
-        @printf '=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=\n'
+	@printf '\033[35;1m\n'
+	@printf '=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=\n'
 	@printf '=-=-= Target: %s\n' "$1"
-        @printf '=-=-= Date: %s\n' "$(shell date)"
-        @printf '=-=-= Directory: %s\n' "$$(pwd)"
-        @printf '=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-='
-        @printf '\033[0m\n'
+	@printf '=-=-= Date: %s\n' "$(shell date)"
+	@printf '=-=-= Directory: %s\n' "$$(pwd)"
+	@printf '=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-='
+	@printf '\033[0m\n'
 endef
 
 # Rules
@@ -42,7 +42,7 @@ all: clean default test web  ## Make a release: make clean && make && make test 
 	@ls -lh pam-www.tar
 
 .PHONY: clean
-clean:   # clean up
+clean:	 # clean up
 	$(call hdr,"$@")
 	-[ -d .git ] && git clean -xdf -e keep . || true
 
@@ -79,7 +79,7 @@ init: .init bs app-version app-help  ## very basic setup for python3 and jshint
 # $ cp "$HOME/Library/Mobile Documents/com~apple~CloudDocs/backup-project.tar" .
 # $ tar xf backup-project.tar
 .PHONY: backup
-backup:  ## create source backup
+backup:	 ## create source backup
 	$(call hdr,"$@")
 	@\
 	NAME="backup-$$(basename $$(pwd) ).tar" ; \
@@ -113,7 +113,7 @@ update-blue-icons:  ## Idempotent update of www/icons/blue from www/icons/black.
 	done
 
 .PHONY: bs ## install bootstrap locally
-bs: 	$(DST)/js/bootstrap.bundle.js \
+bs:	$(DST)/js/bootstrap.bundle.js \
 	$(DST)/js/bootstrap.bundle.js.map \
 	$(DST)/css/bootstrap.min.css \
 	$(DST)/css/bootstrap.min.css.map \
@@ -230,7 +230,7 @@ SRC_FILES := VERSION README.md \
 		$(shell find www/help -type f)
 
 .PHONY: app-version
-app-version: www/js/version.js  ## update the version in the source code
+app-version: www/js/version.js	## update the version in the source code
 
 www/js/version.js: Makefile $(SRC_FILES)
 	$(call hdr,"$@")
@@ -292,7 +292,7 @@ help:  ## this help message
 	@printf "\n\033[35;1m%s\n" "Targets"
 	@grep -E '^[ ]*[^:]*[ ]*:.*##' $(MAKEFILE_LIST) 2>/dev/null | \
 		grep -E -v '^ *#' | \
-	        grep -E -v "egrep|sort|sed|MAKEFILE" | \
+		grep -E -v "egrep|sort|sed|MAKEFILE" | \
 		sed -e 's/: .*##/##/' -e 's/^[^:#]*://' | \
 		awk -F'##' '{printf("%-18s %s\n",$$1,$$2)}' | \
 		sort -f | \

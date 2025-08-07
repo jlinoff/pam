@@ -139,23 +139,43 @@ export function menuPrefsDlg() {
             //prefHelpLink(['col-2'],['col-10']),  // user cannot change this
         ),
         mkFieldset('Miscellaneous').xAppend(
-            prefPromptDesc('The preferences in this section probably do not '+
-                           'need to be changed unless you really know what you are doing.'),
             prefStatusMsgDurationMS(labelClasses, inputClasses),
+            prefPromptDesc('Defines how long the status messages persist before disappearing. '+
+                           'Trial and error found that 1.5 seconds (1500ms) seemed to work best. '+
+                           'It probably makes sense to leave this alone.'),
             prefLogStatusToConsole(labelClasses, inputClasses),
+            prefPromptDesc('Log information to the console. '+
+                           'Don\'t enable this unless you are debugging.'),
             prefClearBeforeLoad(labelClasses, inputClasses),
+            prefPromptDesc('You generally always want to clear before loading '+
+                           'new data from a file to avoid unpredictable data interactions.'),
             prefLoadDupStrategy(labelClasses, inputClasses),
             prefCloneFieldValues(labelClasses, inputClasses),
+            prefPromptDesc('You generally always want to clone field values.'),
             prefRequireRecordFields(labelClasses, inputClasses),
+            prefPromptDesc('Allow records to be created with no fields. '+
+                           'This generally doesn\'t make sense.'),
             prefEditableFieldName(labelClasses, inputClasses),
+            prefPromptDesc('Allow the user to change field names in each record. '+
+                           'This is generaly not advisable because it can lead to confusion.'),
             prefFilePassCacheStrategy(labelClasses, inputClasses),
+            prefPromptDesc('This the browser cache strategy for the master (file) password. '+
+                           'The most secure option is <code>none</code> but it can be inconvenient '+
+                           'because you must enter it <i>every</i> time you load or save a file.<br>'+
+                           'The <code>global</code> option stores the password in global session window. '+
+                           'It is remembered until the browser tab is closed.<br>'+
+                           'The <code>local</code> option a stores the password in localStorage where '+
+                           'persists until it is explicitly reset. This is a good option for secure '+
+                           'environment because it is so convenient.<br>'+
+                           'The <code>session</code> option a stores the password in sessionStorage '+
+                           'where is persists until the browser tab is closed.'),
         ),
         // record fields
         mkFieldset('Record Fields').xAppend(
             prefPromptDesc('These are the fields pre-defined to simplify creating a new record. '+
                            'It is unlikely that you would want to change these unless you want '+
                            'a set of unique fields for a custom environment.'),
-            xmk('p').xInnerHTML(),
+            xmk('p').xInnerHTML(''),
             fldsList),
         // Administration stuff - at the very end to make it somewhat non-obvious
         mkFieldset('Administration').xAppend(

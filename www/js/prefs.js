@@ -155,7 +155,7 @@ export function menuPrefsDlg() {
             prefPromptDesc('These are the fields pre-defined to simplify creating a new record. '+
                            'It is unlikely that you would want to change these unless you want '+
                            'a set of unique fields for a custom environment.'),
-            xmk('p').xInnerHTML(),
+            xmk('p').xInnerHTML(''),
             fldsList),
         // Administration stuff - at the very end to make it somewhat non-obvious
         mkFieldset('Administration').xAppend(

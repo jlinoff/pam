@@ -126,16 +126,38 @@ function topLayout() {
                         .xStyle({'float': 'right', 'margin-right': '1em'})
                         .xAttrs({'title': 'generate password'})
                         .xAppend(icon('bi-key', 'generate password'))  // in dark mode
-                        .xAddEventListener('click', (event) => {mkMainPasswordGenerator()})
+                        .xAddEventListener('click', (event) => {toggleMainPasswordGenerator()})
                 ),
         )
+}
+
+function toggleMainPasswordGenerator() {
+    let fakeRow = document.getElementById('fakeRow')
+    if (!!fakeRow) {
+        // The password generator is present, turn it off.
+        let btns = fakeRow.getElementsByClassName('btn')
+        for (let i=0; i<btns.length; i++) {
+            let b = btns[i]
+            if (b.innerHTML.includes('Close Password Generator')) {
+                b.click()
+                break
+            }
+            if (b.innerHTML.includes('Delete Field')) {
+                b.click()
+                break
+            }
+        }
+    } else {
+        // The password generator is not present, turn it on.
+        mkMainPasswordGenerator()
+    }
 }
 
 function mkMainPasswordGenerator() {
     // Create fake scafolding for the password generation logic on the main page.
 
     // If records are displayed, hide them.
-    let records = document.getElementById('records-accordion')
+    let records = document.getElementById('mid-section')
     if (!!records) {
         records.xStyle({display: 'none'})
     }
@@ -147,15 +169,13 @@ function mkMainPasswordGenerator() {
     }
 
     // Create the fake row scafolding, including a fake event.
-    let fakeTopdiv = xmk('div')
+    let fakeTopdiv = xmk('div').xId('fakeTopdiv')
+        .xStyle({'padding-left':'1em',
+                 'padding-top':'0',
+                 'margin-top': '0'})
     let fakeRow = xmk('div')
         .xClass('row', 'x-fake')
         .xId('fakeRow')
-        .xStyle({'margin-left':'5em',
-                 'margin-right':'5em',
-                 'position':'fixed',
-                 'top': '0',
-                 'z-index': '1000 !important'})
     let fakePassword = mkRecordEditField('Password', 'password', fakeRow, '')
     let fakeCliboardCopyButton = xmk('button')
         .xClass('btn', 'btn-lg', 'p-0', 'ms-2')
@@ -197,9 +217,11 @@ function mkMainPasswordGenerator() {
     let fakeEvent = {'target': {'parentElement': fakeRow}}
 
     // Now make the password generation dialogue.
-    fakeTopdiv.xAppend(fakeRow)
+    fakeTopdiv.xAppend(fakeRow,
+                       xmk('div').xStyle({'height': '80px'}) // for scrolling
+                      )
     fakeRow.xAppend(fakePassword)
-    document.body.appendChild(fakeRow)
+    document.body.appendChild(fakeTopdiv)
     mkGeneratePasswordDlg(fakeEvent)
 
     // Find the buttons needed for the event overlays.
@@ -218,13 +240,12 @@ function mkMainPasswordGenerator() {
     // Add the additional event handlers to clean up.
     button1.addEventListener('click', (event) => {
         button2.click()
-        let fakes = document.body.getElementsByClassName('x-fake')
     })
     button2.addEventListener('click', (event) => {
         button1.click()
-        let fakes = document.body.getElementsByClassName('x-fake')
-        for (let j=0;j<fakes.length; j++ ) {
-            fakes[j].remove()
+        let fakeTopdiv = document.getElementById('fakeTopdiv')
+        if (!!fakeTopdiv) {
+            fakeTopdiv.remove()
         }
         if (!!records) {
             records.xStyle({display: 'block'})

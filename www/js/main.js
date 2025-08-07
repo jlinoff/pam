@@ -157,7 +157,7 @@ function mkMainPasswordGenerator() {
     // Create fake scafolding for the password generation logic on the main page.
 
     // If records are displayed, hide them.
-    let records = document.getElementById('records-accordion')
+    let records = document.getElementById('mid-section')
     if (!!records) {
         records.xStyle({display: 'none'})
     }
@@ -173,11 +173,6 @@ function mkMainPasswordGenerator() {
     let fakeRow = xmk('div')
         .xClass('row', 'x-fake')
         .xId('fakeRow')
-        .xStyle({'margin-left':'5em',
-                 'margin-right':'5em',
-                 'position':'fixed',
-                 'top': '0',
-                 'z-index': '1000 !important'})
     let fakePassword = mkRecordEditField('Password', 'password', fakeRow, '')
     let fakeCliboardCopyButton = xmk('button')
         .xClass('btn', 'btn-lg', 'p-0', 'ms-2')

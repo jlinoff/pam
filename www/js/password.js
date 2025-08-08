@@ -341,26 +341,48 @@ export function toggleMainPasswordGenerator() {
     let fakeRow = document.getElementById('x-main-passgen-row')
     if (!!fakeRow) {
         // The password generator is present, turn it off.
-        let btns = fakeRow.getElementsByClassName('btn')
-        for (let i=0; i<btns.length; i++) {
-            let b = btns[i]
-            if (b.innerHTML.includes('Close Password Generator')) {
-                b.click()
-                break
-            }
-            if (b.innerHTML.includes('Delete Field')) {
-                b.click()
-                break
-            }
-        }
+        removeMainPasswordGenerator()
     } else {
         // The password generator is not present, turn it on.
         mkMainPasswordGenerator()
     }
 }
 
+function removeMainPasswordGenerator() {
+    let fakeTopdiv = document.getElementById('x-main-passgen-topdiv')
+    if (!!fakeTopdiv) {
+        fakeTopdiv.remove()
+    }
+
+    let topSection = document.getElementById('top-section')
+    if (!!topSection) {
+        topSection.xStyle({display: 'block'})
+    }
+
+    let midSection = document.getElementById('mid-section')
+    if (!!midSection) {
+        midSection.xStyle({display: 'block'})
+    }
+
+    // Enable raw JSON editing if it was disabled
+    if (window.prefs.enableRawJSONEdit) {
+        let eraw = document.getElementById('x-edit-raw-json-data')
+        if (!!eraw ) {
+            eraw.xStyle({display: 'block'})
+        }
+    }
+}
+
 function mkMainPasswordGenerator() {
     // Create fake scafolding for the password generation logic on the main page.
+
+    // Disable raw JSON editing if it is enabled to avoid overlay conflicts
+    if (window.prefs.enableRawJSONEdit) {
+        let eraw = document.getElementById('x-edit-raw-json-data')
+        if (!!eraw ) {
+            eraw.xStyle({display: 'none'})
+        }
+    }
 
     // If records are displayed, hide them.
     let midSection = document.getElementById('mid-section')
@@ -376,12 +398,13 @@ function mkMainPasswordGenerator() {
 
     // Create the fake row scafolding, including a fake event.
     let fakeTopdiv = xmk('div')
+        .xId('x-main-passgen-topdiv')
         .xStyle({'padding-left':'1em',
                  'padding-top':'0',
                  'margin-top': '0'})
     let fakeRow = xmk('div')
-        .xClass('row', 'x-fake')
         .xId('x-main-passgen-row')
+        .xClass('row', 'x-fake')
     let fakePassword = mkRecordEditField('Password', 'password', fakeRow, '')
     let fakeCliboardCopyButton = xmk('button')
         .xClass('btn', 'btn-lg', 'p-0', 'ms-2')
@@ -449,15 +472,6 @@ function mkMainPasswordGenerator() {
     })
     button2.addEventListener('click', (event) => {
         button1.click()
-        let fakeTopdiv = document.getElementById('fakeTopdiv')
-        if (!!fakeTopdiv) {
-            fakeTopdiv.remove()
-        }
-        if (!!topSection) {
-            topSection.xStyle({display: 'block'})
-        }
-        if (!!midSection ) {
-            midSection.xStyle({display: 'block'})
-        }
+        removeMainPasswordGenerator()
     })
 }

@@ -42,9 +42,22 @@ function removeRawEditPage() {
     if (!!midSection) {
         midSection.xStyle({display: 'block'})
     }
+
+    // renable main page password generation
+    let pgen = document.getElementById('x-generate-password')
+    if (!!pgen ) {
+        pgen.xStyle({display: 'block'})
+    }
+
 }
 
 function mkRawEditPage() {
+    // disable main page password generation to avoid overlay conflicts.
+    let pgen = document.getElementById('x-generate-password')
+    if (!!pgen ) {
+        pgen.xStyle({display: 'none'})
+    }
+
     let topSection = document.getElementById('top-section')
     if (!!topSection) {
         topSection.xStyle({display: 'none'})
@@ -66,7 +79,7 @@ function mkRawEditPage() {
     }
     convertInternalDataToJSON(contents, now)
     let text = JSON.stringify(contents, null, 4)
-    let numRows = estimateRowsForWindow()
+    let numRows = estimateRowsForWindow() - 1
 
     let textarea = xmk('textarea')
         .xId('x-edit-raw-data-textarea')
@@ -74,29 +87,37 @@ function mkRawEditPage() {
         .xStyle({'width': '100%',
                  'box-sizing': 'border-box',
                  'margin': '0',
-                 'padding': '5px',
-                 'flex-grow': '1'})
+                 'padding': '5px'})
     textarea.value = text
 
     let topDiv = xmk('div').xId('x-edit-raw-data-div')
         .xStyle({'padding-left':'1em',
                  'padding-right': '1em',
                  'padding-top':'0',
-                 'margin-top': '0',
-                 'display': 'flex'})
+                 'margin-top': '0'})
         .xAppend(
             //xmk('p').xInnerHTML(text),
             textarea,
-            xmk('br'),
-            xmk('button')
-                .xClass('btn', 'btn-secondary', 'm-2')
-                .xAttrs({'title': 'save changes'})
-                .xInnerHTML('Save')
-                .xAddEventListener('click', (event) => { /* jshint ignore:line */
-                    let ta = document.getElementById('x-edit-raw-data-textarea')
-                    loadCallback(ta.value)
-                    statusBlip('raw changes saved')
-                }),
+            xmk('div').xAppend(
+                xmk('button')
+                    .xClass('btn', 'btn-secondary', 'm-1')
+                    .xAttrs({'title': 'save changes'})
+                    .xInnerHTML('Close')
+                    .xAddEventListener('click', (event) => { /* jshint ignore:line */
+                        removeRawEditPage()
+                        statusBlip('raw changes not saved')
+                    }),
+                xmk('button')
+                    .xClass('btn', 'btn-secondary', 'm-1')
+                    .xAttrs({'title': 'save changes'})
+                    .xInnerHTML('Save')
+                    .xAddEventListener('click', (event) => { /* jshint ignore:line */
+                        let ta = document.getElementById('x-edit-raw-data-textarea')
+                        loadCallback(ta.value)
+                        statusBlip('raw changes saved')
+                        removeRawEditPage()
+                    }),
+            ),
             xmk('div').xStyle({'height': '80px'}) // for scrolling over footer
         )
     document.body.appendChild(topDiv)
@@ -105,41 +126,41 @@ function mkRawEditPage() {
 // This code was written by Gemini 2.5.
 function estimateRowsForWindow(footerSelector = 'footer') {
     // 1. Get the total available height of the browser's viewport.
-    const windowHeight = window.innerHeight;
+    const windowHeight = window.innerHeight
 
     // 2. Find the footer element using the provided selector.
-    const footerElement = document.querySelector(footerSelector);
+    const footerElement = document.querySelector(footerSelector)
 
     // 3. Measure the footer's height. If it doesn't exist, its height is 0.
-    let footerHeight = 0;
+    let footerHeight = 0
     if (footerElement) {
         // offsetHeight includes padding and border, which is what we want.
-        footerHeight = footerElement.offsetHeight;
+        footerHeight = footerElement.offsetHeight
     }
 
     // 4. Calculate the usable height for the textarea.
-    const usableHeight = windowHeight - footerHeight;
+    const usableHeight = windowHeight - footerHeight
 
     // 5. Create a temporary textarea to measure its default line-height.
-    const tempTextarea = document.createElement('textarea');
-    tempTextarea.style.position = 'absolute';
-    tempTextarea.style.visibility = 'hidden';
-    tempTextarea.style.top = '-9999px';
-    document.body.appendChild(tempTextarea);
+    const tempTextarea = document.createElement('textarea')
+    tempTextarea.style.position = 'absolute'
+    tempTextarea.style.visibility = 'hidden'
+    tempTextarea.style.top = '-9999px'
+    document.body.appendChild(tempTextarea)
 
     // 6. Get the computed line-height.
-    const computedStyle = window.getComputedStyle(tempTextarea);
-    const lineHeight = parseFloat(computedStyle.lineHeight);
+    const computedStyle = window.getComputedStyle(tempTextarea)
+    const lineHeight = parseFloat(computedStyle.lineHeight)
 
     // 7. Clean up by removing the temporary element.
-    document.body.removeChild(tempTextarea);
+    document.body.removeChild(tempTextarea)
 
     // 8. Calculate the number of rows based on the usable height.
     if (isNaN(lineHeight) || lineHeight <= 0 || usableHeight <= 0) {
-        return 0; // Return 0 if there's no space or if measurement failed.
+        return 0 // Return 0 if there's no space or if measurement failed.
     }
 
-    const numberOfRows = Math.floor(usableHeight / lineHeight);
+    const numberOfRows = Math.floor(usableHeight / lineHeight)
 
     return numberOfRows;
 }

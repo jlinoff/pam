@@ -254,7 +254,9 @@ export function menuPrefsDlg() {
             prefEnableRawJSONEdit(labelClasses, inputClasses),
             prefPromptDesc('Enable editing of the raw internal JSON data. '+
                            'This is not recommended unless you really know what you are doing '+
-                           'because it can permanently destroy the data in an unrecoverable way.')
+                           'because it can permanently destroy the data in an unrecoverable way. '+
+                           'It also disables the password protected preferences which '+
+                           'allows anything to be modified or inspected.')
         ),
     )
 

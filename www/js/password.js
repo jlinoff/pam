@@ -3,6 +3,7 @@ import { xmk } from './lib.js'
 import { statusBlip } from './status.js'
 import { words } from './en_words.js'
 import { icon, setDarkLightTheme } from './utils.js'
+import { mkRecordEditField } from './field.js'
 
 export const ALPHA_LOWER = "abcdefghijklmnopqrstuvwxyz"
 export const ALPHA_UPPER = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
@@ -334,4 +335,129 @@ export function getFilePass() {
         password = ''
     }
     return password
+}
+
+export function toggleMainPasswordGenerator() {
+    let fakeRow = document.getElementById('x-main-passgen-row')
+    if (!!fakeRow) {
+        // The password generator is present, turn it off.
+        let btns = fakeRow.getElementsByClassName('btn')
+        for (let i=0; i<btns.length; i++) {
+            let b = btns[i]
+            if (b.innerHTML.includes('Close Password Generator')) {
+                b.click()
+                break
+            }
+            if (b.innerHTML.includes('Delete Field')) {
+                b.click()
+                break
+            }
+        }
+    } else {
+        // The password generator is not present, turn it on.
+        mkMainPasswordGenerator()
+    }
+}
+
+function mkMainPasswordGenerator() {
+    // Create fake scafolding for the password generation logic on the main page.
+
+    // If records are displayed, hide them.
+    let midSection = document.getElementById('mid-section')
+    if (!!midSection) {
+        midSection.xStyle({display: 'none'})
+    }
+
+    // If the search bar is present, hide it.
+    let topSection = document.getElementById('top-section')
+    if (!!topSection ) {
+        topSection.xStyle({display: 'none'})
+    }
+
+    // Create the fake row scafolding, including a fake event.
+    let fakeTopdiv = xmk('div')
+        .xStyle({'padding-left':'1em',
+                 'padding-top':'0',
+                 'margin-top': '0'})
+    let fakeRow = xmk('div')
+        .xClass('row', 'x-fake')
+        .xId('x-main-passgen-row')
+    let fakePassword = mkRecordEditField('Password', 'password', fakeRow, '')
+    let fakeCliboardCopyButton = xmk('button')
+        .xClass('btn', 'btn-lg', 'p-0', 'ms-2')
+        .xAttrs({'type': 'button'})
+        .xAppend(icon('bi-clipboard', 'copy to clipboard')) // also bi-files
+        .xAddEventListener('click', (event) => {
+            if (navigator.clipboard) {
+                let input = event.target.xGetParentWithClass('row').getElementsByClassName('x-fld-value')[0]
+                let value = input.value
+                input.focus()
+                navigator.clipboard.writeText(value)
+                    .then(
+                        (text) => {
+                            // succeeded
+                            statusBlip(`copied ${value.length} bytes to clipboard`)
+                        },
+                        (error) => {
+                            // failed
+                            const msg = `internal error:\nnavigator.clipboard.writeText() error:\n${error}`
+                            statusBlip(msg)
+                            alert(msg)
+                        }
+                    )
+                    .catch((error) => {
+                        const msg = `internal error:\nnavigator.clipboard.writeText() exception:\n${error}`
+                        statusBlip(msg)
+                        alert(msg)
+                    })
+            } else {
+                const msg = `internal error:\nnavigator.clipboard not found\ncould be a permissions problem`
+                statusBlip(msg)
+                alert(msg)
+            }
+        })
+
+    // Insert the clipboard copy button.
+    let div = fakePassword.getElementsByClassName('bi-gear')[0].parentElement.parentElement
+    div.xAppend(xmk('span').xInnerHTML('&nbsp;&nbsp;'), fakeCliboardCopyButton)
+    let fakeEvent = {'target': {'parentElement': fakeRow}}
+
+    // Now make the password generation dialogue.
+    fakeTopdiv.xAppend(fakeRow,
+                       xmk('div').xStyle({'height': '80px'}) // for scrolling over footer
+                      )
+    fakeRow.xAppend(fakePassword)
+    document.body.appendChild(fakeTopdiv)
+    mkGeneratePasswordDlg(fakeEvent)
+
+    // Find the buttons needed for the event overlays.
+    let button1 = null
+    let button2 = null
+    let btns = fakeRow.getElementsByClassName('btn')
+    for (let i=0; i<btns.length; i++) {
+        let b = btns[i]
+        if (b.innerHTML.includes('Close Password Generator')) {
+            button1 = b
+        }
+        if (b.innerHTML.includes('Delete Field')) {
+            button2 = b
+        }
+    }
+    // Add the additional event handlers to clean up.
+    button1.addEventListener('click', (event) => {
+        button2.click()
+    })
+    button2.addEventListener('click', (event) => {
+        button1.click()
+        let fakeTopdiv = document.getElementById('fakeTopdiv')
+        if (!!fakeTopdiv) {
+            fakeTopdiv.remove()
+        }
+        if (!!topSection) {
+            topSection.xStyle({display: 'block'})
+        }
+        if (!!midSection ) {
+            midSection.xStyle({display: 'block'})
+        }
+    })
 }

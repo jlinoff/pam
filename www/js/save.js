@@ -103,18 +103,8 @@ export function menuSaveDlg() {
     return e
 }
 
-// Save the file.
-function saveFile(filename, password) {
-    let now = new Date().toISOString()
-    let contents = {
-        'meta': {
-            'date-saved': now,
-            'format-version': VERSION,
-        },
-        'prefs': {},
-        'records': [],
-    }
-
+// Convert internal data to JSON.
+export function convertInternalDataToJSON(contents, now) {
     // Save the preferencess
     for (const [key, value] of Object.entries(window.prefs)) {
         //console.log(`SAVE: ${key} = "${value}"`)
@@ -169,6 +159,20 @@ function saveFile(filename, password) {
         }
         contents.records.push(rec)
     }
+}
+
+// Save the file.
+function saveFile(filename, password) {
+    let now = new Date().toISOString()
+    let contents = {
+        'meta': {
+            'date-saved': now,
+            'format-version': VERSION,
+        },
+        'prefs': {},
+        'records': [],
+    }
+    convertInternalDataToJSON(contents, now)
     setAboutFileInfo(`Saved ${contents.records.length} records on ${now} to ${filename}.`)
     let text = JSON.stringify(contents, null, 0)
     encrypt(password, text, filename, saveCallback)

@@ -7,6 +7,7 @@ import { enablePrinting } from './print.js'
 import { enableSaveFile } from './save.js'
 import { setDarkLightTheme } from './utils.js'
 import { searchRecords } from './search.js'
+import { enableRawJSONEdit } from './raw.js'
 
 // These are the input types that the tool knows how to handle.
 export const VALID_FIELD_TYPES = {
@@ -99,6 +100,7 @@ export function initPrefs() {
         requireRecordFields: false,
         lockPreferencesPassword: '',
         defaultRecordFields: '',
+        enableRawJSONEdit: false,
     }
     setHelpLinks()
 }
@@ -248,7 +250,13 @@ export function menuPrefsDlg() {
             prefPromptDesc('This allows you to add custom information to the <code>About</code> page. '+
                            'Typically you might add something like administrator contact information. '+
                            'An example would be '+
-                           '<code>This implementation supported by admin@example.com</code>.')
+                           '<code>This implementation supported by admin@example.com</code>.'),
+            prefEnableRawJSONEdit(labelClasses, inputClasses),
+            prefPromptDesc('Enable editing of the raw internal JSON data. '+
+                           'This is not recommended unless you really know what you are doing '+
+                           'because it can permanently destroy the data in an unrecoverable way. '+
+                           'It also disables the password protected preferences which '+
+                           'allows anything to be modified or inspected.')
         ),
     )
 
@@ -427,6 +435,7 @@ function savePrefs(el) {
     window.prefs.predefinedRecordFields = sorted
     refreshAbout()
     enablePrinting()
+    enableRawJSONEdit()
 
     // WIP:
     // The logic is here is a bit tricky.
@@ -484,6 +493,14 @@ function prefLockPreferencesPassword(labelClasses, inputClasses) {
             ),
         ),
     )
+}
+
+function prefEnableRawJSONEdit(labelClasses, inputClasses) {
+    return mkPrefsCheckBox(labelClasses,
+                           inputClasses,
+                           'enableRawJSONEdit',
+                           'Enable Raw JSON Editing',
+                           'enable raw JSON editing')
 }
 
 function prefCustomAboutInfo(labelClasses, inputClasses) {

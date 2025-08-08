@@ -11,8 +11,8 @@ import { mkMenu } from './menu.js'
 import { mkSearchInputElement, searchRecords } from './search.js'
 import { refreshAbout } from './about.js'
 import { printRecords, enablePrinting } from './print.js'
-import { mkGeneratePasswordDlg } from './password.js'
-import { mkRecordEditField } from './field.js'
+import { toggleMainPasswordGenerator } from './password.js'
+import { enableRawJSONEdit, toggleRawJSONDataEdit } from './raw.js'
 
 /**
  * Actions to take when the window is loaded.
@@ -31,6 +31,7 @@ export function main() {
     initialize()
     adjust()
     enablePrinting()
+    enableRawJSONEdit()
     setDarkLightTheme(window.prefs.themeName)
     //setTimeout(() => {adjust()}, 1000)
     const secure = window.isSecureContext? '(secure)' : ''
@@ -126,134 +127,16 @@ function topLayout() {
                         .xStyle({'float': 'right', 'margin-right': '1em'})
                         .xAttrs({'title': 'generate password'})
                         .xAppend(icon('bi-key', 'generate password'))  // in dark mode
-                        .xAddEventListener('click', (event) => {toggleMainPasswordGenerator()})
+                        .xAddEventListener('click', (event) => {toggleMainPasswordGenerator()}),
+                    xmk('button')
+                        .xId('x-edit-raw-json-data')
+                        .xClass('btn')
+                        .xStyle({'float': 'right', 'margin-right': '1em'})
+                        .xAttrs({'title': 'edit raw JSON data'})
+                        .xAppend(icon('bi-filetype-json', 'edit raw JSON data'))  // in dark mode
+                        .xAddEventListener('click', (event) => {toggleRawJSONDataEdit()}),
                 ),
         )
-}
-
-function toggleMainPasswordGenerator() {
-    let fakeRow = document.getElementById('fakeRow')
-    if (!!fakeRow) {
-        // The password generator is present, turn it off.
-        let btns = fakeRow.getElementsByClassName('btn')
-        for (let i=0; i<btns.length; i++) {
-            let b = btns[i]
-            if (b.innerHTML.includes('Close Password Generator')) {
-                b.click()
-                break
-            }
-            if (b.innerHTML.includes('Delete Field')) {
-                b.click()
-                break
-            }
-        }
-    } else {
-        // The password generator is not present, turn it on.
-        mkMainPasswordGenerator()
-    }
-}
-
-function mkMainPasswordGenerator() {
-    // Create fake scafolding for the password generation logic on the main page.
-
-    // If records are displayed, hide them.
-    let records = document.getElementById('mid-section')
-    if (!!records) {
-        records.xStyle({display: 'none'})
-    }
-
-    // If the search bar is present, hide it.
-    let search = document.getElementById('top-section')
-    if (!!search ) {
-        search.xStyle({display: 'none'})
-    }
-
-    // Create the fake row scafolding, including a fake event.
-    let fakeTopdiv = xmk('div').xId('fakeTopdiv')
-        .xStyle({'padding-left':'1em',
-                 'padding-top':'0',
-                 'margin-top': '0'})
-    let fakeRow = xmk('div')
-        .xClass('row', 'x-fake')
-        .xId('fakeRow')
-    let fakePassword = mkRecordEditField('Password', 'password', fakeRow, '')
-    let fakeCliboardCopyButton = xmk('button')
-        .xClass('btn', 'btn-lg', 'p-0', 'ms-2')
-        .xAttrs({'type': 'button'})
-        .xAppend(icon('bi-clipboard', 'copy to clipboard')) // also bi-files
-        .xAddEventListener('click', (event) => {
-            if (navigator.clipboard) {
-                let input = event.target.xGetParentWithClass('row').getElementsByClassName('x-fld-value')[0]
-                let value = input.value
-                input.focus()
-                navigator.clipboard.writeText(value)
-                    .then(
-                        (text) => {
-                            // succeeded
-                            statusBlip(`copied ${value.length} bytes to clipboard`)
-                        },
-                        (error) => {
-                            // failed
-                            const msg = `internal error:\nnavigator.clipboard.writeText() error:\n${error}`
-                            statusBlip(msg)
-                            alert(msg)
-                        }
-                    )
-                    .catch((error) => {
-                        const msg = `internal error:\nnavigator.clipboard.writeText() exception:\n${error}`
-                        statusBlip(msg)
-                        alert(msg)
-                    })
-            } else {
-                const msg = `internal error:\nnavigator.clipboard not found\ncould be a permissions problem`
-                statusBlip(msg)
-                alert(msg)
-            }
-        })
-
-    // Insert the clipboard copy button.
-    let div = fakePassword.getElementsByClassName('bi-gear')[0].parentElement.parentElement
-    div.xAppend(xmk('span').xInnerHTML('&nbsp;&nbsp;'), fakeCliboardCopyButton)
-    let fakeEvent = {'target': {'parentElement': fakeRow}}
-
-    // Now make the password generation dialogue.
-    fakeTopdiv.xAppend(fakeRow,
-                       xmk('div').xStyle({'height': '80px'}) // for scrolling
-                      )
-    fakeRow.xAppend(fakePassword)
-    document.body.appendChild(fakeTopdiv)
-    mkGeneratePasswordDlg(fakeEvent)
-
-    // Find the buttons needed for the event overlays.
-    let button1 = null
-    let button2 = null
-    let btns = fakeRow.getElementsByClassName('btn')
-    for (let i=0; i<btns.length; i++) {
-        let b = btns[i]
-        if (b.innerHTML.includes('Close Password Generator')) {
-            button1 = b
-        }
-        if (b.innerHTML.includes('Delete Field')) {
-            button2 = b
-        }
-    }
-    // Add the additional event handlers to clean up.
-    button1.addEventListener('click', (event) => {
-        button2.click()
-    })
-    button2.addEventListener('click', (event) => {
-        button1.click()
-        let fakeTopdiv = document.getElementById('fakeTopdiv')
-        if (!!fakeTopdiv) {
-            fakeTopdiv.remove()
-        }
-        if (!!records) {
-            records.xStyle({display: 'block'})
-        }
-        if (!!search ) {
-            search.xStyle({display: 'block'})
-        }
-    })
 }
 
 // Create the search input and the menu at the top.

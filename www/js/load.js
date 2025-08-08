@@ -9,6 +9,7 @@ import { decrypt } from './crypt.js'
 import { mkLoadSavePassword, setFilePass } from './password.js'
 import { enablePrinting } from './print.js'
 import { enableSaveFile } from './save.js'
+import { enableRawJSONEdit } from './raw.js'
 import { setAboutFileInfo } from './about.js'
 import { searchRecords } from './search.js'
 
@@ -238,7 +239,7 @@ function loadFileContent(filename, password, content) {
 }
 
 // Load the data.
-function loadCallback(text) {
+export function loadCallback(text) {
     if (!text || text.length === 0 ) {
         return
     }
@@ -339,6 +340,7 @@ function loadCallback(text) {
     }
     enablePrinting()
     enableSaveFile()
+    enableRawJSONEdit()
     let now = new Date()
     let thenDateString = json.meta['date-saved']
     let thenDate = new Date(thenDateString)

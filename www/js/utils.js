@@ -1,6 +1,7 @@
 // Utility functions.
 import { xmk, xget, xgetn, enableFunctionChaining } from './lib.js'
 import { ALPHABET, getCrypticPassword, getMemorablePassword } from './password.js'
+import { statusBlip } from './status.js'
 
 // global id map
 // each prefix has a number associated with it.
@@ -322,5 +323,32 @@ export function setDarkLightTheme(theme) {
         }
     } else {
         alert(`ERROR: invalid theme: '${theme}, expected 'dark' or 'light'`)
+    }
+}
+
+export function copyTextToClipboard(value) {
+    if (navigator.clipboard) {
+        navigator.clipboard.writeText(value)
+            .then(
+                (text) => {
+                    // succeeded
+                    statusBlip(`copied ${value.length} bytes to clipboard`)
+                },
+                (error) => {
+                    // failed
+                    const msg = `internal error:\nnavigator.clipboard.writeText() error:\n${error}`
+                    statusBlip(msg)
+                    alert(msg)
+                        }
+            )
+            .catch((error) => {
+                const msg = `internal error:\nnavigator.clipboard.writeText() exception:\n${error}`
+                statusBlip(msg)
+                alert(msg)
+            })
+    } else {
+        const msg = `internal error:\nnavigator.clipboard not found\ncould be a permissions problem`
+        statusBlip(msg)
+        alert(msg)
     }
 }

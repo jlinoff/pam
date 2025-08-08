@@ -13,6 +13,7 @@ import { refreshAbout } from './about.js'
 import { printRecords, enablePrinting } from './print.js'
 import { mkGeneratePasswordDlg } from './password.js'
 import { mkRecordEditField } from './field.js'
+import { enableRawJSONEdit } from './raw.js'
 
 /**
  * Actions to take when the window is loaded.
@@ -31,6 +32,7 @@ export function main() {
     initialize()
     adjust()
     enablePrinting()
+    enableRawJSONEdit()
     setDarkLightTheme(window.prefs.themeName)
     //setTimeout(() => {adjust()}, 1000)
     const secure = window.isSecureContext? '(secure)' : ''
@@ -126,9 +128,21 @@ function topLayout() {
                         .xStyle({'float': 'right', 'margin-right': '1em'})
                         .xAttrs({'title': 'generate password'})
                         .xAppend(icon('bi-key', 'generate password'))  // in dark mode
-                        .xAddEventListener('click', (event) => {toggleMainPasswordGenerator()})
+                        .xAddEventListener('click', (event) => {toggleMainPasswordGenerator()}),
+                    xmk('button')
+                        .xId('x-edit-raw-json-data')
+                        .xClass('btn')
+                        .xStyle({'float': 'right', 'margin-right': '1em'})
+                        .xAttrs({'title': 'edit raw JSON data'})
+                        .xAppend(icon('bi-filetype-json', 'edit raw JSON data'))  // in dark mode
+                        .xAddEventListener('click', (event) => {toggleRawJSONDataEdit()}),
                 ),
         )
+}
+
+function toggleRawJSONDataEdit() {
+    // do nothing for now
+    alert('placeholder for raw JSON edit')
 }
 
 function toggleMainPasswordGenerator() {

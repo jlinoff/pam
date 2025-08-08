@@ -33,6 +33,13 @@ export const VALID_CACHE_STRATEGIES = {  // window.prefs.filePassCache
 // the user click on "Close" without saving.
 var delete_occurred = false
 
+export function resetPrefs() {
+    initPrefs() // clears the window.prefs values but the dlg embeds them
+    let newPrefsDlg = menuPrefsDlg() // rebuild with the default values
+    let oldPrefsDlg = document.getElementById('menuPrefsDlg')
+    oldPrefsDlg.replaceWith(newPrefsDlg)
+}
+
 export function initPrefs() {
     window.prefs = {
         // Use the '.txt' extension because the '.pam' extension
@@ -144,14 +151,19 @@ export function menuPrefsDlg() {
                            'Trial and error found that 1.5 seconds (1500ms) seemed to work best. '+
                            'It probably makes sense to leave this alone.'),
             prefLogStatusToConsole(labelClasses, inputClasses),
-            prefPromptDesc('Log information to the console. '+
+            prefPromptDesc('Log status information to the console. '+
                            'Don\'t enable this unless you are debugging.'),
             prefClearBeforeLoad(labelClasses, inputClasses),
             prefPromptDesc('You generally always want to clear before loading '+
-                           'new data from a file to avoid unpredictable data interactions.'),
+                           'new data from a file to avoid unpredictable data interactions. '+
+                           'This operation also resets the preferences.'),
             prefLoadDupStrategy(labelClasses, inputClasses),
             prefCloneFieldValues(labelClasses, inputClasses),
-            prefPromptDesc('You generally always want to clone field values.'),
+            prefPromptDesc('If this is enabled field values are copied into the cloned record. '+
+                           'If it is disabled, the fields are left blank. '+
+                           'Neither option is superior. '+
+                           'I prefer the have it enabled because there are often overlaps '+
+                           'in the values which an reduce the amount of typing sometimes.'),
             prefRequireRecordFields(labelClasses, inputClasses),
             prefPromptDesc('Allow records to be created with no fields. '+
                            'This generally doesn\'t make sense.'),
@@ -159,22 +171,24 @@ export function menuPrefsDlg() {
             prefPromptDesc('Allow the user to change field names in each record. '+
                            'This is generaly not advisable because it can lead to confusion.'),
             prefFilePassCacheStrategy(labelClasses, inputClasses),
-            prefPromptDesc('This the browser cache strategy for the master (file) password. '+
-                           'The most secure option is <code>none</code> but it can be inconvenient '+
-                           'because you must enter it <i>every</i> time you load or save a file.<br>'+
-                           'The <code>global</code> option stores the password in global session window. '+
-                           'It is remembered until the browser tab is closed.<br>'+
+            prefPromptDesc('Define the browser cache strategy for the file (master) password.<br>'+
+                           'The most secure option is <code>none</code> because it does not save '+
+                           'the password which means that you must enter it <i>every</i> time '+
+                           'you load or save a file.<br>'+
+                           'The <code>global</code> option stores the password in a global window variable. '+
+                           'It persists until the page is reloaded or closed.<br>'+
                            'The <code>local</code> option a stores the password in localStorage where '+
-                           'persists until it is explicitly reset. This is a good option for secure '+
-                           'environment because it is so convenient.<br>'+
+                           'persists until all windows that share the same URL are closed. '+
+                           'This is a good option for personal use because it is so convenient.<br>'+
                            'The <code>session</code> option a stores the password in sessionStorage '+
-                           'where is persists until the browser tab is closed.'),
+                           'where is persists for a single browser tab until it is closed.'),
         ),
         // record fields
         mkFieldset('Record Fields').xAppend(
-            prefPromptDesc('These are the fields pre-defined to simplify creating a new record. '+
+            prefPromptDesc('These are the fields that a user can choose from when creating a new record. '+
                            'It is unlikely that you would want to change these unless you want '+
-                           'a set of unique fields for a custom environment.'),
+                           'a set of unique fields for a custom environment.'+
+                           'Some folks might want to delete some of the fields if will never be used.'),
             xmk('p').xInnerHTML(''),
             fldsList),
         // Administration stuff - at the very end to make it somewhat non-obvious
@@ -188,8 +202,8 @@ export function menuPrefsDlg() {
                            'so it is not as secure as the master password. '+
                            'Only set it in a secure environment.'),
             prefDefaultRecordFields(['col-4'],['col-8']),
-            prefPromptDesc('These are the default fields defined for each new record '+
-                           'entered as a comma separated list of field names. '+
+            prefPromptDesc('These are the fields defined automatically when creating a new record. '+
+                           'The fields are entered entered as a comma separated list of field names. '+
                            'A common example would be: <code>url,login,password</code>.'),
             prefEnablePrinting(labelClasses, inputClasses),
             prefPromptDesc('Enable or disable the menu <code>Print</code> operation. Being able to print records '+

@@ -9,7 +9,7 @@ import { checkRecordEditDlg,
          saveRecordEditDlg } from './record.js'
 import { mkRecordEditDlg } from './field.js'
 import { menuAboutDlg } from './about.js'
-import { menuPrefsDlg, addDefaultRecordFields } from './prefs.js'
+import { menuPrefsDlg, addDefaultRecordFields, resetPrefs } from './prefs.js'
 import { menuSaveDlg, enableSaveFile } from './save.js'
 import { menuLoadDlg } from './load.js'
 import { printRecords } from './print.js'
@@ -40,7 +40,7 @@ function menuEntry(target, text, iconName, title) {
 function menuClearDlg() {
     let body = xmk('span')
         .xAppendChild(
-            xmk('p').xInnerHTML('Really, really clear all existing records ?!???'),
+            xmk('p').xInnerHTML('Really, really clear all existing records and preferences?'),
             xmk('div').xClass('row')
                 .xAppend(
                     xmk('div').xClass('col-auto')
@@ -83,6 +83,7 @@ function menuClearDlg() {
                                  (el) => {
                                      console.log(el)
                                      clearRecords()
+                                     resetPrefs()
                                      statusBlip('all records cleared')
                                      return true
                                 })

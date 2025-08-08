@@ -13,7 +13,7 @@ import { refreshAbout } from './about.js'
 import { printRecords, enablePrinting } from './print.js'
 import { mkGeneratePasswordDlg } from './password.js'
 import { mkRecordEditField } from './field.js'
-import { enableRawJSONEdit } from './raw.js'
+import { enableRawJSONEdit, toggleRawJSONDataEdit } from './raw.js'
 
 /**
  * Actions to take when the window is loaded.
@@ -140,11 +140,6 @@ function topLayout() {
         )
 }
 
-function toggleRawJSONDataEdit() {
-    // do nothing for now
-    alert('placeholder for raw JSON edit')
-}
-
 function toggleMainPasswordGenerator() {
     let fakeRow = document.getElementById('fakeRow')
     if (!!fakeRow) {
@@ -232,7 +227,7 @@ function mkMainPasswordGenerator() {
 
     // Now make the password generation dialogue.
     fakeTopdiv.xAppend(fakeRow,
-                       xmk('div').xStyle({'height': '80px'}) // for scrolling
+                       xmk('div').xStyle({'height': '80px'}) // for scrolling over footer
                       )
     fakeRow.xAppend(fakePassword)
     document.body.appendChild(fakeTopdiv)

@@ -4,7 +4,7 @@ import { statusBlip } from './status.js'
 import { icon, mkPopupModalDlg, mkPopupModalDlgButton, setDarkLightTheme } from './utils.js'
 import { clearRecords, deleteRecord, findRecord, insertRecord, mkRecord } from './record.js'
 import { mkRecordField } from './field.js'
-import { menuPrefsDlg, initPrefs, addDefaultRecordFields } from './prefs.js'
+import { menuPrefsDlg, resetPrefs, addDefaultRecordFields } from './prefs.js'
 import { decrypt } from './crypt.js'
 import { mkLoadSavePassword, setFilePass } from './password.js'
 import { enablePrinting } from './print.js'
@@ -252,9 +252,10 @@ function loadCallback(text) {
     }
     if (window.prefs.clearBeforeLoad) {
         clearRecords()
+        resetPrefs()
     }
     if ( 'prefs' in json) {
-        initPrefs()  // make sure newer prefs are present
+        resetPrefs()  // make sure newer prefs are present
         for (const [key, value] of Object.entries(json.prefs)) {
             window.prefs[key] = value
         }

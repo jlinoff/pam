@@ -2,7 +2,7 @@
 import { xmk } from './lib.js'
 import { statusBlip } from './status.js'
 import { words } from './en_words.js'
-import { icon, setDarkLightTheme } from './utils.js'
+import { icon, setDarkLightTheme, copyTextToClipboard } from './utils.js'
 import { mkRecordEditField } from './field.js'
 
 export const ALPHA_LOWER = "abcdefghijklmnopqrstuvwxyz"
@@ -411,33 +411,10 @@ function mkMainPasswordGenerator() {
         .xAttrs({'type': 'button'})
         .xAppend(icon('bi-clipboard', 'copy to clipboard')) // also bi-files
         .xAddEventListener('click', (event) => {
-            if (navigator.clipboard) {
-                let input = event.target.xGetParentWithClass('row').getElementsByClassName('x-fld-value')[0]
-                let value = input.value
-                input.focus()
-                navigator.clipboard.writeText(value)
-                    .then(
-                        (text) => {
-                            // succeeded
-                            statusBlip(`copied ${value.length} bytes to clipboard`)
-                        },
-                        (error) => {
-                            // failed
-                            const msg = `internal error:\nnavigator.clipboard.writeText() error:\n${error}`
-                            statusBlip(msg)
-                            alert(msg)
-                        }
-                    )
-                    .catch((error) => {
-                        const msg = `internal error:\nnavigator.clipboard.writeText() exception:\n${error}`
-                        statusBlip(msg)
-                        alert(msg)
-                    })
-            } else {
-                const msg = `internal error:\nnavigator.clipboard not found\ncould be a permissions problem`
-                statusBlip(msg)
-                alert(msg)
-            }
+            let input = event.target.xGetParentWithClass('row').getElementsByClassName('x-fld-value')[0]
+            let value = input.value
+            input.focus()
+            copyTextToClipboard(value)
         })
 
     // Insert the clipboard copy button.

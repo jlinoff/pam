@@ -239,7 +239,7 @@ function loadFileContent(filename, password, content) {
 }
 
 // Load the data.
-function loadCallback(text) {
+export function loadCallback(text) {
     if (!text || text.length === 0 ) {
         return
     }

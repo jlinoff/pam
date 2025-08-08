@@ -287,7 +287,7 @@ export function menuPrefsDlg() {
 
 function prefPromptDesc(msg) {
     return xmk('p')
-        .xStyle({'margin-left': '5em', 'margin-right': '5em', 'font-size':'smaller'})
+        .xStyle({'margin-left': '1em', 'margin-right': '1em', 'font-size':'smaller'})
         .xInnerHTML(msg)
 }
 

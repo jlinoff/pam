@@ -5,6 +5,7 @@
  * copy.
  */
 import { xmk, xget, xgetn, enableFunctionChaining } from './lib.js'
+import { convertInternalDataToJSON } from './save.js'
 
 export function enableRawJSONEdit() {
     let button = document.getElementById('x-edit-raw-json-data')
@@ -51,12 +52,41 @@ function mkRawEditPage() {
         midSection.xStyle({display: 'none'})
     }
 
+    let contents = {
+        'prefs': {},
+        'records': [],
+    }
+    let now = new Date().toISOString()
+    convertInternalDataToJSON(contents, now)
+    let text = JSON.stringify(contents, null, 4)
+    let numRows = text.split('\n').length
+    if (numRows > 40) {
+        numRows = 40
+    }
+    let textarea = xmk('textarea')
+        .xId('x-edit-raw-data-textarea')
+        .xAttr('rows', numRows)
+        .xStyle({'width': '100%',
+                 'box-sizing': 'border-box',
+                 'margin': '0',
+                 'padding': '5px'})
+    textarea.value = text
+
     let topDiv = xmk('div').xId('x-edit-raw-data-div')
         .xStyle({'padding-left':'1em',
+                 'padding-right': '1em',
                  'padding-top':'0',
                  'margin-top': '0'})
         .xAppend(
-            xmk('p').xInnerHTML('edit page'),
+            //xmk('p').xInnerHTML(text),
+            textarea,
+            xmk('button')
+                .xClass('btn', 'btn-secondary', 'm-2')
+                .xAttrs({'title': 'save changes'})
+                .xInnerHTML('Save')
+                .xAddEventListener('click', (event) => { /* jshint ignore:line */
+                    alert('save data placeholder')
+                }),
             xmk('div').xStyle({'height': '80px'}) // for scrolling over footer
         )
     document.body.appendChild(topDiv)

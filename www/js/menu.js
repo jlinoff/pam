@@ -124,17 +124,26 @@ export function mkMenu() {
                             if(!window.prefs.lockPreferencesPassword) {
                                 window.prefs.lockPreferencesPassword = ''
                             }
-                            // wait for the dlg to appear
-                            const dlg = await waitForElement('#menuPrefsDlg')
-                            let modal = bootstrap.Modal.getInstance(dlg)
                             if (window.prefs.lockPreferencesPassword.length > 0) {
-                                setTimeout(() => {modal.hide()}, 0.5)
                                 hide('top-section')
                                 hide('mid-section')
+                                // wait for the dlg to appear
+                                const dlg = await waitForElement('#menuPrefsDlg')
+                                dlg.addEventListener('shown.bs.modal', () => {
+                                    let modal = bootstrap.Modal.getInstance(dlg)
+                                    modal.hide()
+                                }, { once: true })
                                 const pw = await promptForInput()
                                 console.log(pw)
                                 if (pw === window.prefs.lockPreferencesPassword) {
                                     modal.show()
+                                    // password was valid, this is an administrator
+                                    // make sure that the "Save File" option is visible.
+                                    modal.show()
+                                    let tmp = window.prefs.enableSaveFile
+                                    window.prefs.enableSaveFile = true
+                                    enableSaveFile()
+                                    window.prefs.enableSaveFile = tmp
                                 }
                                 show('top-section')
                                 show('mid-section')
@@ -297,10 +306,9 @@ function promptForInput() {
     return new Promise(resolve => {
         // 1. Create the elements for the prompt
         const container = document.createElement('div')
-        container.className = 'x-prefs-input-prompt-container'
 
         const input = xmk('input')
-              .xStyle({'width': '90%'})
+              .xClass('m-2', 'w-75', 'fs-1', 'form-control-large')
               .xAttrs({'type': 'password',
                        'placeholder': 'Enter preferences unlock password...'})
               .xAddEventListener('keydown', (event) => {
@@ -319,7 +327,7 @@ function promptForInput() {
         const space = xmk('br')
 
         const okButton = xmk('button')
-              .xClass('btn')
+              .xClass('btn', 'btn-lg', 'btn-primary', 'p-2', 'ms-2')
               .xAttrs({'type': 'submit'})
               .xInnerText('Submit')
               .xAddEventListener('click', () => {

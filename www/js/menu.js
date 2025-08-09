@@ -264,6 +264,8 @@ function waitForElement(selector) {
             resolve(element)
             return
         }
+        // Tell JSHint to allow the function inside this loop
+        /*jshint loopfunc:true */
         const observer = new MutationObserver(mutations => {
             for (const mutation of mutations) {
                 const addedNodes = Array.from(mutation.addedNodes)
@@ -276,7 +278,7 @@ function waitForElement(selector) {
             }
         })
         observer.observe(document.body, { childList: true, subtree: true })
-    });
+    })
 }
 
 function promptForPrefsPassword() {

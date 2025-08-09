@@ -194,7 +194,7 @@ function loadUrl() {
     if (url.length > 4 ) {
         loadUrlContent(url)
     } else {
-        alert(`WARNING! invalid url specified: ${url}`)
+        alert(`WARNING: invalid url specified: ${url}`)
     }
 }
 
@@ -297,7 +297,7 @@ export function loadCallback(text) {
                 // clearBeforeLoad makes this unnecesary but it is optional.
                 if (!warned) {
                     // only warn once
-                    alert('WARNING! internal state error ' +
+                    alert('WARNING: internal state error ' +
                           `invalid loadDupStrategy "${window.prefs.loadDupStrategy}"\n` +
                           'Duplicates will be ignored')
                 }

@@ -449,7 +449,7 @@ export function loadCSS( cssPath ) {
 export function xgetid(id) {
     let e = document.getElementById(id)
     if (!e) {
-        console.log(`WARNING! element not found by id "${id}"`)
+        console.log(`WARNING: element not found by id "${id}"`)
     }
     return e
 }
@@ -462,7 +462,7 @@ export function xget(query) {
     // .foo == class "foo"
     let e = document.querySelector(query)
     if (!e) {
-        console.log(`WARNING! element not found by query "${query}"`)
+        console.log(`WARNING: element not found by query "${query}"`)
     }
     return e
 }
@@ -473,7 +473,7 @@ export function xget(query) {
 export function xgetn(query) {
     let e = document.querySelectorAll(query)
     if (!e) {
-        console.log(`WARNING! element not found by query "${query}"`)
+        console.log(`WARNING: element not found by query "${query}"`)
     }
     return e
 }

@@ -237,7 +237,7 @@ export function menuNewDlg() {
                                              let container = event.xGet('.container')
                                              if (container.getAttribute('data-check-failed')) {
                                                  let msg = container.getAttribute('data-check-failed')
-                                                 alert(`ERROR! ${msg}\nCANNOT SAVE RECORD`)
+                                                 alert(`ERROR: ${msg}\nCANNOT SAVE RECORD`)
                                                  container.removeAttribute('data-check-failed')
                                                  addDefaultRecordFields()
                                                  return false

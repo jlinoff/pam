@@ -49,8 +49,8 @@ export function searchRecords(value) {
         regex = window.prefs.searchCaseInsensitive ? new RegExp(value, 'i') : new RegExp(value)
     } catch (exc) {
         // This can occur when a partial expression is being typed in.
-        //alert(`ERROR! invalid search expression: "${value}"\nregexp:${exc}`)
-        //console.log(`WARNING! invalid search expression: "${value}"\nregexp:${exc}`)
+        //alert(`ERROR: invalid search expression: "${value}"\nregexp:${exc}`)
+        //console.log(`WARNING: invalid search expression: "${value}"\nregexp:${exc}`)
         value = '.'
         regex = window.prefs.searchCaseInsensitive ? new RegExp(value, 'i') : new RegExp(value)
     }

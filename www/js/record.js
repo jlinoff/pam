@@ -410,7 +410,7 @@ export function checkRecordEditDlg(event, allowCloneTitle) {
                 }
 
                 let type = valueElem.getAttribute('data-fld-type')
-                if (type === 'url') {
+                if (!!type === 'url') {
                     if (!isURL(value)) {
                         let msg = `"${name}" is not a valid URL "${value}" in record: ${title}`
                         //console.log('warning!', msg)

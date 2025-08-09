@@ -87,19 +87,6 @@ export function sortDictByKey(dict) {
     return sorted
 }
 
-// convert dictionary keys to list for error reporting.
-export function convertDictKeys2List(dict) {
-    let list = '['
-    Object.entries(sortDictByKey(dict)).forEach(([key,value]) => {
-        if (list.length > 1) {
-            list += ', '
-        }
-        list += `"${key}"`
-    })
-    list += ']'
-    return list
-}
-
 // Create a popup modal dialogue.
 export function mkPopupModalDlg(id, title, body, ...buttons) {
     let lid = id + 'Label'
@@ -241,18 +228,6 @@ export function mkPopupModalDlgButton(text, type, tooltip, callback) {
 }
 
 /**
- * Toggle the light/dark, theme based on the data-bs-theme-value
- */
-export function toggleDarkTheme() {
-    let curTheme = document.body.getAttribute('data-bs-theme')
-    if (curTheme === "dark" ) {
-        setDarkLightTheme('light')
-    } else {
-        setDarkLightTheme('dark')
-    }
-}
-
-/**
  * Update attribute value.
  */
 function updateAttributeValue(attr, value) {
@@ -357,4 +332,27 @@ export function clog(msg) {
     if (window.prefs.logStatusToConsole) {
         console.log(msg)
     }
+}
+
+function setStyles(styles, ...args) {
+    for (let i=0; i<args.length; i++) {
+        let arg = args[i]
+        let element = null
+        if (typeof arg === 'string') {
+            element = document.getElementById(arg)
+        } else if (arg instanceof Element) {
+            element = arg
+        }
+        if (!!element) {
+            Object.assign(element.style, styles)
+        }
+    }
+}
+
+export function hide(...args) {
+    setStyles({'display':'none'}, ...args)
+}
+
+export function show(...args) {
+    setStyles({'display':'block'}, ...args)
 }

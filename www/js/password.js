@@ -2,7 +2,7 @@
 import { xmk } from './lib.js'
 import { statusBlip } from './status.js'
 import { words } from './en_words.js'
-import { icon, clog, setDarkLightTheme, copyTextToClipboard } from './utils.js'
+import { icon, clog, hide, show, setDarkLightTheme, copyTextToClipboard } from './utils.js'
 import { mkRecordEditField } from './field.js'
 
 export const ALPHA_LOWER = "abcdefghijklmnopqrstuvwxyz"
@@ -354,22 +354,12 @@ function removeMainPasswordGenerator() {
         fakeTopdiv.remove()
     }
 
-    let topSection = document.getElementById('top-section')
-    if (!!topSection) {
-        topSection.xStyle({display: 'block'})
-    }
-
-    let midSection = document.getElementById('mid-section')
-    if (!!midSection) {
-        midSection.xStyle({display: 'block'})
-    }
+    show('top-section')
+    show('mid-section')
 
     // Enable raw JSON editing if it was disabled
     if (window.prefs.enableRawJSONEdit) {
-        let eraw = document.getElementById('x-edit-raw-json-data')
-        if (!!eraw ) {
-            eraw.xStyle({display: 'block'})
-        }
+        show('x-edit-raw-json-data')
     }
 }
 
@@ -378,23 +368,11 @@ function mkMainPasswordGenerator() {
 
     // Disable raw JSON editing if it is enabled to avoid overlay conflicts
     if (window.prefs.enableRawJSONEdit) {
-        let eraw = document.getElementById('x-edit-raw-json-data')
-        if (!!eraw ) {
-            eraw.xStyle({display: 'none'})
-        }
+        hide('x-edit-raw-json-data')
     }
 
-    // If records are displayed, hide them.
-    let midSection = document.getElementById('mid-section')
-    if (!!midSection) {
-        midSection.xStyle({display: 'none'})
-    }
-
-    // If the search bar is present, hide it.
-    let topSection = document.getElementById('top-section')
-    if (!!topSection ) {
-        topSection.xStyle({display: 'none'})
-    }
+    hide('top-section')
+    hide('mid-section')
 
     // Create the fake row scafolding, including a fake event.
     let fakeTopdiv = xmk('div')

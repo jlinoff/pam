@@ -1,7 +1,7 @@
 // menus.
 import { xmk } from './lib.js'
 import { statusBlip } from './status.js'
-import { icon, clog, mkPopupModalDlgButton, mkPopupModalDlg } from './utils.js'
+import { icon, clog, hide, show, mkPopupModalDlgButton, mkPopupModalDlg } from './utils.js'
 import { checkRecordEditDlg,
          clearRecords,
          cleanRecordEditDlg,
@@ -120,30 +120,32 @@ export function mkMenu() {
                               'Preferences',
                               'bi-gear',
                               'app preferences')
-                        .xAddEventListener('click', (event) => {
+                        .xAddEventListener('click', async (event) => {
                             if(!window.prefs.lockPreferencesPassword) {
                                 window.prefs.lockPreferencesPassword = ''
                             }
                             if (window.prefs.lockPreferencesPassword.length > 0) {
-                                showPasswordPrompt('Please enter the Preferences Password')
-                                    .then(pw => {
-                                        pw = (!!pw) ? pw : ''
-                                        if (pw !== window.prefs.lockPreferencesPassword) {
-                                            // password was invalid, hide the preferences dialog
-                                            setTimeout(() => {
-                                                let dlg = document.getElementById('menuPrefsDlg')
-                                                let modal = bootstrap.Modal.getInstance(dlg)
-                                                modal.hide()
-                                            }, 500)
-                                        } else {
-                                            // password was valid, this is an administrator
-                                            // make sure that the "Save File" option is visible.
-                                            let tmp = window.prefs.enableSaveFile
-                                            window.prefs.enableSaveFile = true
-                                            enableSaveFile()
-                                            window.prefs.enableSaveFile = tmp
-                                        }
-                                    })
+                                hide('top-section')
+                                hide('mid-section')
+                                // wait for the dlg to appear
+                                const dlg = await waitForElement('#menuPrefsDlg')
+                                dlg.addEventListener('shown.bs.modal', () => {
+                                    let modal = bootstrap.Modal.getInstance(dlg)
+                                    modal.hide()
+                                }, { once: true })
+                                const pw = await promptForPrefsPassword()
+                                if (pw === window.prefs.lockPreferencesPassword) {
+                                    // password was valid, this is an administrator
+                                    // make sure that the "Save File" option is visible.
+                                    let modal = bootstrap.Modal.getInstance(dlg)
+                                    modal.show()
+                                    let tmp = window.prefs.enableSaveFile
+                                    window.prefs.enableSaveFile = true
+                                    enableSaveFile()
+                                    window.prefs.enableSaveFile = tmp
+                                }
+                                show('top-section')
+                                show('mid-section')
                             }
                         }),
                     menuEntryDivider(),
@@ -252,6 +254,83 @@ export function menuNewDlg() {
                                          })
     let e = mkPopupModalDlg('menuNewDlg', 'New Record', body, closeButton, saveButton)
     return e
+}
+
+// Paste the waitForElement function here...
+function waitForElement(selector) {
+    return new Promise(resolve => {
+        const element = document.querySelector(selector)
+        if (element) {
+            resolve(element)
+            return
+        }
+        // Tell JSHint to allow the function inside this loop
+        /*jshint loopfunc:true */
+        const observer = new MutationObserver(mutations => {
+            for (const mutation of mutations) {
+                const addedNodes = Array.from(mutation.addedNodes)
+                const matchingNode = addedNodes.find(node => node.matches && node.matches(selector))
+                if (matchingNode) {
+                    observer.disconnect()
+                    resolve(matchingNode)
+                    return
+                }
+            }
+        })
+        observer.observe(document.body, { childList: true, subtree: true })
+    })
+}
+
+function promptForPrefsPassword() {
+    // This function returns a new Promise. The promise's logic is defined
+    // inside the function passed to the constructor.
+    return new Promise(resolve => {
+        // 1. Create the elements for the prompt
+        const container = document.createElement('div')
+        const id = 'x-prefs-password-prompt-input'
+
+        const input = xmk('input')
+              .xId(id)
+              .xClass('m-2', 'w-75', 'fs-1', 'form-control-large')
+              .xAttrs({'type': 'password',
+                       'placeholder': 'Enter Preferences Lock Password...'})
+              .xAddEventListener('keydown', (event) => {
+                  if (event.key === 'Enter') {
+                      // Get the value from the input field
+                      const inputValue = input.value
+
+                      // Clean up: remove the prompt from the DOM
+                      container.remove()
+
+                      // Resolve the promise, forwarding the input value
+                      resolve(inputValue)
+                  }
+              })
+
+        const space = xmk('br')
+
+        const okButton = xmk('button')
+              .xClass('btn', 'btn-lg', 'btn-primary', 'p-2', 'ms-2')
+              .xAttrs({'type': 'submit'})
+              .xInnerText('Submit')
+              .xAddEventListener('click', () => {
+                  // Get the value from the input field
+                  const inputValue = input.value
+
+                  // Clean up: remove the prompt from the DOM
+                  container.remove()
+
+                  // Resolve the promise, forwarding the input value
+                  resolve(inputValue)
+              })
+
+        // 3. Assemble and add the prompt to the page
+        container.xAppendChild(input, space, okButton)
+        document.body.appendChild(container)
+
+        // 4. Focus the input field for a better user experience
+        document.getElementById(id).focus()
+    });
 }
 
 /**

@@ -1,7 +1,7 @@
 // preferences stuff
 import { xmk, xget, xgetn, enableFunctionChaining } from './lib.js'
-import { convertDictKeys2List, icon, mkPopupModalDlgButton, mkPopupModalDlg, sortDictByKey } from './utils.js'
-import { updateRecordFieldTypes, mkRecordEditField }  from './field.js'
+import { icon, mkPopupModalDlgButton, mkPopupModalDlg, sortDictByKey } from './utils.js'
+import { mkRecordEditField }  from './field.js'
 import { refreshAbout } from './about.js'
 import { enablePrinting } from './print.js'
 import { enableSaveFile } from './save.js'
@@ -120,7 +120,7 @@ export function menuPrefsDlg() {
     let labelClasses = ['col-9']
     let inputClasses = ['col-3']
     let helpLink = `<a href="window.prefs.helpLink" target="_blank">Help</a>`
-    let fldsList = mkRecordFields(window.prefs.predefinedRecordFields)
+    let fldsList = mkPredefineRecordFields(window.prefs.predefinedRecordFields)
     let body = xmk('span').xAppendChild(
         prefPromptDesc(`See the ${helpLink} documentation for detailed information. `+
                        'No changes are saved until you <code>Save</code> at the bottom of the page. '+
@@ -214,8 +214,6 @@ export function menuPrefsDlg() {
                            'This allows an administrator to disable printing and saving. '+
                            'This password is encrypted but it <i>is</i> stored in the PAM file '+
                            'so it is not as secure as the master password. '+
-                           'Only enter it here when you are in a secure environment because '+
-                           'it is input as plaintext. '+
                            'Setting the password here is useful when multiple users are reading '+
                            'the same PAM file data and you don\'t want them to change the '+
                            'records or the preferences.'),
@@ -270,7 +268,7 @@ export function menuPrefsDlg() {
                                          // make sure that the deleted items are restored
                                          // if the user closes without saving.
                                          let old_div = document.body.xGet('#x-prefs-fld-div')
-                                         let new_div = mkRecordFields(window.prefs.predefinedRecordFields)
+                                         let new_div = mkPredefineRecordFields(window.prefs.predefinedRecordFields)
                                          old_div.replaceWith(new_div)
                                      }
                                      delete_occurred = false
@@ -287,7 +285,7 @@ export function menuPrefsDlg() {
     e.xAddEventListener('show.bs.modal', (event) => {
         // do this each time the prefs modal popup pops up
         let div = document.body.xGet('#x-prefs-fld-div')
-        let flds = mkRecordFields(window.prefs.predefinedRecordFields)
+        let flds = mkPredefineRecordFields(window.prefs.predefinedRecordFields)
         div.replaceWith(flds)
         setDarkLightTheme(window.prefs.themeName) // fix the new DOM elements
     })
@@ -999,7 +997,7 @@ function prefLabel(labelClasses, title) {
     )
 }
 
-function mkRecordFields(recordFields) {
+function mkPredefineRecordFields(recordFields) {
     // Display the pre-defined record, allow them to be modified or deleted.
     let fldsList = xmk('div').xId('x-prefs-fld-div')
     let sorted_dict = sortDictByKey(recordFields)
@@ -1087,7 +1085,7 @@ function mkRecordFields(recordFields) {
                             delete newRecordFields[name]
                             delete_occurred = true
                             let div = document.body.xGet('#x-prefs-fld-div')
-                            div.replaceWith(mkRecordFields(newRecordFields))
+                            div.replaceWith(mkPredefineRecordFields(newRecordFields))
                             setDarkLightTheme(window.prefs.themeName) // fix the new DOM elements
                         }),
                 ),
@@ -1122,7 +1120,7 @@ function mkRecordFields(recordFields) {
                      //console.log(newRecordFields)
                      newRecordFields[new_key] = new_value
                      let div = document.body.xGet('#x-prefs-fld-div')
-                     div.replaceWith(mkRecordFields(newRecordFields))
+                     div.replaceWith(mkPredefineRecordFields(newRecordFields))
                      setDarkLightTheme(window.prefs.themeName) // fix the new DOM elements
                  }),
          ),

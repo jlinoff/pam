@@ -406,20 +406,6 @@ export function mkRecordEditField(name, type, container, value) {
     return draggableRow
 }
 
-// export update record field types
-export function updateRecordFieldTypes() {
-    // update the record field types when
-    // window.prefs.predefinedRecordFields changes.
-    let dropdown = document.body.xGet('#x-new-field-type').xGetParentWithClass('dropdown')
-    let menu = dropdown.xGet('ul')
-    menu.replaceWith(
-        xmk('ul')
-            .xAttrs({'aria-labelledby': 'x-new-field-type'})
-            .xClass('dropdown-menu')
-            .xAppend(...mkRecordFieldNameListItems(window.prefs.predefinedRecordFields))
-    )
-}
-
 // Define the DOM elements used to edit the record.
 export function mkRecordEditDlg(title) {
     return xmk('div').xClass('container').xAppend(

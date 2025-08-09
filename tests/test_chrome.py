@@ -9,6 +9,7 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.remote.webdriver import WebDriver
 
 
 # Use this when testing interactively or debugging (NO_OPTIONS=1).
@@ -35,7 +36,9 @@ def get_driver():
     options.add_argument("--silent")
     options.add_argument("--start-maximized")
     options.add_argument("--headless")
-    return webdriver.Chrome(options=options)
+    driver =  webdriver.Chrome(options=options)
+    driver.set_window_size(1920, 1080)
+    return driver
 
 
 def get_parent(element):
@@ -79,6 +82,13 @@ def set_theme(driver, requested_theme):
     toggle_dark_light_mode(driver)
     time.sleep(0.5)
 
+def scroll_and_click(driver: WebDriver, element):
+    '''
+    Scroll into position for element click to avoid overlap.
+    '''
+    driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", element)
+    time.sleep(0.5)
+    element.click()
 
 def choose_menu_option(driver, option):
     '''
@@ -95,9 +105,7 @@ def choose_menu_option(driver, option):
     #breakpoint()
     for menu_item in menu_items:
         if option in menu_item.text:
-            driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", menu_item)
-            time.sleep(0.5)
-            menu_item.click()
+            scroll_and_click(driver, menu_item)
             break
     #click_menu_option(driver, option)
     time.sleep(0.5)

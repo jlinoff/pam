@@ -13,12 +13,6 @@ export function status(msg) {
     clog(msg)
 }
 
-// Report a status message for a period of time, then clear it.
-export function statusBlipCustom(msg, ms) {
-    status(msg)
-    setTimeout(() => {xget('#status').innerHTML = '&nbsp;'}, ms)
-}
-
 // Report a status message for 1.5s, then clear it.
 export function statusBlip(msg) {
     status(msg)

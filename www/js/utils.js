@@ -262,7 +262,7 @@ function updateAttributeValue(attr, value) {
         try {
             element.setAttribute(attr, value)
         } catch (error) {
-            console.log(error)
+            clog(error)
         }
     }
 }
@@ -280,7 +280,7 @@ function replaceClass(from, to) {
         try {
             element.classList.replace(from, to)
         } catch (error) {
-            console.log(error)
+            clog(error)
         }
     }
 }
@@ -295,7 +295,7 @@ function setStylesByClass(className, styles) {
         try {
             element.xStyle(styles)
         } catch (error) {
-            console.log(error)
+            clog(error)
         }
     }
 }
@@ -350,5 +350,11 @@ export function copyTextToClipboard(value) {
         const msg = `internal error:\nnavigator.clipboard not found\ncould be a permissions problem`
         statusBlip(msg)
         alert(msg)
+    }
+}
+
+export function clog(msg) {
+    if (window.prefs.logStatusToConsole) {
+        console.log(msg)
     }
 }

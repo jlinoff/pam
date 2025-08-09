@@ -1,5 +1,5 @@
 import { xmk, xgetn } from './lib.js'
-import { icon, isURL, mkid,  mkPopupModalDlg, mkPopupModalDlgButton } from './utils.js'
+import { icon, clog, isURL, mkid,  mkPopupModalDlg, mkPopupModalDlgButton } from './utils.js'
 import { copyRecordFieldsToEditDlg, mkRecordEditDlg, mkRecordField } from './field.js'
 import { searchRecords } from './search.js'
 import { clearAbout } from './about.js'
@@ -137,8 +137,8 @@ export function mkRecord(title, active, created, ...recordFields) {
                  'style': 'height: 1.5em; width: 1.5em',
                 })
         .xAddEventListener('click', (event) => {
-            console.log(event.target.checked)
-            console.log(event.target)
+            clog(event.target.checked)
+            clog(event.target)
             if (event.target.checked) {
                 let item = event.target.xGetParentWithClass('accordion-item')
                 let button = item.xGet('.accordion-button')
@@ -295,7 +295,7 @@ function menuCloneDlg(title, active, created) {
                                           'btn-secondary',
                                           'close the dialogue with no changes',
                                           (event) => {
-                                              console.log(event)
+                                              clog(event)
                                               cleanRecordEditDlg(event)
                                               return true
                                           })
@@ -303,12 +303,12 @@ function menuCloneDlg(title, active, created) {
                                          'btn-primary',
                                          'save the changes and close the dialogue',
                                          (event) => {
-                                             console.log(event)
+                                             clog(event)
                                              checkRecordEditDlg(event, false) // do not allow duplicate titles
                                              let container = event.xGet('.container')
                                              if (container.getAttribute('data-check-failed')) {
                                                  let msg = container.getAttribute('data-check-failed')
-                                                 alert(`ERROR! ${msg}\nCANNOT SAVE RECORD`)
+                                                 alert(`ERROR: ${msg}\nCANNOT SAVE RECORD`)
                                                  container.removeAttribute('data-check-failed')
                                                  return false
                                              } else {
@@ -354,15 +354,15 @@ export function checkRecordEditDlg(event, allowCloneTitle) {
     // Check the record to make sure that is copacetic.
     // error info is reported by the data-check-failed attribute.
     // todo: check for blank title
-    console.log('checking', event)
+    clog(`checking ${event}`)
     let container = event.xGet('.container')
     let title = container.xGet('.x-record-title').value.trim()
-    console.log('title', title)
+    clog(`title: ${title}`)
     // allowCloneTitle is true when we know that the old record will be
     // removed so duplicates are okay
     if (!title && !allowCloneTitle) {
         // note: could use an attribute here to store error messages
-        console.log('warning!', 'undefined record title')
+        clog('WARNING: undefined record title')
         container.xAttr('data-check-failed', 'undefined record title')
         return
     }
@@ -389,30 +389,31 @@ export function checkRecordEditDlg(event, allowCloneTitle) {
         for (let i=0; i<flds.length; i++) {
             //console.log(`fld[${i}]`, flds[i])
             let nameElem = flds[i].xGet('.x-fld-name')
-            if (nameElem) {
-                let name = nameElem.value.trim()
+            let name = 'undefined'
+            if (!!nameElem) {
+                name = nameElem.value.trim()
                 if (!name) {
-                    let msg = `undefined field name in record: ${title}`
-                    console.log('warning!', msg)
+                    let msg = `undefined field name in record: "${title}"`
+                    clog(`WARNING: ${msg}`)
                     container.xAttr('data-check-failed', msg)
                     return
                 }
             }
             let valueElem = flds[i].xGet('.x-fld-value')
-            if (valueElem) {
+            if (!!valueElem) {
                 let value = valueElem.value.trim()
                 if (!value) {
-                    let msg = `undefined field value in ${name} in record: ${title}`
-                    //console.log('warning!', msg)
+                    let msg = `undefined field value in "${name}" in record: "${title}"`
+                    clog(`WARNING: ${msg}`)
                     container.xAttr('data-check-failed', msg)
                     return
                 }
 
                 let type = valueElem.getAttribute('data-fld-type')
-                if (type === 'url') {
+                if (type === 'url' ) {
                     if (!isURL(value)) {
-                        let msg = `"${name}" is not a valid URL "${value}" in record: ${title}`
-                        //console.log('warning!', msg)
+                        let msg = `"${name}" is not a valid website URL "${value}" in record: "${title}"`
+                        clog(`WARNING: ${msg}`)
                         container.xAttr('data-check-failed', msg)
                         return
                     }
@@ -491,7 +492,7 @@ function editRecordDlg(title) {
                                              let container = event.xGet('.container')
                                              if (container.getAttribute('data-check-failed')) {
                                                  let msg = container.getAttribute('data-check-failed')
-                                                 alert(`ERROR! ${msg}\nCANNOT SAVE RECORD`)
+                                                 alert(`ERROR: ${msg}\nCANNOT SAVE RECORD`)
                                                  container.removeAttribute('data-check-failed')
                                                  return false
                                              } else {

@@ -1,7 +1,7 @@
 // Load file.
 import { xmk, xget, xgetn, enableFunctionChaining } from './lib.js'
 import { statusBlip } from './status.js'
-import { icon, mkPopupModalDlg, mkPopupModalDlgButton, setDarkLightTheme } from './utils.js'
+import { icon, clog, mkPopupModalDlg, mkPopupModalDlgButton, setDarkLightTheme } from './utils.js'
 import { clearRecords, deleteRecord, findRecord, insertRecord, mkRecord } from './record.js'
 import { mkRecordField } from './field.js'
 import { menuPrefsDlg, resetPrefs, addDefaultRecordFields } from './prefs.js'
@@ -165,7 +165,8 @@ function loadClipboardContent() {
 }
 
 function loadUrlContent(url) {
-    fetch(url)
+    clog(`loadingUrlContent: ${url}`)
+    fetch(url, {cache: 'reload'})
         .then((response) => {
             return response.text()
         })
@@ -185,7 +186,7 @@ function loadUrlContent(url) {
         })
         .catch((error) => {
             alert(`failed to load ${url}: ${error.message}`)
-            console.log(`ERROR: ${error.message}`)
+            clog(`ERROR: ${error.message}`)
         })
 }
 
@@ -194,7 +195,7 @@ function loadUrl() {
     if (url.length > 4 ) {
         loadUrlContent(url)
     } else {
-        alert(`WARNING! invalid url specified: ${url}`)
+        alert(`WARNING: invalid url specified: ${url}`)
     }
 }
 
@@ -297,7 +298,7 @@ export function loadCallback(text) {
                 // clearBeforeLoad makes this unnecesary but it is optional.
                 if (!warned) {
                     // only warn once
-                    alert('WARNING! internal state error ' +
+                    alert('WARNING: internal state error ' +
                           `invalid loadDupStrategy "${window.prefs.loadDupStrategy}"\n` +
                           'Duplicates will be ignored')
                 }
@@ -355,9 +356,9 @@ export function loadCallback(text) {
 }
 
 function invalidPasswordCallback(error) {
-    console.log('invalidPasswordCallback')
+    clog('function: invalidPasswordCallback')
     alert(error)
-    console.log(error)
+    clog(error)
 
     // Popup the Load dialogue to allow a retry
     let menuButton = document.body.xGet('#menu')

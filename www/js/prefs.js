@@ -95,11 +95,12 @@ export function initPrefs() {
             'time': 'time',
             'url': 'url',
             'username': 'text',
+            'website': 'url',
         },
         predefinedRecordFieldsDefault: 'text',
         requireRecordFields: false,
         lockPreferencesPassword: '',
-        defaultRecordFields: '',
+        defaultRecordFields: 'website,login,password,note',
         enableRawJSONEdit: false,
     }
     setHelpLinks()
@@ -436,6 +437,7 @@ function savePrefs(el) {
     refreshAbout()
     enablePrinting()
     enableRawJSONEdit()
+    addDefaultRecordFields()
 
     // WIP:
     // The logic is here is a bit tricky.

@@ -4,6 +4,7 @@
  * chaining.
  * @module lib
 */
+import { clog } from './utils.js'
 
 /**
  * Allow chaining for common and other convenience calls to group element creation suff
@@ -449,7 +450,7 @@ export function loadCSS( cssPath ) {
 export function xgetid(id) {
     let e = document.getElementById(id)
     if (!e) {
-        console.log(`WARNING! element not found by id "${id}"`)
+        clog(`WARNING: element not found by id "${id}"`)
     }
     return e
 }
@@ -462,7 +463,7 @@ export function xget(query) {
     // .foo == class "foo"
     let e = document.querySelector(query)
     if (!e) {
-        console.log(`WARNING! element not found by query "${query}"`)
+        clog(`WARNING: element not found by query "${query}"`)
     }
     return e
 }
@@ -473,7 +474,7 @@ export function xget(query) {
 export function xgetn(query) {
     let e = document.querySelectorAll(query)
     if (!e) {
-        console.log(`WARNING! element not found by query "${query}"`)
+        clog(`WARNING: element not found by query "${query}"`)
     }
     return e
 }

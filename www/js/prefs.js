@@ -214,8 +214,6 @@ export function menuPrefsDlg() {
                            'This allows an administrator to disable printing and saving. '+
                            'This password is encrypted but it <i>is</i> stored in the PAM file '+
                            'so it is not as secure as the master password. '+
-                           'Only enter it here when you are in a secure environment because '+
-                           'it is input as plaintext. '+
                            'Setting the password here is useful when multiple users are reading '+
                            'the same PAM file data and you don\'t want them to change the '+
                            'records or the preferences.'),

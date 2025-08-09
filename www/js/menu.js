@@ -291,7 +291,7 @@ function promptForPrefsPassword() {
         const input = xmk('input')
               .xClass('m-2', 'w-75', 'fs-1', 'form-control-large')
               .xAttrs({'type': 'password',
-                       'placeholder': 'Enter preferences unlock password...'})
+                       'placeholder': 'Enter Preferences Lock Password...'})
               .xAddEventListener('keydown', (event) => {
                   if (event.key === 'Enter') {
                       // Get the value from the input field

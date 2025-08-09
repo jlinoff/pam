@@ -389,8 +389,9 @@ export function checkRecordEditDlg(event, allowCloneTitle) {
         for (let i=0; i<flds.length; i++) {
             //console.log(`fld[${i}]`, flds[i])
             let nameElem = flds[i].xGet('.x-fld-name')
-            if (nameElem) {
-                let name = nameElem.value.trim()
+            let name = 'undefined'
+            if (!!nameElem) {
+                name = nameElem.value.trim()
                 if (!name) {
                     let msg = `undefined field name in record: ${title}`
                     console.log('warning!', msg)
@@ -399,10 +400,10 @@ export function checkRecordEditDlg(event, allowCloneTitle) {
                 }
             }
             let valueElem = flds[i].xGet('.x-fld-value')
-            if (valueElem) {
+            if (!!valueElem) {
                 let value = valueElem.value.trim()
                 if (!value) {
-                    let msg = `undefined field value in ${name} in record: ${title}`
+                    let msg = `undefined field value in "${name}" in record: ${title}`
                     //console.log('warning!', msg)
                     container.xAttr('data-check-failed', msg)
                     return

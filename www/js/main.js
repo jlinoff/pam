@@ -6,19 +6,20 @@ import { xmk, xget, xgetn, enableFunctionChaining } from './lib.js'
 import { statusBlip } from './status.js'
 import { words } from './en_words.js'
 import { icon, toggleDarkTheme, setDarkLightTheme } from './utils.js'
-import { initPrefs } from './prefs.js'
+import { initPrefs, addDefaultRecordFields } from './prefs.js'
 import { mkMenu } from './menu.js'
 import { mkSearchInputElement, searchRecords } from './search.js'
 import { refreshAbout } from './about.js'
-import { printRecords, enablePrinting } from './print.js'
 import { toggleMainPasswordGenerator } from './password.js'
-import { enableRawJSONEdit, toggleRawJSONDataEdit } from './raw.js'
+import { toggleRawJSONDataEdit } from './raw.js'
+import { enablePrinting } from './print.js'
+import { enableRawJSONEdit } from './raw.js'
 
 /**
  * Actions to take when the window is loaded.
  * @global
  */
-window.onload = () => { initPrefs(); main() }
+window.onload = () => { main() }
 window.onresize = () => { refreshAbout() }
 
 /**
@@ -28,12 +29,15 @@ export function main() {
     // Enable the extra "x" prototype functions for elements.
     //console.log('window.isSecureContext: ', window.isSecureContext)
     enableFunctionChaining()
-    initialize()
+    initPrefs()  // sets window.prefs
+    initialize() // requires window.prefs
     adjust()
-    enablePrinting()
-    enableRawJSONEdit()
+    initPrefs()
     setDarkLightTheme(window.prefs.themeName)
     //setTimeout(() => {adjust()}, 1000)
+    enablePrinting()
+    enableRawJSONEdit()
+    addDefaultRecordFields()
     const secure = window.isSecureContext? '(secure)' : ''
     statusBlip(`initializing PAM... ${secure} ${window.screen.width}x${window.screen.height}`)
 }

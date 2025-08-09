@@ -133,12 +133,11 @@ export function mkMenu() {
                                     let modal = bootstrap.Modal.getInstance(dlg)
                                     modal.hide()
                                 }, { once: true })
-                                const pw = await promptForInput()
-                                console.log(pw)
+                                const pw = await promptForPrefsPassword()
                                 if (pw === window.prefs.lockPreferencesPassword) {
-                                    modal.show()
                                     // password was valid, this is an administrator
                                     // make sure that the "Save File" option is visible.
+                                    let modal = bootstrap.Modal.getInstance(dlg)
                                     modal.show()
                                     let tmp = window.prefs.enableSaveFile
                                     window.prefs.enableSaveFile = true
@@ -148,26 +147,6 @@ export function mkMenu() {
                                 show('top-section')
                                 show('mid-section')
                             }
-                            /*if (window.prefs.lockPreferencesPassword.length > 0) {
-                                showPasswordPrompt('Please enter the Preferences Password')
-                                    .then(pw => {
-                                        pw = (!!pw) ? pw : ''
-                                        setTimeout(() => {
-                                            let dlg = document.getElementById('menuPrefsDlg')
-                                            let modal = bootstrap.Modal.getInstance(dlg)
-                                            modal.hide()
-                                            if (pw === window.prefs.lockPreferencesPassword) {
-                                                // password was valid, this is an administrator
-                                                // make sure that the "Save File" option is visible.
-                                                modal.show()
-                                                let tmp = window.prefs.enableSaveFile
-                                                window.prefs.enableSaveFile = true
-                                                enableSaveFile()
-                                                window.prefs.enableSaveFile = tmp
-                                            }
-                                        }, 500)
-                                    })
-                            }*/
                         }),
                     menuEntryDivider(),
                     menuEntry('menuNewDlg',
@@ -300,7 +279,7 @@ function waitForElement(selector) {
     });
 }
 
-function promptForInput() {
+function promptForPrefsPassword() {
     // This function returns a new Promise. The promise's logic is defined
     // inside the function passed to the constructor.
     return new Promise(resolve => {

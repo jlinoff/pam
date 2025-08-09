@@ -358,3 +358,26 @@ export function clog(msg) {
         console.log(msg)
     }
 }
+
+function setStyles(styles, ...args) {
+    for (let i=0; i<args.length; i++) {
+        let arg = args[i]
+        let element = null
+        if (typeof arg === 'string') {
+            element = document.getElementById(arg)
+        } else if (arg instanceof Element) {
+            element = arg
+        }
+        if (!!element) {
+            Object.assign(element.style, styles)
+        }
+    }
+}
+
+export function hide(...args) {
+    setStyles({'display':'none'}, ...args)
+}
+
+export function show(...args) {
+    setStyles({'display':'block'}, ...args)
+}

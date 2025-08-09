@@ -1,7 +1,7 @@
 // menus.
 import { xmk } from './lib.js'
 import { statusBlip } from './status.js'
-import { icon, mkPopupModalDlgButton, mkPopupModalDlg } from './utils.js'
+import { icon, clog, mkPopupModalDlgButton, mkPopupModalDlg } from './utils.js'
 import { checkRecordEditDlg,
          clearRecords,
          cleanRecordEditDlg,
@@ -74,14 +74,14 @@ function menuClearDlg() {
                                  'btn-secondary',
                                  'close the dialogue with no changes',
                                  (el) => {
-                                    console.log(el)
+                                    clog(el)
                                     return true
                                 })
     let b2 = mkPopupModalDlgButton('Clear',
                                  'btn-primary',
                                  'clear all records and close the dialogue',
                                  (el) => {
-                                     console.log(el)
+                                     clog(el)
                                      clearRecords()
                                      resetPrefs()
                                      statusBlip('all records cleared')

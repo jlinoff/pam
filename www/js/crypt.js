@@ -1,5 +1,6 @@
 // Encypt/decrypt using SubtleCrypto
 import { statusBlip } from './status.js'
+import { clog } from './utils.js'
 
 // https://stackoverflow.com/questions/40031688/javascript-arraybuffer-to-hex
 function buf2hex(buffer) { // buffer is an ArrayBuffer
@@ -87,11 +88,11 @@ export function encrypt(password, plaintext, filename, callback) {
                         callback(ciphertext, filename)
                     })
                     .catch( (error) => {
-                        console.log(error)
+                        clog(error)
                     })
             })
             .catch((error) => {
-                console.log(error)
+                clog(error)
             })
     } else {
         statusBlip('encryption not enabled')
@@ -137,7 +138,7 @@ export function decrypt(password, ciphertext, callback, callback2) {
                     })
                     .catch( (error) => {
                         callback2(`Decryption failed!\nPlease try another password.\n${error}`)
-                        console.log(error)
+                        clog(error)
                     })
             })
             .catch((error) => {

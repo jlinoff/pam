@@ -2,7 +2,7 @@
 import { xmk } from './lib.js'
 import { statusBlip } from './status.js'
 import { words } from './en_words.js'
-import { icon, setDarkLightTheme, copyTextToClipboard } from './utils.js'
+import { icon, clog, setDarkLightTheme, copyTextToClipboard } from './utils.js'
 import { mkRecordEditField } from './field.js'
 
 export const ALPHA_LOWER = "abcdefghijklmnopqrstuvwxyz"
@@ -40,7 +40,7 @@ export function getRandomWord(minlen, maxlen) {
     }
     if (tries >= maxtries) {
         let msg = `ERROR: tries exceeded threshold of ${maxtries} in maxtries(${minlen},${maxlen})`
-        console.log(msg)
+        clog(msg)
         statusBlip(msg)
         word = '?'
     }
@@ -78,11 +78,11 @@ export function getMemorablePassword(length) {
         }
     }
     if (tries >= maxtries) {
-        console.log('ERROR: tries exceeded threshold')
+        clog(`ERROR: tries exceeded threshold: ${maxtries}`)
         result = '???' + getCrypticPassword(length, HEX_DIGITS)
     }
     if (result.length !== length) {
-        console.log('ERROR: tries exceeded threshold', result.length)
+        clog(`ERROR: length exceeded threshold: ${result.length}`)
         result = '???' + getCrypticPassword(length, HEX_DIGITS)
     }
     return result
@@ -307,7 +307,7 @@ export function setFilePass(password) {
         sessionStorage.setItem('filePass', password)
         break
     default:
-        console.log('ERROR: internal error, invalid value')
+        clog(`ERROR: internal error, invalid value "${window.prefs.filePassCache}"`)
         break
     }
 }
@@ -328,7 +328,7 @@ export function getFilePass() {
         password = sessionStorage.getItem('filePass')
         break
     default:
-        console.log('ERROR: internal error, invalid value')
+        clog('ERROR: internal error, invalid value')
         break
     }
     if ( password == null ) { /* jshint ignore:line */

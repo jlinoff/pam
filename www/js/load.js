@@ -1,7 +1,7 @@
 // Load file.
 import { xmk, xget, xgetn, enableFunctionChaining } from './lib.js'
 import { statusBlip } from './status.js'
-import { icon, mkPopupModalDlg, mkPopupModalDlgButton, setDarkLightTheme } from './utils.js'
+import { icon, clog, mkPopupModalDlg, mkPopupModalDlgButton, setDarkLightTheme } from './utils.js'
 import { clearRecords, deleteRecord, findRecord, insertRecord, mkRecord } from './record.js'
 import { mkRecordField } from './field.js'
 import { menuPrefsDlg, resetPrefs, addDefaultRecordFields } from './prefs.js'
@@ -185,7 +185,7 @@ function loadUrlContent(url) {
         })
         .catch((error) => {
             alert(`failed to load ${url}: ${error.message}`)
-            console.log(`ERROR: ${error.message}`)
+            clog(`ERROR: ${error.message}`)
         })
 }
 
@@ -355,9 +355,9 @@ export function loadCallback(text) {
 }
 
 function invalidPasswordCallback(error) {
-    console.log('invalidPasswordCallback')
+    clog('function: invalidPasswordCallback')
     alert(error)
-    console.log(error)
+    clog(error)
 
     // Popup the Load dialogue to allow a retry
     let menuButton = document.body.xGet('#menu')

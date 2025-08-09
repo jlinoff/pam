@@ -106,6 +106,20 @@ export function enableFunctionChaining() {
 
     /**
      * Add text to an element.
+     * Wrapper for innerText.
+     * @example
+     * xmk('p').xInnerText('<i>text here</i>').xAddClass('x-foo')
+     * @param {string} The text.
+     * @returns {element} The caller element to enable chaining.
+     * @global
+     */
+    Element.prototype.xInnerText = function(text) {
+        this.innerText = text;
+        return this;
+    }
+
+    /**
+     * Add text to an element.
      * Escape any HTML.
      * Wrapper for textContent.
      * @example

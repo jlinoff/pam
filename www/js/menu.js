@@ -287,8 +287,10 @@ function promptForPrefsPassword() {
     return new Promise(resolve => {
         // 1. Create the elements for the prompt
         const container = document.createElement('div')
+        const id = 'x-prefs-password-prompt-input'
 
         const input = xmk('input')
+              .xId(id)
               .xClass('m-2', 'w-75', 'fs-1', 'form-control-large')
               .xAttrs({'type': 'password',
                        'placeholder': 'Enter Preferences Lock Password...'})
@@ -327,7 +329,7 @@ function promptForPrefsPassword() {
         document.body.appendChild(container)
 
         // 4. Focus the input field for a better user experience
-        input.focus()
+        document.getElementById(id).focus()
     });
 }
 

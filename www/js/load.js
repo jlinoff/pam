@@ -165,6 +165,7 @@ function loadClipboardContent() {
 }
 
 function loadUrlContent(url) {
+    clog(`loadingUrlContent: ${url}`)
     fetch(url)
         .then((response) => {
             return response.text()

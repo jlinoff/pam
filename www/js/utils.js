@@ -87,19 +87,6 @@ export function sortDictByKey(dict) {
     return sorted
 }
 
-// convert dictionary keys to list for error reporting.
-export function convertDictKeys2List(dict) {
-    let list = '['
-    Object.entries(sortDictByKey(dict)).forEach(([key,value]) => {
-        if (list.length > 1) {
-            list += ', '
-        }
-        list += `"${key}"`
-    })
-    list += ']'
-    return list
-}
-
 // Create a popup modal dialogue.
 export function mkPopupModalDlg(id, title, body, ...buttons) {
     let lid = id + 'Label'
@@ -238,18 +225,6 @@ export function mkPopupModalDlgButton(text, type, tooltip, callback) {
         })
         .xInnerHTML(text)
     return dlg
-}
-
-/**
- * Toggle the light/dark, theme based on the data-bs-theme-value
- */
-export function toggleDarkTheme() {
-    let curTheme = document.body.getAttribute('data-bs-theme')
-    if (curTheme === "dark" ) {
-        setDarkLightTheme('light')
-    } else {
-        setDarkLightTheme('dark')
-    }
 }
 
 /**

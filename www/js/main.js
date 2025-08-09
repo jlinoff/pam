@@ -5,7 +5,7 @@
 import { xmk, xget, xgetn, enableFunctionChaining } from './lib.js'
 import { statusBlip } from './status.js'
 import { words } from './en_words.js'
-import { icon, toggleDarkTheme, setDarkLightTheme } from './utils.js'
+import { icon, setDarkLightTheme } from './utils.js'
 import { initPrefs, addDefaultRecordFields } from './prefs.js'
 import { mkMenu } from './menu.js'
 import { mkSearchInputElement, searchRecords } from './search.js'

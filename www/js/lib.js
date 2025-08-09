@@ -444,31 +444,6 @@ export function xmk(tagName, options) {
   return document.createElement(tagName, options);
 }
 
-
-/**
- * Load a CSS stylesheet.
- * https://stackoverflow.com/questions/574944/how-to-load-up-css-files-using-javascript
- */
-export function loadCSS( cssPath ) {
-    // The link is how the DOM knows to find and insert the style sheet.
-    let link = `<link rel=\"stylesheet\" href=\"${cssPath}\" />`
-    document.getElementsByTagName("head")[0].insertAdjacentHTML(
-    "beforeend",
-    link);
-}
-
-
-/**
- * Convenience function to replace document.getElementById()
- */
-export function xgetid(id) {
-    let e = document.getElementById(id)
-    if (!e) {
-        clog(`WARNING: element not found by id "${id}"`)
-    }
-    return e
-}
-
 /**
  * Convenience function to replace document.querySelector()
  */

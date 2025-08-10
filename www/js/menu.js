@@ -294,7 +294,7 @@ function promptForPrefsPassword() {
               .xAppend(
                   xmk('input')
                       .xId(id)
-                      .xClass('m-2', 'w-50', 'fs-1', 'form-control-large')
+                      .xClass('m-2', 'w-75', 'fs-1', 'form-control-large')
                       .xAttrs({'type': 'password',
                                'placeholder': 'Enter Preferences Lock Password...'})
                       .xAddEventListener('keydown', (event) => {
@@ -310,21 +310,7 @@ function promptForPrefsPassword() {
                           }
                       }),
                   xmk('button')
-                      .xClass('btn', 'btn-lg', 'btn-primary', 'px-2', 'ms-0', 'w-auto')
-                      .xAttrs({'type': 'submit'})
-                      .xInnerText('Submit')
-                      .xAddEventListener('click', () => {
-                          // Get the value from the input field
-                          const inputValue = document.getElementById(id).value
-
-                          // Clean up: remove the prompt from the DOM
-                          container.remove()
-
-                          // Resolve the promise, forwarding the input value
-                          resolve(inputValue)
-                      }),
-                  xmk('button')
-                      .xClass('btn', 'btn-lg', 'px-4', 'ms-2', 'w-auto')
+                      .xClass('btn', 'btn-lg', 'px-0', 'ms-2', 'w-auto')
                       .xAttr('type', 'button')
                       .xAddEventListener('click', (event) => {
                           let button = event.target.parentElement
@@ -344,7 +330,23 @@ function promptForPrefsPassword() {
                       })
                       .xAppend(
                           icon('bi-eye', 'show/hide password name')
-                      )
+                      ),
+                  xmk('div').xAppend(
+                      xmk('button')
+                          .xClass('btn', 'btn-lg', 'btn-primary', 'px-2', 'ms-0', 'w-auto')
+                          .xAttrs({'type': 'submit'})
+                          .xInnerText('Submit')
+                          .xAddEventListener('click', () => {
+                              // Get the value from the input field
+                              const inputValue = document.getElementById(id).value
+
+                              // Clean up: remove the prompt from the DOM
+                              container.remove()
+
+                              // Resolve the promise, forwarding the input value
+                              resolve(inputValue)
+                          }),
+                  ),
               )
 
         // 3. Assemble and add the prompt to the page

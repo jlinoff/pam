@@ -305,7 +305,7 @@ function promptForPrefsPassword() {
                       .xAddEventListener('keydown', (event) => {
                           if (event.key === 'Enter') {
                               // Get the value from the input field
-                              const inputValue = input.value
+                              const inputValue = document.getElementById(id).value
 
                               // Clean up: remove the prompt from the DOM
                               container.remove()

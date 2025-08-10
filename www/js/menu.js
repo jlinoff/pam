@@ -286,46 +286,68 @@ function promptForPrefsPassword() {
     // inside the function passed to the constructor.
     return new Promise(resolve => {
         // 1. Create the elements for the prompt
-        const container = document.createElement('div')
         const id = 'x-prefs-password-prompt-input'
 
-        const input = xmk('input')
-              .xId(id)
-              .xClass('m-2', 'w-75', 'fs-1', 'form-control-large')
-              .xAttrs({'type': 'password',
-                       'placeholder': 'Enter Preferences Lock Password...'})
-              .xAddEventListener('keydown', (event) => {
-                  if (event.key === 'Enter') {
-                      // Get the value from the input field
-                      const inputValue = input.value
+        const container = document.createElement('div')
+              .xStyle({'margin-left':'1em'})
+              .xClass('row')
+              .xAppend(
+                  xmk('input')
+                      .xId(id)
+                      .xClass('m-2', 'w-50', 'fs-1', 'form-control-large')
+                      .xAttrs({'type': 'password',
+                               'placeholder': 'Enter Preferences Lock Password...'})
+                      .xAddEventListener('keydown', (event) => {
+                          if (event.key === 'Enter') {
+                              // Get the value from the input field
+                              const inputValue = input.value
 
-                      // Clean up: remove the prompt from the DOM
-                      container.remove()
+                              // Clean up: remove the prompt from the DOM
+                              container.remove()
 
-                      // Resolve the promise, forwarding the input value
-                      resolve(inputValue)
-                  }
-              })
+                              // Resolve the promise, forwarding the input value
+                              resolve(inputValue)
+                          }
+                      }),
+                  xmk('button')
+                      .xClass('btn', 'btn-lg', 'btn-primary', 'px-2', 'ms-0', 'w-auto')
+                      .xAttrs({'type': 'submit'})
+                      .xInnerText('Submit')
+                      .xAddEventListener('click', () => {
+                          // Get the value from the input field
+                          const inputValue = document.getElementById(id).value
 
-        const space = xmk('br')
+                          // Clean up: remove the prompt from the DOM
+                          container.remove()
 
-        const okButton = xmk('button')
-              .xClass('btn', 'btn-lg', 'btn-primary', 'p-2', 'ms-2')
-              .xAttrs({'type': 'submit'})
-              .xInnerText('Submit')
-              .xAddEventListener('click', () => {
-                  // Get the value from the input field
-                  const inputValue = input.value
-
-                  // Clean up: remove the prompt from the DOM
-                  container.remove()
-
-                  // Resolve the promise, forwarding the input value
-                  resolve(inputValue)
-              })
+                          // Resolve the promise, forwarding the input value
+                          resolve(inputValue)
+                      }),
+                  xmk('button')
+                      .xClass('btn', 'btn-lg', 'px-4', 'ms-2', 'w-auto')
+                      .xAttr('type', 'button')
+                      .xAddEventListener('click', (event) => {
+                          let button = event.target.parentElement
+                          let row = event.target.xGetParentWithClass('row')
+                          let input = row.xGet('input')
+                          let icon = button.xGet('i')
+                          let show = icon.classList.contains('bi-eye')
+                          if (show) {
+                              icon.classList.remove('bi-eye')
+                              icon.classList.add('bi-eye-slash')
+                              input.xAttr('type', 'text')
+                          } else {
+                              icon.classList.remove('bi-eye-slash')
+                              icon.classList.add('bi-eye')
+                              input.xAttr('type', 'password')
+                          }
+                      })
+                      .xAppend(
+                          icon('bi-eye', 'show/hide password name')
+                      )
+              )
 
         // 3. Assemble and add the prompt to the page
-        container.xAppendChild(input, space, okButton)
         document.body.appendChild(container)
 
         // 4. Focus the input field for a better user experience

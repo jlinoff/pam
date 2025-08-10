@@ -356,11 +356,7 @@ function removeMainPasswordGenerator() {
 
     show('top-section')
     show('mid-section')
-
-    // Enable raw JSON editing if it was disabled
-    if (window.prefs.enableRawJSONEdit) {
-        show('x-edit-raw-json-data')
-    }
+    enableRawJSONEdit()
 }
 
 function mkMainPasswordGenerator() {

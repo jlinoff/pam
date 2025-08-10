@@ -13,6 +13,7 @@ import { menuPrefsDlg, addDefaultRecordFields, resetPrefs } from './prefs.js'
 import { menuSaveDlg, enableSaveFile } from './save.js'
 import { menuLoadDlg } from './load.js'
 import { printRecords } from './print.js'
+import { enableRawJSONEdit } from './raw.js'
 
 function menuEntryDivider() {
     return xmk('li').xAppend(xmk('hr').xClass('dropdown-divider'))
@@ -127,6 +128,8 @@ export function mkMenu() {
                             if (window.prefs.lockPreferencesPassword.length > 0) {
                                 hide('top-section')
                                 hide('mid-section')
+                                hide('x-generate-password')
+                                hide('x-edit-raw-json-data')
                                 // wait for the dlg to appear
                                 const dlg = await waitForElement('#menuPrefsDlg')
                                 dlg.addEventListener('shown.bs.modal', () => {
@@ -146,6 +149,8 @@ export function mkMenu() {
                                 }
                                 show('top-section')
                                 show('mid-section')
+                                show('x-generate-password')
+                                enableRawJSONEdit()
                             }
                         }),
                     menuEntryDivider(),

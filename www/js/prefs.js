@@ -51,6 +51,7 @@ export function initPrefs() {
         fileName: 'example.txt',
         filePass: '',
         filePassCache: 'local',  // options: none, global, local, session
+        textareaMinHeight: '5em',
         editableFieldName: false, // if true, allow field names to be changed
         searchCaseInsensitive: true,
         searchRecordTitles: true,
@@ -177,6 +178,9 @@ export function menuPrefsDlg() {
             prefPromptDesc('Allow the user to change field names in each record. '+
                            'This is generally not advisable because different fields with '+
                            'same semantic meaning in different records can lead to confusion.'),
+            prefTextareaMinHeight(labelClasses, inputClasses),
+            prefPromptDesc('Define the minimum height of the textareas for notes and HTML input. '+
+                           'This is useful in mobile browsers where resize is not available.'),
             prefFilePassCacheStrategy(labelClasses, inputClasses),
             prefPromptDesc('Define the browser cache strategy for the file (master) password.<br>'+
                            'The most secure option is <code>none</code> because it does not save '+
@@ -644,6 +648,23 @@ function prefEnableSaveFile(labelClasses, inputClasses) {
                            'enableSaveFile',
                            'Enable Save File',
                            'enable save file')
+}
+
+function prefTextareaMinHeight(labelClasses, inputClasses) {
+    return xmk('div').xClass('row').xAppend(
+        prefLabel(labelClasses, 'Textarea Minimum Height'),
+        xmk('div').xClass(...inputClasses).xAppend(
+            xmk('div').xClass('input-group').xAppend(
+                xmk('input')
+                    .xClass('form-control', 'text-start')
+                    .xAttrs({'type': 'text',
+                             'value': window.prefs.textareaMinHeight,
+                             'title': 'minimum height of textarea elements',
+                             'data-pref-id': 'textareaMinHeight',
+                            }),
+            ),
+        ),
+    )
 }
 
 function prefFilePassCacheStrategy(labelClasses, inputClasses) {

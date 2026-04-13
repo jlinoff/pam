@@ -230,7 +230,6 @@ export function menuNewDlg() {
                                           'btn-secondary',
                                           'close the dialogue with no changes',
                                           (event) => {
-                                              //console.log(event)
                                               cleanRecordEditDlg(event)
                                               addDefaultRecordFields()
                                               return true
@@ -239,7 +238,6 @@ export function menuNewDlg() {
                                          'btn-primary',
                                          'save the changes and close the dialogue',
                                          (event) => {
-                                             //console.log(event)
                                              checkRecordEditDlg(event, false)
                                              let container = event.xGet('.container')
                                              if (container.getAttribute('data-check-failed')) {

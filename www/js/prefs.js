@@ -267,7 +267,6 @@ export function menuPrefsDlg() {
                                  'btn-secondary',
                                  'close the dialogue without making changes',
                                  (el) => {
-                                     //console.log(el)
                                      if (delete_occurred) {
                                          // make sure that the deleted items are restored
                                          // if the user closes without saving.
@@ -368,41 +367,29 @@ function setHelpLinks() {
 // The window.prefs entries are determined automatically from the
 // data-pref-id attribute.
 function savePrefs(el) {
-    //console.log(el)
     // add logic to set window.prefs.* here
     let prefs = el.xGetN('[data-pref-id]')
     for (const pref of prefs) {
-        //console.log('PREF:', pref.getAttribute('data-pref-id'))
-        //console.log(pref)
         let type = pref.tagName
         let key = pref.getAttribute('data-pref-id')
-        //console.log(`TYPE: ${type}`)
-        //console.log(`VAR: window.prefs["${key}"]`)
         if (type === 'INPUT') {
             // inputs are easy.
             let value = pref.value
-            //console.log(`${type} - window.prefs["${key}"] = "${value}"`)
             window.prefs[key] = value
         } else if (type === 'BUTTON') {
             let icon = pref.xGet('i')
             let value = false
             if (icon) {
-                //console.log(icon)
-                //console.log(icon.classList)
                 value = icon.classList.contains('bi-check2-square')
-                //console.log(value)
             }
             switch(key) {
             case 'loadDupStrategy':
                 let dropdown_menu = pref.parentElement.xGet('.dropdown-menu')
                 let active = dropdown_menu.xGet('.active')
                 value = active.innerHTML
-                //console.log(`ACTIVE: ${active}`)
-                //console.log(`${type} - window.prefs["${key}"] = "${value}"`)
                 break
             default:
                 window.prefs[key] = value
-                //console.log(`${type} - window.prefs["${key}"] = "${value}"`)
                 break
             }
         } else if (type === "TEXTAREA") {
@@ -412,7 +399,6 @@ function savePrefs(el) {
                 window.prefs.customAboutInfo = pref.value
             } else {
                 window.prefs[key] = pref.value
-                //console.log(`${type} - window.prefs["${key}"] = "${value}"`)
             }
         }
     }
@@ -869,7 +855,7 @@ function prefMemorablePasswordMinWords(labelClasses, inputClasses) {
 }
 
 function prefMemorablePasswordMaxWords(labelClasses, inputClasses) {
-    xmk('div').xClass('row').xAppend(
+    return xmk('div').xClass('row').xAppend(
         prefLabel(labelClasses, 'Memorable Password Max Words'),
         xmk('div').xClass(...inputClasses).xAppend(
             xmk('div').xClass('input-group').xAppend(
@@ -951,8 +937,6 @@ function mkPrefsCheckBox(labelClasses, inputClasses, id, title, popup) {
                             })
                     .xAppend(icon(checkbox, 'enable or disable'))
                     .xAddEventListener('click', (event) => {
-                        //console.log(event)
-                        //console.log(event.target.parentElement.tagName)
                         let button = event.target.xGetParentOfType('button')
                         let icon = button.xGet('i')
                         let enabled = icon.classList.contains('bi-check2-square')
@@ -1046,12 +1030,8 @@ function mkPredefineRecordFields(recordFields) {
                 .xAddEventListener('click', (event) => {
                     setActive(event)
                     let value = event.target.innerHTML
-                    //console.log(value)
                     let dm = event.target.xGetParentWithClass('dropdown-menu')
-                    //console.log(dm)
-                    //console.log(dm.parentElement)
                     let button = dm.parentElement.xGet('.dropdown-toggle')
-                    //console.log(button)
                     button.innerHTML = value
                 })
             if (key1 === value) {
@@ -1138,7 +1118,6 @@ function mkPredefineRecordFields(recordFields) {
                          idn += 1
                          new_key = base + idn.toString(16).padStart(4, '0')
                      }
-                     //console.log(newRecordFields)
                      newRecordFields[new_key] = new_value
                      let div = document.body.xGet('#x-prefs-fld-div')
                      div.replaceWith(mkPredefineRecordFields(newRecordFields))

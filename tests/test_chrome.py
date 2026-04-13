@@ -22,7 +22,7 @@ def get_driver():
     '''
     # https://stackoverflow.com/questions/53657215/running-selenium-with-headless-chrome-webdriver
     if NO_OPTIONS:
-        return webdriver.Chrome()
+        return webdriver.Chrome()  # pylint: disable=not-callable
     options = Options()
     options.add_argument("--no-sandbox")
     options.add_argument('--disable-cache')
@@ -36,7 +36,7 @@ def get_driver():
     options.add_argument("--silent")
     options.add_argument("--start-maximized")
     options.add_argument("--headless")
-    driver =  webdriver.Chrome(options=options)
+    driver =  webdriver.Chrome(options=options)  # pylint: disable=not-callable
     driver.set_window_size(1920, 1080)
     return driver
 

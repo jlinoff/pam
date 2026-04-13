@@ -27,7 +27,6 @@ window.onresize = () => { refreshAbout() }
  */
 export function main() {
     // Enable the extra "x" prototype functions for elements.
-    //console.log('window.isSecureContext: ', window.isSecureContext)
     enableFunctionChaining()
     initPrefs()  // sets window.prefs
     initialize() // requires window.prefs

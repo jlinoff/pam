@@ -82,7 +82,6 @@ export function mkRecordFieldCopyToClipboardButton(raw_value) {
         .xAppend(icon('bi-clipboard', 'copy to clipboard')) // also bi-files
         .xAddEventListener('click', (event) => {
             statusBlip(`copying ${value.length} bytes to clipboard`)
-            //console.log(status)
             if (navigator.clipboard) {
                 navigator.clipboard
                     .writeText(value)
@@ -156,7 +155,6 @@ function mkRecordFieldNameListEntry(name, type) {
             let row = event.target.xGetParentWithClass('row')
 
             // Create the draggable field.
-            //console.log(`selected ${name}`)
             let container = event.target.xGetParentWithClass('container')
             container.xAppend(mkRecordEditField(name, type, container))
         })
@@ -174,7 +172,6 @@ function mkRecordFieldNameListItems(nameTypeMap) {
         }
         entries.push(e)
     })
-    //console.log(entries)
     return entries
 }
 
@@ -185,13 +182,9 @@ export function mkRecordEditField(name, type, container, value) {
     // See if name was already used, if so, append a number to the name to make it unique.
     let names = container.xGetN('.x-fld-name')
     let dups = {} // make sure it is not renamed to something that already exists
-    //console.log('.x-fld-name', names)
     names.forEach( (n) => {
-        //console.log('n.value', n.value)
         if (n.value.includes(name)) {
-            //console.log('name', name)
             let pos = n.value.search(/\d/);
-            //console.log('pos', pos)
             if (pos < 0) {
                 name = name + '1'
             } else {
@@ -283,7 +276,6 @@ export function mkRecordEditField(name, type, container, value) {
             .xAppend(icon('bi-eye', 'show or hide password'))
             .xAddEventListener('click', (event) => {
                 let button = event.target.parentElement
-                //console.log(button)
                 let row = button.xGetParentWithClass('row')
                 let passwordInput = row.xGet('.x-fld-value')
                 let icon = button.xGet('i')
@@ -361,9 +353,7 @@ export function mkRecordEditField(name, type, container, value) {
                         .xAddEventListener('click', (event) => {
                             let row = event.target.xGetParentWithClass('row')
                             let field = row.xGet('.x-fld-value')
-                            //console.log(field)
                             let ftype = field.getAttribute('data-fld-type')
-                            //console.log(ftype)
                             if (ftype === 'textarea') {
                                 field.value = ''
                             } else if (ftype === 'password') {

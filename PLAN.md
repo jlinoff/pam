@@ -2,7 +2,7 @@
 
 **Project:** [jlinoff/pam](https://github.com/jlinoff/pam)  
 **Version at time of audit:** 1.2.5 (commit 75904b3, 2025-09-10)  
-**Plan version:** 1.1 (full review pass: structural fixes, SIMP-004/DOC-002 linkage, about.js/print.js coverage, load.js extraction, breaking change strategy text corrected, Open Question 3 resolved)  
+**Plan version:** 1.2 (Phase 0 added: initial clean-up to establish known-good baseline before test harness)  
 **Collaboration model:** Option B — file uploads per session, changes returned as files/diffs, committed by Joe
 
 ---
@@ -423,7 +423,17 @@ This is honest and unsurprising — the user has had at least one full release c
 
 The general principle throughout: **write the tests first, then implement.** The failing test is the specification. The only exception is the `crypt.js` v1 regression baseline in Phase 1, which captures existing behavior before anything is changed — that test must pass immediately on first run.
 
-### Phase 1 — Test harness foundation (Sessions 1–2)
+### Phase 0 — Initial clean-up (Session 1)
+Establish a known-good, clean baseline before writing any tests. This phase contains only non-functional changes and trivial fixes that have no associated tests. Everything here should be reviewable in under five minutes with `git diff`.
+
+- [ ] Confirm `make test` passes cleanly on `main` before any changes — document the result in the merge commit
+- [ ] Remove trailing whitespace from all `www/js/*.js` files (the `make lint` `rg` check already enforces this going forward — this clears any pre-existing violations)
+- [ ] Remove dead comments and commented-out code that is clearly obsolete (not experimental code under active consideration — be conservative)
+- [ ] Fix PORT-004: set `"name": "PAM"` and `"short_name": "PAM"` in `site.webmanifest` — one-liner, verified by inspection, no test needed
+- [ ] Confirm `make test` still passes after changes
+- [ ] **Branch:** `phase/00-initial-cleanup`
+
+### Phase 1 — Test harness foundation (Sessions 2–3)
 The test harness comes first so every subsequent change has a safety net. The `crypt.js` v1 regression baseline is locked in before any crypto code is touched.
 
 - [ ] Verify `.jshintignore` contents — confirm `tests/` does not need an entry
@@ -434,36 +444,35 @@ The test harness comes first so every subsequent change has a safety net. The `c
 - [ ] Write unit tests for pure no-DOM modules: `utils.js`, `status.js`, `lib.js` — these should all pass immediately against the existing code
 - [ ] Write unit tests for `search.js`, `record.js`, `password.js` (inject prefs as parameter — small prerequisite refactor in `password.js` needed first)
 
-### Phase 2 — Quick wins (Session 3)
+### Phase 2 — Quick wins (Session 4)
 Tests for each fix are written first. The fix is then implemented to make them pass.
 
 - [ ] Write tests for SEC-005: assert that `encrypt()` callbacks fire exactly once on empty-input edge cases → implement fix (add `return` after early-exit callbacks)
 - [ ] Write tests for SIMP-005: assert that the memorable password max-words preference row is present in the rendered prefs DOM → implement fix (add missing `return`)
 - [ ] Write tests for SEC-007: assert that `javascript:` and `data:` URIs are rejected by `loadUrl()` → implement fix (protocol validation)
-- [ ] PORT-004: update `site.webmanifest` (no test needed — trivially verified by inspection)
 - [ ] Run full test suite after each fix; all tests must remain green
 
-### Phase 3 — Core security defaults (Sessions 4–5)
+### Phase 3 — Core security defaults (Sessions 5–6)
 - [ ] Write tests for SEC-002 / UX-004: assert that `getFilePass()` defaults to `'session'` scope when no preference is stored → implement change
 - [ ] Write tests for SEC-006: assert that the stored lock password is a SHA-256 hash, not plaintext; assert that hash comparison verifies correctly → implement change
 - [ ] Write tests for SEC-008: assert that `index.html` contains a CSP meta tag with the expected policy → implement change
 - [ ] Extract `formatTimeElapsed()` from `load.js` as a pure exported function (prerequisite for unit testing `load.js`)
 - [ ] Write unit tests for `load.js` (`formatTimeElapsed` and JSON parse/validate logic) and `save.js` (`convertInternalDataToJSON` round-trip against known fixture)
 
-### Phase 4 — SEC-001 + E2E infrastructure (Sessions 6–7)
+### Phase 4 — SEC-001 + E2E infrastructure (Sessions 7–8)
 - [ ] Write unit tests for SEC-001: assert that `html` field type renders as escaped plain text with `</>` badge when rendering is disabled; assert that it renders as HTML when enabled → implement default-off behavior and prefs gate
 - [ ] Write E2E Selenium tests for: record CRUD, search (title/field/regex/case), preferences navigation, `html` field rendering toggle
 - [ ] Add `make e2e-test` target; update `make test` to run `unit-test` then `e2e-test`
 - [ ] Add persistent toolbar indicator when HTML rendering is active
 - [ ] Document threat model in SECURITY.md
 
-### Phase 5 — Simplification + remaining tests (Sessions 8–10)
+### Phase 5 — Simplification + remaining tests (Sessions 9–11)
 - [ ] Write unit tests for `prefs-model.js` (the module does not yet exist — tests define its API) → implement SIMP-001: split `prefs.js` into `prefs-model.js`, `prefs-ui.js`, `prefs-fields.js`; tests must pass against the new module
 - [ ] Write tests for consolidated clipboard function in `utils.js` → implement SIMP-002: remove duplicate from `field.js`
 - [ ] SIMP-003: identify dead code in `menu.js`, confirm no tests reference it, remove
 - [ ] Write E2E tests for password generation, file operations, load duplicate strategies
 
-### Phase 6 — UX + documentation (Sessions 11–12)
+### Phase 6 — UX + documentation (Sessions 12–13)
 - [ ] Write E2E tests for UX-001 (password generator open/close/generate flow), UX-002 (delete confirmation), UX-003 (tabbed prefs navigation) → implement each in turn
 - [ ] Write E2E tests for `about.js` (About dialog open/close, version display) and `print.js` (print dialog triggered, record content present) → implement any fixes surfaced
 - [ ] Write unit tests for the save strategy abstraction: assert that `showSaveFilePicker` path is selected when the API is available; assert that anchor-download fallback is selected otherwise → implement save mechanism abstraction in `save.js`
@@ -472,7 +481,7 @@ Tests for each fix are written first. The fix is then implemented to make them p
 - [ ] SECURITY.md (incorporating SEC-001 threat model, SEC-002/006 notes, and pointers to MIGRATION.md for the crypto changes)
 - [ ] JSDoc for `crypt.js`, `load.js`, `save.js`
 
-### Phase 7 — Dual crypto + release v1.3 (Sessions 13–14)
+### Phase 7 — Dual crypto + release v1.3 (Sessions 14–15)
 - [ ] Write unit tests first:
   - v2 encrypt/decrypt round-trip (will fail until implemented)
   - Cross-path rejection: file encrypted with v1 cannot be decrypted with v2 path and vice versa
@@ -489,14 +498,14 @@ Tests for each fix are written first. The fix is then implemented to make them p
 - [ ] Final coverage report, target ≥75%
 - [ ] Update README, tag v1.3
 
-### Phase 8 — v2 default + migration nudge, release v1.4 (Session 15)
+### Phase 8 — v2 default + migration nudge, release v1.4 (Session 16)
 - [ ] Write E2E test: load a v1 file, assert migration banner appears; dismiss it, assert it does not reappear in the same session
 - [ ] Write unit test: assert that the default encryption format preference is now v2
 - [ ] Flip default encryption format to v2 for new files and new users — tests must now pass
 - [ ] Implement dismissable migration banner (sessionStorage tracking by ciphertext hash)
 - [ ] Tag v1.4
 
-### Phase 9 — Remove v1 encrypt, release v2.0 (Session 16)
+### Phase 9 — Remove v1 encrypt, release v2.0 (Session 17)
 - [ ] Write E2E test: assert that the v1 encryption format option is absent from Preferences → Security
 - [ ] Write E2E test: load a v1 file, assert updated banner text ("your next save will upgrade to v2"), save, assert file is now v2
 - [ ] Remove v1 encrypt path and preference option from UI — tests must now pass
@@ -515,6 +524,7 @@ Each phase of work lives on its own short-lived branch. Branches are created fro
 ### Branch naming
 
 ```
+phase/00-initial-cleanup
 phase/01-test-harness
 phase/02-quick-wins
 phase/03-security-defaults
@@ -563,14 +573,13 @@ All unit tests pass. All E2E tests pass. CI green.
 Example:
 
 ```
-Merge phase/01-test-harness — PLAN.md Phase 1
+Merge phase/00-initial-cleanup — PLAN.md Phase 0
 
-Established the vanilla JS test runner in tests/tests.html with
-make unit-test integration. Wrote unit tests for utils.js, status.js,
-lib.js, search.js, record.js, and password.js (prefs made injectable).
-Locked in the crypt.js v1 round-trip regression baseline — all tests
-pass against the existing implementation before any code changes.
-Confirmed .jshintignore requires no additions for tests/tests.html.
+Confirmed make test passes cleanly on main before any changes.
+Removed trailing whitespace from www/js/*.js. Removed clearly
+obsolete dead comments. Fixed site.webmanifest name fields
+(PORT-004). Confirmed make test still passes after all changes.
+No functional changes in this phase.
 
 All unit tests pass. All E2E tests pass. CI green.
 ```
@@ -651,6 +660,7 @@ A PAM record could store a URL and a small JavaScript fill snippet. A "Login" bu
 | 8 | 2026-04-12 | TDD discipline applied: tests written before implementation in every phase throughout the work sequence | PLAN.md |
 | 9 | 2026-04-12 | Branching strategy added: one branch per phase, --no-ff merge commits, message references PLAN.md phase | PLAN.md |
 | 10 | 2026-04-12 | Full plan review: fixed breaking change strategy text, SIMP-004/DOC-002 linkage, about.js/print.js test coverage, load.js extraction explicitness, section ordering and heading errors | PLAN.md |
+| 11 | 2026-04-13 | Phase 0 added: initial clean-up to establish known-good baseline; PORT-004 moved from Phase 2 to Phase 0; session numbers updated | PLAN.md |
 
 ---
 

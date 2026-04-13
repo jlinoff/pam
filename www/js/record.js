@@ -387,7 +387,6 @@ export function checkRecordEditDlg(event, allowCloneTitle) {
         return
     } else {
         for (let i=0; i<flds.length; i++) {
-            //console.log(`fld[${i}]`, flds[i])
             let nameElem = flds[i].xGet('.x-fld-name')
             let name = 'undefined'
             if (!!nameElem) {
@@ -430,7 +429,6 @@ function mkRecordFields(container) {
     let recordFields = []
     let flds = container.xGetN('.x-new-rec-fld')
     for (let i=0; i<flds.length; i++) {
-        //console.log(`save.row[${i}]`, flds[i])
         let nameElem = flds[i].xGet('.x-fld-name')
         let valueElem = flds[i].xGet('.x-fld-value')
         if (!nameElem || !valueElem) {
@@ -449,11 +447,8 @@ function mkRecordFields(container) {
 // save the record
 export function saveRecordEditDlg(event, active, created) {
     let container = event.xGet('.container')
-    //console.log('save', container)
     let rows = container.xGetN('.row')
-    //console.log('save.rows', rows)
     let title = container.xGet('.x-record-title').value
-    //console.log('save.title', title)
     // Create the accordion item with all of the record information.
     // Accordions in bootstrap only allow one to item to be expanded at a time.
     let recordFields = mkRecordFields(container)
@@ -479,7 +474,6 @@ function editRecordDlg(title) {
                                           'btn-secondary',
                                           'close the dialogue with no changes',
                                           (event) => {
-                                              //console.log(event)
                                               cleanRecordEditDlg(event)
                                               return true
                                           })
@@ -487,7 +481,6 @@ function editRecordDlg(title) {
                                          'btn-primary',
                                          'save the changes and close the dialogue',
                                          (event) => {
-                                             //console.log(event)
                                              checkRecordEditDlg(event, true)
                                              let container = event.xGet('.container')
                                              if (container.getAttribute('data-check-failed')) {

@@ -3,7 +3,6 @@ import { xget } from './lib.js'
 import { clog } from './utils.js'
 
 var STATUS_TIMEOUT = 1500
-//var STATUS_ICON = '<i class="bi bi-info-square-fill"></i>'
 var STATUS_ICON = '<i class="bi bi-exclamation-octagon"></i>'
 
 // Report a status message.

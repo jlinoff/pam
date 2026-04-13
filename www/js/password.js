@@ -93,9 +93,6 @@ function saveGeneratedPassword(event) {
     let row = event.target.xGetParentWithClass('row')
     let e2 = row.xGet('.x-fld-value') // field value input
     let e1 = row.parentElement.xGet('.x-fld-value-length') // span
-    //console.log('row', row)
-    //console.log('x-fld-value', e1)
-    //console.log('x-fld-value-length', e2)
     e2.value = event.target.innerHTML
     if (!!e1) {
         // does not exist in the save dialogue
@@ -142,7 +139,6 @@ export function mkGeneratePasswordDlg(event) {
                     .xAddEventListener('click', (event) => {
                         event.preventDefault() // very important
                         let row = button.xGetParentWithClass('row')
-                        //console.log(row)
                         row.xGetN('.x-fld-pw-gen').forEach( (col) => {
                             col.classList.add('d-none')
                         })
@@ -194,17 +190,13 @@ export function mkGeneratePasswordDlg(event) {
                         }
                     })
                     .xAddEventListener('input', (event) => {
-                        //console.log(event.target.value)
                         let rlen = event.target.parentElement.xGet('.x-fld-pw-range-len')
                         let len = parseInt(event.target.value)
                         let row = button.xGetParentWithClass('row')
                         rlen.xInnerHTML(len)
                         row.xGet('.x-fld-pw-cp0').innerHTML = getCrypticPassword(len, ALPHABET)
                         row.xGetN('.x-fld-pw-mp').forEach( (e) => {
-                            //console.log(e)
-                            //console.log(len)
                             let pwd = getMemorablePassword(len)
-                            //console.log(pwd)
                             e.innerHTML = pwd
                         })
                     }),
@@ -217,7 +209,6 @@ export function mkGeneratePasswordDlg(event) {
     } else {
         // password dialogue already exists
         let row = button.xGetParentWithClass('row')
-        //console.log(row)
         let range = row.xGet('.x-fld-pw-range-len')
         let len = parseInt(range.innerHTML)
         let cp0Value = getCrypticPassword(len, ALPHABET)
@@ -232,7 +223,6 @@ export function mkGeneratePasswordDlg(event) {
         if (cols[0].classList.contains('d-none')) {
             cols.forEach((col) => {
                 col.classList.remove('d-none')
-                //console.log(col)
             })
         }
     }

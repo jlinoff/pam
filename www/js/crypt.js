@@ -27,7 +27,6 @@ const toBase64 = buffer => {
     return binstr
     // The following call is subject to limitations based on the
     // maximum number of function arguments.
-    //return btoa(String.fromCharCode(...new Uint8Array(buffer)))
 }
 const fromBase64 = buffer => {
     try {

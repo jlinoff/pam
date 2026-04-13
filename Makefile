@@ -214,9 +214,9 @@ www/help/index.html: Makefile README.md www/help/index.css \
 	sed -i 's@<img src="www/icons/blue/@<img src="../icons/black/@' tmp.md
 	sed -i "s/__VERSION__/$$(cat VERSION | tr -d ' \n')/g" tmp.md
 	sed -i "s/__BOOTSTRAP_VERSION__/$(BS_VER)/g" tmp.md
-	sed -i "s/__BUILD__/$$(git show -s --format=%ci $$(git rev-parse --short HEAD | tr -d ' \n'))/g" tmp.md
+	sed -i "s|__BUILD__|$$(git show -s --format=%ci $$(git rev-parse --short HEAD | tr -d ' \n'))|g" tmp.md
 	sed -i "s/__GIT_COMMIT_ID__/$$(git rev-parse --short HEAD | tr -d ' \n')/g" tmp.md
-	sed -i "s/__GIT_BRANCH__/$$(git rev-parse --abbrev-ref HEAD | tr -d ' \n')/g" tmp.md
+	sed -i "s|__GIT_BRANCH__|$$(git rev-parse --abbrev-ref HEAD | tr -d ' \n')|g" tmp.md
 	sed -i "s/<!-- PP: //g" tmp.md
 	sed -i "s/ PP: -->//g" tmp.md
 	cat tmp.md | grep -v '\[!\[Release\](' | grep -v '!\[Workflow\](' > tmp1.md
@@ -290,10 +290,10 @@ web-min: app-help app-version  ## (EXPERIMENTAL) create a minimized web release 
 help:  ## this help message
 	$(call hdr,"$@")
 	@printf "\n\033[35;1m%s\n" "Targets"
-	@grep -E '^[ ]*[^:]*[ ]*:.*##' $(MAKEFILE_LIST) 2>/dev/null | \
+	@grep -E '^[^.[:space:]][^[:space:]]*:.*[[:space:]]##' $(MAKEFILE_LIST) 2>/dev/null | \
 		grep -E -v '^ *#' | \
 		grep -E -v "egrep|sort|sed|MAKEFILE" | \
-		sed -e 's/: .*##/##/' -e 's/^[^:#]*://' | \
+		sed -e 's/:[[:space:]].*##/##/' -e 's/^[^:#]*://' | \
 		awk -F'##' '{printf("%-18s %s\n",$$1,$$2)}' | \
 		sort -f | \
 		sed -e 's@^@   @'

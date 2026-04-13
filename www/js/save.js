@@ -79,14 +79,12 @@ export function menuSaveDlg() {
                                  'btn-secondary',
                                  'close the dialogue with no changes',
                                  (el) => {
-                                    //console.log(el)
                                     return true
                                 })
     let b2 = mkPopupModalDlgButton('Save',
                                  'btn-primary',
                                  'save using the password',
                                  (el) => {
-                                     //console.log(el)
                                      let fn = el.xGet('#x-save-filename').value.trim()
                                      let fp = el.xGet('#x-save-password').value.trim()
                                      document.body.xGet('#x-save-password').value = fp
@@ -105,7 +103,6 @@ export function menuSaveDlg() {
 export function convertInternalDataToJSON(contents, now) {
     // Save the preferencess
     for (const [key, value] of Object.entries(window.prefs)) {
-        //console.log(`SAVE: ${key} = "${value}"`)
         contents.prefs[key] = value
     }
 

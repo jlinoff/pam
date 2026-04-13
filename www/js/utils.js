@@ -248,8 +248,6 @@ function updateAttributeValue(attr, value) {
  */
 function replaceClass(from, to) {
     let elements = Array.from(document.body.getElementsByClassName(from))
-    //let ea = [].slice.call(document.querySelectorAll(`.${from}`),0)
-    //let elements = [].slice.call(Array.from(document.body.getElementsByClassName(from)), 0)
     for (let i = elements.length-1; i >= 0; i--) {
         let element = elements[i]
         try {

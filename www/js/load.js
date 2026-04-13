@@ -70,7 +70,6 @@ export function menuLoadDlg() {
                                    'btn-secondary',
                                    'close the dialogue with no changes',
                                    (el) => {
-                                       //console.log(el)
                                        return true
                                    })
     let b2 = xmk('span').xAppendChild(
@@ -78,7 +77,6 @@ export function menuLoadDlg() {
                               'btn-primary',
                               'load using the password',
                               (el) => {
-                                  //console.log(el)
                                   let password = el.xGet('#x-load-password').value.trim()
                                   let input = document.body.xGet('#x-load-file-select-input')
                                   setFilePass(password)
@@ -108,7 +106,6 @@ export function menuLoadDlg() {
                     reader.readAsText(file)
                     reader.onload = (event3) => {
                         let content = event3.target.result
-                        //console.log('debug', content.slice(0,10))
                         const filename = file.name
                         let password = document.body.xGet('#x-load-password').value.trim()
                         loadFileContent(filename, password, content)
@@ -171,7 +168,6 @@ function loadUrlContent(url) {
             return response.text()
         })
         .then((content) => {
-            //console.log(data)
             let size = content.length
             if (content[0] === '{') {
                 // This file is plain json, it is not encrypted
@@ -346,7 +342,6 @@ export function loadCallback(text) {
     let thenDateString = json.meta['date-saved']
     let thenDate = new Date(thenDateString)
     let elapsed = now.getTime() - thenDate.getTime() // ms
-    //let days = elapsed / (1000 * 3600 * 24)
     let fet = formatTimeElapsed(elapsed)
     window.prefs.lastUpdated = now.toISOString()  // for use in reporting
     setDarkLightTheme(window.prefs.themeName)

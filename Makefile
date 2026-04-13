@@ -42,7 +42,7 @@ all: clean default test web  ## Make a release: make clean && make && make test 
 	@ls -lh pam-www.tar
 
 .PHONY: clean
-clean:	 # clean up
+clean:	 ## clean up back to basic git managed source files
 	$(call hdr,"$@")
 	-[ -d .git ] && git clean -xdf -e keep . || true
 

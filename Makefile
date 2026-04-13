@@ -42,7 +42,7 @@ all: clean default test web  ## Make a release: make clean && make && make test 
 	@ls -lh pam-www.tar
 
 .PHONY: clean
-clean:	 # clean up
+clean:	 ## clean up back to basic git managed source files
 	$(call hdr,"$@")
 	-[ -d .git ] && git clean -xdf -e keep . || true
 
@@ -177,7 +177,20 @@ run: init  ## Run the server on port PORT
 KILL_SERVER := lsof -i :$(PORT) && kill -9 $$(lsof -F pcuftDsin -i :$(PORT) | grep ^p | sed -e 's/^p//')
 
 .PHONY: test
-test: init lint | tests/test_chrome.py ## Run local tests
+test: unit-test e2e-test ## Run all tests (unit + e2e)
+
+.PHONY: unit-test
+unit-test: init lint ## Run vanilla JS unit tests in tests/tests.html via ChromeDriver
+	$(call hdr,"$@")
+	-$(KILL_SERVER)
+	( cd www && pipenv run python -m http.server $(PORT) > /dev/null 2>&1 ) &
+	sleep 2
+	lsof -i :$(PORT)
+	pipenv run python3 -m pytest -v tests/test_unit.py
+	$(KILL_SERVER)
+
+.PHONY: e2e-test
+e2e-test: init lint ## Run Selenium E2E tests in tests/test_chrome.py
 	$(call hdr,"$@")
 	pipenv run python3 --version
 	lsof -v

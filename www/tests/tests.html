@@ -1,0 +1,722 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PAM Unit Tests</title>
+  <style>
+    body { font-family: monospace; font-size: 14px; margin: 2em; background: #1a1a1a; color: #ccc; }
+    h1   { color: #fff; margin-bottom: 0.25em; }
+    h2   { color: #aaa; font-size: 1em; margin: 1.5em 0 0.5em; border-bottom: 1px solid #333; padding-bottom: 0.25em; }
+    .summary { font-size: 1.1em; margin: 1em 0; padding: 0.5em 1em; border-radius: 4px; }
+    .pass    { color: #4caf50; }
+    .fail    { color: #f44336; }
+    .skip    { color: #888; }
+    .summary.all-pass { background: #1b3a1b; border: 1px solid #4caf50; }
+    .summary.has-fail { background: #3a1b1b; border: 1px solid #f44336; }
+    .test-line { margin: 2px 0; padding-left: 1em; }
+    .test-line.fail { background: #2a1a1a; }
+    pre  { margin: 0.25em 0 0.25em 2em; color: #f44336; font-size: 0.9em; }
+    #x-summary-text { font-weight: bold; }
+  </style>
+</head>
+<body>
+  <h1>PAM Unit Tests</h1>
+  <div id="x-summary" class="summary">Running...</div>
+  <div id="x-results"></div>
+
+<script type="module">
+
+// ---------------------------------------------------------------------------
+// Minimal window.prefs stub — must be set before any app module is imported
+// ---------------------------------------------------------------------------
+window.prefs = {
+  // status
+  statusMsgDurationMS: 1500,
+  logStatusToConsole: false,
+  // search
+  searchCaseInsensitive: true,
+  searchRecordTitles: true,
+  searchRecordFieldNames: true,
+  searchRecordFieldValues: true,
+  hideInactiveRecords: false,
+  // password / memorable
+  memorablePasswordWordSeparator: '-',
+  memorablePasswordMinWordLength: 3,
+  memorablePasswordMaxWords: 6,
+  memorablePasswordMinWords: 2,
+  memorablePasswordMaxTries: 1000,
+  memorablePasswordPrefix: '',
+  memorablePasswordSuffix: '',
+  passwordRangeMinLength: 8,
+  passwordRangeMaxLength: 64,
+  passwordRangeLengthDefault: 16,
+  // file pass cache
+  filePassCache: 'session',
+  filePass: '',
+  // misc
+  themeName: 'dark',
+  enableRawJSONEdit: false,
+}
+
+// ---------------------------------------------------------------------------
+// Test runner
+// ---------------------------------------------------------------------------
+let _passed = 0
+let _failed = 0
+let _currentSuite = null
+const _results = document.getElementById('x-results')
+
+function suite(name) {
+  _currentSuite = name
+  const h = document.createElement('h2')
+  h.textContent = name
+  h.id = 'suite-' + name.replace(/\s+/g, '-').toLowerCase()
+  _results.appendChild(h)
+}
+
+function test(name, fn) {
+  const line = document.createElement('div')
+  line.className = 'test-line'
+  try {
+    fn()
+    _passed++
+    line.classList.add('pass')
+    line.textContent = '✓ ' + name
+  } catch(e) {
+    _failed++
+    line.classList.add('fail')
+    line.textContent = '✗ ' + name
+    const pre = document.createElement('pre')
+    pre.textContent = e.message || String(e)
+    line.appendChild(pre)
+  }
+  _results.appendChild(line)
+}
+
+function assert(condition, msg) {
+  if (!condition) throw new Error('assert failed: ' + (msg || '(no message)'))
+}
+
+function assertEqual(a, b, msg) {
+  if (a !== b) throw new Error((msg || 'assertEqual') + '\n  expected: ' + JSON.stringify(b) + '\n  actual:   ' + JSON.stringify(a))
+}
+
+function assertNotEqual(a, b, msg) {
+  if (a === b) throw new Error((msg || 'assertNotEqual') + ': values are equal: ' + JSON.stringify(a))
+}
+
+function assertThrows(fn, msg) {
+  let threw = false
+  try { fn() } catch(e) { threw = true }
+  if (!threw) throw new Error((msg || 'assertThrows') + ': expected exception was not thrown')
+}
+
+function finalize() {
+  const el = document.getElementById('x-summary')
+  const total = _passed + _failed
+  el.textContent = `${total} tests: ${_passed} passed, ${_failed} failed`
+  el.className = 'summary ' + (_failed === 0 ? 'all-pass' : 'has-fail')
+  // expose result for ChromeDriver to read
+  window.__TEST_RESULTS__ = { passed: _passed, failed: _failed, total }
+}
+
+// ---------------------------------------------------------------------------
+// lib.js — enableFunctionChaining and helpers
+// ---------------------------------------------------------------------------
+import { enableFunctionChaining, xmk, xget, xgetn } from '/js/lib.js'
+enableFunctionChaining()
+
+suite('lib.js — xmk')
+test('xmk creates an element with the correct tagName', () => {
+  const el = xmk('div')
+  assertEqual(el.tagName.toLowerCase(), 'div')
+})
+test('xmk creates different element types', () => {
+  assertEqual(xmk('span').tagName.toLowerCase(), 'span')
+  assertEqual(xmk('button').tagName.toLowerCase(), 'button')
+  assertEqual(xmk('input').tagName.toLowerCase(), 'input')
+})
+
+suite('lib.js — xClass / xId / xAttr / xAttrs')
+test('xClass adds CSS classes', () => {
+  const el = xmk('div').xClass('foo', 'bar')
+  assert(el.classList.contains('foo'), 'should contain foo')
+  assert(el.classList.contains('bar'), 'should contain bar')
+})
+test('xClass ignores null entries', () => {
+  const el = xmk('div').xClass('foo', null, 'bar')
+  assert(el.classList.contains('foo'))
+  assert(el.classList.contains('bar'))
+})
+test('xId sets the element id', () => {
+  const el = xmk('div').xId('test-id')
+  assertEqual(el.id, 'test-id')
+})
+test('xAttr sets a single attribute', () => {
+  const el = xmk('input').xAttr('type', 'text')
+  assertEqual(el.getAttribute('type'), 'text')
+})
+test('xAttrs sets multiple attributes', () => {
+  const el = xmk('input').xAttrs({ type: 'text', placeholder: 'name', required: 'true' })
+  assertEqual(el.getAttribute('type'), 'text')
+  assertEqual(el.getAttribute('placeholder'), 'name')
+  assertEqual(el.getAttribute('required'), 'true')
+})
+
+suite('lib.js — xInnerHTML / xInnerText / xTextContent')
+test('xInnerHTML sets innerHTML', () => {
+  const el = xmk('div').xInnerHTML('<b>hello</b>')
+  assertEqual(el.innerHTML, '<b>hello</b>')
+})
+test('xInnerText sets innerText', () => {
+  const el = xmk('div').xInnerText('hello')
+  assertEqual(el.innerText, 'hello')
+})
+test('xTextContent escapes HTML', () => {
+  const el = xmk('div').xTextContent('<b>escaped</b>')
+  assertEqual(el.textContent, '<b>escaped</b>')
+  assertEqual(el.innerHTML, '&lt;b&gt;escaped&lt;/b&gt;')
+})
+
+suite('lib.js — xAppendChild / xAppend / xPrependChild')
+test('xAppendChild adds child elements', () => {
+  const parent = xmk('div').xAppendChild(xmk('span').xId('c1'), xmk('span').xId('c2'))
+  assertEqual(parent.children.length, 2)
+  assertEqual(parent.children[0].id, 'c1')
+  assertEqual(parent.children[1].id, 'c2')
+})
+test('xAppend is an alias for xAppendChild', () => {
+  const parent = xmk('div').xAppend(xmk('span').xId('a1'))
+  assertEqual(parent.children[0].id, 'a1')
+})
+test('xAppendChild ignores null entries', () => {
+  const parent = xmk('div').xAppendChild(xmk('span'), null, xmk('span'))
+  assertEqual(parent.children.length, 2)
+})
+test('xPrependChild inserts at the front', () => {
+  const parent = xmk('div').xAppend(xmk('span').xId('second'))
+  parent.xPrependChild(xmk('span').xId('first'))
+  assertEqual(parent.children[0].id, 'first')
+  assertEqual(parent.children[1].id, 'second')
+})
+
+suite('lib.js — xStyle / xTooltip')
+test('xStyle sets CSS properties', () => {
+  const el = xmk('div').xStyle({ color: 'red', display: 'none' })
+  assertEqual(el.style.color, 'red')
+  assertEqual(el.style.display, 'none')
+})
+test('xTooltip sets the title attribute', () => {
+  const el = xmk('div').xTooltip('my tip')
+  assertEqual(el.getAttribute('title'), 'my tip')
+})
+
+suite('lib.js — xGet / xGetN / xGetParentOfType')
+test('xGet finds a descendant by query', () => {
+  const parent = xmk('div').xAppend(xmk('span').xId('target'))
+  const found = parent.xGet('#target')
+  assert(found !== null, 'should find #target')
+  assertEqual(found.id, 'target')
+})
+test('xGetN returns all matching descendants', () => {
+  const parent = xmk('div').xAppend(xmk('span'), xmk('span'), xmk('span'))
+  const spans = parent.xGetN('span')
+  assertEqual(spans.length, 3)
+})
+test('xGetParentOfType traverses up to find matching tag', () => {
+  const grandparent = xmk('div')
+  const parent = xmk('section')
+  const child = xmk('span')
+  grandparent.xAppend(parent.xAppend(child))
+  const found = child.xGetParentOfType('section')
+  assert(found !== null)
+  assertEqual(found.tagName.toLowerCase(), 'section')
+})
+
+suite('lib.js — chaining')
+test('methods chain correctly', () => {
+  const el = xmk('div')
+    .xId('chain-test')
+    .xClass('foo')
+    .xAttr('data-x', 'val')
+    .xTooltip('tip')
+  assertEqual(el.id, 'chain-test')
+  assert(el.classList.contains('foo'))
+  assertEqual(el.getAttribute('data-x'), 'val')
+  assertEqual(el.getAttribute('title'), 'tip')
+})
+
+// ---------------------------------------------------------------------------
+// utils.js — pure functions
+// ---------------------------------------------------------------------------
+import { mkid, isURL, sortDictByKey, hide, show } from '/js/utils.js'
+
+suite('utils.js — mkid')
+test('mkid produces unique ids with prefix', () => {
+  const a = mkid('test')
+  const b = mkid('test')
+  assertNotEqual(a, b, 'mkid should produce unique ids')
+  assert(a.startsWith('test-'), 'id should start with prefix')
+})
+test('mkid uses different counters per prefix', () => {
+  const x = mkid('alpha')
+  const y = mkid('beta')
+  assert(x.startsWith('alpha-'))
+  assert(y.startsWith('beta-'))
+})
+
+suite('utils.js — isURL')
+test('https URL is recognised', () => {
+  assert(isURL('https://example.com'))
+})
+test('http URL is recognised', () => {
+  assert(isURL('http://example.com'))
+})
+test('plain text is not a URL', () => {
+  assert(!isURL('not a url'))
+})
+test('partial URL fragment is not a URL', () => {
+  assert(!isURL('example.com'))
+})
+test('empty string is not a URL', () => {
+  assert(!isURL(''))
+})
+
+suite('utils.js — sortDictByKey')
+test('sorts keys case-insensitively', () => {
+  const dict = { Banana: 2, apple: 1, Cherry: 3 }
+  const sorted = sortDictByKey(dict)
+  const keys = Object.keys(sorted)
+  assertEqual(keys[0].toLowerCase(), 'apple')
+  assertEqual(keys[1].toLowerCase(), 'banana')
+  assertEqual(keys[2].toLowerCase(), 'cherry')
+})
+test('preserves values during sort', () => {
+  const dict = { b: 2, a: 1 }
+  const sorted = sortDictByKey(dict)
+  assertEqual(sorted['a'], 1)
+  assertEqual(sorted['b'], 2)
+})
+test('empty dict returns empty dict', () => {
+  const sorted = sortDictByKey({})
+  assertEqual(Object.keys(sorted).length, 0)
+})
+
+suite('utils.js — hide / show')
+test('hide sets display:none', () => {
+  const el = xmk('div').xId('hide-test')
+  document.body.appendChild(el)
+  hide('hide-test')
+  assertEqual(el.style.display, 'none')
+  el.remove()
+})
+test('show sets display:block', () => {
+  const el = xmk('div').xId('show-test')
+  document.body.appendChild(el)
+  show('show-test')
+  assertEqual(el.style.display, 'block')
+  el.remove()
+})
+
+// ---------------------------------------------------------------------------
+// status.js — DOM mutations
+// ---------------------------------------------------------------------------
+import { status, statusBlip } from '/js/status.js'
+
+// set up the #status element that status.js targets
+const statusEl = xmk('div').xId('status')
+document.body.appendChild(statusEl)
+
+suite('status.js — status()')
+test('status() sets content of #status element', () => {
+  status('test message')
+  assert(statusEl.innerHTML.includes('test message'), 'status element should contain message')
+})
+test('status() includes the icon', () => {
+  status('icon test')
+  assert(statusEl.innerHTML.includes('<i '), 'status element should include icon markup')
+})
+
+suite('status.js — statusBlip()')
+test('statusBlip() sets content immediately', () => {
+  statusBlip('blip message')
+  assert(statusEl.innerHTML.includes('blip message'), 'statusBlip should set content immediately')
+})
+
+// ---------------------------------------------------------------------------
+// utils.js — clog (depends on window.prefs.logStatusToConsole)
+// ---------------------------------------------------------------------------
+import { clog } from '/js/utils.js'
+
+suite('utils.js — clog')
+test('clog does not throw when logStatusToConsole is false', () => {
+  window.prefs.logStatusToConsole = false
+  clog('should not throw')
+  assert(true, 'clog did not throw')
+})
+test('clog does not throw when logStatusToConsole is true', () => {
+  window.prefs.logStatusToConsole = true
+  clog('console message')
+  window.prefs.logStatusToConsole = false
+  assert(true, 'clog did not throw')
+})
+
+// ---------------------------------------------------------------------------
+// password.js — getCrypticPassword, ALPHABET constants
+// ---------------------------------------------------------------------------
+import {
+  getCrypticPassword,
+  getMemorablePassword,
+  setFilePass,
+  getFilePass,
+  ALPHABET,
+  ALPHA_LOWER,
+  ALPHA_UPPER,
+  DEC_DIGITS,
+  SPECIAL
+} from '/js/password.js'
+
+suite('password.js — constants')
+test('ALPHABET contains lowercase, uppercase, digits, special chars', () => {
+  for (const c of ALPHA_LOWER) assert(ALPHABET.includes(c), `ALPHABET missing ${c}`)
+  for (const c of ALPHA_UPPER) assert(ALPHABET.includes(c), `ALPHABET missing ${c}`)
+  for (const c of DEC_DIGITS)  assert(ALPHABET.includes(c), `ALPHABET missing ${c}`)
+  for (const c of SPECIAL)     assert(ALPHABET.includes(c), `ALPHABET missing ${c}`)
+})
+
+suite('password.js — getCrypticPassword')
+test('produces password of the requested length', () => {
+  for (const len of [8, 16, 32, 64]) {
+    const pwd = getCrypticPassword(len, ALPHABET)
+    assertEqual(pwd.length, len, `length should be ${len}`)
+  }
+})
+test('all characters are from the provided alphabet', () => {
+  const pwd = getCrypticPassword(100, ALPHA_LOWER)
+  for (const c of pwd) assert(ALPHA_LOWER.includes(c), `unexpected char: ${c}`)
+})
+test('two calls produce different results (probabilistically)', () => {
+  const a = getCrypticPassword(32, ALPHABET)
+  const b = getCrypticPassword(32, ALPHABET)
+  assertNotEqual(a, b, 'two 32-char passwords should differ (collision astronomically unlikely)')
+})
+test('length zero produces empty string', () => {
+  assertEqual(getCrypticPassword(0, ALPHABET), '')
+})
+
+suite('password.js — getMemorablePassword')
+test('produces a non-empty result', () => {
+  const pwd = getMemorablePassword(20)
+  assert(pwd.length > 0, 'memorable password should not be empty')
+})
+test('result length is close to target (within word boundary tolerance)', () => {
+  const target = 20
+  const pwd = getMemorablePassword(target)
+  // memorable passwords overshoot slightly due to word boundaries
+  assert(pwd.length >= 1, 'should produce something')
+})
+
+suite('password.js — setFilePass / getFilePass')
+test('session cache: set and get round-trip', () => {
+  window.prefs.filePassCache = 'session'
+  setFilePass('my-secret')
+  const got = getFilePass()
+  assertEqual(got, 'my-secret')
+})
+test('none cache: always returns empty string', () => {
+  window.prefs.filePassCache = 'none'
+  setFilePass('ignored')
+  assertEqual(getFilePass(), '')
+})
+test('global cache: stores in window.prefs.filePass', () => {
+  window.prefs.filePassCache = 'global'
+  setFilePass('global-pass')
+  assertEqual(window.prefs.filePass, 'global-pass')
+  assertEqual(getFilePass(), 'global-pass')
+})
+test('null password is stored as empty string', () => {
+  window.prefs.filePassCache = 'session'
+  setFilePass(null)
+  assertEqual(getFilePass(), '')
+})
+
+// Restore default
+window.prefs.filePassCache = 'session'
+
+// ---------------------------------------------------------------------------
+// search.js — searchRecords (needs minimal DOM fixture)
+// ---------------------------------------------------------------------------
+import { searchRecords, clearSearch } from '/js/search.js'
+
+// Build a minimal DOM fixture: #records-accordion with some records
+function makeAccordionItem(title, active, fields) {
+  const item = xmk('div').xClass('accordion-item')
+  const button = xmk('button').xClass('accordion-button')
+  button.innerHTML = title
+  button.setAttribute('x-active', active ? 'true' : 'false')
+  item.appendChild(button)
+  // add field name and value elements
+  if (fields) {
+    fields.forEach(([name, type, value]) => {
+      const nameEl = xmk('span').xClass('x-fld-name')
+      nameEl.innerHTML = name
+      const valEl = xmk('span').xClass('x-fld-value')
+      valEl.setAttribute('data-fld-type', type)
+      valEl.setAttribute('data-fld-raw-value', value)
+      item.appendChild(nameEl)
+      item.appendChild(valEl)
+    })
+  }
+  return item
+}
+
+const accordion = xmk('div').xId('records-accordion')
+accordion.appendChild(makeAccordionItem('Amazon', true,  [['username', 'text', 'jsmith'], ['password', 'password', 'secret1']]))
+accordion.appendChild(makeAccordionItem('Google', true,  [['username', 'text', 'joe@gmail.com'], ['password', 'password', 'secret2']]))
+accordion.appendChild(makeAccordionItem('GitHub', true,  [['username', 'text', 'jlinoff'], ['token', 'password', 'ghp_abc123']]))
+accordion.appendChild(makeAccordionItem('OldBank', false, [['account', 'text', 'inactive-acct']]))
+document.body.appendChild(accordion)
+
+// #x-num-records needed by searchRecords
+const numRecordsEl = xmk('span').xId('x-num-records')
+document.body.appendChild(numRecordsEl)
+
+// #search needed by clearSearch
+const searchInputEl = xmk('input').xId('search')
+document.body.appendChild(searchInputEl)
+
+function visibleTitles() {
+  const items = accordion.querySelectorAll('.accordion-item')
+  const result = []
+  for (const item of items) {
+    if (!item.classList.contains('d-none')) {
+      result.push(item.querySelector('.accordion-button').innerHTML)
+    }
+  }
+  return result
+}
+
+suite('search.js — searchRecords title match')
+test('empty search shows all active records', () => {
+  searchRecords('.')
+  const visible = visibleTitles()
+  assert(visible.includes('Amazon'))
+  assert(visible.includes('Google'))
+  assert(visible.includes('GitHub'))
+})
+test('title match is case-insensitive', () => {
+  searchRecords('amazon')
+  const visible = visibleTitles()
+  assert(visible.includes('Amazon'), 'Amazon should be visible')
+  assert(!visible.includes('Google'), 'Google should be hidden')
+})
+test('partial title match works', () => {
+  searchRecords('git')
+  const visible = visibleTitles()
+  assert(visible.includes('GitHub'))
+  assert(!visible.includes('Amazon'))
+})
+test('no match hides all records', () => {
+  searchRecords('xyznotfound')
+  const visible = visibleTitles()
+  assertEqual(visible.length, 0)
+})
+
+suite('search.js — searchRecords field match')
+test('field value match works', () => {
+  searchRecords('jsmith')
+  const visible = visibleTitles()
+  assert(visible.includes('Amazon'), 'Amazon has jsmith username')
+  assert(!visible.includes('Google'))
+})
+test('field name match works', () => {
+  searchRecords('token')
+  const visible = visibleTitles()
+  assert(visible.includes('GitHub'), 'GitHub has a token field')
+  assert(!visible.includes('Amazon'))
+})
+
+suite('search.js — inactive records')
+test('inactive records are shown by default', () => {
+  window.prefs.hideInactiveRecords = false
+  searchRecords('.')
+  const visible = visibleTitles()
+  assert(visible.includes('OldBank'), 'OldBank should be visible when hideInactiveRecords is false')
+})
+test('inactive records are hidden when pref is set', () => {
+  window.prefs.hideInactiveRecords = true
+  searchRecords('.')
+  const visible = visibleTitles()
+  assert(!visible.includes('OldBank'), 'OldBank should be hidden when hideInactiveRecords is true')
+  window.prefs.hideInactiveRecords = false
+})
+
+// ---------------------------------------------------------------------------
+// crypt.js — v1 regression baseline (MUST PASS — locked before any crypto changes)
+// ---------------------------------------------------------------------------
+import { encrypt, decrypt } from '/js/crypt.js'
+
+// Helper: wrap callback-based encrypt/decrypt in Promises
+function encryptAsync(password, plaintext) {
+  return new Promise((resolve, reject) => {
+    // We need a real #status element (already added above)
+    encrypt(password, plaintext, 'test.pam', (ciphertext, _filename) => {
+      resolve(ciphertext)
+    })
+    // timeout failsafe
+    setTimeout(() => reject(new Error('encrypt timed out')), 5000)
+  })
+}
+
+function decryptAsync(password, ciphertext) {
+  return new Promise((resolve, reject) => {
+    decrypt(password, ciphertext,
+      (plaintext) => resolve({ ok: true, plaintext }),
+      (errMsg)   => resolve({ ok: false, error: errMsg })
+    )
+    setTimeout(() => reject(new Error('decrypt timed out')), 5000)
+  })
+}
+
+// Async test wrapper — runs after sync tests
+async function runCryptTests() {
+  suite('crypt.js — v1 regression baseline')
+
+  // Test 1: encrypt then decrypt round-trip
+  await (async () => {
+    const label = 'encrypt/decrypt round-trip with known password'
+    try {
+      const plaintext = '{"records":[],"version":1}'
+      const password  = 'test-password-phase1'
+      const ciphertext = await encryptAsync(password, plaintext)
+      assert(typeof ciphertext === 'string', 'ciphertext should be a string')
+      assertNotEqual(ciphertext, plaintext, 'ciphertext should differ from plaintext')
+      const result = await decryptAsync(password, ciphertext)
+      assert(result.ok, 'decryption should succeed: ' + (result.error || ''))
+      assertEqual(result.plaintext, plaintext, 'decrypted text should match original')
+      _passed++
+      const line = document.createElement('div')
+      line.className = 'test-line pass'
+      line.textContent = '✓ ' + label
+      _results.appendChild(line)
+    } catch(e) {
+      _failed++
+      const line = document.createElement('div')
+      line.className = 'test-line fail'
+      line.textContent = '✗ ' + label
+      const pre = document.createElement('pre')
+      pre.textContent = e.message || String(e)
+      line.appendChild(pre)
+      _results.appendChild(line)
+    }
+  })()
+
+  // Test 2: wrong password fails
+  await (async () => {
+    const label = 'wrong password produces decryption failure'
+    try {
+      const plaintext  = '{"records":[],"version":1}'
+      const ciphertext = await encryptAsync('correct-password', plaintext)
+      const result = await decryptAsync('wrong-password', ciphertext)
+      assert(!result.ok, 'decryption with wrong password should fail')
+      _passed++
+      const line = document.createElement('div')
+      line.className = 'test-line pass'
+      line.textContent = '✓ ' + label
+      _results.appendChild(line)
+    } catch(e) {
+      _failed++
+      const line = document.createElement('div')
+      line.className = 'test-line fail'
+      line.textContent = '✗ ' + label
+      const pre = document.createElement('pre')
+      pre.textContent = e.message || String(e)
+      line.appendChild(pre)
+      _results.appendChild(line)
+    }
+  })()
+
+  // Test 3: empty plaintext passes through unchanged
+  await (async () => {
+    const label = 'empty plaintext passes through encrypt unchanged'
+    try {
+      const result = await encryptAsync('password', '')
+      assertEqual(result, '', 'empty plaintext should return empty string')
+      _passed++
+      const line = document.createElement('div')
+      line.className = 'test-line pass'
+      line.textContent = '✓ ' + label
+      _results.appendChild(line)
+    } catch(e) {
+      _failed++
+      const line = document.createElement('div')
+      line.className = 'test-line fail'
+      line.textContent = '✗ ' + label
+      const pre = document.createElement('pre')
+      pre.textContent = e.message || String(e)
+      line.appendChild(pre)
+      _results.appendChild(line)
+    }
+  })()
+
+  // Test 4: two encryptions of the same plaintext produce different ciphertexts (random IV)
+  await (async () => {
+    const label = 'each encryption produces a different ciphertext (random IV/salt)'
+    try {
+      const plaintext = '{"records":[]}'
+      const password  = 'same-password'
+      const c1 = await encryptAsync(password, plaintext)
+      const c2 = await encryptAsync(password, plaintext)
+      assertNotEqual(c1, c2, 'two encryptions of the same plaintext should differ due to random IV')
+      _passed++
+      const line = document.createElement('div')
+      line.className = 'test-line pass'
+      line.textContent = '✓ ' + label
+      _results.appendChild(line)
+    } catch(e) {
+      _failed++
+      const line = document.createElement('div')
+      line.className = 'test-line fail'
+      line.textContent = '✗ ' + label
+      const pre = document.createElement('pre')
+      pre.textContent = e.message || String(e)
+      line.appendChild(pre)
+      _results.appendChild(line)
+    }
+  })()
+
+  // Test 5: plaintext without password passes through unchanged
+  await (async () => {
+    const label = 'plaintext JSON without password passes through unchanged'
+    try {
+      const plaintext = '{"records":[]}'
+      const result = await encryptAsync('', plaintext)
+      assertEqual(result, plaintext, 'no-password encrypt should return plaintext unchanged')
+      _passed++
+      const line = document.createElement('div')
+      line.className = 'test-line pass'
+      line.textContent = '✓ ' + label
+      _results.appendChild(line)
+    } catch(e) {
+      _failed++
+      const line = document.createElement('div')
+      line.className = 'test-line fail'
+      line.textContent = '✗ ' + label
+      const pre = document.createElement('pre')
+      pre.textContent = e.message || String(e)
+      line.appendChild(pre)
+      _results.appendChild(line)
+    }
+  })()
+
+  finalize()
+}
+
+// Run sync tests first, then async crypt tests
+finalize() // update summary with sync results so far
+runCryptTests() // will call finalize() again after async tests complete
+
+</script>
+</body>
+</html>

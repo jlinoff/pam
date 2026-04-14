@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>PAM - Architecture</title>
+  <style>
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: auto; overflow-x: auto;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+    /* CSS for syntax highlighting */
+    html { -webkit-text-size-adjust: 100%; }
+    pre > code.sourceCode { white-space: pre; position: relative; }
+    pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+    pre > code.sourceCode > span:empty { height: 1.2em; }
+    .sourceCode { overflow: visible; }
+    code.sourceCode > span { color: inherit; text-decoration: inherit; }
+    div.sourceCode { margin: 1em 0; }
+    pre.sourceCode { margin: 0; }
+    @media screen {
+    div.sourceCode { overflow: auto; }
+    }
+    @media print {
+    pre > code.sourceCode { white-space: pre-wrap; }
+    pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+    }
+    pre.numberSource code
+      { counter-reset: source-line 0; }
+    pre.numberSource code > span
+      { position: relative; left: -4em; counter-increment: source-line; }
+    pre.numberSource code > span > a:first-child::before
+      { content: counter(source-line);
+        position: relative; left: -1em; text-align: right; vertical-align: baseline;
+        border: none; display: inline-block;
+        -webkit-touch-callout: none; -webkit-user-select: none;
+        -khtml-user-select: none; -moz-user-select: none;
+        -ms-user-select: none; user-select: none;
+        padding: 0 4px; width: 4em;
+        color: #aaaaaa;
+      }
+    pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+    div.sourceCode
+      {   }
+    @media screen {
+    pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+    }
+    code span.al { color: #ff0000; font-weight: bold; } /* Alert */
+    code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+    code span.at { color: #7d9029; } /* Attribute */
+    code span.bn { color: #40a070; } /* BaseN */
+    code span.bu { color: #008000; } /* BuiltIn */
+    code span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+    code span.ch { color: #4070a0; } /* Char */
+    code span.cn { color: #880000; } /* Constant */
+    code span.co { color: #60a0b0; font-style: italic; } /* Comment */
+    code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+    code span.do { color: #ba2121; font-style: italic; } /* Documentation */
+    code span.dt { color: #902000; } /* DataType */
+    code span.dv { color: #40a070; } /* DecVal */
+    code span.er { color: #ff0000; font-weight: bold; } /* Error */
+    code span.ex { } /* Extension */
+    code span.fl { color: #40a070; } /* Float */
+    code span.fu { color: #06287e; } /* Function */
+    code span.im { color: #008000; font-weight: bold; } /* Import */
+    code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+    code span.kw { color: #007020; font-weight: bold; } /* Keyword */
+    code span.op { color: #666666; } /* Operator */
+    code span.ot { color: #007020; } /* Other */
+    code span.pp { color: #bc7a00; } /* Preprocessor */
+    code span.sc { color: #4070a0; } /* SpecialChar */
+    code span.ss { color: #bb6688; } /* SpecialString */
+    code span.st { color: #4070a0; } /* String */
+    code span.va { color: #19177c; } /* Variable */
+    code span.vs { color: #4070a0; } /* VerbatimString */
+    code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+  </style>
+  <link rel="stylesheet" href="index.css" />
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">PAM - Architecture</h1>
+</header>
+<h1 id="pam-architecture">PAM Architecture</h1>
+<p>This document describes the structure of the PAM codebase for
+contributors.</p>
+<hr />
+<h2 id="overview">Overview</h2>
+<p>PAM is a single-page web application written in vanilla JavaScript
+using ES modules. There is no build step, no bundler, and no npm runtime
+dependencies. The browser loads <code>www/index.html</code>, which pulls
+in <code>main.js</code> as an ES module, which in turn imports
+everything else.</p>
+<pre><code>www/
+├── index.html          # entry point — loads main.js
+├── js/                 # ES modules
+├── css/                # bootstrap + custom styles
+├── font/               # bootstrap icons
+├── icons/              # SVG icons (black and blue variants)
+├── help/               # generated help page (from README.md via pandoc)
+└── examples/           # example PAM files for new users to practice with</code></pre>
+<hr />
+<h2 id="module-map">Module map</h2>
+<p>Each module has a single responsibility. The diagram below shows
+which modules import which (arrows point from importer to importee).</p>
+<pre><code>main.js
+├── lib.js              (x* prototype chaining API)
+├── utils.js            (shared helpers: icon, clog, hide, show, clipboard, theme)
+├── status.js           (status bar messages)
+├── prefs.js            (preferences model + UI)
+│   ├── prefs-model.js  (pure data: getDefaultPrefs, VALID_FIELD_TYPES, hashPrefsPassword)
+│   ├── field.js        (record field rendering + editing)
+│   ├── save.js         (file save)
+│   ├── load.js         (file load)
+│   └── main.js         ← circular (updateHtmlRenderingIndicator)
+├── menu.js             (menu construction + dialog orchestration)
+│   ├── prefs.js
+│   ├── field.js
+│   ├── save.js
+│   └── load.js
+├── search.js           (search/filter logic)
+├── password.js         (password generation + file-pass caching)
+├── about.js            (About dialog)
+├── print.js            (print records)
+├── raw.js              (raw JSON edit mode)
+└── en_words.js         (word list for memorable passwords)</code></pre>
+<p><strong>Note on the circular dependency:</strong>
+<code>prefs.js</code> imports <code>updateHtmlRenderingIndicator</code>
+from <code>main.js</code>, and <code>main.js</code> imports from
+<code>prefs.js</code>. This works because ES modules handle circular
+imports by providing the already-evaluated exports at the point of use.
+The reference will be resolved in a future phase by moving
+<code>updateHtmlRenderingIndicator</code> out of
+<code>main.js</code>.</p>
+<hr />
+<h2 id="the-x-prototype-chaining-api-lib.js">The <code>x*</code>
+prototype chaining API (<code>lib.js</code>)</h2>
+<p><code>lib.js</code> extends <code>HTMLDocument</code> and
+<code>Element</code> with convenience methods prefixed with
+<code>x</code>. They are installed by calling
+<code>enableFunctionChaining()</code> once at startup in
+<code>main.js</code>.</p>
+<p>The pattern exists because the native DOM API is verbose and does not
+support method chaining. Compare:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="co">// Native DOM — 7 statements, no chaining</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> btn <span class="op">=</span> <span class="bu">document</span><span class="op">.</span><span class="fu">createElement</span>(<span class="st">&#39;button&#39;</span>)</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>btn<span class="op">.</span><span class="at">classList</span><span class="op">.</span><span class="fu">add</span>(<span class="st">&#39;btn&#39;</span><span class="op">,</span> <span class="st">&#39;btn-primary&#39;</span>)</span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>btn<span class="op">.</span><span class="at">id</span> <span class="op">=</span> <span class="st">&#39;save-btn&#39;</span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>btn<span class="op">.</span><span class="fu">setAttribute</span>(<span class="st">&#39;type&#39;</span><span class="op">,</span> <span class="st">&#39;button&#39;</span>)</span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>btn<span class="op">.</span><span class="fu">setAttribute</span>(<span class="st">&#39;title&#39;</span><span class="op">,</span> <span class="st">&#39;save the record&#39;</span>)</span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>btn<span class="op">.</span><span class="fu">addEventListener</span>(<span class="st">&#39;click&#39;</span><span class="op">,</span> handler)</span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>parent<span class="op">.</span><span class="fu">appendChild</span>(btn)</span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a><span class="co">// x* API — one expression</span></span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a><span class="fu">xmk</span>(<span class="st">&#39;button&#39;</span>)</span>
+<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a>    <span class="op">.</span><span class="fu">xClass</span>(<span class="st">&#39;btn&#39;</span><span class="op">,</span> <span class="st">&#39;btn-primary&#39;</span>)</span>
+<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a>    <span class="op">.</span><span class="fu">xId</span>(<span class="st">&#39;save-btn&#39;</span>)</span>
+<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a>    <span class="op">.</span><span class="fu">xAttrs</span>({ <span class="dt">type</span><span class="op">:</span> <span class="st">&#39;button&#39;</span><span class="op">,</span> <span class="dt">title</span><span class="op">:</span> <span class="st">&#39;save the record&#39;</span> })</span>
+<span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a>    <span class="op">.</span><span class="fu">xAddEventListener</span>(<span class="st">&#39;click&#39;</span><span class="op">,</span> handler)</span>
+<span id="cb3-16"><a href="#cb3-16" aria-hidden="true" tabindex="-1"></a>    <span class="op">.</span><span class="fu">xAppendToParent</span>(parent)</span></code></pre></div>
+<h3 id="full-api-reference">Full API reference</h3>
+<table>
+<colgroup>
+<col style="width: 38%" />
+<col style="width: 61%" />
+</colgroup>
+<thead>
+<tr>
+<th>Method</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>xmk(tag)</code></td>
+<td>Create a new element. Shorthand for
+<code>document.createElement</code>.</td>
+</tr>
+<tr>
+<td><code>.xClass(...names)</code></td>
+<td>Add one or more CSS classes.</td>
+</tr>
+<tr>
+<td><code>.xRemoveClass(...names)</code></td>
+<td>Remove one or more CSS classes.</td>
+</tr>
+<tr>
+<td><code>.xId(id)</code></td>
+<td>Set the element id.</td>
+</tr>
+<tr>
+<td><code>.xAttr(name, value)</code></td>
+<td>Set a single attribute.</td>
+</tr>
+<tr>
+<td><code>.xAttrs({key: value, ...})</code></td>
+<td>Set multiple attributes at once.</td>
+</tr>
+<tr>
+<td><code>.xAttrNS(ns, name, value)</code></td>
+<td>Set a namespaced attribute.</td>
+</tr>
+<tr>
+<td><code>.xAttrIfTrue(name, value, flag)</code></td>
+<td>Set attribute only if <code>flag</code> is truthy.</td>
+</tr>
+<tr>
+<td><code>.xStyle({prop: value, ...})</code></td>
+<td>Set multiple inline styles at once.</td>
+</tr>
+<tr>
+<td><code>.xInnerHTML(html)</code></td>
+<td>Set <code>innerHTML</code>.</td>
+</tr>
+<tr>
+<td><code>.xInnerText(text)</code></td>
+<td>Set <code>innerText</code>.</td>
+</tr>
+<tr>
+<td><code>.xTextContent(text)</code></td>
+<td>Set <code>textContent</code>.</td>
+</tr>
+<tr>
+<td><code>.xTooltip(text)</code></td>
+<td>Set the <code>title</code> attribute (browser tooltip).</td>
+</tr>
+<tr>
+<td><code>.xAddEventListener(event, fn)</code></td>
+<td>Add an event listener.</td>
+</tr>
+<tr>
+<td><code>.xAppend(...children)</code></td>
+<td>Append one or more children. (<code>xAppendChild</code> is an
+alias.)</td>
+</tr>
+<tr>
+<td><code>.xPrepend(...children)</code></td>
+<td>Prepend one or more children. (<code>xPrependChild</code> is an
+alias.)</td>
+</tr>
+<tr>
+<td><code>.xAppendToParent(parent)</code></td>
+<td>Append this element to a given parent.</td>
+</tr>
+<tr>
+<td><code>.xRemoveChildren()</code></td>
+<td>Remove all child nodes.</td>
+</tr>
+<tr>
+<td><code>.xGet(selector)</code></td>
+<td><code>querySelector</code> scoped to this element.</td>
+</tr>
+<tr>
+<td><code>.xGetN(selector)</code></td>
+<td><code>querySelectorAll</code> scoped to this element (returns
+array).</td>
+</tr>
+<tr>
+<td><code>.xGetNthParent(n)</code></td>
+<td>Walk up n levels and return that ancestor.</td>
+</tr>
+<tr>
+<td><code>.xGetParentWithClass(...classes)</code></td>
+<td>Walk up until an ancestor with the given class(es) is found.</td>
+</tr>
+<tr>
+<td><code>.xGetParentOfType(...tags)</code></td>
+<td>Walk up until an ancestor of the given tag type is found.</td>
+</tr>
+</tbody>
+</table>
+<p>All methods return <code>this</code> to enable chaining, except
+<code>xGet</code>, <code>xGetN</code>, and the parent-traversal methods
+which return the found element(s).</p>
+<hr />
+<h2 id="data-model">Data model</h2>
+<h3 id="records-and-fields">Records and fields</h3>
+<p>The in-memory data model lives entirely in the DOM. There is no
+separate JavaScript data store. Each record is a Bootstrap accordion
+item:</p>
+<pre><code>.accordion-item
+  .accordion-button              ← title; x-active attribute tracks active/inactive state
+  .accordion-collapse
+    .accordion-body
+      .row  (one per field)
+        .x-fld-name              ← field name (div)
+        .x-fld-value             ← field value (div); carries data-fld-type and
+                                   data-fld-raw-value attributes</code></pre>
+<p>When saving, <code>convertInternalDataToJSON()</code> in
+<code>save.js</code> walks this DOM structure and serialises it to JSON.
+When loading, <code>load.js</code> reconstructs the DOM from the
+JSON.</p>
+<h3 id="field-types">Field types</h3>
+<p>Defined in <code>prefs-model.js</code> as
+<code>VALID_FIELD_TYPES</code>:</p>
+<table>
+<colgroup>
+<col style="width: 27%" />
+<col style="width: 72%" />
+</colgroup>
+<thead>
+<tr>
+<th>Type</th>
+<th>How it renders</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>text</code></td>
+<td>Plain text</td>
+</tr>
+<tr>
+<td><code>password</code></td>
+<td>Masked (<code>****</code>), with show/hide and generate buttons</td>
+</tr>
+<tr>
+<td><code>url</code></td>
+<td>Clickable link</td>
+</tr>
+<tr>
+<td><code>email</code></td>
+<td>Plain text</td>
+</tr>
+<tr>
+<td><code>phone</code></td>
+<td>Plain text</td>
+</tr>
+<tr>
+<td><code>datetime-local</code></td>
+<td>Plain text</td>
+</tr>
+<tr>
+<td><code>time</code></td>
+<td>Plain text</td>
+</tr>
+<tr>
+<td><code>textarea</code></td>
+<td>Monospace pre-formatted block</td>
+</tr>
+<tr>
+<td><code>html</code></td>
+<td>Escaped text with <code>&lt;/&gt;</code> badge by default; live HTML
+when <code>allowHtmlFieldRendering</code> is enabled (see
+<code>SECURITY.md</code> SEC-001)</td>
+</tr>
+</tbody>
+</table>
+<h3 id="preferences">Preferences</h3>
+<p>Preferences are stored in <code>window.prefs</code>, initialised by
+<code>initPrefs()</code> in <code>prefs.js</code> using
+<code>getDefaultPrefs()</code> from <code>prefs-model.js</code>. When a
+file is saved, <code>window.prefs</code> is serialised into the JSON
+alongside the records. When a file is loaded, the saved prefs overwrite
+<code>window.prefs</code>.</p>
+<p>The defaults are the canonical reference for what preferences exist
+and what their safe values are. See
+<code>prefs-model.js:getDefaultPrefs()</code>.</p>
+<hr />
+<h2 id="file-format">File format</h2>
+<p>PAM files are UTF-8 text. Without a master password they are plain
+JSON. With a password the JSON is encrypted with AES-256-CBC,
+PBKDF2-SHA-256 key derivation, and Base64-encoded.</p>
+<p><strong>v1 format (current):</strong> Base64 ciphertext stored
+directly. The first character <code>{</code> distinguishes plaintext
+from ciphertext (Base64 output never starts with <code>{</code>).</p>
+<p><strong>v2 format (planned, v1.3):</strong> Will use a
+<code>PAMv2</code> header prefix and a corrected key-derivation
+implementation. See <code>SECURITY.md</code> SEC-003/SEC-004 for the v1
+weaknesses.</p>
+<hr />
+<h2 id="save-mechanism">Save mechanism</h2>
+<p><code>save.js</code> provides two save paths, dispatched by
+<code>saveCallback()</code>:</p>
+<p><strong>Anchor download</strong> (active): creates a hidden
+<code>&lt;a download&gt;</code> element with a <code>data:</code> URI
+and programmatically clicks it. Works reliably across all browsers
+including mobile.</p>
+<p><strong>File System Access API</strong>
+(<code>showSaveFilePicker</code>): shows a native save dialog. More
+user-friendly but not yet reliable on mobile browsers. Implemented in
+<code>saveUsingPromises()</code> and available but currently disabled in
+<code>saveCallback()</code>.</p>
+<hr />
+<h2 id="testing">Testing</h2>
+<h3 id="unit-tests">Unit tests</h3>
+<p><code>www/tests/tests.html</code> is a vanilla JS test runner that
+imports modules directly and runs in the browser. It is driven by
+<code>tests/test_unit.py</code> (Selenium + ChromeDriver).</p>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="fu">make</span> unit-test</span></code></pre></div>
+<h3 id="end-to-end-tests">End-to-end tests</h3>
+<p><code>tests/test_chrome.py</code> drives the full app in headless
+Chrome via Selenium.</p>
+<div class="sourceCode" id="cb6"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="fu">make</span> e2e-test</span></code></pre></div>
+<h3 id="both">Both</h3>
+<div class="sourceCode" id="cb7"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="fu">make</span> test   <span class="co"># lint + unit + e2e</span></span></code></pre></div>
+<hr />
+<h2 id="conventions">Conventions</h2>
+<p><strong>No build step.</strong> All JS is plain ES modules served
+directly.</p>
+<p><strong>No new npm runtime dependencies.</strong> The Shai-Hulud
+supply chain incident (Sept–Nov 2025, 500–796 packages compromised)
+established this as a hard constraint for all phases.</p>
+<p><strong>pylint 10.00/10</strong> on all Python files, enforced by
+<code>make lint</code>.</p>
+<p><strong>jshint clean</strong> on all JS files under
+<code>www/</code>, enforced by <code>make lint</code>.</p>
+<p><strong>TDD throughout.</strong> Tests are written before
+implementations in every phase. A failing test documents the intended
+behaviour; a passing test locks it in.</p>
+<p><strong>One branch per phase.</strong> Branches are named
+<code>phase/NN-description</code>. Merges to <code>main</code> use
+<code>--no-ff</code>.</p>
+<hr />
+<h2 id="development-process">Development process</h2>
+<p>The v1.3 security and simplification rewrite (phases 0–9, April 2026)
+was conducted as a structured pair-programming collaboration with <a
+href="https://claude.ai">Claude</a> (Anthropic). Claude produced diffs,
+tests, and documentation; Joe Linoff reviewed every diff, ran every
+test, caught design issues, and made all architectural decisions. The
+code and the judgement are Joe’s — Claude was the fast typist who knew a
+lot of things.</p>
+<p>The methodology throughout: one branch per phase, tests written
+before implementations, pre-registered hypotheses for any speculative
+work, and a living <code>PLAN.md</code> tracking decisions and
+rationale. See <code>PLAN.md</code> for the full session log.</p>
+</body>
+</html>

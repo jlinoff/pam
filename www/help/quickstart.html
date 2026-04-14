@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>PAM - Quick Start</title>
+  <style>
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: auto; overflow-x: auto;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+    /* CSS for syntax highlighting */
+    html { -webkit-text-size-adjust: 100%; }
+    pre > code.sourceCode { white-space: pre; position: relative; }
+    pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+    pre > code.sourceCode > span:empty { height: 1.2em; }
+    .sourceCode { overflow: visible; }
+    code.sourceCode > span { color: inherit; text-decoration: inherit; }
+    div.sourceCode { margin: 1em 0; }
+    pre.sourceCode { margin: 0; }
+    @media screen {
+    div.sourceCode { overflow: auto; }
+    }
+    @media print {
+    pre > code.sourceCode { white-space: pre-wrap; }
+    pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+    }
+    pre.numberSource code
+      { counter-reset: source-line 0; }
+    pre.numberSource code > span
+      { position: relative; left: -4em; counter-increment: source-line; }
+    pre.numberSource code > span > a:first-child::before
+      { content: counter(source-line);
+        position: relative; left: -1em; text-align: right; vertical-align: baseline;
+        border: none; display: inline-block;
+        -webkit-touch-callout: none; -webkit-user-select: none;
+        -khtml-user-select: none; -moz-user-select: none;
+        -ms-user-select: none; user-select: none;
+        padding: 0 4px; width: 4em;
+        color: #aaaaaa;
+      }
+    pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+    div.sourceCode
+      {   }
+    @media screen {
+    pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+    }
+    code span.al { color: #ff0000; font-weight: bold; } /* Alert */
+    code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+    code span.at { color: #7d9029; } /* Attribute */
+    code span.bn { color: #40a070; } /* BaseN */
+    code span.bu { color: #008000; } /* BuiltIn */
+    code span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+    code span.ch { color: #4070a0; } /* Char */
+    code span.cn { color: #880000; } /* Constant */
+    code span.co { color: #60a0b0; font-style: italic; } /* Comment */
+    code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+    code span.do { color: #ba2121; font-style: italic; } /* Documentation */
+    code span.dt { color: #902000; } /* DataType */
+    code span.dv { color: #40a070; } /* DecVal */
+    code span.er { color: #ff0000; font-weight: bold; } /* Error */
+    code span.ex { } /* Extension */
+    code span.fl { color: #40a070; } /* Float */
+    code span.fu { color: #06287e; } /* Function */
+    code span.im { color: #008000; font-weight: bold; } /* Import */
+    code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+    code span.kw { color: #007020; font-weight: bold; } /* Keyword */
+    code span.op { color: #666666; } /* Operator */
+    code span.ot { color: #007020; } /* Other */
+    code span.pp { color: #bc7a00; } /* Preprocessor */
+    code span.sc { color: #4070a0; } /* SpecialChar */
+    code span.ss { color: #bb6688; } /* SpecialString */
+    code span.st { color: #4070a0; } /* String */
+    code span.va { color: #19177c; } /* Variable */
+    code span.vs { color: #4070a0; } /* VerbatimString */
+    code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+  </style>
+  <link rel="stylesheet" href="index.css" />
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">PAM - Quick Start</h1>
+</header>
+<h1 id="pam-quick-start">PAM Quick Start</h1>
+<p>Get up and running in five minutes.</p>
+<hr />
+<h2 id="what-is-pam">What is PAM?</h2>
+<p>PAM (Personal Account Manager) is a single-page web app that stores
+your passwords and other sensitive data in an encrypted file that you
+control. Everything happens in your browser — no data is ever sent to a
+server.</p>
+<hr />
+<h2 id="step-1-open-pam">Step 1 — Open PAM</h2>
+<p>Visit <a
+href="https://jlinoff.github.io/pam/www/">https://jlinoff.github.io/pam/www/</a>
+in any modern browser, or run it locally:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">git</span> clone https://github.com/jlinoff/pam</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="bu">cd</span> pam</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="fu">make</span> run        <span class="co"># starts a local server on port 8081</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="co"># open http://localhost:8081 in your browser</span></span></code></pre></div>
+<hr />
+<h2 id="step-2-create-your-first-record">Step 2 — Create your first
+record</h2>
+<ol type="1">
+<li>Click the <strong>☰ menu</strong> (top right) and choose <strong>New
+Record</strong>.</li>
+<li>Type a title — for example, <code>GitHub</code>.</li>
+<li>Fill in the fields (website, login, password, note). The default
+fields are all required — if you don’t need one, you can delete it with
+the trash icon on that field row.</li>
+<li>Click <strong>Save</strong>.</li>
+</ol>
+<p>The record now appears in the accordion list. Click it to expand and
+see the fields.</p>
+<hr />
+<h2 id="step-3-copy-a-password-to-the-clipboard">Step 3 — Copy a
+password to the clipboard</h2>
+<p>Expand a record and click the <strong>clipboard icon</strong> next to
+the field you want. The value is copied silently — nothing is shown on
+screen.</p>
+<p>To reveal a password in place, click the <strong>eye icon</strong>
+next to the field.</p>
+<hr />
+<h2 id="step-4-save-your-records-to-a-file">Step 4 — Save your records
+to a file</h2>
+<ol type="1">
+<li>Click <strong>☰ menu → Save File</strong>.</li>
+<li>Enter a strong master password. <strong>This is the only password
+that protects your data — if you lose it, your records cannot be
+recovered.</strong></li>
+<li>Enter a filename (default: <code>example.txt</code>).</li>
+<li>Click <strong>Save</strong>.</li>
+</ol>
+<p>Your browser will download an encrypted file. Store it somewhere safe
+— cloud storage, a USB drive, wherever you keep important files.</p>
+<hr />
+<h2 id="step-5-load-your-records-next-time">Step 5 — Load your records
+next time</h2>
+<ol type="1">
+<li>Click <strong>☰ menu → Load File</strong>.</li>
+<li>Click <strong>Choose File</strong> and select your saved file.</li>
+<li>Enter your master password.</li>
+<li>Click <strong>Load</strong>.</li>
+</ol>
+<p>Your records reappear exactly as you left them.</p>
+<hr />
+<h2 id="searching">Searching</h2>
+<p>Type anything in the search box at the top. PAM filters records in
+real time by title (and optionally by field names and values — see
+Preferences → Search).</p>
+<hr />
+<h2 id="generating-a-strong-password">Generating a strong password</h2>
+<ol type="1">
+<li>In any password field while editing a record, click the <strong>gear
+icon</strong> to open the password generator.</li>
+<li>Choose <strong>Cryptic</strong> (random characters) or
+<strong>Memorable</strong> (word-based).</li>
+<li>Adjust the length or word count.</li>
+<li>Click <strong>Copy</strong> or <strong>Use</strong> to apply
+it.</li>
+</ol>
+<p>You can also open the generator from the <strong>key icon</strong> in
+the toolbar.</p>
+<hr />
+<h2 id="a-few-things-worth-knowing">A few things worth knowing</h2>
+<p><strong>Your master password is never stored.</strong> PAM only keeps
+it in memory for the current session (by default). If you reload the
+page you will need to enter it again when saving or loading.</p>
+<p><strong>The file format is plain JSON, encrypted with
+AES-256-CBC.</strong> You can inspect or migrate it with standard tools
+if you ever need to leave PAM.</p>
+<p><strong>Records have flexible fields.</strong> The default fields
+(website, login, password, note) are just a starting point. You can add
+any field with any type — text, URL, email, date, password, textarea, or
+HTML — from the edit dialog.</p>
+<p><strong>Inactive records are hidden by default.</strong> To
+deactivate a record without deleting it, click the
+<strong>active/inactive toggle</strong> on the record’s title row.
+Inactive records can be shown again from Preferences → Hide Inactive
+Records.</p>
+<hr />
+<h2 id="where-to-go-next">Where to go next</h2>
+<ul>
+<li><strong><a href="./index.html">Full documentation</a></strong> —
+complete reference covering every feature</li>
+<li><strong><a href="./security.html">SECURITY.md</a></strong> — the
+security model and known limitations</li>
+<li><strong><a href="./architecture.html">ARCHITECTURE.md</a></strong> —
+how the code is structured (for contributors)</li>
+<li><strong><a href="./history.html">HISTORY.md</a></strong> — the
+lineage of PAM and its predecessors</li>
+</ul>
+</body>
+</html>

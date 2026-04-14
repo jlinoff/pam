@@ -4,6 +4,8 @@
 
 personal account manager webapp
 
+> **New to PAM?** Start with the [Quick Start guide](./quickstart.html) — get up and running in five minutes.
+
 <details>
 <summary>Metadata</summary>
 
@@ -2373,11 +2375,15 @@ It uses
 [bootstrap-5](https://getbootstrap.com/docs/5.0/getting-started/introduction/)
 to make it work better in mobile browsers.
 
-It uses [pylenium](https://docs.pylenium.io/)
-to test the web app which means the github actions file
+It uses [Selenium](https://www.selenium.dev/) with [pytest](https://pytest.org/)
+to test the web app. The github actions file
 [main.yml](https://github.com/jlinoff/pam/blob/main/.github/workflows/main.yml)
-is pretty interesting because it demonstrates to how to build a complete
-web test environment using python on an Ubuntu:20.04 VM with a local web server.
+demonstrates how to build a complete web test environment using Python on an
+Ubuntu:20.04 VM with a local web server.
+
+Note: an earlier version of PAM used [pylenium](https://docs.pylenium.io/) for testing.
+After extended difficulties getting it to work reliably it was replaced with vanilla
+Selenium, which has proven stable throughout the rewrite.
 
 Not only that but I wrote my own little, lightweight javascript
 library to provide a limited functional interface to make coding HTML
@@ -2398,8 +2404,8 @@ Here are the steps to build PAM.
 
 1. `git clone https://github.com/jlinoff/pam.git`
 1. `make` or `make init`
-   * This installs the python test infrastructure
-     including pylenium as well as bootstrap 5.
+   * This installs the Python test infrastructure
+     including Selenium and pytest, as well as bootstrap 5.
    * It also creates the `www/js/version.js` file
      and the help.
 1. `make run`
@@ -2457,8 +2463,10 @@ Here are the steps to test PAM.
 
 1. `make test`
 
-The test infrastructure uses python and pylenium to
-automate user interactions.
+The test infrastructure uses Python, pytest, and Selenium (ChromeDriver) to
+automate user interactions. Unit tests run in the browser via a vanilla JS
+test runner in `www/tests/tests.html`. E2E tests drive the full app in
+headless Chrome via `tests/test_chrome.py`.
 
 ### Release PAM
 
@@ -2478,109 +2486,9 @@ Here are the steps.
 This pre-supposes that you have cloned the pam project from github.
 
 ### History
-This is one of the several times that I have written a password
-manager from scratch over the past twenty years and it is intended to
-be the last. Because this version while it is _far_ from perfect,
-is good enough for my needs and should provide a decent start for
-someone who wants to improve it.
 
-If you are interested in the evolution of this project read on.
+PAM is the latest in a series of password managers written over the past
+twenty years, each building on lessons learned from the last. The lineage
+runs from passman (2010) → qspm (2018) → myvault (2020) → PAM (2022).
 
-Below are three previous implementations that are still around
-followed by a brief chronology of how things progressed over the years.
-
-#### passman
-| <!-- --> | <!-- --> |
-| -------- | -------- |
-| Circa | 2010 |
-| Project| [https://joelinoff.com/blog/?page_id=1025](https://joelinoff.com/blog/?page_id=1025)
-| Webapp| [https://projects.joelinoff.com/passman/passman-v0.7/](https://projects.joelinoff.com/passman/passman-v0.7/)
-This is the oldest surviving effort. It is an early incarnation
-written in pure javascript that uses a table paradigm for presenting
-the data. The UI and the implementation are quite complex.
-
-#### qspm
-| <!-- --> | <!-- --> |
-| -------- | -------- |
-| Circa | 2018 |
-| Project| [https://github.com/eSentire/qspm](https://github.com/eSentire/qspm) |
-| Webapp| [https://esentire.github.io/qspm/](https://esentire.github.io/qspm/) |
-
-This is the older effort that was implemented using Rust and
-javascript and was funded by my employer at that time (eSentire, Inc.) for
-a hack week project. The UI and the implementation are quite complex.
-
-The acronym stands for Quantum Safe Password Manager. An ambitious
-name to say the least.
-
-#### myvault
-| <!-- --> | <!-- --> |
-| -------- | -------- |
-| Circa | 2020|
-| Project| [https://github.com/jlinoff/myvault](https://github.com/jlinoff/myvault)|
-| Webapp| [https://jlinoff.github.io/myvault](https://jlinoff.github.io/myvault/) |
-| Help| [https://jlinoff.github.io/myvault/help](https://jlinoff.github.io/myvault/help/) |
-
-This is the precursor to pam. It was implemented using Rust and
-javascript. I used it for a several of years.
-
-It has poor implementations of the record create and edit dialogues
-and a poor implementation of the password generator dialogue.
-
-Other than that it was okay.
-
-#### pam
-| <!-- --> | <!-- --> |
-| -------- | -------- |
-| Circa | 2022 |
-| Project| [https://github.com/jlinoff/pam](https://github.com/jlinoff/pam)|
-| Webapp| [https://jlinoff.github.io/pam/www/](https://jlinoff.github.io/pam/www/) |
-| Help | [https://jlinoff.github.io/pam/www/help/](https://jlinoff.github.io/pam/www/help/) |
-
-This is the latest incarnation and it is pure javascript.
-It fixes some of the problems seen in the earlier attempts
-and it leverages
-[bootstrap-5](https://getbootstrap.com/docs/5.0/getting-started/introduction/)
-to make it work better in mobile browsers.
-The implementation is a bit simpler but like all of the
-other attempts there is still plenty of room for improvement.
-
-The acronym stands for Personal Accounts Manager or Password Manager
-or whatever. It doesn't really matter. I just wanted something short
-and easy to remember.
-
-#### Chronology
-I first wrote a password manager in the early 2000's in javascript. In
-those days I had to write my own uncertified implementations of the
-encryption algorithms like AES-256-CBC and AES-256-GCM and DES3 but
-that was perfectly okay because, back then, my day job involved a lot
-of security stuff like designing hardware and software (in C++) to
-implement certified algorithms.
-
-As time went on, I would continue to re-implement password managers as
-a hobby to learn new skills and refresh old ones. That pretty quickly
-got me into javascript, python, docker, golang and, a few years ago, to
-rust. It has been a fun journey and I learned a great deal.
-
-By the time, I got around to writing _PAM_, I was using the prototype
-for a lot more than password management (mostly because I could enter
-records from my phone). It was a useful idiom for record management in
-general which is where things are today.
-
-You will see that I dropped Rust in the latest incarnation but that is
-not because I don't think Rust is suitable or wonderful. Rust is most
-definitely suitable and wonderful. I dropped it because I did not need
-it. The secure context had everything I needed.
-
-In a perfect world, I would have done this in emacs `org-mode`
-(yes, I am one of those) but I was never able to get remote access
-from multiple devices working as well as I liked so I stuck with
-javascript.
-
-I sincerely hope that there is something here that others can learn
-from this.
-
-I have really enjoyed playing around with password management over the
-years. The journey has been great fun.
-
-Enjoy.
+See [HISTORY.md](./history.html) for the full story.

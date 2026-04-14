@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>PAM - History</title>
+  <style>
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: auto; overflow-x: auto;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+  </style>
+  <link rel="stylesheet" href="index.css" />
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">PAM - History</h1>
+</header>
+<h1 id="pam-history">PAM History</h1>
+<p>PAM is one of several password managers Joe Linoff has written from
+scratch over the past twenty years. This document traces the
+lineage.</p>
+<hr />
+<h2 id="predecessors">Predecessors</h2>
+<h3 id="passman">passman</h3>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<tbody>
+<tr>
+<td>Circa</td>
+<td>2010</td>
+</tr>
+<tr>
+<td>Project</td>
+<td><a
+href="https://joelinoff.com/blog/?page_id=1025">joelinoff.com/blog/?page_id=1025</a></td>
+</tr>
+<tr>
+<td>Webapp</td>
+<td><a
+href="https://projects.joelinoff.com/passman/passman-v0.7/">projects.joelinoff.com/passman/passman-v0.7/</a></td>
+</tr>
+</tbody>
+</table>
+<p>The oldest surviving effort. Written in pure JavaScript using a table
+paradigm for presenting data. The UI and implementation are quite
+complex.</p>
+<h3 id="qspm">qspm</h3>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<tbody>
+<tr>
+<td>Circa</td>
+<td>2018</td>
+</tr>
+<tr>
+<td>Project</td>
+<td><a
+href="https://github.com/eSentire/qspm">github.com/eSentire/qspm</a></td>
+</tr>
+<tr>
+<td>Webapp</td>
+<td><a
+href="https://esentire.github.io/qspm/">esentire.github.io/qspm/</a></td>
+</tr>
+</tbody>
+</table>
+<p>Implemented in Rust and JavaScript, funded by eSentire, Inc. as a
+hack week project. The acronym stands for Quantum Safe Password Manager
+— an ambitious name. The UI and implementation are quite complex.</p>
+<h3 id="myvault">myvault</h3>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<tbody>
+<tr>
+<td>Circa</td>
+<td>2020</td>
+</tr>
+<tr>
+<td>Project</td>
+<td><a
+href="https://github.com/jlinoff/myvault">github.com/jlinoff/myvault</a></td>
+</tr>
+<tr>
+<td>Webapp</td>
+<td><a
+href="https://jlinoff.github.io/myvault/">jlinoff.github.io/myvault</a></td>
+</tr>
+<tr>
+<td>Help</td>
+<td><a
+href="https://jlinoff.github.io/myvault/help/">jlinoff.github.io/myvault/help</a></td>
+</tr>
+</tbody>
+</table>
+<p>The direct precursor to PAM. Implemented in Rust and JavaScript. Used
+in production for several years. The record create/edit dialogs and
+password generator were poor implementations — the motivation for
+rewriting as PAM.</p>
+<h3 id="pam">pam</h3>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<tbody>
+<tr>
+<td>Circa</td>
+<td>2022</td>
+</tr>
+<tr>
+<td>Project</td>
+<td><a
+href="https://github.com/jlinoff/pam">github.com/jlinoff/pam</a></td>
+</tr>
+<tr>
+<td>Webapp</td>
+<td><a
+href="https://jlinoff.github.io/pam/www/">jlinoff.github.io/pam/www/</a></td>
+</tr>
+</tbody>
+</table>
+<p>Pure JavaScript. Drops Rust — not because Rust isn’t suitable (it
+is), but because the browser’s SubtleCrypto API provides everything
+needed. Leverages Bootstrap 5 for mobile compatibility. Fixes the dialog
+and generator weaknesses of myvault.</p>
+<p>The acronym stands for Personal Accounts Manager, or Password
+Manager, or whatever. It doesn’t really matter.</p>
+<hr />
+<h2 id="chronology">Chronology</h2>
+<p>Password management as a hobby project spans more than twenty
+years:</p>
+<p><strong>Early 2000s</strong> — First implementation in JavaScript,
+with hand-written uncertified implementations of AES-256-CBC,
+AES-256-GCM, and DES3. Feasible at the time because the day job involved
+designing certified hardware and software security implementations in
+C++.</p>
+<p><strong>2000s–2010s</strong> — Successive reimplementations as a way
+to learn new technologies: JavaScript, Python, Docker, Go, and
+eventually Rust.</p>
+<p><strong>By PAM</strong> — The tool had grown beyond password
+management into general record management, driven largely by the ability
+to enter and access records from a phone. That broader use case is what
+PAM is designed for.</p>
+<p><strong>Rust was dropped</strong> not out of dissatisfaction — Rust
+is excellent — but because it was no longer needed. The browser secure
+context provides everything required.</p>
+<p><strong>A note on org-mode</strong> — in a perfect world this would
+have been built in Emacs org-mode, but reliable remote access from
+multiple devices never quite worked well enough. JavaScript won by
+default.</p>
+</body>
+</html>

@@ -2,7 +2,7 @@
 
 **Project:** [jlinoff/pam](https://github.com/jlinoff/pam)  
 **Version at time of audit:** 1.2.5 (commit 75904b3, 2025-09-10)  
-**Plan version:** 1.8 (UX-005 added: prefs dialog flash before password prompt)  
+**Plan version:** 1.9 (Phase 7 updated: migration guard, MIGRATION.md, release notes, pinned issue added to checklist)  
 **Collaboration model:** Option B — file uploads per session, changes returned as files/diffs, committed by Joe
 
 ---
@@ -504,6 +504,10 @@ Tests for each fix are written first. The fix is then implemented to make them p
 - [ ] Write E2E tests: save as v1 → reload → decrypt; save as v2 → reload → decrypt
 - [ ] PORT-002: Evaluate single-file bundle
 - [ ] Final coverage report, target ≥75%
+- [ ] **Add v2 format detection guard:** if a pre-v1.3 PAM tries to open a v2 file, show a clear message — "This file was saved with PAM v1.3 or later. Please upgrade." Prevents silent decrypt failure for users on old versions.
+- [ ] **Write MIGRATION.md** covering: what the v1 weaknesses are, practical risk assessment (strong password ≥16 chars is not immediately exploitable despite the weaknesses), how to migrate (open in v1.3, re-save), that v1 files remain readable forever, and that the old version is always available via `git checkout v1.2.5 && make run`
+- [ ] **GitHub release notes for v1.3:** direct, honest description of v1 weaknesses; what v2 fixes; migration path; backward compatibility guarantee. Target audience is technical/security-aware — do not soften.
+- [ ] **Open a pinned GitHub issue** "Encryption format migration v1→v2 (tracking)" for user questions and to serve as a permanent searchable reference
 - [ ] Update README, tag v1.3
 
 ### Phase 8 — v2 default + migration nudge, release v1.4 (Session 16)

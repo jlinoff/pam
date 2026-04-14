@@ -186,12 +186,22 @@ function loadUrlContent(url) {
         })
 }
 
+// Validate that a URL uses an acceptable protocol for loading.
+// Only http:// and https:// are permitted — javascript: and data: URIs
+// are explicitly rejected to prevent XSS via the URL load path (SEC-007).
+export function isValidLoadUrl(url) {
+    if (!url || url.length === 0) {
+        return false
+    }
+    return url.startsWith('https://') || url.startsWith('http://')
+}
+
 function loadUrl() {
     let url = prompt('URL:').trim()
-    if (url.length > 4 ) {
+    if (isValidLoadUrl(url)) {
         loadUrlContent(url)
     } else {
-        alert(`WARNING: invalid url specified: ${url}`)
+        alert(`WARNING: invalid url specified: "${url}"\nOnly https:// and http:// URLs are permitted.`)
     }
 }
 

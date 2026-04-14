@@ -2,7 +2,7 @@
 
 **Project:** [jlinoff/pam](https://github.com/jlinoff/pam)  
 **Version at time of audit:** 1.2.5 (commit 75904b3, 2025-09-10)  
-**Plan version:** 1.2 (Phase 0 added: initial clean-up to establish known-good baseline before test harness)  
+**Plan version:** 1.3 (session log updated: merge commit hashes added for implemented phases; planning sessions retain —)  
 **Collaboration model:** Option B — file uploads per session, changes returned as files/diffs, committed by Joe
 
 ---
@@ -647,20 +647,22 @@ A PAM record could store a URL and a small JavaScript fill snippet. A "Login" bu
 
 ## Session Log
 
-| Session | Date | Work Done | Files Changed |
-|---------|------|-----------|---------------|
-| 0 | 2026-04-11 | Initial audit, plan created | PLAN.md |
-| 1 | 2026-04-11 | Added breaking/benevolent classification, release plan | PLAN.md |
-| 2 | 2026-04-11 | Full repo upload; added Makefile, CI, jshint, webmanifest findings | PLAN.md |
-| 3 | 2026-04-11 | npm rejected on security grounds; test harness switched to browser-based vanilla JS runner + expanded Selenium | PLAN.md |
-| 4 | 2026-04-12 | SEC-001 resolved: html field kept, disabled by default, gated on prefs password, persistent indicator added | PLAN.md |
-| 5 | 2026-04-12 | Breaking crypto changes phased: v1.3 dual impl v1 default → v1.4 v2 default + nudge → v2.0 remove v1 encrypt | PLAN.md |
-| 6 | 2026-04-12 | Added FUTURE-001 (mobile save) and FUTURE-002 (credential injection); Phase 6 save abstraction noted | PLAN.md |
-| 7 | 2026-04-12 | Work sequence reordered: test harness moved to Phase 1; crypt.js v1 regression baseline before any crypto changes | PLAN.md |
-| 8 | 2026-04-12 | TDD discipline applied: tests written before implementation in every phase throughout the work sequence | PLAN.md |
-| 9 | 2026-04-12 | Branching strategy added: one branch per phase, --no-ff merge commits, message references PLAN.md phase | PLAN.md |
-| 10 | 2026-04-12 | Full plan review: fixed breaking change strategy text, SIMP-004/DOC-002 linkage, about.js/print.js test coverage, load.js extraction explicitness, section ordering and heading errors | PLAN.md |
-| 11 | 2026-04-13 | Phase 0 added: initial clean-up to establish known-good baseline; PORT-004 moved from Phase 2 to Phase 0; session numbers updated | PLAN.md |
+| Session | Date | Work Done | Merge Commit | Files Changed |
+|---------|------|-----------|--------------|---------------|
+| 0 | 2026-04-11 | Initial audit, plan created | — | PLAN.md |
+| 1 | 2026-04-11 | Added breaking/benevolent classification, release plan | — | PLAN.md |
+| 2 | 2026-04-11 | Full repo upload; added Makefile, CI, jshint, webmanifest findings | — | PLAN.md |
+| 3 | 2026-04-11 | npm rejected on security grounds; test harness switched to browser-based vanilla JS runner + expanded Selenium | — | PLAN.md |
+| 4 | 2026-04-12 | SEC-001 resolved: html field kept, disabled by default, gated on prefs password, persistent indicator added | — | PLAN.md |
+| 5 | 2026-04-12 | Breaking crypto changes phased: v1.3 dual impl v1 default → v1.4 v2 default + nudge → v2.0 remove v1 encrypt | — | PLAN.md |
+| 6 | 2026-04-12 | Added FUTURE-001 (mobile save) and FUTURE-002 (credential injection); Phase 6 save abstraction noted | — | PLAN.md |
+| 7 | 2026-04-12 | Work sequence reordered: test harness moved to Phase 1; crypt.js v1 regression baseline before any crypto changes | — | PLAN.md |
+| 8 | 2026-04-12 | TDD discipline applied: tests written before implementation in every phase throughout the work sequence | — | PLAN.md |
+| 9 | 2026-04-12 | Branching strategy added: one branch per phase, --no-ff merge commits, message references PLAN.md phase | — | PLAN.md |
+| 10 | 2026-04-12 | Full plan review: fixed breaking change strategy text, SIMP-004/DOC-002 linkage, about.js/print.js test coverage, load.js extraction explicitness, section ordering and heading errors | — | PLAN.md |
+| 11 | 2026-04-13 | Phase 0 added: initial clean-up to establish known-good baseline; PORT-004 moved from Phase 2 to Phase 0; session numbers updated | — | PLAN.md |
+| 12 | 2026-04-13 | Phase 0 implemented: 64 dead lines removed, webmanifest fixed, Makefile sed delimiters fixed, pylint false positive suppressed | `65f1ebd` | www/js/*.js, www/site.webmanifest, Makefile, tests/test_chrome.py |
+| 13 | 2026-04-13 | Phase 1 implemented: www/tests/tests.html test runner + 56 unit tests across 6 suites; crypt.js v1 regression baseline locked; make unit-test + e2e-test targets added | `68a82cc` | www/tests/tests.html, tests/test_unit.py, Makefile, .jshintignore |
 
 ---
 

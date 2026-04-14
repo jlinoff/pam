@@ -234,24 +234,39 @@ www/help/index.html: Makefile README.md www/help/index.css \
 	sed -i "s/ PP: -->//g" tmp.md
 	cat tmp.md | grep -v '\[!\[Release\](' | grep -v '!\[Workflow\](' > tmp1.md
 	mv tmp1.md tmp.md
+	echo '' >> tmp.md
+	echo '---' >> tmp.md
+	echo '[&lt;- Back to PAM](../index.html)' >> tmp.md
 	pandoc -s --css index.css -s --metadata title='PAM - help' --html-q-tags -o $@ tmp.md
 	rm -f tmp*.md
 
 www/help/quickstart.html: Makefile QUICKSTART.md www/help/index.css
 	$(call hdr,"quickstart")
-	pandoc -s --css index.css -s --metadata title='PAM - Quick Start' --html-q-tags -o $@ QUICKSTART.md
+	printf '[&lt;- Back to PAM](../index.html)\n\n---\n\n' > tmp_doc.md
+	cat QUICKSTART.md >> tmp_doc.md
+	pandoc -s --css index.css -s --metadata title='PAM - Quick Start' --html-q-tags -o $@ tmp_doc.md
+	rm -f tmp_doc.md
 
 www/help/security.html: Makefile SECURITY.md www/help/index.css
 	$(call hdr,"security")
-	pandoc -s --css index.css -s --metadata title='PAM - Security' --html-q-tags -o $@ SECURITY.md
+	printf '[&lt;- Back to PAM](../index.html)\n\n---\n\n' > tmp_doc.md
+	cat SECURITY.md >> tmp_doc.md
+	pandoc -s --css index.css -s --metadata title='PAM - Security' --html-q-tags -o $@ tmp_doc.md
+	rm -f tmp_doc.md
 
 www/help/architecture.html: Makefile ARCHITECTURE.md www/help/index.css
 	$(call hdr,"architecture")
-	pandoc -s --css index.css -s --metadata title='PAM - Architecture' --html-q-tags -o $@ ARCHITECTURE.md
+	printf '[&lt;- Back to PAM](../index.html)\n\n---\n\n' > tmp_doc.md
+	cat ARCHITECTURE.md >> tmp_doc.md
+	pandoc -s --css index.css -s --metadata title='PAM - Architecture' --html-q-tags -o $@ tmp_doc.md
+	rm -f tmp_doc.md
 
 www/help/history.html: Makefile HISTORY.md www/help/index.css
 	$(call hdr,"history")
-	pandoc -s --css index.css -s --metadata title='PAM - History' --html-q-tags -o $@ HISTORY.md
+	printf '[&lt;- Back to PAM](../index.html)\n\n---\n\n' > tmp_doc.md
+	cat HISTORY.md >> tmp_doc.md
+	pandoc -s --css index.css -s --metadata title='PAM - History' --html-q-tags -o $@ tmp_doc.md
+	rm -f tmp_doc.md
 
 SRC_FILES := VERSION README.md \
 		www/index.html www/help/index.css \

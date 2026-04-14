@@ -2,7 +2,7 @@
 
 **Project:** [jlinoff/pam](https://github.com/jlinoff/pam)  
 **Version at time of audit:** 1.2.5 (commit 75904b3, 2025-09-10)  
-**Plan version:** 1.7 (all completed phase checklists marked done; SEC-006 revert noted)  
+**Plan version:** 2.0 (Phases 7–9 restructured: Phase 7 is now test consolidation/settling; Phase 8 is dual crypto with v2-always-write design; Phase 9 deferred ≥1 year post-v1.3)  
 **Collaboration model:** Option B — file uploads per session, changes returned as files/diffs, committed by Joe
 
 ---
@@ -66,6 +66,7 @@ All 🟢 and 🟡 changes ship in v1.3 independently of the crypto phasing. See 
 | UX-002 | User flow | — | 🟢 Benevolent | Delete record has no confirmation — additive confirmation step |
 | UX-003 | User flow | — | 🟢 Benevolent | Preferences dialog too long — tabbed layout, no behavior change |
 | UX-004 | User flow | — | 🟡 Benevolent w/ caveat | `filePassCache` default change — users relying on `local` will notice |
+| UX-005 | User flow | — | 🟢 Benevolent | Preferences dialog flashes briefly before password prompt — cosmetic annoyance |
 | DOC-001 | Docs | — | 🟢 Benevolent | Add QUICKSTART.md — additive |
 | DOC-002 | Docs | — | 🟢 Benevolent | Add ARCHITECTURE.md — additive |
 | DOC-003 | Docs | — | 🟢 Benevolent | Extract SECURITY.md — additive |
@@ -249,6 +250,9 @@ Very long modal. Convert to Bootstrap nav-tabs (Search / Passwords / Miscellaneo
 
 ### UX-004 🟡 Benevolent with caveat — `filePassCache` default change
 Same as SEC-002. Correct from a security standpoint; users relying on auto-cache will notice the change.
+
+### UX-005 🟢 Benevolent — Preferences dialog flashes before password prompt
+When `lockPreferencesPassword` is set, the preferences modal opens briefly before being hidden to show the password prompt. The flash occurs because the Bootstrap modal must exist in the DOM before `modal.hide()` can be called. Fix: check the password *before* showing the modal — prompt first, then show only on success. Risk: `promptForPrefsPassword` itself uses a Bootstrap modal; stacking modals has known z-index and backdrop issues on mobile. Leave for a dedicated UX cleanup phase with its own E2E coverage.
 
 ---
 
@@ -474,7 +478,7 @@ Tests for each fix are written first. The fix is then implemented to make them p
 - [x] Write E2E tests for password generation, file operations, load duplicate strategies
 
 ### Phase 6 — UX + documentation (Sessions 12–13)
-- [x] Write E2E tests for UX-001 (password generator open/close) → implemented; UX-002 and UX-003 deferred to Phase 7
+- [x] Write E2E tests for UX-001 (password generator open/close) → implemented; UX-002, UX-003, and UX-005 deferred to later UX cleanup phase
 - [x] Write E2E tests for `about.js` (About dialog open/close, version display) and `print.js` (records loaded before print)
 - [ ] Write unit tests for the save strategy abstraction — deferred to Phase 7 (anchor-download path is already the active path; abstraction is documented in ARCHITECTURE.md)
 - [x] QUICKSTART.md — created and served as www/help/quickstart.html via make app-help
@@ -485,37 +489,64 @@ Tests for each fix are written first. The fix is then implemented to make them p
 - [x] README.md — pylenium corrected to Selenium/pytest; history trimmed; quickstart callout added at top
 - [x] Makefile — app-help generates quickstart.html, security.html, architecture.html, history.html
 
-### Phase 7 — Dual crypto + release v1.3 (Sessions 14–15)
-- [ ] Write unit tests first:
-  - v2 encrypt/decrypt round-trip (will fail until implemented)
-  - Cross-path rejection: file encrypted with v1 cannot be decrypted with v2 path and vice versa
-  - Legacy file detection: file with no header routes to v1 decrypt
-  - File format version header: assert correct prefix on output of each path
-- [ ] Implement file format version header (`PAMv1` / `PAMv2` prefix)
-- [ ] Implement v1 encrypt/decrypt path (100k iterations, TextEncoder salt — bugs preserved exactly, commented explicitly)
-- [ ] Implement v2 encrypt/decrypt path (600k iterations, raw-byte salt)
-- [ ] Implement legacy file detection (no header → v1)
-- [ ] Confirm original v1 regression baseline still passes against the new v1 path
-- [ ] Add *"Encryption format"* preference (v1 default) to Preferences → Security
-- [ ] Write E2E tests: save as v1 → reload → decrypt; save as v2 → reload → decrypt
-- [ ] PORT-002: Evaluate single-file bundle
+### Phase 7 — Test consolidation + settling (revised)
+
+**Rationale:** The codebase has moved fast through phases 0–6. Before the
+crypto rewrite, this phase builds out test coverage in areas that have gaps,
+fixes any recently discovered bugs, and ensures the system is stable.
+The crypto implementation moves to Phase 8.
+
+- [ ] Document and fix the new bug found after Phase 6 (add regression test first)
+- [ ] Expand unit tests for `record.js`: `findRecord`, `findRecordAfter`, `deleteRecord`, `insertRecord`, `clearRecords`
+- [ ] Expand unit tests for `save.js`: `convertInternalDataToJSON` round-trip against a known DOM fixture
+- [ ] Expand unit tests for `load.js`: JSON parse/validate logic, duplicate handling strategies
+- [ ] Expand E2E tests: load duplicate strategies (ignore/replace/allow), file round-trip (save then reload and verify record count)
+- [ ] UX-002: delete confirmation (E2E test first → implement)
+- [ ] UX-003: tabbed preferences navigation (E2E test first → implement)
+- [ ] PORT-002: evaluate single-file bundle — document decision, implement if verdict is yes
+- [ ] Coverage report: establish baseline, identify remaining gaps, document in PLAN.md
+- [ ] Update README
+
+### Phase 8 — Dual crypto + release v1.3 (revised)
+
+**Design decision (post-Phase 6):** PAM 1.3 will always write v2 and always
+read both v1 and v2. There is no user-facing format preference and no phased
+default flip. This is cleaner than the original plan: users get the security
+improvement immediately on first save, with zero breaking changes for readers.
+v1 decrypt is retained permanently — no existing file ever becomes unreadable.
+
+- [ ] Write unit tests first (TDD — all must fail before implementation):
+  - v2 encrypt/decrypt round-trip
+  - Cross-path rejection: v2-only path rejects ciphertext without `PAMv2:` prefix
+  - Legacy file detection: no prefix → v1 decrypt path
+  - File format header: assert v2 output starts with `PAMv2:`
+  - v1 regression baseline: confirm existing v1 tests still pass unchanged
+- [ ] Implement `PAMv2:` file format header prefix
+- [ ] Implement v2 encrypt path (600k iterations, raw salt bytes, `PAMv2:` prefix)
+- [ ] Implement v2 decrypt path (strips prefix, uses raw salt)
+- [ ] Implement unified `decrypt()` dispatcher: `PAMv2:` → v2 path, else → v1 path
+- [ ] Preserve v1 encrypt path in code (commented out, not removed) with explicit comment explaining the bugs are intentional
+- [ ] Remove v1 encrypt from the UI entirely — PAM 1.3 always writes v2
+- [ ] Confirm v1 regression baseline still passes
+- [ ] Write E2E test: save a file → reload → verify records intact (exercises full v2 round-trip)
+- [ ] **Add v2 format detection guard:** if a pre-v1.3 PAM somehow encounters a v2 file, it sees an unrecognised Base64 string (not `{`) and reports a decrypt failure — document this in MIGRATION.md rather than trying to handle it in old code
+- [ ] **Write MIGRATION.md:** v1 weaknesses, practical risk assessment, migration path (just save — no user action needed beyond that), backward compatibility guarantee, old version availability
+- [ ] **GitHub release notes for v1.3:** direct, honest, calibrated for a technical/security audience
+- [ ] **Open pinned GitHub issue:** "Encryption format migration v1→v2 (tracking)"
 - [ ] Final coverage report, target ≥75%
 - [ ] Update README, tag v1.3
 
-### Phase 8 — v2 default + migration nudge, release v1.4 (Session 16)
-- [ ] Write E2E test: load a v1 file, assert migration banner appears; dismiss it, assert it does not reappear in the same session
-- [ ] Write unit test: assert that the default encryption format preference is now v2
-- [ ] Flip default encryption format to v2 for new files and new users — tests must now pass
-- [ ] Implement dismissable migration banner (sessionStorage tracking by ciphertext hash)
-- [ ] Tag v1.4
+### Phase 9 — Remove v1 encrypt code, release v2.0 (deferred, ≥1 year post-v1.3)
 
-### Phase 9 — Remove v1 encrypt, release v2.0 (Session 17)
-- [ ] Write E2E test: assert that the v1 encryption format option is absent from Preferences → Security
-- [ ] Write E2E test: load a v1 file, assert updated banner text ("your next save will upgrade to v2"), save, assert file is now v2
-- [ ] Remove v1 encrypt path and preference option from UI — tests must now pass
-- [ ] Confirm v1 decrypt path still passes all existing v1 unit and E2E tests (permanent retention)
-- [ ] Write MIGRATION.md
-- [ ] Tag v2.0
+**Policy:** v1 encrypt code will not be removed for at least one year after v1.3
+ships. This gives the entire user base time to migrate their files without any
+risk of being stranded.
+
+- [ ] Confirm all known users have had opportunity to migrate (≥1 year elapsed)
+- [ ] Write E2E test: assert v1 encrypt code path is unreachable from the UI
+- [ ] Remove v1 encrypt function from `crypt.js` — v1 decrypt stays permanently
+- [ ] Confirm v1 decrypt regression baseline still passes
+- [ ] Update MIGRATION.md, tag v2.0
 
 ---
 
@@ -535,8 +566,8 @@ phase/03-security-defaults
 phase/04-sec001-e2e
 phase/05-simplification
 phase/06-ux-documentation
-phase/07-dual-crypto-v1.3
-phase/08-v2-default-v1.4
+phase/07-test-consolidation
+phase/08-dual-crypto-v1.3
 phase/09-v1-encrypt-removal-v2.0
 ```
 

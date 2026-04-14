@@ -534,7 +534,7 @@ documentation impact.
 - [x] UX-002: delete confirmation — E2E test written first, implemented, all tests green
 - [x] Expand E2E: load duplicate strategies (ignore/replace/allow) — 3 tests added; allow strategy tested via pref accessibility (full load cycle not testable due to file prefs reset design)
 - [x] PORT-002: evaluated — deferred. Supply chain risk, circular dependency prerequisite, file:// achievable via make run. See PORT-002 observation for full rationale.
-- [ ] UX-005: prefs dialog flash before password prompt — likely defer again (Bootstrap modal stacking risk)
+- [x] UX-005: deferred — cosmetic flash, Bootstrap modal stacking risk makes fix non-trivial. See UX-005 observation for full rationale.
 - [ ] Update README — minor updates for Phase 7/8 changes
 - [ ] Update VERSION to 1.2.6, tag
 - [ ] UX-003: tabbed preferences navigation — E2E test first, then implement, then update README

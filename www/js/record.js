@@ -401,6 +401,20 @@ export function checkRecordEditDlg(event, allowCloneTitle) {
             let valueElem = flds[i].xGet('.x-fld-value')
             if (!!valueElem) {
                 let value = valueElem.value.trim()
+                let type = valueElem.getAttribute('data-fld-type')
+
+                // For number fields, an empty value means the browser rejected
+                // the input (e.g. 'bbvv' in <input type="number"> returns '').
+                // Give a specific message before the generic empty-value check.
+                if (type === 'number' && value === '') {
+                    let raw = valueElem.getAttribute('data-fld-raw-value') || ''
+                    let msg = `"${name}" must be a valid number (integer or decimal). ` +
+                              `Example: 42 or 3.14`
+                    clog(`WARNING: ${msg}`)
+                    container.xAttr('data-check-failed', msg)
+                    return
+                }
+
                 if (!value) {
                     let msg = `undefined field value in "${name}" in record: "${title}"`
                     clog(`WARNING: ${msg}`)
@@ -408,7 +422,6 @@ export function checkRecordEditDlg(event, allowCloneTitle) {
                     return
                 }
 
-                let type = valueElem.getAttribute('data-fld-type')
                 if (type === 'url' ) {
                     if (!isURL(value)) {
                         let msg = `"${name}" is not a valid website URL "${value}" in record: "${title}"`

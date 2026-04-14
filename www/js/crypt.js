@@ -1,23 +1,25 @@
 /**
  * @module crypt
  * @description AES-256-CBC encryption and decryption using the browser SubtleCrypto API.
+ * Supports two file format versions with automatic detection on decrypt.
  *
- * ## File format (v1)
- * The encrypted output is a Base64 string encoding: [16-byte salt][16-byte IV][ciphertext].
- * The salt is generated randomly per encryption; the IV is generated randomly per encryption.
- * Key derivation uses PBKDF2-SHA-256 with 100,000 iterations.
+ * ## v1 format (legacy — PAM < 1.3)
+ * Raw Base64 string: [16-byte salt][16-byte IV][ciphertext].
+ * Key derivation: PBKDF2-SHA-256, 100,000 iterations.
+ * Known weaknesses (preserved intentionally — fixing would break existing files):
+ *   1. Salt entropy bug: salt bytes passed through TextEncoder.encode() which calls
+ *      .toString() first, producing "0,34,211,..." ASCII instead of raw bytes.
+ *   2. Low iteration count: 100,000 is below NIST SP 800-132 / OWASP recommendation (≥600,000).
  *
- * ## Known v1 weaknesses (see SECURITY.md SEC-003/SEC-004)
- * 1. The salt bytes are passed through TextEncoder.encode() — which calls .toString() first —
- *    producing an ASCII string like "0,34,211,..." instead of raw bytes. This dramatically
- *    reduces effective salt entropy. This bug is preserved intentionally: fixing it would
- *    break decryption of all existing v1 files.
- * 2. 100,000 PBKDF2 iterations is below current NIST/OWASP recommendations (≥600,000).
- *    This will be addressed in the v2 file format (PAM v1.3).
+ * ## v2 format (PAM 1.3+)
+ * Prefixed Base64 string: "PAMv2:" + Base64([16-byte salt][16-byte IV][ciphertext]).
+ * Key derivation: PBKDF2-SHA-256, 600,000 iterations, raw salt bytes (no TextEncoder bug).
+ * The "PAMv2:" prefix enables unambiguous format detection.
  *
- * ## Plaintext detection
- * The first character `{` is used to distinguish plaintext JSON from Base64 ciphertext,
- * since Base64-encoded output never begins with `{`.
+ * ## Format detection
+ * - Starts with "PAMv2:" → v2 decrypt path
+ * - Starts with "{" → plaintext JSON (no decryption needed)
+ * - Anything else → v1 decrypt path (legacy)
  */
 import { statusBlip } from './status.js'
 import { clog } from './utils.js'
@@ -33,7 +35,9 @@ function buf2hex(buffer) { // buffer is an ArrayBuffer
 const encoder = new TextEncoder()
 const decoder = new TextDecoder()
 
-const numIterations = 100000
+const numIterations = 100000     // v1 — preserved exactly, do not change
+const numIterationsV2 = 600000  // v2 — NIST SP 800-132 / OWASP 2023 recommendation
+const V2_PREFIX = 'PAMv2:'      // v2 file format prefix
 
 const toBase64 = buffer => {
     // handle very large buffers
@@ -168,6 +172,12 @@ export function decrypt(password, ciphertext, callback, callback2) {
     }
     let plaintext = ciphertext
 
+    // Dispatch: v2 files have PAMv2: prefix; everything else uses v1 path
+    if (ciphertext.startsWith(V2_PREFIX)) {
+        decryptV2(password, ciphertext, callback, callback2)
+        return
+    }
+
     if (window.isSecureContext) {
         statusBlip(`decrypting ${ciphertext.length}B...`)
         const salt_len = 16
@@ -199,6 +209,115 @@ export function decrypt(password, ciphertext, callback, callback2) {
                 callback2(`Decryption setup failed!\nPlease try another password.\n${error}`)
             })
         statusBlip(`decrypted ${ciphertext.length}B -> ${plaintext.length}B ...`)
+    } else {
+        statusBlip('decryption not enabled')
+    }
+}
+
+
+/**
+ * Encrypt plaintext JSON using the v2 format (AES-256-CBC, 600k PBKDF2 iterations,
+ * raw salt bytes, PAMv2: prefix).
+ *
+ * @param {string} password - The master password.
+ * @param {string} plaintext - The UTF-8 JSON string to encrypt.
+ * @param {string} filename - Passed through to the callback unchanged.
+ * @param {function(string, string): void} callback - Called with (ciphertext, filename).
+ */
+export function encryptV2(password, plaintext, filename, callback) {
+    if (!plaintext || plaintext.length === 0) {
+        callback(plaintext, filename)
+        return
+    }
+    if (!password || password.length === 0) {
+        if (plaintext[0] !== '{') {
+            callback(plaintext, filename)
+            return
+        }
+        callback(plaintext, filename)
+        return
+    }
+    if (window.isSecureContext) {
+        statusBlip(`encrypting (v2) ${plaintext.length}B...`)
+        const iv = window.crypto.getRandomValues(new Uint8Array(16))
+        const salt = window.crypto.getRandomValues(new Uint8Array(16))
+        const encoded_plaintext = encoder.encode(plaintext)
+        // v2: pass raw salt bytes directly — no TextEncoder bug
+        window.crypto.subtle.importKey(
+            'raw', encoder.encode(password), {name: 'PBKDF2'}, false, ['deriveKey']
+        ).then((keyMaterial) => {
+            window.crypto.subtle.deriveKey(
+                { name: 'PBKDF2', salt: salt, iterations: numIterationsV2, hash: 'SHA-256' },
+                keyMaterial,
+                { name: 'AES-CBC', length: 256 },
+                false,
+                ['encrypt', 'decrypt']
+            ).then((key) => {
+                window.crypto.subtle.encrypt(
+                    {name: 'AES-CBC', iv: iv}, key, encoded_plaintext
+                ).then((encrypted) => {
+                    const ciphertext = V2_PREFIX + toBase64([...salt, ...iv, ...new Uint8Array(encrypted)])
+                    statusBlip(`encrypted (v2) ${plaintext.length}B -> ${ciphertext.length}B`)
+                    callback(ciphertext, filename)
+                }).catch((error) => { clog(error) })
+            }).catch((error) => { clog(error) })
+        }).catch((error) => { clog(error) })
+    } else {
+        statusBlip('encryption not enabled')
+    }
+}
+
+/**
+ * Decrypt v2 format ciphertext (requires PAMv2: prefix).
+ * Rejects anything without the PAMv2: prefix — use decrypt() for unified dispatch.
+ *
+ * @param {string} password - The master password.
+ * @param {string} ciphertext - Must start with "PAMv2:".
+ * @param {function(string): void} callback - Called with plaintext on success.
+ * @param {function(string): void} callback2 - Called with error message on failure.
+ */
+export function decryptV2(password, ciphertext, callback, callback2) {
+    if (!ciphertext || !ciphertext.startsWith(V2_PREFIX)) {
+        callback2('Not a v2 file: missing PAMv2: prefix')
+        return
+    }
+    if (!password || password.length === 0) {
+        callback2('No password specified\nPlease specify the password and try again')
+        return
+    }
+    if (window.isSecureContext) {
+        statusBlip(`decrypting (v2) ${ciphertext.length}B...`)
+        const b64 = ciphertext.slice(V2_PREFIX.length)
+        const encrypted = fromBase64(b64)
+        const salt = encrypted.slice(0, 16)
+        const iv = encrypted.slice(16, 32)
+        const data = encrypted.slice(32)
+        // v2: use raw salt bytes directly
+        window.crypto.subtle.importKey(
+            'raw', encoder.encode(password), {name: 'PBKDF2'}, false, ['deriveKey']
+        ).then((keyMaterial) => {
+            window.crypto.subtle.deriveKey(
+                { name: 'PBKDF2', salt: salt, iterations: numIterationsV2, hash: 'SHA-256' },
+                keyMaterial,
+                { name: 'AES-CBC', length: 256 },
+                false,
+                ['encrypt', 'decrypt']
+            ).then((key) => {
+                window.crypto.subtle.decrypt(
+                    {name: 'AES-CBC', iv: iv}, key, data
+                ).then((decrypted) => {
+                    const plaintext = decoder.decode(decrypted)
+                    statusBlip(`decrypted (v2) ${ciphertext.length}B -> ${plaintext.length}B`)
+                    callback(plaintext)
+                }).catch((error) => {
+                    callback2(`Decryption failed!\nPlease try another password.\n${error}`)
+                })
+            }).catch((error) => {
+                callback2(`Decryption setup failed!\nPlease try another password.\n${error}`)
+            })
+        }).catch((error) => {
+            callback2(`Key import failed!\n${error}`)
+        })
     } else {
         statusBlip('decryption not enabled')
     }

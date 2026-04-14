@@ -13,6 +13,7 @@ import { refreshAbout } from './about.js'
 import { toggleMainPasswordGenerator } from './password.js'
 import { toggleRawJSONDataEdit } from './raw.js'
 import { enablePrinting } from './print.js'
+import { enableSaveFile } from './save.js'
 import { enableRawJSONEdit } from './raw.js'
 
 /**
@@ -44,6 +45,7 @@ export function main() {
     setDarkLightTheme(window.prefs.themeName)
     //setTimeout(() => {adjust()}, 1000)
     enablePrinting()
+    enableSaveFile()
     enableRawJSONEdit()
     addDefaultRecordFields()
     const secure = window.isSecureContext? '(secure)' : ''

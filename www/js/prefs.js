@@ -117,6 +117,7 @@ export function initPrefs() {
         allowHtmlFieldRendering: false,  // SEC-001: html fields render as escaped text by default
         defaultRecordFields: 'website,login,password,note',
         enableRawJSONEdit: false,
+        encryptionFormat: 'v1',  // v1 (default) or v2 — see SECURITY.md SEC-003/SEC-004
     }
     setHelpLinks()
 }

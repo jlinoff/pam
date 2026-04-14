@@ -39,6 +39,10 @@ export function mkRecordField(name, type, value) {
             fieldValue = '<span class="badge bg-secondary me-1 x-html-disabled-badge" title="HTML rendering disabled (SEC-001)">&lt;/&gt;</span>' + escaped
         }
         break
+    case 'number':
+        // HTML number input — display raw value as plain text with clipboard button.
+        // Edit mode already uses <input type="number"> via mkRecordEditField.
+        break
     default:
         break
     }

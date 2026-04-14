@@ -13,11 +13,13 @@ import { setAboutFileInfo } from './about.js'
  * Called on prefs change and on initial load.
  */
 export function enableSaveFile() {
+    // Use Bootstrap's d-none class rather than inline display:none —
+    // Bootstrap dropdown CSS overrides inline styles when the menu opens.
     let eps = document.body.xGetN('.x-save-file-menu-item')
     if ( window.prefs.enableSaveFile ) {
-        show(eps)
+        eps.forEach( (el) => { el.classList.remove('d-none') } )
     } else {
-        hide(eps)
+        eps.forEach( (el) => { el.classList.add('d-none') } )
     }
 }
 // Called from the top level menu.

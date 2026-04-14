@@ -6,6 +6,7 @@ export const VALID_FIELD_TYPES = {
     'datetime-local': 1,
     'email': 1,
     'html': 1,
+    'number': 1,  // HTML number input; displays as plain text with clipboard button
     'password': 1,
     'phone': 1,
     'text': 1,

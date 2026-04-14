@@ -173,13 +173,18 @@ export function mkRecord(title, active, created, ...recordFields) {
                 .xInnerHTML('&nbsp;Active'))
 
     let deleteButton = xmk('button')
-        .xClass('btn', 'fs-6', 'm-1')
+        .xClass('btn', 'fs-6', 'm-1', 'x-record-delete-btn')
         .xAttrs({'title': 'delete this record permanently'})
         .xAppend(
             icon('bi-trash', 'delete this record permanently'),
             xmk('span').xInnerHTML('&nbsp;Delete'))
         .xAddEventListener('click', (event) => {
             let ai = event.target.xGetParentWithClass('accordion-item')
+            let title = ai.xGet('.accordion-button').innerHTML
+            // UX-002: require confirmation before deleting
+            if (!confirm(`Delete record "${title}"?\nThis cannot be undone.`)) {
+                return
+            }
             ai.remove()
             setNumRecords()
             searchRecords() // refresh

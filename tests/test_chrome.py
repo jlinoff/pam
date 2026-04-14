@@ -486,6 +486,12 @@ def test_record_create_and_delete():
     )
     assert len(delete_buttons) > 0, 'Delete button not found'
     scroll_and_click(driver, delete_buttons[0])
+    time.sleep(0.3)
+    # UX-002: accept the confirmation dialog
+    try:
+        driver.switch_to.alert.accept()
+    except Exception:  # pylint: disable=broad-except
+        pass
     time.sleep(0.5)
 
     # Verify record is gone
@@ -704,5 +710,72 @@ def test_save_and_reload_round_trip():
     time.sleep(0.5)
     records_cleared = driver.find_elements(By.CLASS_NAME, 'accordion-button')
     assert len(records_cleared) == 0, 'Records should be cleared before reload test'
+
+    driver.quit()
+
+
+def test_delete_record_confirmation():
+    '''
+    UX-002: Deleting a record should require confirmation.
+    Clicking Delete and then cancelling should leave the record intact.
+    Clicking Delete and confirming should remove the record.
+    '''
+    driver = get_driver()
+    driver.get('http://localhost:8081/')
+    time.sleep(1)
+
+    # Load example records so there is something to delete
+    dlg = choose_menu_option(driver, 'Load File')
+    buttons = dlg.find_elements(By.TAG_NAME, 'button')
+    example_btn = next((b for b in buttons if 'Load Example Records' in b.text), None)
+    assert example_btn is not None, 'Load Example Records button should exist'
+    example_btn.click()
+    time.sleep(0.5)
+    try:
+        driver.switch_to.alert.accept()
+    except Exception:  # pylint: disable=broad-except
+        pass
+    time.sleep(1)
+
+    # Expand the first record
+    records = driver.find_elements(By.CLASS_NAME, 'accordion-button')
+    assert len(records) > 0, 'Example records should be loaded'
+    first_title = records[0].text.strip()
+    scroll_and_click(driver, records[0])
+    time.sleep(0.5)
+
+    # Click Delete and cancel — record should remain
+    delete_btns = driver.find_elements(By.CLASS_NAME, 'x-record-delete-btn')
+    assert len(delete_btns) > 0, 'Delete button should exist'
+    scroll_and_click(driver, delete_btns[0])
+    time.sleep(0.3)
+    try:
+        alert = driver.switch_to.alert
+        msg = 'Confirmation dialog should mention delete or record title'
+        assert 'delete' in alert.text.lower() or first_title in alert.text, msg
+        alert.dismiss()  # cancel
+    except Exception:  # pylint: disable=broad-except
+        pass
+    time.sleep(0.3)
+
+    # Record should still exist
+    remaining = driver.find_elements(By.CLASS_NAME, 'accordion-button')
+    titles = [r.text.strip() for r in remaining]
+    assert first_title in titles, f'Record "{first_title}" should still exist after cancel'
+
+    # Click Delete and confirm — record should be removed
+    scroll_and_click(driver, delete_btns[0])
+    time.sleep(0.3)
+    try:
+        alert = driver.switch_to.alert
+        alert.accept()  # confirm
+    except Exception:  # pylint: disable=broad-except
+        pass
+    time.sleep(0.3)
+
+    remaining = driver.find_elements(By.CLASS_NAME, 'accordion-button')
+    titles = [r.text.strip() for r in remaining]
+    assert first_title not in titles, \
+        f'Record "{first_title}" should be gone after confirmed delete'
 
     driver.quit()

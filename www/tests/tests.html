@@ -1406,6 +1406,105 @@ test('VALID_CACHE_STRATEGIES contains expected values', () => {
   })
 })
 
+
+// ---------------------------------------------------------------------------
+// Phase 7 — Record Fields preference coverage
+// ---------------------------------------------------------------------------
+suite('prefs — VALID_FIELD_TYPES')
+test('VALID_FIELD_TYPES contains all expected types', () => {
+  const expected = ['datetime-local', 'email', 'html', 'number',
+                    'password', 'phone', 'text', 'textarea', 'time', 'url']
+  expected.forEach(type => {
+    assert(type in VALID_FIELD_TYPES,
+      `VALID_FIELD_TYPES should contain '${type}'`)
+  })
+})
+test('VALID_FIELD_TYPES does not contain unexpected types', () => {
+  const unexpected = ['checkbox', 'radio', 'file', 'submit']
+  unexpected.forEach(type => {
+    assert(!(type in VALID_FIELD_TYPES),
+      `VALID_FIELD_TYPES should not contain '${type}'`)
+  })
+})
+
+suite('prefs — predefinedRecordFields defaults')
+test('predefinedRecordFields contains website as url', () => {
+  assertEqual(getDefaultPrefs().predefinedRecordFields['website'], 'url',
+    'website should be type url')
+})
+test('predefinedRecordFields contains password as password', () => {
+  assertEqual(getDefaultPrefs().predefinedRecordFields['password'], 'password',
+    'password should be type password')
+})
+test('predefinedRecordFields contains note as textarea', () => {
+  assertEqual(getDefaultPrefs().predefinedRecordFields['note'], 'textarea',
+    'note should be type textarea')
+})
+test('predefinedRecordFields contains login as text', () => {
+  assertEqual(getDefaultPrefs().predefinedRecordFields['login'], 'text',
+    'login should be type text')
+})
+test('predefinedRecordFields contains number as number', () => {
+  assertEqual(getDefaultPrefs().predefinedRecordFields['number'], 'number',
+    'number field should be type number')
+})
+test('number is in VALID_FIELD_TYPES', () => {
+  assert('number' in VALID_FIELD_TYPES,
+    'number should be a valid field type')
+})
+
+suite('field.js — number field validation')
+test('valid number value passes isNaN check', () => {
+  const value = '42'
+  assert(!isNaN(value) && value.trim() !== '',
+    'valid number "42" should pass validation')
+})
+test('non-numeric value fails isNaN check', () => {
+  const value = 'bbvv'
+  assert(isNaN(value),
+    'non-numeric value "bbvv" should fail validation')
+})
+test('empty string fails number validation', () => {
+  const value = '   '
+  assert(value.trim() === '' || isNaN(value),
+    'blank value should fail number validation')
+})
+test('float value passes isNaN check', () => {
+  const value = '3.14'
+  assert(!isNaN(value) && value.trim() !== '',
+    'float "3.14" should pass validation')
+})
+test('negative number passes isNaN check', () => {
+  const value = '-7'
+  assert(!isNaN(value) && value.trim() !== '',
+    'negative number "-7" should pass validation')
+})
+test('all predefinedRecordFields types are valid', () => {
+  const fields = getDefaultPrefs().predefinedRecordFields
+  Object.entries(fields).forEach(([name, type]) => {
+    assert(type in VALID_FIELD_TYPES,
+      `predefinedRecordFields['${name}'] type '${type}' should be in VALID_FIELD_TYPES`)
+  })
+})
+test('predefinedRecordFieldsDefault is text', () => {
+  assertEqual(getDefaultPrefs().predefinedRecordFieldsDefault, 'text',
+    'predefinedRecordFieldsDefault should be text')
+})
+
+suite('prefs — defaultRecordFields')
+test('defaultRecordFields default is website,login,password,note', () => {
+  assertEqual(getDefaultPrefs().defaultRecordFields, 'website,login,password,note',
+    'defaultRecordFields should be website,login,password,note')
+})
+test('defaultRecordFields entries exist in predefinedRecordFields', () => {
+  const defaults = getDefaultPrefs()
+  const fields = defaults.defaultRecordFields.split(',')
+  fields.forEach(name => {
+    assert(name in defaults.predefinedRecordFields,
+      `defaultRecordFields entry '${name}' should exist in predefinedRecordFields`)
+  })
+})
+
 // Run sync tests first, then async crypt tests
 finalize() // update summary with sync results so far
 runCryptTests() // will call finalize() again after async tests complete

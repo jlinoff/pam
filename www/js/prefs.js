@@ -8,6 +8,7 @@ import { enableSaveFile } from './save.js'
 import { setDarkLightTheme } from './utils.js'
 import { searchRecords } from './search.js'
 import { enableRawJSONEdit } from './raw.js'
+import { updateHtmlRenderingIndicator } from './main.js'
 
 // These are the input types that the tool knows how to handle.
 export const VALID_FIELD_TYPES = {
@@ -113,6 +114,7 @@ export function initPrefs() {
         predefinedRecordFieldsDefault: 'text',
         requireRecordFields: false,
         lockPreferencesPassword: '',
+        allowHtmlFieldRendering: false,  // SEC-001: html fields render as escaped text by default
         defaultRecordFields: 'website,login,password,note',
         enableRawJSONEdit: false,
     }
@@ -452,6 +454,7 @@ function savePrefs(el) {
     }
 
     setDarkLightTheme(window.prefs.themeName)
+    updateHtmlRenderingIndicator()  // SEC-001: update toolbar badge
     searchRecords()  // refresh
     return checkDefaultRecordFields(true)
 }
@@ -495,6 +498,16 @@ function prefLockPreferencesPassword(labelClasses, inputClasses) {
             ),
         ),
     )
+}
+
+function prefAllowHtmlFieldRendering(labelClasses, inputClasses) {
+    return mkPrefsCheckBox(labelClasses,
+                           inputClasses,
+                           'allowHtmlFieldRendering',
+                           'Allow HTML Field Rendering',
+                           'WARNING (SEC-001): Only enable for trusted files distributed on a read-only volume. ' +
+                           'Enabling this allows HTML fields to render as live HTML, which is an XSS risk if ' +
+                           'loading files from untrusted sources.')
 }
 
 function prefEnableRawJSONEdit(labelClasses, inputClasses) {

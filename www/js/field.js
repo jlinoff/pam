@@ -29,7 +29,16 @@ export function mkRecordField(name, type, value) {
         fieldValue = `<pre>${rawValue}</pre>` // needed to keep line breaks in HTML
         break
     case 'html':
-        fieldValue = `${rawValue}` // user HTML
+        if (window.prefs.allowHtmlFieldRendering) {
+            fieldValue = rawValue // render as live HTML (SEC-001: only when explicitly enabled)
+        } else {
+            // Default: render as escaped plain text with </> badge (SEC-001)
+            let escaped = rawValue
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+            fieldValue = '<span class="badge bg-secondary me-1 x-html-disabled-badge" title="HTML rendering disabled (SEC-001)">&lt;/&gt;</span>' + escaped
+        }
         break
     default:
         break

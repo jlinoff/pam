@@ -785,6 +785,7 @@ test('empty password with JSON ciphertext: callback fires exactly once', () => {
 // The function is now exported so we can test it directly.
 // ---------------------------------------------------------------------------
 import { prefMemorablePasswordMaxWords } from '/js/prefs.js'
+import { mkRecordField } from '/js/field.js'
 
 suite('SIMP-005 — prefMemorablePasswordMaxWords renders correctly')
 test('returns a non-null DOM element (not undefined)', () => {
@@ -925,6 +926,60 @@ test('1 day 2 hours', () => {
 })
 test('pluralises days', () => {
   assert(formatTimeElapsed(2 * 86400000).startsWith('2 days'))
+})
+
+
+// ---------------------------------------------------------------------------
+// Phase 4 — SEC-001: html field rendering default-off with </> badge
+// ---------------------------------------------------------------------------
+suite('SEC-001 — html field rendering')
+
+// Helper: build a minimal record field element for type 'html'
+function makeHtmlField(rawValue) {
+  window.prefs.allowHtmlFieldRendering = false  // ensure default
+  return mkRecordField('test-field', 'html', rawValue)
+}
+
+test('html field default: renders escaped text not live HTML', () => {
+  const el = makeHtmlField('<b>bold</b>')
+  const valueDiv = el.querySelector('.x-fld-value')
+  assert(valueDiv !== null, 'should have .x-fld-value element')
+  // Should NOT contain a <b> element (live HTML)
+  assert(valueDiv.querySelector('b') === null,
+    'html rendering disabled: <b> tag should not be rendered as live HTML')
+})
+test('html field default: shows </> badge', () => {
+  const el = makeHtmlField('<b>bold</b>')
+  const badge = el.querySelector('.x-html-disabled-badge')
+  assert(badge !== null, 'should show </> badge when html rendering is disabled')
+})
+test('html field default: escaped text contains original content', () => {
+  const el = makeHtmlField('<b>bold</b>')
+  const valueDiv = el.querySelector('.x-fld-value')
+  assert(valueDiv.textContent.includes('bold'),
+    'escaped text should still contain the content')
+})
+test('html field enabled: renders as live HTML', () => {
+  window.prefs.allowHtmlFieldRendering = true
+  const el = mkRecordField('test-field', 'html', '<b>bold</b>')
+  const valueDiv = el.querySelector('.x-fld-value')
+  assert(valueDiv.querySelector('b') !== null,
+    'html rendering enabled: <b> tag should render as live HTML')
+  window.prefs.allowHtmlFieldRendering = false
+})
+test('html field enabled: no </> badge', () => {
+  window.prefs.allowHtmlFieldRendering = true
+  const el = mkRecordField('test-field', 'html', '<b>bold</b>')
+  const badge = el.querySelector('.x-html-disabled-badge')
+  assert(badge === null, 'no badge when html rendering is enabled')
+  window.prefs.allowHtmlFieldRendering = false
+})
+test('non-html field types are unaffected by allowHtmlFieldRendering', () => {
+  window.prefs.allowHtmlFieldRendering = false
+  const el = mkRecordField('test-field', 'text', 'plain text')
+  const valueDiv = el.querySelector('.x-fld-value')
+  assert(valueDiv.querySelector('.x-html-disabled-badge') === null,
+    'text fields should never show the html badge')
 })
 
 // Run sync tests first, then async crypt tests

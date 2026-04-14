@@ -213,7 +213,7 @@ run-single-test: init lint | tests/test_pam.py
 	pipenv run python3 -m pytest -k test_pam_setup tests/test_chrome.py
 
 .PHONY: app-help
-app-help: www/help/index.html  ## generate the pam help
+app-help: www/help/index.html www/help/quickstart.html www/help/security.html www/help/architecture.html www/help/history.html  ## generate the pam help
 
 # requires sed 4.8 or later
 www/help/index.html: Makefile README.md www/help/index.css \
@@ -236,6 +236,22 @@ www/help/index.html: Makefile README.md www/help/index.css \
 	mv tmp1.md tmp.md
 	pandoc -s --css index.css -s --metadata title='PAM - help' --html-q-tags -o $@ tmp.md
 	rm -f tmp*.md
+
+www/help/quickstart.html: Makefile QUICKSTART.md www/help/index.css
+	$(call hdr,"quickstart")
+	pandoc -s --css index.css -s --metadata title='PAM - Quick Start' --html-q-tags -o $@ QUICKSTART.md
+
+www/help/security.html: Makefile SECURITY.md www/help/index.css
+	$(call hdr,"security")
+	pandoc -s --css index.css -s --metadata title='PAM - Security' --html-q-tags -o $@ SECURITY.md
+
+www/help/architecture.html: Makefile ARCHITECTURE.md www/help/index.css
+	$(call hdr,"architecture")
+	pandoc -s --css index.css -s --metadata title='PAM - Architecture' --html-q-tags -o $@ ARCHITECTURE.md
+
+www/help/history.html: Makefile HISTORY.md www/help/index.css
+	$(call hdr,"history")
+	pandoc -s --css index.css -s --metadata title='PAM - History' --html-q-tags -o $@ HISTORY.md
 
 SRC_FILES := VERSION README.md \
 		www/index.html www/help/index.css \

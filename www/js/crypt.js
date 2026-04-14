@@ -1,4 +1,24 @@
-// Encypt/decrypt using SubtleCrypto
+/**
+ * @module crypt
+ * @description AES-256-CBC encryption and decryption using the browser SubtleCrypto API.
+ *
+ * ## File format (v1)
+ * The encrypted output is a Base64 string encoding: [16-byte salt][16-byte IV][ciphertext].
+ * The salt is generated randomly per encryption; the IV is generated randomly per encryption.
+ * Key derivation uses PBKDF2-SHA-256 with 100,000 iterations.
+ *
+ * ## Known v1 weaknesses (see SECURITY.md SEC-003/SEC-004)
+ * 1. The salt bytes are passed through TextEncoder.encode() — which calls .toString() first —
+ *    producing an ASCII string like "0,34,211,..." instead of raw bytes. This dramatically
+ *    reduces effective salt entropy. This bug is preserved intentionally: fixing it would
+ *    break decryption of all existing v1 files.
+ * 2. 100,000 PBKDF2 iterations is below current NIST/OWASP recommendations (≥600,000).
+ *    This will be addressed in the v2 file format (PAM v1.3).
+ *
+ * ## Plaintext detection
+ * The first character `{` is used to distinguish plaintext JSON from Base64 ciphertext,
+ * since Base64-encoded output never begins with `{`.
+ */
 import { statusBlip } from './status.js'
 import { clog } from './utils.js'
 
@@ -58,7 +78,24 @@ const PBKDF2 = async (password, salt, iterations, length, hash, algorithm = 'AES
         );
     }
 
-// Encrypt plaintext
+/**
+ * Encrypt plaintext JSON using AES-256-CBC.
+ *
+ * This function is asynchronous — the result is delivered via callback, not returned.
+ * Callers must not assume the callback fires synchronously.
+ *
+ * Edge cases (all handled, all deliver exactly one callback invocation):
+ * - Empty plaintext: callback(plaintext, filename) immediately, no encryption.
+ * - Empty password + non-JSON plaintext: assumed already encrypted; callback as-is.
+ * - Empty password + JSON plaintext: written out as plaintext (no encryption).
+ * - Non-secure context (HTTP): encryption is disabled; status message shown.
+ *
+ * @param {string} password - The master password. Empty string means no encryption.
+ * @param {string} plaintext - The UTF-8 JSON string to encrypt.
+ * @param {string} filename - The target filename, passed through to the callback unchanged.
+ * @param {function(string, string): void} callback - Called with (ciphertext, filename)
+ *   on success. On failure, logs the error and does not invoke the callback.
+ */
 export function encrypt(password, plaintext, filename, callback) {
     if (!plaintext || plaintext.length === 0) {
         callback(plaintext, filename)
@@ -100,7 +137,21 @@ export function encrypt(password, plaintext, filename, callback) {
     }
 }
 
-// Decrypt ciphertext.
+/**
+ * Decrypt AES-256-CBC ciphertext produced by encrypt().
+ *
+ * This function is asynchronous — the result is delivered via callbacks, not returned.
+ *
+ * Edge cases (all handled, all deliver exactly one callback invocation):
+ * - Empty ciphertext: callback(ciphertext) immediately.
+ * - Empty password + JSON ciphertext (starts with `{`): assumed already decrypted; callback as-is.
+ * - Empty password + non-JSON ciphertext: cannot decrypt without a password; callback2 called.
+ *
+ * @param {string} password - The master password used during encryption.
+ * @param {string} ciphertext - Base64-encoded ciphertext from encrypt(), or plain JSON.
+ * @param {function(string): void} callback - Called with the decrypted plaintext on success.
+ * @param {function(string): void} callback2 - Called with an error message string on failure.
+ */
 export function decrypt(password, ciphertext, callback, callback2) {
     if (!ciphertext || ciphertext.length === 0) {
         callback(ciphertext)

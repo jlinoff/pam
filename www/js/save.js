@@ -8,6 +8,10 @@ import { mkGeneratePasswordDlg, mkLoadSavePassword, setFilePass } from './passwo
 import { encrypt } from './crypt.js'
 import { setAboutFileInfo } from './about.js'
 
+/**
+ * Show or hide the Save File menu entry based on window.prefs.enableSaveFile.
+ * Called on prefs change and on initial load.
+ */
 export function enableSaveFile() {
     let eps = document.body.xGetN('.x-save-file-menu-item')
     if ( window.prefs.enableSaveFile ) {
@@ -17,6 +21,11 @@ export function enableSaveFile() {
     }
 }
 // Called from the top level menu.
+/**
+ * Build and return the Save File modal dialog element.
+ * The dialog lets the user set a filename, enter a master password, and save.
+ * @returns {Element} The modal dialog element.
+ */
 export function menuSaveDlg() {
     let body = xmk('span')
         .xAppendChild(
@@ -100,6 +109,19 @@ export function menuSaveDlg() {
 }
 
 // Convert internal data to JSON.
+/**
+ * Serialise the current in-memory state (prefs + records) to a JSON-compatible object.
+ *
+ * This function reads directly from the DOM — it walks the records accordion and
+ * extracts field names, types, and values from the DOM structure. There is no
+ * separate in-memory data store.
+ *
+ * @param {object} contents - An object with a `prefs` key and a `records` array.
+ *   Both are populated by this function. The caller must initialise them:
+ *   `{ prefs: {}, records: [] }`.
+ * @param {string} now - ISO 8601 timestamp used as the `created` value for
+ *   records that do not already have one.
+ */
 export function convertInternalDataToJSON(contents, now) {
     // Save the preferencess
     for (const [key, value] of Object.entries(window.prefs)) {

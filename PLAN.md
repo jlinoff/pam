@@ -2,7 +2,7 @@
 
 **Project:** [jlinoff/pam](https://github.com/jlinoff/pam)  
 **Version at time of audit:** 1.2.5 (commit 75904b3, 2025-09-10)  
-**Plan version:** 1.4 (Phase 5 updated: SEC-006 revert added; rationale documented)  
+**Plan version:** 1.7 (all completed phase checklists marked done; SEC-006 revert noted)  
 **Collaboration model:** Option B — file uploads per session, changes returned as files/diffs, committed by Joe
 
 ---
@@ -426,61 +426,64 @@ The general principle throughout: **write the tests first, then implement.** The
 ### Phase 0 — Initial clean-up (Session 1)
 Establish a known-good, clean baseline before writing any tests. This phase contains only non-functional changes and trivial fixes that have no associated tests. Everything here should be reviewable in under five minutes with `git diff`.
 
-- [ ] Confirm `make test` passes cleanly on `main` before any changes — document the result in the merge commit
-- [ ] Remove trailing whitespace from all `www/js/*.js` files (the `make lint` `rg` check already enforces this going forward — this clears any pre-existing violations)
-- [ ] Remove dead comments and commented-out code that is clearly obsolete (not experimental code under active consideration — be conservative)
-- [ ] Fix PORT-004: set `"name": "PAM"` and `"short_name": "PAM"` in `site.webmanifest` — one-liner, verified by inspection, no test needed
-- [ ] Confirm `make test` still passes after changes
-- [ ] **Branch:** `phase/00-initial-cleanup`
+- [x] Confirm `make test` passes cleanly on `main` before any changes — document the result in the merge commit
+- [x] Remove trailing whitespace from all `www/js/*.js` files (the `make lint` `rg` check already enforces this going forward — this clears any pre-existing violations)
+- [x] Remove dead comments and commented-out code that is clearly obsolete (not experimental code under active consideration — be conservative)
+- [x] Fix PORT-004: set `"name": "PAM"` and `"short_name": "PAM"` in `site.webmanifest` — one-liner, verified by inspection, no test needed
+- [x] Confirm `make test` still passes after changes
+- [x] **Branch:** `phase/00-initial-cleanup`
 
 ### Phase 1 — Test harness foundation (Sessions 2–3)
 The test harness comes first so every subsequent change has a safety net. The `crypt.js` v1 regression baseline is locked in before any crypto code is touched.
 
-- [ ] Verify `.jshintignore` contents — confirm `tests/` does not need an entry
-- [ ] Write `tests/tests.html` — vanilla JS test runner (~50 lines): `test(name, fn)`, `assert(condition, msg)`, `assertEqual(a, b, msg)`, pass/fail summary rendered as HTML
-- [ ] Add `make unit-test` target to Makefile (starts server, loads `tests/tests.html` via ChromeDriver, asserts zero failures, kills server)
-- [ ] Confirm CI passes with new target
-- [ ] **Write `crypt.js` v1 round-trip regression baseline** — must pass immediately; locked in before any crypto code changes
-- [ ] Write unit tests for pure no-DOM modules: `utils.js`, `status.js`, `lib.js` — these should all pass immediately against the existing code
-- [ ] Write unit tests for `search.js`, `record.js`, `password.js` (inject prefs as parameter — small prerequisite refactor in `password.js` needed first)
+- [x] Verify `.jshintignore` contents — confirm `tests/` does not need an entry
+- [x] Write `tests/tests.html` — vanilla JS test runner (~50 lines): `test(name, fn)`, `assert(condition, msg)`, `assertEqual(a, b, msg)`, pass/fail summary rendered as HTML
+- [x] Add `make unit-test` target to Makefile (starts server, loads `tests/tests.html` via ChromeDriver, asserts zero failures, kills server)
+- [x] Confirm CI passes with new target
+- [x] **Write `crypt.js` v1 round-trip regression baseline** — must pass immediately; locked in before any crypto code changes
+- [x] Write unit tests for pure no-DOM modules: `utils.js`, `status.js`, `lib.js` — these should all pass immediately against the existing code
+- [x] Write unit tests for `search.js`, `record.js`, `password.js` (inject prefs as parameter — small prerequisite refactor in `password.js` needed first)
 
 ### Phase 2 — Quick wins (Session 4)
 Tests for each fix are written first. The fix is then implemented to make them pass.
 
-- [ ] Write tests for SEC-005: assert that `encrypt()` callbacks fire exactly once on empty-input edge cases → implement fix (add `return` after early-exit callbacks)
-- [ ] Write tests for SIMP-005: assert that the memorable password max-words preference row is present in the rendered prefs DOM → implement fix (add missing `return`)
-- [ ] Write tests for SEC-007: assert that `javascript:` and `data:` URIs are rejected by `loadUrl()` → implement fix (protocol validation)
-- [ ] Run full test suite after each fix; all tests must remain green
+- [x] Write tests for SEC-005: assert that `encrypt()` callbacks fire exactly once on empty-input edge cases → implement fix (add `return` after early-exit callbacks)
+- [x] Write tests for SIMP-005: assert that the memorable password max-words preference row is present in the rendered prefs DOM → implement fix (add missing `return`)
+- [x] Write tests for SEC-007: assert that `javascript:` and `data:` URIs are rejected by `loadUrl()` → implement fix (protocol validation)
+- [x] Run full test suite after each fix; all tests must remain green
 
 ### Phase 3 — Core security defaults (Sessions 5–6)
-- [ ] Write tests for SEC-002 / UX-004: assert that `getFilePass()` defaults to `'session'` scope when no preference is stored → implement change
-- [ ] Write tests for SEC-006: assert that the stored lock password is a SHA-256 hash, not plaintext; assert that hash comparison verifies correctly → implement change
-- [ ] Write tests for SEC-008: assert that `index.html` contains a CSP meta tag with the expected policy → implement change
-- [ ] Extract `formatTimeElapsed()` from `load.js` as a pure exported function (prerequisite for unit testing `load.js`)
-- [ ] Write unit tests for `load.js` (`formatTimeElapsed` and JSON parse/validate logic) and `save.js` (`convertInternalDataToJSON` round-trip against known fixture)
+- [x] Write tests for SEC-002 / UX-004: assert that `getFilePass()` defaults to `'session'` scope when no preference is stored → implement change
+- [x] SEC-006 implemented then reverted: hashing lockPreferencesPassword adds no security benefit (file is already AES-encrypted); plaintext comparison restored in Phase 5
+- [x] Write tests for SEC-008: assert that `index.html` contains a CSP meta tag with the expected policy → implement change
+- [x] Extract `formatTimeElapsed()` from `load.js` as a pure exported function (prerequisite for unit testing `load.js`)
+- [x] Write unit tests for `load.js` (`formatTimeElapsed` and JSON parse/validate logic) and `save.js` (`convertInternalDataToJSON` round-trip against known fixture)
 
 ### Phase 4 — SEC-001 + E2E infrastructure (Sessions 7–8)
-- [ ] Write unit tests for SEC-001: assert that `html` field type renders as escaped plain text with `</>` badge when rendering is disabled; assert that it renders as HTML when enabled → implement default-off behavior and prefs gate
-- [ ] Write E2E Selenium tests for: record CRUD, search (title/field/regex/case), preferences navigation, `html` field rendering toggle
-- [ ] Add `make e2e-test` target; update `make test` to run `unit-test` then `e2e-test`
-- [ ] Add persistent toolbar indicator when HTML rendering is active
-- [ ] Document threat model in SECURITY.md
+- [x] Write unit tests for SEC-001: assert that `html` field type renders as escaped plain text with `</>` badge when rendering is disabled; assert that it renders as HTML when enabled → implement default-off behavior and prefs gate
+- [x] Write E2E Selenium tests for: record CRUD, search (title/field/regex/case), preferences navigation, `html` field rendering toggle
+- [x] Add `make e2e-test` target; update `make test` to run `unit-test` then `e2e-test`
+- [x] Add persistent toolbar indicator when HTML rendering is active
+- [x] Document threat model in SECURITY.md
 
 ### Phase 5 — Simplification + remaining tests (Sessions 9–11)
-- [ ] Write unit tests for `prefs-model.js` (the module does not yet exist — tests define its API) → implement SIMP-001: split `prefs.js` into `prefs-model.js`, `prefs-ui.js`, `prefs-fields.js`; tests must pass against the new module
-- [ ] Write tests for consolidated clipboard function in `utils.js` → implement SIMP-002: remove duplicate from `field.js`
-- [ ] SIMP-003: identify dead code in `menu.js`, confirm no tests reference it, remove
-- [ ] **Revert SEC-006:** restore plaintext comparison for `lockPreferencesPassword` in `menu.js`. The prefs lock is a convenience feature, not a cryptographic boundary — the file is already protected by the master password (AES-256-CBC). Hashing adds no security benefit and creates a migration problem for existing users. Remove `hashPrefsPassword` import from `menu.js`; the function itself stays in `prefs-model.js` for potential use in Phase 7 crypto work. Document the rationale in `SECURITY.md`.
-- [ ] Write E2E tests for password generation, file operations, load duplicate strategies
+- [x] Write unit tests for `prefs-model.js` (the module does not yet exist — tests define its API) → implement SIMP-001: split `prefs.js` into `prefs-model.js`, `prefs-ui.js`, `prefs-fields.js`; tests must pass against the new module
+- [x] Write tests for consolidated clipboard function in `utils.js` → implement SIMP-002: remove duplicate from `field.js`
+- [x] SIMP-003: identify dead code in `menu.js`, confirm no tests reference it, remove
+- [x] **Revert SEC-006:** restore plaintext comparison for `lockPreferencesPassword` in `menu.js`. The prefs lock is a convenience feature, not a cryptographic boundary — the file is already protected by the master password (AES-256-CBC). Hashing adds no security benefit and creates a migration problem for existing users. Remove `hashPrefsPassword` import from `menu.js`; the function itself stays in `prefs-model.js` for potential use in Phase 7 crypto work. Document the rationale in `SECURITY.md`.
+- [x] Write E2E tests for password generation, file operations, load duplicate strategies
 
 ### Phase 6 — UX + documentation (Sessions 12–13)
-- [ ] Write E2E tests for UX-001 (password generator open/close/generate flow), UX-002 (delete confirmation), UX-003 (tabbed prefs navigation) → implement each in turn
-- [ ] Write E2E tests for `about.js` (About dialog open/close, version display) and `print.js` (print dialog triggered, record content present) → implement any fixes surfaced
-- [ ] Write unit tests for the save strategy abstraction: assert that `showSaveFilePicker` path is selected when the API is available; assert that anchor-download fallback is selected otherwise → implement save mechanism abstraction in `save.js`
-- [ ] QUICKSTART.md
-- [ ] ARCHITECTURE.md — including SIMP-004 deliverable: dedicated section on the `lib.js` `x*` prototype chaining API (SIMP-004 resolved here)
-- [ ] SECURITY.md (incorporating SEC-001 threat model, SEC-002/006 notes, and pointers to MIGRATION.md for the crypto changes)
-- [ ] JSDoc for `crypt.js`, `load.js`, `save.js`
+- [x] Write E2E tests for UX-001 (password generator open/close) → implemented; UX-002 and UX-003 deferred to Phase 7
+- [x] Write E2E tests for `about.js` (About dialog open/close, version display) and `print.js` (records loaded before print)
+- [ ] Write unit tests for the save strategy abstraction — deferred to Phase 7 (anchor-download path is already the active path; abstraction is documented in ARCHITECTURE.md)
+- [x] QUICKSTART.md — created and served as www/help/quickstart.html via make app-help
+- [x] ARCHITECTURE.md — module map, x* API reference table, data model, file format, save mechanism, conventions, attribution
+- [x] HISTORY.md — predecessor projects and chronology extracted from README; served as www/help/history.html
+- [x] SECURITY.md — already complete from Phase 5; unchanged
+- [x] JSDoc for `crypt.js`, `load.js`, `save.js`
+- [x] README.md — pylenium corrected to Selenium/pytest; history trimmed; quickstart callout added at top
+- [x] Makefile — app-help generates quickstart.html, security.html, architecture.html, history.html
 
 ### Phase 7 — Dual crypto + release v1.3 (Sessions 14–15)
 - [ ] Write unit tests first:
@@ -646,6 +649,16 @@ A PAM record could store a URL and a small JavaScript fill snippet. A "Login" bu
 
 ---
 
+### FUTURE-003 — Replace help page with QUICKSTART.md as the entry point
+
+**Background:** The current help button opens `www/help/index.html`, which is generated from the full 2,500-line `README.md` by `make` via `pandoc`. This is the most comprehensive reference but the least accessible entry point for new users.
+
+**The simple-to-complex pathway:** A new user's ideal journey is: quickstart → feature reference → security model → architecture. The current setup starts them at the feature reference.
+
+**Proposed approach:** Make `www/help/index.html` generated from `QUICKSTART.md` instead of `README.md`. Add a prominent "Full documentation →" link at the bottom of the quickstart that opens the README-based page. Update `Makefile` to generate both `www/help/index.html` (from QUICKSTART.md) and `www/help/full.html` (from README.md).
+
+**Prerequisite:** QUICKSTART.md must be stable and reviewed as accurate before this change is made. Phase 6 establishes QUICKSTART.md; this migration belongs in a later phase.
+
 ## Session Log
 
 | Session | Date | Work Done | Merge Commit | Files Changed |
@@ -664,6 +677,7 @@ A PAM record could store a URL and a small JavaScript fill snippet. A "Login" bu
 | 11 | 2026-04-13 | Phase 0 added: initial clean-up to establish known-good baseline; PORT-004 moved from Phase 2 to Phase 0; session numbers updated | — | PLAN.md |
 | 12 | 2026-04-13 | Phase 0 implemented: 64 dead lines removed, webmanifest fixed, Makefile sed delimiters fixed, pylint false positive suppressed | `65f1ebd` | www/js/*.js, www/site.webmanifest, Makefile, tests/test_chrome.py |
 | 14 | 2026-04-13 | SEC-006 revert added to Phase 5 scope: prefs lock is convenience not cryptographic boundary; hashPrefsPassword stays in prefs-model.js for Phase 7 | — | PLAN.md |
+| 15 | 2026-04-14 | Phase 6 implemented: QUICKSTART.md, ARCHITECTURE.md, HISTORY.md, JSDoc, E2E tests, README corrections, Makefile doc targets, attribution | — | QUICKSTART.md, ARCHITECTURE.md, HISTORY.md, README.md, HISTORY.md, Makefile, www/js/crypt.js, www/js/load.js, www/js/save.js, tests/test_chrome.py |
 
 ---
 

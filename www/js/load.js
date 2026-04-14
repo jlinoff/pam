@@ -189,6 +189,15 @@ function loadUrlContent(url) {
 // Validate that a URL uses an acceptable protocol for loading.
 // Only http:// and https:// are permitted — javascript: and data: URIs
 // are explicitly rejected to prevent XSS via the URL load path (SEC-007).
+/**
+ * Validate that a URL is safe to load from.
+ *
+ * Only https:// and http:// protocols are accepted. javascript:, data:, ftp:,
+ * and all other URI schemes are rejected to prevent XSS via the URL load path (SEC-007).
+ *
+ * @param {string} url - The URL to validate.
+ * @returns {boolean} True if the URL is safe to load, false otherwise.
+ */
 export function isValidLoadUrl(url) {
     if (!url || url.length === 0) {
         return false
@@ -390,6 +399,20 @@ function invalidPasswordCallback(error) {
 // 3 days, 1 hour, 5 minutes
 // It pluralizes values for day, hour, minute, and second that are greater than one.
 // It ignores zero values for day, hour, minute, second.
+/**
+ * Format a duration in milliseconds as a human-readable string.
+ *
+ * Returns a comma-separated list of the largest non-zero time units.
+ * Returns '0 seconds' for zero or sub-second input.
+ *
+ * @param {number} ms - Duration in milliseconds.
+ * @returns {string} Human-readable duration, e.g. '1 day, 2 hours, 3 minutes, 4 seconds'.
+ *
+ * @example
+ * formatTimeElapsed(0)        // '0 seconds'
+ * formatTimeElapsed(61000)    // '1 minute, 1 second'
+ * formatTimeElapsed(86400000) // '1 day'
+ */
 export function formatTimeElapsed(ms) {
     let es = Math.floor(ms / 1000)
     let em = Math.floor(es / 60)

@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>PAM - Security</title>
+  <style>
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: auto; overflow-x: auto;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+  </style>
+  <link rel="stylesheet" href="index.css" />
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">PAM - Security</h1>
+</header>
+<h1 id="pam-security-model">PAM Security Model</h1>
+<p>This document describes the security model for PAM, the known risks,
+and the mitigations in place.</p>
+<hr />
+<h2 id="threat-model">Threat model</h2>
+<p>PAM is a client-side web application. All encryption and decryption
+happens in the browser using the Web Crypto API
+(<code>SubtleCrypto</code>). No data is ever sent to a server. The
+encrypted file is stored locally by the user.</p>
+<p>The primary threat vectors are:</p>
+<ol type="1">
+<li><strong>Compromise of the encrypted file</strong> — an attacker
+obtains the <code>.pam</code> file and attempts to brute-force the
+master password offline.</li>
+<li><strong>XSS via malicious file content</strong> — a user is tricked
+into loading a PAM file from an untrusted source that contains malicious
+HTML in an <code>html</code>-type field.</li>
+<li><strong>Master password exposure</strong> — the master password is
+cached in browser storage and exposed via XSS, a compromised extension,
+or physical access to the device.</li>
+</ol>
+<hr />
+<h2 id="sec-001-html-field-rendering">SEC-001 — HTML field
+rendering</h2>
+<p>PAM supports an <code>html</code> field type that allows rich content
+(formatted notes, links, instructions). This is an intentional feature
+designed for controlled internal deployments where a security team
+authors PAM data and distributes it on a read-only volume to a defined
+cohort.</p>
+<p><strong>Risk:</strong> If a user loads a PAM file from an untrusted
+source, <code>html</code> fields could contain malicious scripts
+(XSS).</p>
+<p><strong>Mitigation:</strong> - HTML field rendering is
+<strong>disabled by default</strong>. Fields of type <code>html</code>
+render as escaped plain text with a <code>&lt;/&gt;</code> badge. - HTML
+rendering can only be enabled in <strong>Preferences → Security → Allow
+HTML Field Rendering</strong>, which is accessible only after unlocking
+preferences with the prefs password. - When HTML rendering is enabled, a
+persistent <strong>⚠ HTML ON</strong> warning badge is shown in the
+toolbar so users always know they are in a mode where HTML fields render
+live.</p>
+<p><strong>When is it safe to enable?</strong> - The PAM file was
+authored by a trusted party (e.g. your own security team). - The file is
+distributed on a read-only volume and cannot be modified by end users. -
+You are not loading PAM files from untrusted URLs.</p>
+<p><strong>Residual risk:</strong> A PAM file distributed with HTML
+rendering already enabled in its prefs block carries that setting with
+it. The mitigation protects against <em>foreign</em> malicious files,
+not against the trusted file itself being compromised.</p>
+<hr />
+<h2 id="sec-002-master-password-caching">SEC-002 — Master password
+caching</h2>
+<p>The master file password can be cached in browser storage to avoid
+re-entry on every save/load. The cache strategy is controlled in
+<strong>Preferences → Security → filePass Cache Strategy</strong>.</p>
+<p><strong>Options:</strong> - <code>session</code> (default) — password
+is cached for the current browser session only and cleared when the tab
+is closed. - <code>local</code> — password persists in
+<code>localStorage</code> indefinitely across sessions. <strong>Use with
+caution.</strong> - <code>global</code> — password is held in memory
+only (lost on page reload). - <code>none</code> — password is never
+cached.</p>
+<p><strong>Recommendation:</strong> Use <code>session</code> (the
+default) unless you have a specific reason to use <code>local</code>.
+The <code>local</code> option is a convenience feature that reduces
+security — only enable it on a trusted, personal device.</p>
+<hr />
+<h2 id="sec-003-sec-004-encryption-format-v1-vs-v2">SEC-003 / SEC-004 —
+Encryption format (v1 vs v2)</h2>
+<p>PAM v1.x uses AES-256-CBC with PBKDF2-SHA-256 key derivation. The v1
+implementation has two known weaknesses:</p>
+<ol type="1">
+<li><strong>Low iteration count</strong> (100,000) — NIST SP 800-132
+(2023) and OWASP now recommend ≥ 600,000 iterations.</li>
+<li><strong>Salt entropy bug</strong> — the random salt bytes are passed
+through <code>TextEncoder.encode()</code> which calls
+<code>.toString()</code> first, producing an ASCII string like
+<code>"0,34,211,..."</code> instead of raw bytes, dramatically reducing
+salt entropy.</li>
+</ol>
+<p>Both bugs define the key derivation for all existing v1 files. Fixing
+them requires a new file format (v2).</p>
+<p><strong>Migration:</strong> v2 format support is planned for PAM
+v1.3. The migration is non-breaking — v1 files can always be decrypted;
+users choose when to re-save in v2 format. See <code>MIGRATION.md</code>
+(published with v2.0).</p>
+<hr />
+<h2 id="sec-006-preferences-lock-password">SEC-006 — Preferences lock
+password</h2>
+<p>The preferences lock password (<code>lockPreferencesPassword</code>)
+is stored as <strong>plaintext</strong> in the PAM file’s prefs
+block.</p>
+<p><strong>This is intentional.</strong> The prefs lock is a convenience
+feature whose sole purpose is to prevent casual or accidental
+modification of preferences in a shared deployment. It is not a
+cryptographic boundary.</p>
+<p>The entire PAM file — including the prefs block and
+<code>lockPreferencesPassword</code> — is encrypted with the master
+password (AES-256-CBC). An attacker who has the master password can read
+everything. Hashing <code>lockPreferencesPassword</code> would add no
+security benefit in this threat model, and would silently break existing
+files where the value was stored as plaintext.</p>
+<p><strong>Threat model:</strong> The prefs lock protects against an
+authorised user (who has the master password) accidentally changing
+deployment-managed settings. It does not protect against a determined
+attacker.</p>
+<hr />
+<h2 id="sec-007-url-load-validation">SEC-007 — URL load validation</h2>
+<p>The <strong>Load → URL</strong> feature only accepts
+<code>https://</code> and <code>http://</code> URLs.
+<code>javascript:</code>, <code>data:</code>, <code>ftp:</code>, and
+other URI schemes are rejected to prevent protocol-based injection
+attacks.</p>
+<hr />
+<h2 id="sec-008-content-security-policy">SEC-008 — Content Security
+Policy</h2>
+<p>PAM sets a <code>Content-Security-Policy</code> meta tag in
+<code>index.html</code>:</p>
+<pre><code>default-src &#39;self&#39;;
+script-src &#39;self&#39; https://cdn.jsdelivr.net;
+style-src &#39;self&#39;;
+img-src &#39;self&#39; data:;
+font-src &#39;self&#39;</code></pre>
+<p>This prevents loading of scripts, styles, and resources from
+untrusted origins. The <code>cdn.jsdelivr.net</code> exception covers
+the DOMPurify library used for HTML sanitization.</p>
+<hr />
+<h2 id="reporting-security-issues">Reporting security issues</h2>
+<p>This is an open-source personal password manager. If you find a
+security issue please open a GitHub issue at <a
+href="https://github.com/jlinoff/pam">jlinoff/pam</a>.</p>
+</body>
+</html>

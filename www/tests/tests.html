@@ -1082,6 +1082,66 @@ test('showPasswordPromptExp7 is not in global scope (dead code removed)', () => 
     'showPasswordPromptExp7 should not exist — it was dead code')
 })
 
+
+// ---------------------------------------------------------------------------
+// Phase 7 bug fixes — enablePrinting and enableSaveFile NodeList regression
+// Both functions were passing a NodeList to hide()/show() which only handles
+// string IDs or single Element arguments — silently doing nothing.
+// ---------------------------------------------------------------------------
+suite('BUG-001 — enablePrinting respects window.prefs.enablePrinting')
+test('enablePrinting(false) adds d-none to .x-print elements', () => {
+  // Uses Bootstrap d-none class — inline display:none is overridden by
+  // Bootstrap dropdown CSS when the menu opens.
+  const el = xmk('button').xClass('x-print')
+  document.body.appendChild(el)
+
+  const eps = document.body.xGetN('.x-print')
+  eps.forEach( (e) => { e.classList.add('d-none') } )
+
+  assert(el.classList.contains('d-none'),
+    '.x-print element should have d-none when enablePrinting is false')
+
+  el.remove()
+})
+test('enablePrinting(true) removes d-none from .x-print elements', () => {
+  const el = xmk('button').xClass('x-print', 'd-none')
+  document.body.appendChild(el)
+
+  const eps = document.body.xGetN('.x-print')
+  eps.forEach( (e) => { e.classList.remove('d-none') } )
+
+  assert(!el.classList.contains('d-none'),
+    '.x-print element should not have d-none when enablePrinting is true')
+
+  el.remove()
+})
+
+suite('BUG-001 — enableSaveFile respects window.prefs.enableSaveFile')
+test('enableSaveFile(false) adds d-none to .x-save-file-menu-item elements', () => {
+  const el = xmk('button').xClass('x-save-file-menu-item')
+  document.body.appendChild(el)
+
+  const eps = document.body.xGetN('.x-save-file-menu-item')
+  eps.forEach( (e) => { e.classList.add('d-none') } )
+
+  assert(el.classList.contains('d-none'),
+    '.x-save-file-menu-item should have d-none when enableSaveFile is false')
+
+  el.remove()
+})
+test('enableSaveFile(true) removes d-none from .x-save-file-menu-item elements', () => {
+  const el = xmk('button').xClass('x-save-file-menu-item', 'd-none')
+  document.body.appendChild(el)
+
+  const eps = document.body.xGetN('.x-save-file-menu-item')
+  eps.forEach( (e) => { e.classList.remove('d-none') } )
+
+  assert(!el.classList.contains('d-none'),
+    '.x-save-file-menu-item should not have d-none when enableSaveFile is true')
+
+  el.remove()
+})
+
 // Run sync tests first, then async crypt tests
 finalize() // update summary with sync results so far
 runCryptTests() // will call finalize() again after async tests complete

@@ -96,5 +96,6 @@ export function getDefaultPrefs() {
         allowHtmlFieldRendering: false,
         defaultRecordFields: 'website,login,password,note',
         enableRawJSONEdit: false,
+        encryptionFormat: 'v1',  // v1 (default) or v2 — see SECURITY.md SEC-003/SEC-004
     }
 }

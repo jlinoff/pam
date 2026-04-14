@@ -183,7 +183,7 @@ export function mkMenu() {
                             icon('bi-file-arrow-down-fill'),
                             xmk('span').xInnerHTML('&nbsp;' + 'Save File'),
                         ),
-                    xmk('li').xAppend(xmk('hr').xClass('dropdown-divider', 'x-print')),
+                    xmk('li').xClass('x-print').xAppend(xmk('hr').xClass('dropdown-divider')),
                     xmk('button') // Print
                         .xAttrs({'type': 'button'})
                         .xClass('dropdown-item', 'x-print')

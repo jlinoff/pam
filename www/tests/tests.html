@@ -452,6 +452,7 @@ window.prefs.filePassCache = 'session'
 import { searchRecords, clearSearch } from '/js/search.js'
 import { isValidLoadUrl, formatTimeElapsed } from '/js/load.js'
 import { hashPrefsPassword } from '/js/prefs.js'
+import { getDefaultPrefs, VALID_FIELD_TYPES, VALID_CACHE_STRATEGIES } from '/js/prefs-model.js'
 
 // Build a minimal DOM fixture: #records-accordion with some records
 function makeAccordionItem(title, active, fields) {
@@ -1006,6 +1007,79 @@ test('lockPreferencesPassword is stored as plaintext (not a hash)', () => {
   assert(window.prefs.lockPreferencesPassword.length !== 64,
     'plaintext password should not look like a SHA-256 hash')
   window.prefs.lockPreferencesPassword = saved
+})
+
+
+// ---------------------------------------------------------------------------
+// Phase 5 — SIMP-001: prefs-model.js pure data model
+// ---------------------------------------------------------------------------
+suite('SIMP-001 — prefs-model.js pure data model')
+test('getDefaultPrefs returns a non-null object', () => {
+  const p = getDefaultPrefs()
+  assert(typeof p === 'object' && p !== null, 'getDefaultPrefs should return an object')
+})
+test('getDefaultPrefs filePassCache default is session (SEC-002)', () => {
+  assertEqual(getDefaultPrefs().filePassCache, 'session',
+    'filePassCache default should be session')
+})
+test('getDefaultPrefs allowHtmlFieldRendering default is false (SEC-001)', () => {
+  assertEqual(getDefaultPrefs().allowHtmlFieldRendering, false,
+    'allowHtmlFieldRendering should default to false')
+})
+test('getDefaultPrefs lockPreferencesPassword default is empty string', () => {
+  assertEqual(getDefaultPrefs().lockPreferencesPassword, '',
+    'lockPreferencesPassword should default to empty string')
+})
+test('getDefaultPrefs includes predefinedRecordFields with website', () => {
+  const p = getDefaultPrefs()
+  assert('predefinedRecordFields' in p, 'should include predefinedRecordFields')
+  assertEqual(p.predefinedRecordFields['website'], 'url',
+    'website should be a url field')
+})
+test('getDefaultPrefs returns a fresh object each call (no shared state)', () => {
+  const p1 = getDefaultPrefs()
+  const p2 = getDefaultPrefs()
+  p1.filePassCache = 'mutated'
+  assertEqual(p2.filePassCache, 'session',
+    'mutations to one result should not affect subsequent calls')
+})
+test('VALID_FIELD_TYPES includes html', () => {
+  assert('html' in VALID_FIELD_TYPES, 'html should be a valid field type')
+})
+test('VALID_FIELD_TYPES includes all expected types', () => {
+  const expected = ['text', 'password', 'url', 'email', 'textarea', 'html']
+  for (const t of expected) {
+    assert(t in VALID_FIELD_TYPES, `${t} should be a valid field type`)
+  }
+})
+test('VALID_CACHE_STRATEGIES includes session and local', () => {
+  assert('session' in VALID_CACHE_STRATEGIES, 'session should be valid')
+  assert('local' in VALID_CACHE_STRATEGIES, 'local should be valid')
+  assert('none' in VALID_CACHE_STRATEGIES, 'none should be valid')
+})
+
+// ---------------------------------------------------------------------------
+// Phase 5 — SIMP-002: clipboard consolidation
+// field.js mkRecordFieldCopyToClipboardButton delegates to utils.js
+// ---------------------------------------------------------------------------
+suite('SIMP-002 — clipboard consolidation')
+test('mkRecordField contains a clipboard button', () => {
+  const el = mkRecordField('test', 'text', 'hello')
+  // The clipboard button has a bi-clipboard icon inside it
+  const icon = el.querySelector('.bi-clipboard')
+  assert(icon !== null, 'clipboard button with bi-clipboard icon should exist')
+  const btn = icon.closest('button')
+  assert(btn !== null, 'bi-clipboard should be inside a button')
+})
+
+// ---------------------------------------------------------------------------
+// Phase 5 — SIMP-003: dead code removed from menu.js
+// showPasswordPromptExp7 was an experimental function never called in production
+// ---------------------------------------------------------------------------
+suite('SIMP-003 — dead code removed from menu.js')
+test('showPasswordPromptExp7 is not in global scope (dead code removed)', () => {
+  assert(typeof window.showPasswordPromptExp7 === 'undefined',
+    'showPasswordPromptExp7 should not exist — it was dead code')
 })
 
 // Run sync tests first, then async crypt tests

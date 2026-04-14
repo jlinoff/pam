@@ -351,17 +351,29 @@ test('statusBlip() sets content immediately', () => {
 // ---------------------------------------------------------------------------
 import { clog } from '/js/utils.js'
 
-suite('utils.js — clog')
-test('clog does not throw when logStatusToConsole is false', () => {
+suite('utils.js — clog / logStatusToConsole')
+test('clog suppresses console.log when logStatusToConsole is false', () => {
+  const original = console.log
+  let called = false
+  console.log = () => { called = true }
   window.prefs.logStatusToConsole = false
-  clog('should not throw')
-  assert(true, 'clog did not throw')
+  clog('should be suppressed')
+  console.log = original
+  assert(!called, 'clog should not call console.log when logStatusToConsole is false')
 })
-test('clog does not throw when logStatusToConsole is true', () => {
+test('clog calls console.log when logStatusToConsole is true', () => {
+  const original = console.log
+  let called = false
+  console.log = () => { called = true }
   window.prefs.logStatusToConsole = true
-  clog('console message')
+  clog('should appear in console')
+  console.log = original
   window.prefs.logStatusToConsole = false
-  assert(true, 'clog did not throw')
+  assert(called, 'clog should call console.log when logStatusToConsole is true')
+})
+test('logStatusToConsole default is false', () => {
+  assertEqual(getDefaultPrefs().logStatusToConsole, false,
+    'logStatusToConsole should default to false')
 })
 
 // ---------------------------------------------------------------------------

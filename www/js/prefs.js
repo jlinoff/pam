@@ -854,7 +854,7 @@ function prefMemorablePasswordMinWords(labelClasses, inputClasses) {
     )
 }
 
-function prefMemorablePasswordMaxWords(labelClasses, inputClasses) {
+export function prefMemorablePasswordMaxWords(labelClasses, inputClasses) {
     return xmk('div').xClass('row').xAppend(
         prefLabel(labelClasses, 'Memorable Password Max Words'),
         xmk('div').xClass(...inputClasses).xAppend(

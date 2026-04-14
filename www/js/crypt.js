@@ -62,10 +62,12 @@ const PBKDF2 = async (password, salt, iterations, length, hash, algorithm = 'AES
 export function encrypt(password, plaintext, filename, callback) {
     if (!plaintext || plaintext.length === 0) {
         callback(plaintext, filename)
+        return
     }
     if (!password || password.length === 0) {
         if (plaintext[0] !== '{') {
             callback(plaintext, filename) // already encrypted, encrypt again
+            return
         }
         callback(plaintext, filename) // write out in plaintext
         return
@@ -102,10 +104,12 @@ export function encrypt(password, plaintext, filename, callback) {
 export function decrypt(password, ciphertext, callback, callback2) {
     if (!ciphertext || ciphertext.length === 0) {
         callback(ciphertext)
+        return
     }
     if (!password || password.length === 0) {
         if (ciphertext[0] === '{') {
             callback(ciphertext) // already decrypted
+            return
         }
         // It is encrypted, we MUST have a password
         callback2('No password specified\nPlease specify the password and try again')

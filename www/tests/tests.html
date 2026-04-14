@@ -448,6 +448,7 @@ window.prefs.filePassCache = 'session'
 // search.js — searchRecords (needs minimal DOM fixture)
 // ---------------------------------------------------------------------------
 import { searchRecords, clearSearch } from '/js/search.js'
+import { isValidLoadUrl } from '/js/load.js'
 
 // Build a minimal DOM fixture: #records-accordion with some records
 function makeAccordionItem(title, active, fields) {
@@ -712,6 +713,139 @@ async function runCryptTests() {
 
   finalize()
 }
+
+
+// ---------------------------------------------------------------------------
+// Phase 2 tests — written before implementation (TDD)
+// ---------------------------------------------------------------------------
+
+// ---------------------------------------------------------------------------
+// SEC-005 — Double callback bug in encrypt() / decrypt()
+// Missing `return` after early-exit callback() calls causes double-invocation.
+// These tests assert callbacks fire EXACTLY ONCE on edge-case inputs.
+// ---------------------------------------------------------------------------
+
+suite('SEC-005 — encrypt() callback fires exactly once (sync edge cases)')
+test('empty plaintext: callback fires exactly once', () => {
+  let count = 0
+  // Import is already done above — use the already-imported encrypt
+  // We test the sync early-exit paths by counting callback invocations
+  // encrypt() with empty plaintext should call callback(plaintext, filename) once and stop
+  encrypt('', '', 'test.pam', (ct, fn) => { count++ })
+  // Give any sync fallthrough a tick to manifest
+  assertEqual(count, 1, 'callback should fire exactly once for empty plaintext')
+})
+
+test('empty password with non-JSON plaintext: callback fires exactly once', () => {
+  let count = 0
+  // plaintext[0] !== '{' AND password is empty — hits both callback paths if return is missing
+  encrypt('', 'not-json-content', 'test.pam', (ct, fn) => { count++ })
+  assertEqual(count, 1, 'callback should fire exactly once for empty password + non-JSON plaintext')
+})
+
+test('empty password with JSON plaintext: callback fires exactly once', () => {
+  let count = 0
+  // plaintext[0] === '{' AND password is empty — should call callback once (write plaintext)
+  encrypt('', '{"records":[]}', 'test.pam', (ct, fn) => { count++ })
+  assertEqual(count, 1, 'callback should fire exactly once for empty password + JSON plaintext')
+})
+
+suite('SEC-005 — decrypt() callback fires exactly once (sync edge cases)')
+test('empty ciphertext: callback fires exactly once', () => {
+  let count = 0
+  let count2 = 0
+  decrypt('', '', (pt) => { count++ }, (err) => { count2++ })
+  assertEqual(count, 1, 'callback should fire exactly once for empty ciphertext')
+  assertEqual(count2, 0, 'error callback should not fire for empty ciphertext')
+})
+
+test('empty password with non-JSON ciphertext: error callback fires exactly once', () => {
+  let count = 0
+  let count2 = 0
+  // ciphertext[0] !== '{' AND password is empty — needs password, should call callback2 once
+  decrypt('', 'not-json', (pt) => { count++ }, (err) => { count2++ })
+  assertEqual(count, 0, 'success callback should not fire')
+  assertEqual(count2, 1, 'error callback should fire exactly once')
+})
+
+test('empty password with JSON ciphertext: callback fires exactly once', () => {
+  let count = 0
+  let count2 = 0
+  // ciphertext[0] === '{' AND password is empty — already decrypted, call callback once
+  decrypt('', '{"records":[]}', (pt) => { count++ }, (err) => { count2++ })
+  assertEqual(count, 1, 'callback should fire exactly once for JSON ciphertext with no password')
+  assertEqual(count2, 0, 'error callback should not fire')
+})
+
+// ---------------------------------------------------------------------------
+// SIMP-005 — prefMemorablePasswordMaxWords() returns its row element
+// The original code was missing `return`, silently producing undefined.
+// Fix: add `return` (already applied manually before Phase 2 started).
+// The function is now exported so we can test it directly.
+// ---------------------------------------------------------------------------
+import { prefMemorablePasswordMaxWords } from '/js/prefs.js'
+
+suite('SIMP-005 — prefMemorablePasswordMaxWords renders correctly')
+test('returns a non-null DOM element (not undefined)', () => {
+  const row = prefMemorablePasswordMaxWords(['col-2'], ['col-10'])
+  assert(row !== undefined, 'should not return undefined (missing return bug)')
+  assert(row !== null, 'should not return null')
+  assert(row instanceof Element, 'should return a DOM Element')
+})
+test('returned element has the correct row structure', () => {
+  const row = prefMemorablePasswordMaxWords(['col-2'], ['col-10'])
+  assert(row.classList.contains('row'), 'outer element should have class row')
+})
+test('returned element contains the max words input field', () => {
+  const row = prefMemorablePasswordMaxWords(['col-2'], ['col-10'])
+  const input = row.querySelector('input[data-pref-id="memorablePasswordMaxWords"]')
+  assert(input !== null, 'should contain an input with data-pref-id=memorablePasswordMaxWords')
+})
+test('input value reflects window.prefs.memorablePasswordMaxWords', () => {
+  window.prefs.memorablePasswordMaxWords = 5
+  const row = prefMemorablePasswordMaxWords(['col-2'], ['col-10'])
+  const input = row.querySelector('input[data-pref-id="memorablePasswordMaxWords"]')
+  assertEqual(parseInt(input.getAttribute('value')), 5, 'input value should match prefs value')
+})
+
+// ---------------------------------------------------------------------------
+// SEC-007 — URL protocol validation in loadUrl()
+// loadUrl() only checks url.length > 4, allowing javascript: and data: URIs.
+// These tests assert the validation rejects dangerous protocols.
+// We test via loadUrlContent() indirectly — or better, test the validation
+// logic directly once it is extracted as a pure helper isValidLoadUrl().
+// ---------------------------------------------------------------------------
+
+// After SEC-007 is implemented, loadUrl() will validate the URL protocol.
+// We add a pure helper isValidLoadUrl(url) that loadUrl() delegates to.
+// Tests are written against that helper.
+// For now these tests import it — they will FAIL until implemented (TDD).
+
+// We use a dynamic import check pattern: if isValidLoadUrl is not yet
+// exported from load.js, we skip gracefully with a clear message.
+suite('SEC-007 — URL protocol validation')
+
+test('https:// URL is accepted', () => {
+  assert(isValidLoadUrl('https://example.com/file.pam'), 'https should be valid')
+})
+test('http:// URL is accepted', () => {
+  assert(isValidLoadUrl('http://example.com/file.pam'), 'http should be valid')
+})
+test('javascript: URI is rejected', () => {
+  assert(!isValidLoadUrl('javascript:alert(1)'), 'javascript: should be rejected')
+})
+test('data: URI is rejected', () => {
+  assert(!isValidLoadUrl('data:text/html,<b>x</b>'), 'data: should be rejected')
+})
+test('empty string is rejected', () => {
+  assert(!isValidLoadUrl(''), 'empty string should be rejected')
+})
+test('too-short string is rejected', () => {
+  assert(!isValidLoadUrl('http'), 'bare http with no :// should be rejected')
+})
+test('ftp:// URL is rejected (only http/https allowed)', () => {
+  assert(!isValidLoadUrl('ftp://example.com/file'), 'ftp should be rejected')
+})
 
 // Run sync tests first, then async crypt tests
 finalize() // update summary with sync results so far

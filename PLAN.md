@@ -2,7 +2,7 @@
 
 **Project:** [jlinoff/pam](https://github.com/jlinoff/pam)  
 **Version at time of audit:** 1.2.5 (commit 75904b3, 2025-09-10)  
-**Plan version:** 2.0 (Phases 7–9 restructured: Phase 7 is now test consolidation/settling; Phase 8 is dual crypto with v2-always-write design; Phase 9 deferred ≥1 year post-v1.3)  
+**Plan version:** 2.1 (Coverage map added; Phase 7 checklist updated)  
 **Collaboration model:** Option B — file uploads per session, changes returned as files/diffs, committed by Joe
 
 ---
@@ -496,15 +496,15 @@ crypto rewrite, this phase builds out test coverage in areas that have gaps,
 fixes any recently discovered bugs, and ensures the system is stable.
 The crypto implementation moves to Phase 8.
 
-- [ ] Document and fix the new bug found after Phase 6 (add regression test first)
-- [ ] Expand unit tests for `record.js`: `findRecord`, `findRecordAfter`, `deleteRecord`, `insertRecord`, `clearRecords`
-- [ ] Expand unit tests for `save.js`: `convertInternalDataToJSON` round-trip against a known DOM fixture
-- [ ] Expand unit tests for `load.js`: JSON parse/validate logic, duplicate handling strategies
+- [x] BUG-001: enablePrinting and enableSaveFile NodeList regression — fixed in print.js, save.js, menu.js, main.js; regression tests added
+- [x] Expand unit tests for `record.js`: findRecord, findRecordAfter, deleteRecord, insertRecord, clearRecords (10 tests, 4 suites)
+- [x] Expand unit tests for `save.js`: convertInternalDataToJSON round-trip — title, active, created, text/password fields, prefs (4 tests)
+- [ ] Expand unit tests for `load.js`: JSON parse/validate logic, duplicate handling strategies — IN PROGRESS
 - [ ] Expand E2E tests: load duplicate strategies (ignore/replace/allow), file round-trip (save then reload and verify record count)
 - [ ] UX-002: delete confirmation (E2E test first → implement)
 - [ ] UX-003: tabbed preferences navigation (E2E test first → implement)
 - [ ] PORT-002: evaluate single-file bundle — document decision, implement if verdict is yes
-- [ ] Coverage report: establish baseline, identify remaining gaps, document in PLAN.md
+- [x] Coverage report: established as a coverage map in PLAN.md — module-by-module unit+E2E status with known gaps documented
 - [ ] Update README
 
 ### Phase 8 — Dual crypto + release v1.3 (revised)
@@ -689,6 +689,48 @@ A PAM record could store a URL and a small JavaScript fill snippet. A "Login" bu
 **Proposed approach:** Make `www/help/index.html` generated from `QUICKSTART.md` instead of `README.md`. Add a prominent "Full documentation →" link at the bottom of the quickstart that opens the README-based page. Update `Makefile` to generate both `www/help/index.html` (from QUICKSTART.md) and `www/help/full.html` (from README.md).
 
 **Prerequisite:** QUICKSTART.md must be stable and reviewed as accurate before this change is made. Phase 6 establishes QUICKSTART.md; this migration belongs in a later phase.
+
+
+## Test Coverage Map
+
+Last updated: Phase 7 (April 2026). Coverage = unit tests + E2E tests combined.
+
+| Module | Unit tested | E2E tested | Known gaps |
+|--------|------------|------------|------------|
+| `lib.js` | ✅ Full — all x* prototype methods | — | None |
+| `utils.js` | ✅ Full — mkid, isURL, sortDictByKey, hide/show, clog/logStatusToConsole, clipboard | — | copyTextToClipboard not unit-tested (SIMP-002 confirms delegation) |
+| `status.js` | ✅ Full — status(), statusBlip() | — | None |
+| `search.js` | ✅ Full — title/field/value match, case sensitivity, inactive records, all prefs | ✅ test_search_filters_records | None |
+| `password.js` | ✅ Full — getCrypticPassword, getMemorablePassword, setFilePass/getFilePass, all prefs | ✅ test_password_generator | Toolbar generator DOM interaction not unit-tested |
+| `crypt.js` | ✅ v1 regression baseline (encrypt/decrypt round-trip, wrong password, edge cases) | — | v2 tests written but not yet implemented (Phase 8) |
+| `record.js` | ✅ findRecord, findRecordAfter, insertRecord, deleteRecord, clearRecords | ✅ test_record_create_and_delete | mkRecord not unit-tested (DOM complexity); checkRecordEditDlg not unit-tested |
+| `save.js` | ✅ convertInternalDataToJSON (title, active, created, text field, password raw value, prefs) | ✅ test_save_dlg | saveUsingAnchorLink, saveUsingPromises, saveCallback not unit-tested |
+| `load.js` | ✅ formatTimeElapsed, isValidLoadUrl | ✅ test_load_dlg, test_example_records | loadCallback JSON parse, duplicate strategy, loadFileContent not unit-tested |
+| `field.js` | ✅ mkRecordField (html rendering SEC-001), number validation | ✅ (via record create/edit E2E) | mkRecordEditField, copyRecordFieldsToEditDlg not unit-tested |
+| `prefs-model.js` | ✅ Full — getDefaultPrefs, VALID_FIELD_TYPES, VALID_CACHE_STRATEGIES, hashPrefsPassword | — | None |
+| `prefs.js` | ✅ All preference defaults and behaviour via prefs-model.js; enablePrinting/enableSaveFile | ✅ test_prefs_dlg | savePrefs, menuPrefsDlg DOM rendering not unit-tested |
+| `print.js` | ✅ enablePrinting NodeList fix (BUG-001) | ✅ test_print_dialog_opens | printRecords, genRecordsDocument not unit-tested |
+| `about.js` | — | ✅ test_about_dlg, test_about_dialog_shows_version | Unit tests not written |
+| `menu.js` | ✅ SIMP-003 dead code removal | ✅ All dialog open/close E2E tests | mkMenu, menuNewDlg, menuClearDlg not unit-tested |
+| `main.js` | — | ✅ test_basic_setup, test_pam_setup | startup sequence not unit-testable without full DOM |
+| `raw.js` | — | — | enableRawJSONEdit, toggleRawJSONDataEdit not tested |
+| `version.js` | — | ✅ test_about_dialog_shows_version (version string present) | — |
+| `en_words.js` | ✅ (via getMemorablePassword tests) | — | — |
+
+### Summary
+
+- **Well covered:** lib.js, utils.js, status.js, search.js, password.js, prefs-model.js, crypt.js (v1)
+- **Partially covered:** record.js, save.js, load.js, field.js, prefs.js, print.js, menu.js
+- **E2E only:** main.js, about.js, version.js
+- **Not tested:** raw.js
+
+### Known gaps to address in future phases
+
+- `load.js` — `loadCallback` JSON parse, duplicate record strategies, `invalidPasswordCallback` (Phase 7)
+- `record.js` — `checkRecordEditDlg` validation paths (URL check, number check, required fields) (Phase 7)
+- `raw.js` — `enableRawJSONEdit`, `toggleRawJSONDataEdit` (future phase)
+- `about.js` — unit tests for `refreshAbout`, `setAboutFileInfo` (future phase)
+
 
 ## Session Log
 

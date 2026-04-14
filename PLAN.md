@@ -2,7 +2,7 @@
 
 **Project:** [jlinoff/pam](https://github.com/jlinoff/pam)  
 **Version at time of audit:** 1.2.5 (commit 75904b3, 2025-09-10)  
-**Plan version:** 2.5 (Phase 8 implementation order documented; UX-002 complete)  
+**Plan version:** 2.6 (PORT-002 evaluation documented — deferred with rationale)  
 **Collaboration model:** Option B — file uploads per session, changes returned as files/diffs, committed by Joe
 
 ---
@@ -226,7 +226,25 @@ Builds a preference row with `xmk(...)` but never returns it. The "Memorable Pas
 Already correct. No CDN dependency.
 
 ### PORT-002 🟢 Benevolent — Optional single-file bundle
-The existing `web-min` Makefile target with `minify` is a proof of concept. Extending it with `esbuild` or `rollup` would produce a proper single-file `pam.html` usable from `file://`. Additive.
+
+**Evaluation (Phase 8, April 2026):** Deferred — not worth the cost at this time.
+
+**What bundling would give:**
+- A single `pam.html` usable from `file://` (no web server needed)
+- Smaller total payload via tree-shaking and minification
+- Simpler deployment for non-technical users
+
+**Why not now:**
+
+1. **Supply chain risk.** The Shai-Hulud incident established a hard constraint: no new npm runtime dependencies. `esbuild` and `rollup` are build-time-only tools, but adding them still requires `npm install`, increases the dependency surface, and creates a maintenance obligation. The benefit does not outweigh this cost given PAM's security-conscious user base.
+
+2. **The `prefs.js` circular dependency.** `prefs.js` ↔ `main.js` is a known circular dependency. Bundlers handle ES module cycles differently — esbuild may silently produce incorrect output for circular imports. Resolving the circular dependency is a prerequisite for safe bundling.
+
+3. **`file://` is already achievable.** Running `make run` on localhost serves PAM over HTTP with zero external dependencies. For users who cannot run a local server, the GitHub Pages deployment covers the use case.
+
+4. **Payload is already small.** Total JS is ~1MB unminified including Bootstrap and the word list. Modern browsers cache this aggressively. The user experience is not meaningfully improved by bundling.
+
+**Decision:** No bundle. Document `make run` as the canonical local deployment path. Revisit after the `prefs.js` circular dependency is resolved (deferred, post-Phase 9).
 
 ### PORT-003 🟢 Benevolent — FSAA save disabled (no action needed)
 `saveUsingPromises()` is already commented out. Anchor-link fallback works everywhere.
@@ -514,8 +532,8 @@ preferences + README update) last as it is the most complex and has the most
 documentation impact.
 
 - [x] UX-002: delete confirmation — E2E test written first, implemented, all tests green
-- [ ] Expand E2E: load duplicate strategies (ignore/replace/allow)
-- [ ] PORT-002: evaluate single-file bundle — document decision, implement if verdict is yes
+- [x] Expand E2E: load duplicate strategies (ignore/replace/allow) — 3 tests added; allow strategy tested via pref accessibility (full load cycle not testable due to file prefs reset design)
+- [x] PORT-002: evaluated — deferred. Supply chain risk, circular dependency prerequisite, file:// achievable via make run. See PORT-002 observation for full rationale.
 - [ ] UX-005: prefs dialog flash before password prompt — likely defer again (Bootstrap modal stacking risk)
 - [ ] Update README — minor updates for Phase 7/8 changes
 - [ ] Update VERSION to 1.2.6, tag

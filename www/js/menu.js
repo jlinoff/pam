@@ -12,7 +12,7 @@ import { menuAboutDlg } from './about.js'
 import { menuPrefsDlg, addDefaultRecordFields, resetPrefs } from './prefs.js'
 import { menuSaveDlg, enableSaveFile } from './save.js'
 import { menuLoadDlg } from './load.js'
-import { printRecords } from './print.js'
+import { printRecords, enablePrinting } from './print.js'
 import { enableRawJSONEdit } from './raw.js'
 
 function menuEntryDivider() {
@@ -97,6 +97,12 @@ export function mkMenu() {
     // append trailing space to avoid scroll bar overlap
     let e = xmk('div')
         .xClass('dropdown')
+        .xAddEventListener('show.bs.dropdown', () => {
+            // Re-apply visibility on every open — mobile browsers (iOS Safari)
+            // may reset CSS classes when the dropdown renders.
+            enablePrinting()
+            enableSaveFile()
+        })
         .xAppend(
             xmk('button')
                 .xId('menu')

@@ -497,7 +497,9 @@ document.body.appendChild(accordion)
 
 // #x-num-records needed by searchRecords
 const numRecordsEl = xmk('span').xId('x-num-records')
+const aboutStub = xmk('div').xId('about')
 document.body.appendChild(numRecordsEl)
+document.body.appendChild(aboutStub)
 
 // #search needed by clearSearch
 const searchInputEl = xmk('input').xId('search')
@@ -801,6 +803,7 @@ test('empty password with JSON ciphertext: callback fires exactly once', () => {
 // ---------------------------------------------------------------------------
 import { prefMemorablePasswordMaxWords } from '/js/prefs.js'
 import { mkRecordField } from '/js/field.js'
+import { findRecord, findRecordAfter, deleteRecord, insertRecord, clearRecords, mkRecord } from '/js/record.js'
 
 suite('SIMP-005 — prefMemorablePasswordMaxWords renders correctly')
 test('returns a non-null DOM element (not undefined)', () => {
@@ -1552,6 +1555,76 @@ suite('prefs — Administration: allowHtmlFieldRendering')
 test('allowHtmlFieldRendering default is false', () => {
   assertEqual(getDefaultPrefs().allowHtmlFieldRendering, false,
     'allowHtmlFieldRendering should default to false (SEC-001)')
+})
+
+
+// ---------------------------------------------------------------------------
+// Phase 7 — record.js unit tests
+// Uses the existing accordion fixture (Amazon, Google, GitHub, OldBank)
+// ---------------------------------------------------------------------------
+suite('record.js — findRecord')
+test('findRecord returns record for existing title', () => {
+  const record = findRecord('Amazon')
+  assert(record !== null, 'findRecord should find Amazon')
+  assert(record.classList.contains('accordion-item'), 'result should be an accordion-item')
+})
+test('findRecord is case-insensitive', () => {
+  const record = findRecord('amazon')
+  assert(record !== null, 'findRecord should find Amazon case-insensitively')
+})
+test('findRecord returns null for missing title', () => {
+  const record = findRecord('DoesNotExist')
+  assert(record === null, 'findRecord should return null for missing record')
+})
+
+suite('record.js — findRecordAfter')
+test('findRecordAfter returns record that sorts after given title', () => {
+  // 'Amazon' < 'GitHub' < 'Google' < 'OldBank' alphabetically
+  const after = findRecordAfter('Amazon')
+  assert(after !== null, 'there should be a record after Amazon')
+  const title = after.querySelector('.accordion-button').innerHTML.trim().toLowerCase()
+  assert(title > 'amazon', `record after Amazon should sort after it, got: ${title}`)
+})
+test('findRecordAfter returns null for last record alphabetically', () => {
+  const after = findRecordAfter('ZZZ')
+  assert(after === null, 'findRecordAfter should return null when title would be last')
+})
+
+suite('record.js — insertRecord and deleteRecord')
+test('insertRecord adds record in sorted order', () => {
+  const btn = xmk('button').xClass('accordion-button').xInnerHTML('Dropbox')
+  const item = xmk('div').xClass('accordion-item').xAppend(btn)
+  insertRecord(item, 'Dropbox')
+  const record = findRecord('Dropbox')
+  assert(record !== null, 'inserted record Dropbox should be findable')
+  // verify it sorts between Amazon/GitHub (D comes after A, before G)
+  const items = Array.from(document.querySelectorAll('.accordion-item'))
+  const titles = items.map(el => el.querySelector('.accordion-button').innerHTML.trim().toLowerCase())
+  const idx = titles.indexOf('dropbox')
+  assert(idx > 0, 'Dropbox should not be first')
+  assert(titles[idx - 1] < 'dropbox', `record before Dropbox should sort before it`)
+})
+test('deleteRecord removes an existing record', () => {
+  assert(findRecord('Dropbox') !== null, 'Dropbox should exist before delete')
+  deleteRecord('Dropbox')
+  assert(findRecord('Dropbox') === null, 'Dropbox should be gone after delete')
+})
+test('deleteRecord is a no-op for missing record', () => {
+  const before = document.querySelectorAll('.accordion-item').length
+  deleteRecord('NeverExisted')
+  const after = document.querySelectorAll('.accordion-item').length
+  assertEqual(before, after, 'record count should be unchanged after deleting non-existent record')
+})
+
+suite('record.js — clearRecords')
+test('clearRecords removes all records', () => {
+  clearRecords()
+  const remaining = document.querySelectorAll('.accordion-item').length
+  assertEqual(remaining, 0, 'clearRecords should remove all records')
+})
+test('clearRecords resets x-num-records to 0', () => {
+  const numEl = document.getElementById('x-num-records')
+  assertEqual(numEl.innerHTML, '0', 'x-num-records should be 0 after clearRecords')
 })
 
 // Run sync tests first, then async crypt tests

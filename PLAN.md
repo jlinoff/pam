@@ -2,7 +2,7 @@
 
 **Project:** [jlinoff/pam](https://github.com/jlinoff/pam)  
 **Version at time of audit:** 1.2.5 (commit 75904b3, 2025-09-10)  
-**Plan version:** 2.4 (UX-002, UX-003, PORT-002 removed from Phase 7 — they live only in Phase 8)  
+**Plan version:** 2.5 (Phase 8 implementation order documented; UX-002 complete)  
 **Collaboration model:** Option B — file uploads per session, changes returned as files/diffs, committed by Joe
 
 ---
@@ -509,13 +509,17 @@ The crypto implementation moves to Phase 8.
 rewrite and deserve their own clean branch. Mixing them into Phase 9 would
 muddy the commit history and make the crypto changes harder to review.
 
-- [ ] UX-002: delete confirmation — write E2E test first, then implement
-- [ ] UX-003: tabbed preferences navigation — write E2E test first, then implement
-- [ ] UX-005: prefs dialog flash before password prompt (see UX-005 in observations)
-- [ ] PORT-002: evaluate single-file bundle — document decision, implement if verdict is yes
+**Implementation order:** Low-risk self-contained items first; UX-003 (tabbed
+preferences + README update) last as it is the most complex and has the most
+documentation impact.
+
+- [x] UX-002: delete confirmation — E2E test written first, implemented, all tests green
 - [ ] Expand E2E: load duplicate strategies (ignore/replace/allow)
-- [ ] Update README
+- [ ] PORT-002: evaluate single-file bundle — document decision, implement if verdict is yes
+- [ ] UX-005: prefs dialog flash before password prompt — likely defer again (Bootstrap modal stacking risk)
+- [ ] Update README — minor updates for Phase 7/8 changes
 - [ ] Update VERSION to 1.2.6, tag
+- [ ] UX-003: tabbed preferences navigation — E2E test first, then implement, then update README
 
 ### Phase 9 — Dual crypto + release v1.3 (revised)
 

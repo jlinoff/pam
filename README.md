@@ -786,7 +786,7 @@ can search the web for more details about
 | datetime-local | A datetime text string. Use it if you _only_ want to accept a datetime value. A typical usage might be the date that you finished reading a book. |
 | email | An email text string. Use it if you _only_ want to accept an email value. A typical usage might be the email address of a contact. |
 | html | Textarea data that is rendered directly as HTML. A typical usage might be to reference an image or to display formatted text. |
-| number | A numeric text string. Use it if you _only_ want to accept an number value. A typical usage might be a measurement like height or width or any other numeric value. |
+| number | A numeric value (integer or decimal). PAM validates that the value is a valid number before saving — non-numeric input will be rejected with a clear error message. A typical usage might be a measurement like height or width or a copyright year. |
 | password | A secret text string that is normally displayed as asterisks (`****`) with an eye (<img src="www/icons/blue/eye.svg" height="32" width="32" alt="eye"/>) button that can be clicked or tapped to show the value. |
 | phone | A phone number text string. Use it if you _only_ want to accept a phone number value.  A typical usage might be a mobile phone number. |
 | text | A string, like a name or keyword. You can use this for any text but it is especially useful when a field can be multiple types like an email or a name. A typical usage might be a login name where the value might be a name like "wiley" or an email like "wcoyote@acme.io" or a number like "12345678". |
@@ -1493,10 +1493,9 @@ understand how to change or add new fields.
 ### Delete Record
 To delete a record, select it from the records list and click or tap on the `"Delete"` button.
 
-**Beware the record is deleted permanently!!! PAM trusts you!!**
+_PAM_ will ask you to confirm before deleting the record. Click `OK` to confirm or `Cancel` to keep the record.
 
-_PAM_ will not ask you if you _really_ want to delete the
-record. It will just go ahead and delete it without fanfare _so be careful_.
+**Beware the record is deleted permanently and cannot be recovered once confirmed!**
 
 ### Deactivate Record
 To deactivate a record click on the Active checkbox to make the record inactive.

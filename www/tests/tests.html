@@ -57,6 +57,8 @@ window.prefs = {
   // misc
   themeName: 'dark',
   enableRawJSONEdit: false,
+  // prefs lock (SEC-006 revert: plaintext, not hashed)
+  lockPreferencesPassword: '',
 }
 
 // ---------------------------------------------------------------------------
@@ -980,6 +982,30 @@ test('non-html field types are unaffected by allowHtmlFieldRendering', () => {
   const valueDiv = el.querySelector('.x-fld-value')
   assert(valueDiv.querySelector('.x-html-disabled-badge') === null,
     'text fields should never show the html badge')
+})
+
+
+// ---------------------------------------------------------------------------
+// SEC-006 revert — lockPreferencesPassword is plaintext, not hashed
+// The prefs lock is a convenience feature, not a cryptographic boundary.
+// The file is already protected by the master password (AES-256-CBC).
+// Hashing adds no security benefit and breaks existing files.
+// ---------------------------------------------------------------------------
+suite('SEC-006 revert — prefs lock uses plaintext comparison')
+test('lockPreferencesPassword default is empty string', () => {
+  assertEqual(window.prefs.lockPreferencesPassword, '',
+    'lockPreferencesPassword should default to empty string')
+})
+test('lockPreferencesPassword is stored as plaintext (not a hash)', () => {
+  // A SHA-256 hash would be a 64-char hex string. A plaintext password is not.
+  // Set a known value and confirm it is stored verbatim.
+  const saved = window.prefs.lockPreferencesPassword
+  window.prefs.lockPreferencesPassword = 'my-test-password'
+  assertEqual(window.prefs.lockPreferencesPassword, 'my-test-password',
+    'lockPreferencesPassword should be stored as plaintext')
+  assert(window.prefs.lockPreferencesPassword.length !== 64,
+    'plaintext password should not look like a SHA-256 hash')
+  window.prefs.lockPreferencesPassword = saved
 })
 
 // Run sync tests first, then async crypt tests

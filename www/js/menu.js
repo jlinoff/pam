@@ -9,7 +9,7 @@ import { checkRecordEditDlg,
          saveRecordEditDlg } from './record.js'
 import { mkRecordEditDlg } from './field.js'
 import { menuAboutDlg } from './about.js'
-import { menuPrefsDlg, addDefaultRecordFields, resetPrefs, hashPrefsPassword } from './prefs.js'
+import { menuPrefsDlg, addDefaultRecordFields, resetPrefs } from './prefs.js'
 import { menuSaveDlg, enableSaveFile } from './save.js'
 import { menuLoadDlg } from './load.js'
 import { printRecords } from './print.js'
@@ -137,8 +137,7 @@ export function mkMenu() {
                                     modal.hide()
                                 }, { once: true })
                                 const pw = await promptForPrefsPassword()
-                                const pwHash = await hashPrefsPassword(pw)
-                                if (pwHash === window.prefs.lockPreferencesPassword) {
+                                if (pw === window.prefs.lockPreferencesPassword) {
                                     // password was valid, this is an administrator
                                     // make sure that the "Save File" option is visible.
                                     let modal = bootstrap.Modal.getInstance(dlg)

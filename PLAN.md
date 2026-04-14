@@ -2,7 +2,7 @@
 
 **Project:** [jlinoff/pam](https://github.com/jlinoff/pam)  
 **Version at time of audit:** 1.2.5 (commit 75904b3, 2025-09-10)  
-**Plan version:** 1.7 (all completed phase checklists marked done; SEC-006 revert noted)  
+**Plan version:** 1.9 (Phase 7 updated: migration guard, MIGRATION.md, release notes, pinned issue added to checklist)  
 **Collaboration model:** Option B — file uploads per session, changes returned as files/diffs, committed by Joe
 
 ---
@@ -66,6 +66,7 @@ All 🟢 and 🟡 changes ship in v1.3 independently of the crypto phasing. See 
 | UX-002 | User flow | — | 🟢 Benevolent | Delete record has no confirmation — additive confirmation step |
 | UX-003 | User flow | — | 🟢 Benevolent | Preferences dialog too long — tabbed layout, no behavior change |
 | UX-004 | User flow | — | 🟡 Benevolent w/ caveat | `filePassCache` default change — users relying on `local` will notice |
+| UX-005 | User flow | — | 🟢 Benevolent | Preferences dialog flashes briefly before password prompt — cosmetic annoyance |
 | DOC-001 | Docs | — | 🟢 Benevolent | Add QUICKSTART.md — additive |
 | DOC-002 | Docs | — | 🟢 Benevolent | Add ARCHITECTURE.md — additive |
 | DOC-003 | Docs | — | 🟢 Benevolent | Extract SECURITY.md — additive |
@@ -249,6 +250,9 @@ Very long modal. Convert to Bootstrap nav-tabs (Search / Passwords / Miscellaneo
 
 ### UX-004 🟡 Benevolent with caveat — `filePassCache` default change
 Same as SEC-002. Correct from a security standpoint; users relying on auto-cache will notice the change.
+
+### UX-005 🟢 Benevolent — Preferences dialog flashes before password prompt
+When `lockPreferencesPassword` is set, the preferences modal opens briefly before being hidden to show the password prompt. The flash occurs because the Bootstrap modal must exist in the DOM before `modal.hide()` can be called. Fix: check the password *before* showing the modal — prompt first, then show only on success. Risk: `promptForPrefsPassword` itself uses a Bootstrap modal; stacking modals has known z-index and backdrop issues on mobile. Leave for a dedicated UX cleanup phase with its own E2E coverage.
 
 ---
 
@@ -474,7 +478,7 @@ Tests for each fix are written first. The fix is then implemented to make them p
 - [x] Write E2E tests for password generation, file operations, load duplicate strategies
 
 ### Phase 6 — UX + documentation (Sessions 12–13)
-- [x] Write E2E tests for UX-001 (password generator open/close) → implemented; UX-002 and UX-003 deferred to Phase 7
+- [x] Write E2E tests for UX-001 (password generator open/close) → implemented; UX-002, UX-003, and UX-005 deferred to later UX cleanup phase
 - [x] Write E2E tests for `about.js` (About dialog open/close, version display) and `print.js` (records loaded before print)
 - [ ] Write unit tests for the save strategy abstraction — deferred to Phase 7 (anchor-download path is already the active path; abstraction is documented in ARCHITECTURE.md)
 - [x] QUICKSTART.md — created and served as www/help/quickstart.html via make app-help
@@ -500,6 +504,10 @@ Tests for each fix are written first. The fix is then implemented to make them p
 - [ ] Write E2E tests: save as v1 → reload → decrypt; save as v2 → reload → decrypt
 - [ ] PORT-002: Evaluate single-file bundle
 - [ ] Final coverage report, target ≥75%
+- [ ] **Add v2 format detection guard:** if a pre-v1.3 PAM tries to open a v2 file, show a clear message — "This file was saved with PAM v1.3 or later. Please upgrade." Prevents silent decrypt failure for users on old versions.
+- [ ] **Write MIGRATION.md** covering: what the v1 weaknesses are, practical risk assessment (strong password ≥16 chars is not immediately exploitable despite the weaknesses), how to migrate (open in v1.3, re-save), that v1 files remain readable forever, and that the old version is always available via `git checkout v1.2.5 && make run`
+- [ ] **GitHub release notes for v1.3:** direct, honest description of v1 weaknesses; what v2 fixes; migration path; backward compatibility guarantee. Target audience is technical/security-aware — do not soften.
+- [ ] **Open a pinned GitHub issue** "Encryption format migration v1→v2 (tracking)" for user questions and to serve as a permanent searchable reference
 - [ ] Update README, tag v1.3
 
 ### Phase 8 — v2 default + migration nudge, release v1.4 (Session 16)

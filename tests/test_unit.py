@@ -91,7 +91,30 @@ def test_unit_tests_pass():
             )
 
         assert total > 0, 'No tests were found — check that tests/tests.html loaded correctly'
+
+        # Print per-suite breakdown
+        suites = driver.execute_script('''
+            const out = []
+            let current = null
+            let count = 0
+            document.querySelectorAll('h2, .test-line').forEach(el => {
+                if (el.tagName === 'H2') {
+                    if (current) out.push({suite: current, count})
+                    current = el.textContent
+                    count = 0
+                } else {
+                    count++
+                }
+            })
+            if (current) out.push({suite: current, count})
+            return out
+        ''')
         print(f'\nUnit tests: {passed}/{total} passed')
+        if suites:
+            print()
+            for s in suites:
+                print(f'  {s["count"]:3d}  {s["suite"]}')
+            print()
 
     finally:
         driver.quit()

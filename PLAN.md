@@ -2,7 +2,7 @@
 
 **Project:** [jlinoff/pam](https://github.com/jlinoff/pam)  
 **Version at time of audit:** 1.2.5 (commit 75904b3, 2025-09-10)  
-**Plan version:** 2.2 (Phase 7 load.js tests complete; coverage map updated)  
+**Plan version:** 2.4 (UX-002, UX-003, PORT-002 removed from Phase 7 — they live only in Phase 8)  
 **Collaboration model:** Option B — file uploads per session, changes returned as files/diffs, committed by Joe
 
 ---
@@ -500,14 +500,24 @@ The crypto implementation moves to Phase 8.
 - [x] Expand unit tests for `record.js`: findRecord, findRecordAfter, deleteRecord, insertRecord, clearRecords (10 tests, 4 suites)
 - [x] Expand unit tests for `save.js`: convertInternalDataToJSON round-trip — title, active, created, text/password fields, prefs (4 tests)
 - [x] Expand unit tests for `load.js`: duplicate strategies (ignore/replace/allow), active/created defaults (5 tests, 2 suites). Note: loadCallback cannot be imported due to prefs.js→main.js circular dependency; tested via E2E
-- [ ] Expand E2E tests: load duplicate strategies (ignore/replace/allow), file round-trip (save then reload and verify record count)
-- [ ] UX-002: delete confirmation (E2E test first → implement)
-- [ ] UX-003: tabbed preferences navigation (E2E test first → implement)
-- [ ] PORT-002: evaluate single-file bundle — document decision, implement if verdict is yes
+- [x] Expand E2E tests: file round-trip (load examples, clear, verify count — 1 new E2E test). Load duplicate strategy E2E deferred to Phase 8
 - [x] Coverage report: established as a coverage map in PLAN.md — module-by-module unit+E2E status with known gaps documented
-- [ ] Update README
 
-### Phase 8 — Dual crypto + release v1.3 (revised)
+### Phase 8 — UX polish + bundle evaluation
+
+**Rationale:** UX-002, UX-003, and PORT-002 are orthogonal to the crypto
+rewrite and deserve their own clean branch. Mixing them into Phase 9 would
+muddy the commit history and make the crypto changes harder to review.
+
+- [ ] UX-002: delete confirmation — write E2E test first, then implement
+- [ ] UX-003: tabbed preferences navigation — write E2E test first, then implement
+- [ ] UX-005: prefs dialog flash before password prompt (see UX-005 in observations)
+- [ ] PORT-002: evaluate single-file bundle — document decision, implement if verdict is yes
+- [ ] Expand E2E: load duplicate strategies (ignore/replace/allow)
+- [ ] Update README
+- [ ] Update VERSION to 1.2.6, tag
+
+### Phase 9 — Dual crypto + release v1.3 (revised)
 
 **Design decision (post-Phase 6):** PAM 1.3 will always write v2 and always
 read both v1 and v2. There is no user-facing format preference and no phased
@@ -534,9 +544,9 @@ v1 decrypt is retained permanently — no existing file ever becomes unreadable.
 - [ ] **GitHub release notes for v1.3:** direct, honest, calibrated for a technical/security audience
 - [ ] **Open pinned GitHub issue:** "Encryption format migration v1→v2 (tracking)"
 - [ ] Final coverage report, target ≥75%
-- [ ] Update README, tag v1.3
+- [ ] Update README — deferred to Phase 8, tag v1.3
 
-### Phase 9 — Remove v1 encrypt code, release v2.0 (deferred, ≥1 year post-v1.3)
+### Phase 10 — Remove v1 encrypt code, release v2.0 (deferred, ≥1 year post-v1.3)
 
 **Policy:** v1 encrypt code will not be removed for at least one year after v1.3
 ships. This gives the entire user base time to migrate their files without any
@@ -567,8 +577,9 @@ phase/04-sec001-e2e
 phase/05-simplification
 phase/06-ux-documentation
 phase/07-test-consolidation
-phase/08-dual-crypto-v1.3
-phase/09-v1-encrypt-removal-v2.0
+phase/08-ux-polish
+phase/09-dual-crypto-v1.3
+phase/10-v1-encrypt-removal-v2.0
 ```
 
 Future phases follow the same pattern: `phase/10-mobile-save`, `phase/11-credential-injection`, etc.

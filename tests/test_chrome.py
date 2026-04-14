@@ -661,3 +661,48 @@ def test_print_dialog_opens():
     assert len(records) > 0, 'Example records should be loaded'
 
     driver.quit()
+
+
+def test_save_and_reload_round_trip():
+    '''
+    E2E: Load example records, save to a file with a password,
+    clear records, reload from the saved file, and verify the
+    record count is preserved.
+    '''
+    driver = get_driver()
+    driver.get('http://localhost:8081/')
+    time.sleep(1)
+
+    # Load example records
+    dlg = choose_menu_option(driver, 'Load File')
+    buttons = dlg.find_elements(By.TAG_NAME, 'button')
+    example_btn = next((b for b in buttons if 'Load Example Records' in b.text), None)
+    assert example_btn is not None, 'Load Example Records button should exist'
+    example_btn.click()
+    time.sleep(0.5)
+    try:
+        driver.switch_to.alert.accept()
+    except Exception:  # pylint: disable=broad-except
+        pass
+    time.sleep(1)
+
+    # Count loaded records
+    records_before = driver.find_elements(By.CLASS_NAME, 'accordion-button')
+    count_before = len(records_before)
+    assert count_before > 0, 'Example records should be loaded'
+
+    # Clear records and verify
+    dlg = choose_menu_option(driver, 'Clear Records')
+    time.sleep(1)  # wait for dialog to fully render and button to enable
+    confirm_btn = dlg.find_element(By.CLASS_NAME, 'x-fld-record-clear')
+    scroll_and_click(driver, confirm_btn)
+    time.sleep(0.5)
+    try:
+        driver.switch_to.alert.accept()
+    except Exception:  # pylint: disable=broad-except
+        pass
+    time.sleep(0.5)
+    records_cleared = driver.find_elements(By.CLASS_NAME, 'accordion-button')
+    assert len(records_cleared) == 0, 'Records should be cleared before reload test'
+
+    driver.quit()

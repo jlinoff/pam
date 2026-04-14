@@ -137,144 +137,185 @@ export function menuPrefsDlg() {
     let inputClasses = ['col-3']
     let helpLink = `<a href="window.prefs.helpLink" target="_blank">Help</a>`
     let fldsList = mkPredefineRecordFields(window.prefs.predefinedRecordFields)
+    // UX-003: Bootstrap nav-tabs layout
+    // Tab panels keep all content in DOM so savePrefs() finds all [data-pref-id] elements
+    // regardless of which tab is active.
+    const tabs = [
+        { id: 'prefs-tab-search',       label: 'Search' },
+        { id: 'prefs-tab-passwords',    label: 'Passwords' },
+        { id: 'prefs-tab-misc',         label: 'Miscellaneous' },
+        { id: 'prefs-tab-fields',       label: 'Record Fields' },
+        { id: 'prefs-tab-admin',        label: 'Administration' },
+    ]
+    const mkTabBtn = (tab, active) => xmk('li').xClass('nav-item').xAppend(
+        xmk('button')
+            .xClass('nav-link', ...(active ? ['active'] : []))
+            .xAttrs({
+                'id': `${tab.id}-btn`,
+                'data-bs-toggle': 'tab',
+                'data-bs-target': `#${tab.id}`,
+                'type': 'button',
+                'role': 'tab',
+            })
+            .xInnerHTML(tab.label)
+    )
+    const tabNav = xmk('ul')
+        .xClass('nav', 'nav-tabs', 'mb-3')
+        .xAttr('role', 'tablist')
+        .xAppend(...tabs.map((t, i) => mkTabBtn(t, i === 0)))
+
+    const mkTabPane = (id, active, ...children) => xmk('div')
+        .xClass('tab-pane', 'fade', ...(active ? ['show', 'active'] : []))
+        .xId(id)
+        .xAttr('role', 'tabpanel')
+        .xAppend(...children)
+
     let body = xmk('span').xAppendChild(
         prefPromptDesc(`See the ${helpLink} documentation for detailed information. `+
                        'No changes are saved until you <code>Save</code> at the bottom of the page. '+
                        'Choose <code>Close</code> to quit without saving changes.'),
-        mkFieldset('Search').xAppend(
-            prefSearchCaseInsensitive(labelClasses, inputClasses),
-            prefSearchRecordTitles(labelClasses, inputClasses),
-            prefSearchRecordFieldNames(labelClasses, inputClasses),
-            prefSearchRecordFieldValues(labelClasses, inputClasses),
-            prefPromptDesc('Use caution when enabling this option because '+
-                           'if you search for something like <code>ttp</code> '+
-                           'every record that has <code>https://</code> in the '+
-                           'url field will be displayed.'),
-        ),
-        mkFieldset('Passwords').xAppend(
-            prefPasswordRangeMinLength(labelClasses, inputClasses),
-            prefPasswordRangeMaxLength(labelClasses, inputClasses),
-            prefMemorablePasswordMinWordLength(labelClasses, inputClasses),
-            prefMemorablePasswordWordSeparator(labelClasses, inputClasses),
-            prefMemorablePasswordMinWords(labelClasses, inputClasses),
-            prefMemorablePasswordMaxWords(labelClasses, inputClasses),
-            prefMemorablePasswordMaxTries(labelClasses, inputClasses),
-            prefMemorablePasswordPrefix(labelClasses, inputClasses),
-            prefMemorablePasswordSuffix(labelClasses, inputClasses),
-            //prefProjectLink(['col-2'],['col-10']),  // user cannot change this
-            //prefHelpLink(['col-2'],['col-10']),  // user cannot change this
-        ),
-        mkFieldset('Miscellaneous').xAppend(
-            prefStatusMsgDurationMS(labelClasses, inputClasses),
-            prefPromptDesc('Defines how long the status messages persist before disappearing. '+
-                           'Trial and error found that 1.5 seconds (1500ms) seemed to work best. '+
-                           'It probably makes sense to leave this alone.'),
-            prefLogStatusToConsole(labelClasses, inputClasses),
-            prefPromptDesc('Log status information to the console. '+
-                           'Don\'t enable this unless you are debugging.'),
-            prefClearBeforeLoad(labelClasses, inputClasses),
-            prefPromptDesc('You generally always want to clear before loading '+
-                           'new data from a file to avoid unpredictable data interactions. '+
-                           'This operation also resets the preferences just like the '+
-                           '<code>Clear Records</code> menu option.'),
-            prefLoadDupStrategy(labelClasses, inputClasses),
-            prefCloneFieldValues(labelClasses, inputClasses),
-            prefPromptDesc('If this is enabled field values are copied into the cloned record. '+
-                           'If it is disabled, the fields are left blank. '+
-                           'Neither option is superior. '+
-                           'I prefer the have it enabled because there are often overlaps '+
-                           'in the values which can sometimes reduce the amount of typing necessary.'),
-            prefRequireRecordFields(labelClasses, inputClasses),
-            prefPromptDesc('Allow records to be created with no fields which can be useful '+
-                           'in cases where the record fields will be filled in later. '+
-                           'I prefer to have the fields defined when the record is created but '+
-                           'that is a personal choice.'),
-            prefEditableFieldName(labelClasses, inputClasses),
-            prefPromptDesc('Allow the user to change field names in each record. '+
-                           'This is generally not advisable because different fields with '+
-                           'same semantic meaning in different records can lead to confusion.'),
-            prefTextareaMinHeight(labelClasses, inputClasses),
-            prefPromptDesc('Define the minimum height of the textareas for notes and HTML input. '+
-                           'This is useful in mobile browsers where resize is not available.'),
-            prefFilePassCacheStrategy(labelClasses, inputClasses),
-            prefPromptDesc('Define the browser cache strategy for the file (master) password.<br>'+
-                           'The most secure option is <code>none</code> because it does not save '+
-                           'the password which means that you must enter it <i>every</i> time '+
-                           'you load or save a file.<br>'+
-                           'The <code>global</code> option stores the password in a global window variable. '+
-                           'It persists until the page is reloaded or closed.<br>'+
-                           'The <code>local</code> option a stores the password in localStorage where '+
-                           'persists until all windows that share the same URL are closed. '+
-                           'This is a good option for personal use because it is so convenient.<br>'+
-                           'The <code>session</code> option a stores the password in sessionStorage '+
-                           'where is persists for a single browser tab until it is closed.'),
-        ),
-        // record fields
-        mkFieldset('Record Fields').xAppend(
-            prefPromptDesc('These are the pre-defined fields shown in the pulldown menu that a user can '+
-                           'choose from when creating a new record. '+
-                           'It is unlikely that you would want to change these unless you want '+
-                           'a set of unique fields for specialized records, '+
-                           'like, for example, measurements where you might want to define '+
-                           'height and width in centimeters as two number fields for each record. '+
-                           'Another option is that some folks might want to delete some of the '+
-                           'pre-defined fields to make the pulldown menu shorter because they '+
-                           'will never be used for their records.<br>'+
-                           'The first column is the field name as it appears in the record.<br>'+
-                           'The second column is the HTML type.'),
-            xmk('p').xInnerHTML(''),
-            fldsList),
-        // Administration stuff - at the very end to make it somewhat non-obvious
-        mkFieldset('Administration').xAppend(
-            //prefLockPreferencesPassword(labelClasses, inputClasses),
-            prefLockPreferencesPassword(['col-4'],['col-8']),
-            prefPromptDesc('Setting this password will lock the preferences so that '+
-                           'users who do not know this password cannot change them. '+
-                           'This allows an administrator to disable printing and saving. '+
-                           'This password is encrypted but it <i>is</i> stored in the PAM file '+
-                           'so it is not as secure as the master password. '+
-                           'Setting the password here is useful when multiple users are reading '+
-                           'the same PAM file data and you don\'t want them to change the '+
-                           'records or the preferences.'),
-            prefDefaultRecordFields(['col-4'],['col-8']),
-            prefPromptDesc('These are the fields defined automatically when creating a new record. '+
-                           'The fields are entered entered as a comma separated list of field names. '+
-                           'A common example would be: <code>url,login,password</code>. '+
-                           'This is very useful.'),
-            prefEnablePrinting(labelClasses, inputClasses),
-            prefPromptDesc('Enable or disable the menu <code>Print</code> operation. '+
-                           'Being able to print records could be a security risk because '+
-                           'all of the printed information is decrypted. '+
-                           'This is typically disabled when multiple users share the same PAM file data.'),
-            prefEnableSaveFile(labelClasses, inputClasses),
-            prefPromptDesc('Enable or disable the menu <code>Save File</code> operation. '+
-                           'Being able to save a private copy of the records '+
-                           'could be a security risk. When the user disables this preference it does '+
-                           'not remove the <code>Save File</code> entry from the menu '+
-                           'immediately after the preferences are saved. '+
-                           'If it did, you would never be able to save it persistently in the file. '+
-                           'Instead it allows the file save operation to succeed but the next time the file '+
-                           'is loaded the <code>Save File</code> will <i>not</i> appear in the menu. '+
-                           'When an administrator logs in by successfully entering the '+
-                           '<code>Lock Preferences Password</code>, '+
-                           'the <code>Save File</code> menu option is <i>always</i> displayed, '+
-                           'even when <code>Enable Save File</code> is false. '+
-                           'This is typically disabled when multiple users share the same PAM file data.'),
-            prefHideInactiveRecords(labelClasses, inputClasses),
-            prefPromptDesc('Making records inactive is very much like deleting them. '+
-                           'The only difference is that even though they are no longer visible '+
-                           'a historical record of them is kept if this preference is enabled.'),
-            prefCustomAboutInfo(['col-2'],['col-10']),
-            prefPromptDesc('This allows you to add custom information to the <code>About</code> page. '+
-                           'Typically you might add something like administrator contact information. '+
-                           'An example would be '+
-                           '<code>This implementation supported by admin@example.com</code>.'),
-            prefEnableRawJSONEdit(labelClasses, inputClasses),
-            prefPromptDesc('Enable editing of the raw internal JSON data. '+
-                           'This is not recommended unless you really know what you are doing '+
-                           'because it can permanently destroy the data in an unrecoverable way. '+
-                           'It also disables the password protected preferences which '+
-                           'allows anything to be modified or inspected.')
+        tabNav,
+        xmk('div').xClass('tab-content').xAppend(
+            mkTabPane('prefs-tab-search', true,
+                mkFieldset('Search').xAppend(
+                    prefSearchCaseInsensitive(labelClasses, inputClasses),
+                    prefSearchRecordTitles(labelClasses, inputClasses),
+                    prefSearchRecordFieldNames(labelClasses, inputClasses),
+                    prefSearchRecordFieldValues(labelClasses, inputClasses),
+                    prefPromptDesc('Use caution when enabling this option because '+
+                                   'if you search for something like <code>ttp</code> '+
+                                   'every record that has <code>https://</code> in the '+
+                                   'url field will be displayed.'),
+                ),
+            ),
+            mkTabPane('prefs-tab-passwords', false,
+                mkFieldset('Passwords').xAppend(
+                    prefPasswordRangeMinLength(labelClasses, inputClasses),
+                    prefPasswordRangeMaxLength(labelClasses, inputClasses),
+                    prefMemorablePasswordMinWordLength(labelClasses, inputClasses),
+                    prefMemorablePasswordWordSeparator(labelClasses, inputClasses),
+                    prefMemorablePasswordMinWords(labelClasses, inputClasses),
+                    prefMemorablePasswordMaxWords(labelClasses, inputClasses),
+                    prefMemorablePasswordMaxTries(labelClasses, inputClasses),
+                    prefMemorablePasswordPrefix(labelClasses, inputClasses),
+                    prefMemorablePasswordSuffix(labelClasses, inputClasses),
+                ),
+            ),
+            mkTabPane('prefs-tab-misc', false,
+                mkFieldset('Miscellaneous').xAppend(
+                    prefStatusMsgDurationMS(labelClasses, inputClasses),
+                    prefPromptDesc('Defines how long the status messages persist before disappearing. '+
+                                   'Trial and error found that 1.5 seconds (1500ms) seemed to work best. '+
+                                   'It probably makes sense to leave this alone.'),
+                    prefLogStatusToConsole(labelClasses, inputClasses),
+                    prefPromptDesc('Log status information to the console. '+
+                                   'Don\'t enable this unless you are debugging.'),
+                    prefClearBeforeLoad(labelClasses, inputClasses),
+                    prefPromptDesc('You generally always want to clear before loading '+
+                                   'new data from a file to avoid unpredictable data interactions. '+
+                                   'This operation also resets the preferences just like the '+
+                                   '<code>Clear Records</code> menu option.'),
+                    prefLoadDupStrategy(labelClasses, inputClasses),
+                    prefCloneFieldValues(labelClasses, inputClasses),
+                    prefPromptDesc('If this is enabled field values are copied into the cloned record. '+
+                                   'If it is disabled, the fields are left blank. '+
+                                   'Neither option is superior. '+
+                                   'I prefer the have it enabled because there are often overlaps '+
+                                   'in the values which can sometimes reduce the amount of typing necessary.'),
+                    prefRequireRecordFields(labelClasses, inputClasses),
+                    prefPromptDesc('Allow records to be created with no fields which can be useful '+
+                                   'in cases where the record fields will be filled in later. '+
+                                   'I prefer to have the fields defined when the record is created but '+
+                                   'that is a personal choice.'),
+                    prefEditableFieldName(labelClasses, inputClasses),
+                    prefPromptDesc('Allow the user to change field names in each record. '+
+                                   'This is generally not advisable because different fields with '+
+                                   'same semantic meaning in different records can lead to confusion.'),
+                    prefTextareaMinHeight(labelClasses, inputClasses),
+                    prefPromptDesc('Define the minimum height of the textareas for notes and HTML input. '+
+                                   'This is useful in mobile browsers where resize is not available.'),
+                    prefFilePassCacheStrategy(labelClasses, inputClasses),
+                    prefPromptDesc('Define the browser cache strategy for the file (master) password.<br>'+
+                                   'The most secure option is <code>none</code> because it does not save '+
+                                   'the password which means that you must enter it <i>every</i> time '+
+                                   'you load or save a file.<br>'+
+                                   'The <code>global</code> option stores the password in a global window variable. '+
+                                   'It persists until the page is reloaded or closed.<br>'+
+                                   'The <code>local</code> option a stores the password in localStorage where '+
+                                   'persists until all windows that share the same URL are closed. '+
+                                   'This is a good option for personal use because it is so convenient.<br>'+
+                                   'The <code>session</code> option a stores the password in sessionStorage '+
+                                   'where is persists for a single browser tab until it is closed.'),
+                ),
+            ),
+            mkTabPane('prefs-tab-fields', false,
+                mkFieldset('Record Fields').xAppend(
+                    prefPromptDesc('These are the pre-defined fields shown in the pulldown menu that a user can '+
+                                   'choose from when creating a new record. '+
+                                   'It is unlikely that you would want to change these unless you want '+
+                                   'a set of unique fields for specialized records, '+
+                                   'like, for example, measurements where you might want to define '+
+                                   'height and width in centimeters as two number fields for each record. '+
+                                   'Another option is that some folks might want to delete some of the '+
+                                   'pre-defined fields to make the pulldown menu shorter because they '+
+                                   'will never be used for their records.<br>'+
+                                   'The first column is the field name as it appears in the record.<br>'+
+                                   'The second column is the HTML type.'),
+                    xmk('p').xInnerHTML(''),
+                    fldsList),
+            ),
+            mkTabPane('prefs-tab-admin', false,
+                mkFieldset('Administration').xAppend(
+                    prefLockPreferencesPassword(['col-4'],['col-8']),
+                    prefPromptDesc('Setting this password will lock the preferences so that '+
+                                   'users who do not know this password cannot change them. '+
+                                   'This allows an administrator to disable printing and saving. '+
+                                   'This password is encrypted but it <i>is</i> stored in the PAM file '+
+                                   'so it is not as secure as the master password. '+
+                                   'Setting the password here is useful when multiple users are reading '+
+                                   'the same PAM file data and you don\'t want them to change the '+
+                                   'records or the preferences.'),
+                    prefDefaultRecordFields(['col-4'],['col-8']),
+                    prefPromptDesc('These are the fields defined automatically when creating a new record. '+
+                                   'The fields are entered entered as a comma separated list of field names. '+
+                                   'A common example would be: <code>url,login,password</code>. '+
+                                   'This is very useful.'),
+                    prefEnablePrinting(labelClasses, inputClasses),
+                    prefPromptDesc('Enable or disable the menu <code>Print</code> operation. '+
+                                   'Being able to print records could be a security risk because '+
+                                   'all of the printed information is decrypted. '+
+                                   'This is typically disabled when multiple users share the same PAM file data.'),
+                    prefEnableSaveFile(labelClasses, inputClasses),
+                    prefPromptDesc('Enable or disable the menu <code>Save File</code> operation. '+
+                                   'Being able to save a private copy of the records '+
+                                   'could be a security risk. When the user disables this preference it does '+
+                                   'not remove the <code>Save File</code> entry from the menu '+
+                                   'immediately after the preferences are saved. '+
+                                   'If it did, you would never be able to save it persistently in the file. '+
+                                   'Instead it allows the file save operation to succeed but the next time the file '+
+                                   'is loaded the <code>Save File</code> will <i>not</i> appear in the menu. '+
+                                   'When an administrator logs in by successfully entering the '+
+                                   '<code>Lock Preferences Password</code>, '+
+                                   'the <code>Save File</code> menu option is <i>always</i> displayed, '+
+                                   'even when <code>Enable Save File</code> is false. '+
+                                   'This is typically disabled when multiple users share the same PAM file data.'),
+                    prefHideInactiveRecords(labelClasses, inputClasses),
+                    prefPromptDesc('Making records inactive is very much like deleting them. '+
+                                   'The only difference is that even though they are no longer visible '+
+                                   'a historical record of them is kept if this preference is enabled.'),
+                    prefCustomAboutInfo(['col-2'],['col-10']),
+                    prefPromptDesc('This allows you to add custom information to the <code>About</code> page. '+
+                                   'Typically you might add something like administrator contact information. '+
+                                   'An example would be '+
+                                   '<code>This implementation supported by admin@example.com</code>.'),
+                    prefEnableRawJSONEdit(labelClasses, inputClasses),
+                    prefPromptDesc('Enable editing of the raw internal JSON data. '+
+                                   'This is not recommended unless you really know what you are doing '+
+                                   'because it can permanently destroy the data in an unrecoverable way. '+
+                                   'It also disables the password protected preferences which '+
+                                   'allows anything to be modified or inspected.')
+                ),
+            ),
         ),
     )
 

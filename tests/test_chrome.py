@@ -896,3 +896,58 @@ def test_load_dup_strategy_allow():
     assert result == 'allow', f'loadDupStrategy should be allow, got {result}'
 
     driver.quit()
+
+
+def test_prefs_tabbed_navigation():
+    '''
+    UX-003: Preferences dialog should have tabbed navigation.
+    Verify tabs exist and switching between them works.
+    '''
+    driver = get_driver()
+    driver.get('http://localhost:8081/')
+    time.sleep(1)
+
+    dlg = choose_menu_option(driver, 'Preferences')
+    time.sleep(0.5)
+
+    # Verify all 5 tabs exist
+    tab_labels = [
+        'Search', 'Passwords', 'Miscellaneous',
+        'Record Fields', 'Administration'
+    ]
+    for label in tab_labels:
+        xpath = f'.//button[contains(@class,"nav-link") and text()="{label}"]'
+        tabs = dlg.find_elements(By.XPATH, xpath)
+        assert len(tabs) > 0, f'Tab "{label}" should exist'
+
+    # Search tab should be active by default
+    search_tab = dlg.find_element(
+        By.CSS_SELECTOR, 'button.nav-link[data-bs-target="#prefs-tab-search"]'
+    )
+    assert 'active' in search_tab.get_attribute('class'), \
+        'Search tab should be active by default'
+
+    # Click Passwords tab and verify it becomes active
+    passwords_tab = dlg.find_element(
+        By.CSS_SELECTOR, 'button.nav-link[data-bs-target="#prefs-tab-passwords"]'
+    )
+    scroll_and_click(driver, passwords_tab)
+    time.sleep(0.3)
+    assert 'active' in passwords_tab.get_attribute('class'), \
+        'Passwords tab should be active after clicking'
+
+    # Click Administration tab
+    admin_tab = dlg.find_element(
+        By.CSS_SELECTOR, 'button.nav-link[data-bs-target="#prefs-tab-admin"]'
+    )
+    scroll_and_click(driver, admin_tab)
+    time.sleep(0.3)
+    assert 'active' in admin_tab.get_attribute('class'), \
+        'Administration tab should be active after clicking'
+
+    # Close dialog
+    close_btn = dlg.find_element(By.CLASS_NAME, 'x-fld-record-close')
+    scroll_and_click(driver, close_btn)
+    time.sleep(0.3)
+
+    driver.quit()

@@ -1142,6 +1142,80 @@ test('enableSaveFile(true) removes d-none from .x-save-file-menu-item elements',
   el.remove()
 })
 
+
+// ---------------------------------------------------------------------------
+// Phase 7 — Search preference coverage
+// ---------------------------------------------------------------------------
+suite('search.js — searchCaseInsensitive')
+test('case-insensitive search matches regardless of case', () => {
+  window.prefs.searchCaseInsensitive = true
+  window.prefs.searchRecordTitles = true
+  searchRecords('AMAZON')
+  const visible = Array.from(document.querySelectorAll('.accordion-item'))
+    .filter(el => !el.classList.contains('d-none'))
+    .map(el => el.querySelector('.accordion-button').innerHTML)
+  assert(visible.includes('Amazon'), 'case-insensitive search should find Amazon with AMAZON query')
+})
+test('case-sensitive search does not match wrong case', () => {
+  window.prefs.searchCaseInsensitive = false
+  window.prefs.searchRecordTitles = true
+  searchRecords('AMAZON')
+  const visible = Array.from(document.querySelectorAll('.accordion-item'))
+    .filter(el => !el.classList.contains('d-none'))
+    .map(el => el.querySelector('.accordion-button').innerHTML)
+  assert(!visible.includes('Amazon'), 'case-sensitive search should not find Amazon with AMAZON query')
+  window.prefs.searchCaseInsensitive = true
+})
+
+suite('search.js — searchRecordTitles')
+test('searchRecordTitles=false: title match is skipped', () => {
+  window.prefs.searchRecordTitles = false
+  window.prefs.searchRecordFieldNames = false
+  window.prefs.searchRecordFieldValues = false
+  searchRecords('Amazon')
+  const visible = Array.from(document.querySelectorAll('.accordion-item'))
+    .filter(el => !el.classList.contains('d-none'))
+    .map(el => el.querySelector('.accordion-button').innerHTML)
+  assert(!visible.includes('Amazon'), 'title search disabled should not match Amazon by title')
+  window.prefs.searchRecordTitles = true
+  window.prefs.searchRecordFieldNames = true
+  window.prefs.searchRecordFieldValues = true
+})
+
+suite('search.js — hideInactiveRecords')
+test('hideInactiveRecords=true: inactive records are hidden', () => {
+  window.prefs.hideInactiveRecords = true
+  searchRecords('.')
+  const visible = Array.from(document.querySelectorAll('.accordion-item'))
+    .filter(el => !el.classList.contains('d-none'))
+    .map(el => el.querySelector('.accordion-button').innerHTML)
+  assert(!visible.includes('OldBank'), 'inactive record OldBank should be hidden')
+})
+test('hideInactiveRecords=false: inactive records are visible', () => {
+  window.prefs.hideInactiveRecords = false
+  searchRecords('.')
+  const visible = Array.from(document.querySelectorAll('.accordion-item'))
+    .filter(el => !el.classList.contains('d-none'))
+    .map(el => el.querySelector('.accordion-button').innerHTML)
+  assert(visible.includes('OldBank'), 'inactive record OldBank should be visible')
+  window.prefs.hideInactiveRecords = false
+})
+
+suite('search.js — searchRecordFieldValues')
+test('searchRecordFieldValues=true: matches on field value', () => {
+  window.prefs.searchRecordTitles = false
+  window.prefs.searchRecordFieldNames = false
+  window.prefs.searchRecordFieldValues = true
+  searchRecords('ghp_abc123')  // ghp_abc123 is the value of GitHub's token field
+  const visible = Array.from(document.querySelectorAll('.accordion-item'))
+    .filter(el => !el.classList.contains('d-none'))
+    .map(el => el.querySelector('.accordion-button').innerHTML)
+  assert(visible.includes('GitHub'), 'field value search should find GitHub by its token value ghp_abc123')
+  window.prefs.searchRecordTitles = true
+  window.prefs.searchRecordFieldNames = true
+  window.prefs.searchRecordFieldValues = true
+})
+
 // Run sync tests first, then async crypt tests
 finalize() // update summary with sync results so far
 runCryptTests() // will call finalize() again after async tests complete

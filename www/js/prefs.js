@@ -23,6 +23,18 @@ export const VALID_FIELD_TYPES = {
 }
 
 // These are the storage strategies that the tool understands.
+// Hash a prefs password with SHA-256 (SEC-006).
+// Passwords are stored as hex digests, never plaintext.
+// Returns '' for empty input.
+export async function hashPrefsPassword(password) {
+    if (!password || password.length === 0) {
+        return ''
+    }
+    const enc = new TextEncoder()
+    const buf = await window.crypto.subtle.digest('SHA-256', enc.encode(password))
+    return [...new Uint8Array(buf)].map(b => b.toString(16).padStart(2,'0')).join('')
+}
+
 export const VALID_CACHE_STRATEGIES = {  // window.prefs.filePassCache
     'none': 1,
     'global': 1,
@@ -50,7 +62,7 @@ export function initPrefs() {
         enableSaveFile: true,
         fileName: 'example.txt',
         filePass: '',
-        filePassCache: 'local',  // options: none, global, local, session
+        filePassCache: 'session',  // options: none, global, local, session — default session (SEC-002)
         textareaMinHeight: '5em',
         editableFieldName: false, // if true, allow field names to be changed
         searchCaseInsensitive: true,

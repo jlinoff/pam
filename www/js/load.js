@@ -390,7 +390,7 @@ function invalidPasswordCallback(error) {
 // 3 days, 1 hour, 5 minutes
 // It pluralizes values for day, hour, minute, and second that are greater than one.
 // It ignores zero values for day, hour, minute, second.
-function formatTimeElapsed(ms) {
+export function formatTimeElapsed(ms) {
     let es = Math.floor(ms / 1000)
     let em = Math.floor(es / 60)
     let eh = Math.floor(em / 60)

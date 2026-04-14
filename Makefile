@@ -186,7 +186,7 @@ unit-test: init lint ## Run vanilla JS unit tests in tests/tests.html via Chrome
 	( cd www && pipenv run python -m http.server $(PORT) > /dev/null 2>&1 ) &
 	sleep 2
 	lsof -i :$(PORT)
-	pipenv run python3 -m pytest -v tests/test_unit.py
+	pipenv run python3 -m pytest -v -s tests/test_unit.py
 	$(KILL_SERVER)
 
 .PHONY: e2e-test

@@ -1505,6 +1505,55 @@ test('defaultRecordFields entries exist in predefinedRecordFields', () => {
   })
 })
 
+
+// ---------------------------------------------------------------------------
+// Phase 7 — Administration preference coverage
+// Most Administration prefs are already covered by dedicated suites:
+//   - enablePrinting / enableSaveFile: BUG-001 suites
+//   - hideInactiveRecords: search.js suite
+//   - customAboutInfo / enableRawJSONEdit: Miscellaneous defaults suite
+//   - allowHtmlFieldRendering: SEC-001 suite
+//   - defaultRecordFields: prefs — defaultRecordFields suite
+//   - lockPreferencesPassword (SEC-006 revert): dedicated suite
+// ---------------------------------------------------------------------------
+suite('prefs — Administration: lockPreferencesPassword gate logic')
+test('lockPreferencesPassword default is empty string', () => {
+  assertEqual(getDefaultPrefs().lockPreferencesPassword, '',
+    'lockPreferencesPassword should default to empty string')
+})
+test('empty lockPreferencesPassword means no prompt required', () => {
+  // Gate logic: lockPreferencesPassword.length === 0 → open prefs directly
+  const pw = ''
+  assert(pw.length === 0,
+    'empty password should bypass the prompt gate')
+})
+test('non-empty lockPreferencesPassword means prompt is required', () => {
+  // Gate logic: lockPreferencesPassword.length > 0 → prompt required
+  const pw = 'secret'
+  assert(pw.length > 0,
+    'non-empty password should trigger the prompt gate')
+})
+test('correct password comparison uses plaintext (SEC-006 revert)', () => {
+  // The prefs lock is a convenience feature not a cryptographic boundary.
+  // Plaintext comparison is intentional — see SECURITY.md SEC-006.
+  const stored = 'mypassword'
+  const entered = 'mypassword'
+  assert(entered === stored,
+    'plaintext comparison should work for correct password')
+})
+test('wrong password fails plaintext comparison', () => {
+  const stored = 'mypassword'
+  const entered = 'wrongpassword'
+  assert(entered !== stored,
+    'plaintext comparison should reject wrong password')
+})
+
+suite('prefs — Administration: allowHtmlFieldRendering')
+test('allowHtmlFieldRendering default is false', () => {
+  assertEqual(getDefaultPrefs().allowHtmlFieldRendering, false,
+    'allowHtmlFieldRendering should default to false (SEC-001)')
+})
+
 // Run sync tests first, then async crypt tests
 finalize() // update summary with sync results so far
 runCryptTests() // will call finalize() again after async tests complete

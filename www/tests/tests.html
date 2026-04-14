@@ -1216,6 +1216,126 @@ test('searchRecordFieldValues=true: matches on field value', () => {
   window.prefs.searchRecordFieldValues = true
 })
 
+
+// ---------------------------------------------------------------------------
+// Phase 7 — Password preference coverage
+// ---------------------------------------------------------------------------
+suite('password.js — getCrypticPassword')
+test('getCrypticPassword respects requested length', () => {
+  const pw = getCrypticPassword(20, ALPHABET)
+  assertEqual(pw.length, 20, 'cryptic password should be exactly 20 chars')
+})
+test('getCrypticPassword uses only alphabet characters', () => {
+  const pw = getCrypticPassword(50, ALPHABET)
+  for (let ch of pw) {
+    assert(ALPHABET.includes(ch), `character '${ch}' not in ALPHABET`)
+  }
+})
+
+suite('password.js — getDefaultPrefs password values')
+test('passwordRangeLengthDefault is 20', () => {
+  assertEqual(getDefaultPrefs().passwordRangeLengthDefault, 20,
+    'getDefaultPrefs passwordRangeLengthDefault should be 20')
+})
+test('passwordRangeMinLength is 12', () => {
+  assertEqual(getDefaultPrefs().passwordRangeMinLength, 12,
+    'getDefaultPrefs passwordRangeMinLength should be 12')
+})
+test('passwordRangeMaxLength is 32', () => {
+  assertEqual(getDefaultPrefs().passwordRangeMaxLength, 32,
+    'getDefaultPrefs passwordRangeMaxLength should be 32')
+})
+
+suite('password.js — memorablePasswordWordSeparator')
+test('memorablePasswordWordSeparator default is /', () => {
+  assertEqual(getDefaultPrefs().memorablePasswordWordSeparator, '/',
+    'getDefaultPrefs memorablePasswordWordSeparator should be /')
+})
+test('getMemorablePassword uses the separator', () => {
+  const saved = {
+    sep: window.prefs.memorablePasswordWordSeparator,
+    minWords: window.prefs.memorablePasswordMinWords,
+    maxWords: window.prefs.memorablePasswordMaxWords,
+    minLen: window.prefs.memorablePasswordMinWordLength,
+    prefix: window.prefs.memorablePasswordPrefix,
+    suffix: window.prefs.memorablePasswordSuffix,
+  }
+  window.prefs.memorablePasswordWordSeparator = '-'
+  window.prefs.memorablePasswordMinWords = 2
+  window.prefs.memorablePasswordMaxWords = 5
+  window.prefs.memorablePasswordMinWordLength = 2
+  window.prefs.memorablePasswordPrefix = ''
+  window.prefs.memorablePasswordSuffix = ''
+  const pw = getMemorablePassword(20)
+  assert(pw.includes('-') || pw.startsWith('???'),
+    'memorable password should use - separator (or fallback if generation fails)')
+  window.prefs.memorablePasswordWordSeparator = saved.sep
+  window.prefs.memorablePasswordMinWords = saved.minWords
+  window.prefs.memorablePasswordMaxWords = saved.maxWords
+  window.prefs.memorablePasswordMinWordLength = saved.minLen
+  window.prefs.memorablePasswordPrefix = saved.prefix
+  window.prefs.memorablePasswordSuffix = saved.suffix
+})
+
+suite('password.js — memorablePasswordMinWordLength')
+test('memorablePasswordMinWordLength default is 2', () => {
+  assertEqual(getDefaultPrefs().memorablePasswordMinWordLength, 2,
+    'getDefaultPrefs memorablePasswordMinWordLength should be 2')
+})
+
+suite('password.js — memorablePasswordMinWords / MaxWords')
+test('memorablePasswordMinWords default is 3', () => {
+  assertEqual(getDefaultPrefs().memorablePasswordMinWords, 3,
+    'getDefaultPrefs memorablePasswordMinWords should be 3')
+})
+test('memorablePasswordMaxWords default is 5', () => {
+  assertEqual(getDefaultPrefs().memorablePasswordMaxWords, 5,
+    'getDefaultPrefs memorablePasswordMaxWords should be 5')
+})
+
+suite('password.js — memorablePasswordMaxTries')
+test('memorablePasswordMaxTries default is 10000', () => {
+  assertEqual(getDefaultPrefs().memorablePasswordMaxTries, 10000,
+    'getDefaultPrefs memorablePasswordMaxTries should be 10000')
+})
+
+suite('password.js — memorablePasswordPrefix / Suffix')
+test('memorablePasswordPrefix default is empty string', () => {
+  assertEqual(getDefaultPrefs().memorablePasswordPrefix, '',
+    'getDefaultPrefs memorablePasswordPrefix should be empty string')
+})
+test('memorablePasswordSuffix default is empty string', () => {
+  assertEqual(getDefaultPrefs().memorablePasswordSuffix, '',
+    'getDefaultPrefs memorablePasswordSuffix should be empty string')
+})
+test('getMemorablePassword respects prefix and suffix', () => {
+  const saved = {
+    prefix: window.prefs.memorablePasswordPrefix,
+    suffix: window.prefs.memorablePasswordSuffix,
+    minWords: window.prefs.memorablePasswordMinWords,
+    maxWords: window.prefs.memorablePasswordMaxWords,
+    minLen: window.prefs.memorablePasswordMinWordLength,
+    sep: window.prefs.memorablePasswordWordSeparator,
+  }
+  window.prefs.memorablePasswordPrefix = 'PRE-'
+  window.prefs.memorablePasswordSuffix = '-SUF'
+  window.prefs.memorablePasswordMinWords = 2
+  window.prefs.memorablePasswordMaxWords = 5
+  window.prefs.memorablePasswordMinWordLength = 2
+  window.prefs.memorablePasswordWordSeparator = '/'
+  const pw = getMemorablePassword(20)
+  assert(pw.startsWith('PRE-') || pw.startsWith('???'),
+    'memorable password should start with prefix (or fallback)')
+  assert(pw.endsWith('-SUF') || pw.startsWith('???'),
+    'memorable password should end with suffix (or fallback)')
+  window.prefs.memorablePasswordPrefix = saved.prefix
+  window.prefs.memorablePasswordSuffix = saved.suffix
+  window.prefs.memorablePasswordMinWords = saved.minWords
+  window.prefs.memorablePasswordMaxWords = saved.maxWords
+  window.prefs.memorablePasswordMinWordLength = saved.minLen
+  window.prefs.memorablePasswordWordSeparator = saved.sep
+})
+
 // Run sync tests first, then async crypt tests
 finalize() // update summary with sync results so far
 runCryptTests() // will call finalize() again after async tests complete

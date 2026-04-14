@@ -2,7 +2,7 @@
 
 **Project:** [jlinoff/pam](https://github.com/jlinoff/pam)  
 **Version at time of audit:** 1.2.5 (commit 75904b3, 2025-09-10)  
-**Plan version:** 1.3 (session log updated: merge commit hashes added for implemented phases; planning sessions retain —)  
+**Plan version:** 1.4 (Phase 5 updated: SEC-006 revert added; rationale documented)  
 **Collaboration model:** Option B — file uploads per session, changes returned as files/diffs, committed by Joe
 
 ---
@@ -470,6 +470,7 @@ Tests for each fix are written first. The fix is then implemented to make them p
 - [ ] Write unit tests for `prefs-model.js` (the module does not yet exist — tests define its API) → implement SIMP-001: split `prefs.js` into `prefs-model.js`, `prefs-ui.js`, `prefs-fields.js`; tests must pass against the new module
 - [ ] Write tests for consolidated clipboard function in `utils.js` → implement SIMP-002: remove duplicate from `field.js`
 - [ ] SIMP-003: identify dead code in `menu.js`, confirm no tests reference it, remove
+- [ ] **Revert SEC-006:** restore plaintext comparison for `lockPreferencesPassword` in `menu.js`. The prefs lock is a convenience feature, not a cryptographic boundary — the file is already protected by the master password (AES-256-CBC). Hashing adds no security benefit and creates a migration problem for existing users. Remove `hashPrefsPassword` import from `menu.js`; the function itself stays in `prefs-model.js` for potential use in Phase 7 crypto work. Document the rationale in `SECURITY.md`.
 - [ ] Write E2E tests for password generation, file operations, load duplicate strategies
 
 ### Phase 6 — UX + documentation (Sessions 12–13)
@@ -662,7 +663,7 @@ A PAM record could store a URL and a small JavaScript fill snippet. A "Login" bu
 | 10 | 2026-04-12 | Full plan review: fixed breaking change strategy text, SIMP-004/DOC-002 linkage, about.js/print.js test coverage, load.js extraction explicitness, section ordering and heading errors | — | PLAN.md |
 | 11 | 2026-04-13 | Phase 0 added: initial clean-up to establish known-good baseline; PORT-004 moved from Phase 2 to Phase 0; session numbers updated | — | PLAN.md |
 | 12 | 2026-04-13 | Phase 0 implemented: 64 dead lines removed, webmanifest fixed, Makefile sed delimiters fixed, pylint false positive suppressed | `65f1ebd` | www/js/*.js, www/site.webmanifest, Makefile, tests/test_chrome.py |
-| 13 | 2026-04-13 | Phase 1 implemented: www/tests/tests.html test runner + 56 unit tests across 6 suites; crypt.js v1 regression baseline locked; make unit-test + e2e-test targets added | `68a82cc` | www/tests/tests.html, tests/test_unit.py, Makefile, .jshintignore |
+| 14 | 2026-04-13 | SEC-006 revert added to Phase 5 scope: prefs lock is convenience not cryptographic boundary; hashPrefsPassword stays in prefs-model.js for Phase 7 | — | PLAN.md |
 
 ---
 

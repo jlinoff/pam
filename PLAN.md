@@ -2,7 +2,7 @@
 
 **Project:** [jlinoff/pam](https://github.com/jlinoff/pam)  
 **Version at time of audit:** 1.2.5 (commit 75904b3, 2025-09-10)  
-**Plan version:** 2.1 (Coverage map added; Phase 7 checklist updated)  
+**Plan version:** 2.2 (Phase 7 load.js tests complete; coverage map updated)  
 **Collaboration model:** Option B — file uploads per session, changes returned as files/diffs, committed by Joe
 
 ---
@@ -499,7 +499,7 @@ The crypto implementation moves to Phase 8.
 - [x] BUG-001: enablePrinting and enableSaveFile NodeList regression — fixed in print.js, save.js, menu.js, main.js; regression tests added
 - [x] Expand unit tests for `record.js`: findRecord, findRecordAfter, deleteRecord, insertRecord, clearRecords (10 tests, 4 suites)
 - [x] Expand unit tests for `save.js`: convertInternalDataToJSON round-trip — title, active, created, text/password fields, prefs (4 tests)
-- [ ] Expand unit tests for `load.js`: JSON parse/validate logic, duplicate handling strategies — IN PROGRESS
+- [x] Expand unit tests for `load.js`: duplicate strategies (ignore/replace/allow), active/created defaults (5 tests, 2 suites). Note: loadCallback cannot be imported due to prefs.js→main.js circular dependency; tested via E2E
 - [ ] Expand E2E tests: load duplicate strategies (ignore/replace/allow), file round-trip (save then reload and verify record count)
 - [ ] UX-002: delete confirmation (E2E test first → implement)
 - [ ] UX-003: tabbed preferences navigation (E2E test first → implement)
@@ -705,7 +705,7 @@ Last updated: Phase 7 (April 2026). Coverage = unit tests + E2E tests combined.
 | `crypt.js` | ✅ v1 regression baseline (encrypt/decrypt round-trip, wrong password, edge cases) | — | v2 tests written but not yet implemented (Phase 8) |
 | `record.js` | ✅ findRecord, findRecordAfter, insertRecord, deleteRecord, clearRecords | ✅ test_record_create_and_delete | mkRecord not unit-tested (DOM complexity); checkRecordEditDlg not unit-tested |
 | `save.js` | ✅ convertInternalDataToJSON (title, active, created, text field, password raw value, prefs) | ✅ test_save_dlg | saveUsingAnchorLink, saveUsingPromises, saveCallback not unit-tested |
-| `load.js` | ✅ formatTimeElapsed, isValidLoadUrl | ✅ test_load_dlg, test_example_records | loadCallback JSON parse, duplicate strategy, loadFileContent not unit-tested |
+| `load.js` | ✅ formatTimeElapsed, isValidLoadUrl, duplicate strategies (ignore/replace/allow), active/created defaults | ✅ test_load_dlg, test_example_records | loadCallback not importable (module graph); loadFileContent not unit-tested |
 | `field.js` | ✅ mkRecordField (html rendering SEC-001), number validation | ✅ (via record create/edit E2E) | mkRecordEditField, copyRecordFieldsToEditDlg not unit-tested |
 | `prefs-model.js` | ✅ Full — getDefaultPrefs, VALID_FIELD_TYPES, VALID_CACHE_STRATEGIES, hashPrefsPassword | — | None |
 | `prefs.js` | ✅ All preference defaults and behaviour via prefs-model.js; enablePrinting/enableSaveFile | ✅ test_prefs_dlg | savePrefs, menuPrefsDlg DOM rendering not unit-tested |

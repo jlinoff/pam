@@ -448,7 +448,8 @@ window.prefs.filePassCache = 'session'
 // search.js — searchRecords (needs minimal DOM fixture)
 // ---------------------------------------------------------------------------
 import { searchRecords, clearSearch } from '/js/search.js'
-import { isValidLoadUrl } from '/js/load.js'
+import { isValidLoadUrl, formatTimeElapsed } from '/js/load.js'
+import { hashPrefsPassword } from '/js/prefs.js'
 
 // Build a minimal DOM fixture: #records-accordion with some records
 function makeAccordionItem(title, active, fields) {
@@ -845,6 +846,85 @@ test('too-short string is rejected', () => {
 })
 test('ftp:// URL is rejected (only http/https allowed)', () => {
   assert(!isValidLoadUrl('ftp://example.com/file'), 'ftp should be rejected')
+})
+
+
+// ---------------------------------------------------------------------------
+// Phase 3 — SEC-002/UX-004: filePassCache default is 'session'
+// ---------------------------------------------------------------------------
+suite('SEC-002/UX-004 — filePassCache default is session')
+test('prefs stub uses session (matching the corrected default)', () => {
+  assertEqual(window.prefs.filePassCache, 'session',
+    'filePassCache should default to session, not local')
+})
+test('session cache stores in sessionStorage', () => {
+  window.prefs.filePassCache = 'session'
+  setFilePass('sec002-test')
+  assertEqual(sessionStorage.getItem('filePass'), 'sec002-test',
+    'session cache should write to sessionStorage')
+  sessionStorage.removeItem('filePass')
+  window.prefs.filePassCache = 'session'
+})
+test('local cache stores in localStorage', () => {
+  window.prefs.filePassCache = 'local'
+  setFilePass('sec002-local')
+  assertEqual(localStorage.getItem('filePass'), 'sec002-local',
+    'local cache should write to localStorage')
+  localStorage.removeItem('filePass')
+  window.prefs.filePassCache = 'session'
+})
+
+// ---------------------------------------------------------------------------
+// Phase 3 — SEC-008: CSP meta tag in index.html
+// ---------------------------------------------------------------------------
+suite('SEC-008 — CSP meta tag in index.html')
+test('index.html contains Content-Security-Policy meta tag', async () => {
+  const html = await fetch('/index.html').then(r => r.text())
+  assert(html.includes('Content-Security-Policy'),
+    'index.html should contain a Content-Security-Policy meta tag (SEC-008)')
+})
+test("CSP includes script-src 'self'", async () => {
+  const html = await fetch('/index.html').then(r => r.text())
+  assert(html.includes("script-src 'self'"),
+    "CSP should include script-src 'self'")
+})
+
+// ---------------------------------------------------------------------------
+// Phase 3 — load.js: formatTimeElapsed pure function
+// ---------------------------------------------------------------------------
+suite('load.js — formatTimeElapsed')
+test('zero ms returns 0 seconds', () => {
+  assertEqual(formatTimeElapsed(0), '0 seconds')
+})
+test('sub-second returns 0 seconds', () => {
+  assertEqual(formatTimeElapsed(500), '0 seconds')
+})
+test('exactly 1 second', () => {
+  assertEqual(formatTimeElapsed(1000), '1 second')
+})
+test('exactly 2 seconds', () => {
+  assertEqual(formatTimeElapsed(2000), '2 seconds')
+})
+test('1 minute', () => {
+  assertEqual(formatTimeElapsed(60000), '1 minute')
+})
+test('1 minute 1 second', () => {
+  assertEqual(formatTimeElapsed(61000), '1 minute, 1 second')
+})
+test('2 minutes 30 seconds', () => {
+  assertEqual(formatTimeElapsed(150000), '2 minutes, 30 seconds')
+})
+test('1 hour', () => {
+  assertEqual(formatTimeElapsed(3600000), '1 hour')
+})
+test('1 day', () => {
+  assertEqual(formatTimeElapsed(86400000), '1 day')
+})
+test('1 day 2 hours', () => {
+  assertEqual(formatTimeElapsed(86400000 + 7200000), '1 day, 2 hours')
+})
+test('pluralises days', () => {
+  assert(formatTimeElapsed(2 * 86400000).startsWith('2 days'))
 })
 
 // Run sync tests first, then async crypt tests

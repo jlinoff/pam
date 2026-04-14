@@ -1,9 +1,8 @@
 // record fields
 import { xmk } from './lib.js'
-import { icon, isURL, mkDraggableRow, sortDictByKey } from './utils.js'
+import { icon, isURL, mkDraggableRow, sortDictByKey, copyTextToClipboard } from './utils.js'
 import { findRecord } from './record.js'
 import { mkGeneratePasswordDlg } from './password.js'
-import { statusBlip } from './status.js'
 
 // Make record field with the name, type and value.
 export function mkRecordField(name, type, value) {
@@ -82,7 +81,8 @@ function mkRecordFldElement(name, type, fieldValue, rawValue, ...buttons) {
     )
 }
 
-// Make a button whose action is to copy to the clipboard
+// Make a button whose action is to copy to the clipboard.
+// Delegates to copyTextToClipboard() in utils.js (SIMP-002).
 export function mkRecordFieldCopyToClipboardButton(raw_value) {
     const value = raw_value
     return xmk('button')
@@ -90,33 +90,8 @@ export function mkRecordFieldCopyToClipboardButton(raw_value) {
         .xAttrs({'type': 'button'})
         .xAppend(icon('bi-clipboard', 'copy to clipboard')) // also bi-files
         .xAddEventListener('click', (event) => {
-            statusBlip(`copying ${value.length} bytes to clipboard`)
-            if (navigator.clipboard) {
-                navigator.clipboard
-                    .writeText(value)
-                    .then(
-                        (text) => {
-                            // succeeded
-                            statusBlip(`copied ${value.length} bytes to clipboard`)
-                        },
-                        (error) => {
-                            // failed
-                            const msg = `internal error:\nnavigator.clipboard.writeText() error:\n${error}`
-                            statusBlip(msg)
-                            alert(msg)
-                        }
-                    )
-                    .catch((error) => {
-                        const msg = `internal error:\nnavigator.clipboard.writeText() exception:\n${error}`
-                        statusBlip(msg)
-                        alert(msg)
-                    })
-            } else {
-                const msg = `internal error:\nnavigator.clipboard not found\ncould be a permissions problem`
-                statusBlip(msg)
-                alert(msg)
-            }
-         })
+            copyTextToClipboard(value)
+        })
 }
 
 // Make a button whose action is to show or hide a password value

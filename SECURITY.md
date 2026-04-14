@@ -65,9 +65,13 @@ Both bugs define the key derivation for all existing v1 files. Fixing them requi
 
 ## SEC-006 — Preferences lock password
 
-The preferences lock password (`lockPreferencesPassword`) is stored as a **SHA-256 hex digest** in the PAM file's prefs block — never as plaintext. When a user enters the password to unlock preferences, it is hashed before comparison.
+The preferences lock password (`lockPreferencesPassword`) is stored as **plaintext** in the PAM file's prefs block.
 
-**Note:** This is a convenience lock, not a cryptographic secret. Its purpose is to prevent casual modification of preferences in a shared deployment, not to protect against a determined attacker who has the master password (and can therefore read the entire prefs block).
+**This is intentional.** The prefs lock is a convenience feature whose sole purpose is to prevent casual or accidental modification of preferences in a shared deployment. It is not a cryptographic boundary.
+
+The entire PAM file — including the prefs block and `lockPreferencesPassword` — is encrypted with the master password (AES-256-CBC). An attacker who has the master password can read everything. Hashing `lockPreferencesPassword` would add no security benefit in this threat model, and would silently break existing files where the value was stored as plaintext.
+
+**Threat model:** The prefs lock protects against an authorised user (who has the master password) accidentally changing deployment-managed settings. It does not protect against a determined attacker.
 
 ---
 

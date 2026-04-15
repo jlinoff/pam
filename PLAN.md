@@ -2,7 +2,7 @@
 
 **Project:** [jlinoff/pam](https://github.com/jlinoff/pam)  
 **Version at time of audit:** 1.2.5 (commit 75904b3, 2025-09-10)  
-**Plan version:** 2.6 (PORT-002 evaluation documented — deferred with rationale)  
+**Plan version:** 2.7 (Phase 8 complete — UX-003 done, VERSION 1.3.0; crypto moves to 2.0)  
 **Collaboration model:** Option B — file uploads per session, changes returned as files/diffs, committed by Joe
 
 ---
@@ -536,10 +536,10 @@ documentation impact.
 - [x] PORT-002: evaluated — deferred. Supply chain risk, circular dependency prerequisite, file:// achievable via make run. See PORT-002 observation for full rationale.
 - [x] UX-005: deferred — cosmetic flash, Bootstrap modal stacking risk makes fix non-trivial. See UX-005 observation for full rationale.
 - [x] Update README — Delete Record section updated for UX-002 confirmation dialog; number field validation note added
-- [ ] Update VERSION to 1.2.6, tag
-- [ ] UX-003: tabbed preferences navigation — E2E test first, then implement, then update README
+- [x] Update VERSION to 1.3.0, tag
+- [x] UX-003: tabbed preferences navigation — implemented with Bootstrap nav-tabs, E2E test added
 
-### Phase 9 — Dual crypto + release v1.3 (revised)
+### Phase 9 — Dual crypto + release v2.0 (revised)
 
 **Design decision (post-Phase 6):** PAM 1.3 will always write v2 and always
 read both v1 and v2. There is no user-facing format preference and no phased
@@ -566,19 +566,19 @@ v1 decrypt is retained permanently — no existing file ever becomes unreadable.
 - [ ] **GitHub release notes for v1.3:** direct, honest, calibrated for a technical/security audience
 - [ ] **Open pinned GitHub issue:** "Encryption format migration v1→v2 (tracking)"
 - [ ] Final coverage report, target ≥75%
-- [ ] Update README — deferred to Phase 8, tag v1.3
+- [ ] Update README — deferred to Phase 8, tag v2.0
 
-### Phase 10 — Remove v1 encrypt code, release v2.0 (deferred, ≥1 year post-v1.3)
+### Phase 10 — Remove v1 encrypt code, release v2.1 (deferred, ≥1 year post-v2.0)
 
 **Policy:** v1 encrypt code will not be removed for at least one year after v1.3
 ships. This gives the entire user base time to migrate their files without any
 risk of being stranded.
 
-- [ ] Confirm all known users have had opportunity to migrate (≥1 year elapsed)
+- [ ] Confirm all known users have had opportunity to migrate (≥1 year post-v2.0 elapsed)
 - [ ] Write E2E test: assert v1 encrypt code path is unreachable from the UI
 - [ ] Remove v1 encrypt function from `crypt.js` — v1 decrypt stays permanently
 - [ ] Confirm v1 decrypt regression baseline still passes
-- [ ] Update MIGRATION.md, tag v2.0
+- [ ] Update MIGRATION.md, tag v2.1
 
 ---
 
@@ -600,8 +600,8 @@ phase/05-simplification
 phase/06-ux-documentation
 phase/07-test-consolidation
 phase/08-ux-polish
-phase/09-dual-crypto-v1.3
-phase/10-v1-encrypt-removal-v2.0
+phase/09-dual-crypto-v2.0
+phase/10-v1-encrypt-removal-v2.1
 ```
 
 Future phases follow the same pattern: `phase/10-mobile-save`, `phase/11-credential-injection`, etc.

@@ -6,6 +6,8 @@ personal account manager webapp
 
 > **New to PAM?** Start with the [Quick Start guide](./quickstart.html) — get up and running in five minutes.
 
+> **Documentation note:** The screenshots and UI descriptions in this document reflect PAM 1.2.5 and earlier. PAM 1.3.0 introduced tabbed preferences navigation and other visual changes. The concepts and features are identical — the documentation remains accurate and useful, but some screenshots and UI descriptions may not map 1:1 to what you see on screen.
+
 <details>
 <summary>Metadata</summary>
 

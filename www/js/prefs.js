@@ -262,7 +262,8 @@ export function menuPrefsDlg() {
                 prefPromptDesc('Setting this password will lock the preferences so that '+
                                'users who do not know this password cannot change them. '+
                                'This allows an administrator to disable printing and saving. '+
-                               'This password is encrypted but it <i>is</i> stored in the PAM file '+
+                               'Leave blank to keep the existing password unchanged. '+
+                               'This password is stored in the PAM file '+
                                'so it is not as secure as the master password. '+
                                'Setting the password here is useful when multiple users are reading '+
                                'the same PAM file data and you don\'t want them to change the '+
@@ -422,6 +423,11 @@ function savePrefs(el) {
         if (type === 'INPUT') {
             // inputs are easy.
             let value = pref.value
+            // SEC: lockPreferencesPassword field is always rendered empty.
+            // An empty value means "no change" — preserve the existing hash.
+            if (key === 'lockPreferencesPassword' && value === '') {
+                continue
+            }
             window.prefs[key] = value
         } else if (type === 'BUTTON') {
             let icon = pref.xGet('i')
@@ -523,8 +529,9 @@ function prefLockPreferencesPassword(labelClasses, inputClasses) {
             xmk('div').xClass('input-group').xAppend(
                 xmk('input')
                     .xClass('form-control', 'text-start')
-                    .xAttrs({'type': 'text',
-                             'value': window.prefs.lockPreferencesPassword,
+                    .xAttrs({'type': 'password',
+                             'value': '',
+                             'placeholder': window.prefs.lockPreferencesPassword ? '(password set)' : '',
                              'title': 'password that locks preferences',
                              'data-pref-id': 'lockPreferencesPassword',
                             }),

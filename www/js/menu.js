@@ -305,6 +305,7 @@ function promptForPrefsPassword() {
                       .xId(id)
                       .xClass('m-2', 'w-75', 'fs-1', 'form-control-large')
                       .xAttrs({'type': 'password',
+                               'autocomplete': 'off',
                                'placeholder': 'Enter Preferences Lock Password...'})
                       .xAddEventListener('keydown', (event) => {
                           if (event.key === 'Enter') {

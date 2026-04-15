@@ -32,46 +32,6 @@ the on-line help is generated.
 </details>
 
 <details>
-<summary>Is PAM Right for You?</summary>
-
-
-## PAM vs mainstream password managers
-
-_Analysis: April 2026. Compared against Bitwarden and 1Password as representative mainstream alternatives._
-
-**TL;DR — direct most users to a mainstream product like [Bitwarden](https://bitwarden.com).** PAM has no browser autofill, which is a dealbreaker for everyday web login use. It excels as a flexible encrypted notebook for non-password data (medication lists, account numbers, notes, recipes) and for users who want zero cloud dependency.
-
-| Feature / use case | PAM | Bitwarden / 1Password | Verdict |
-| --- | --- | --- | --- |
-| **Core password management** | | | |
-| Password storage & retrieval | Manual copy/paste only | Automatic, with autofill | PAM loses — friction is high |
-| Browser autofill | None | Browser extension, native app | PAM loses — no browser integration |
-| Password generation | Yes — cryptic and memorable | Yes — cryptic only by default | Tie; PAM's memorable generator is distinctive |
-| Multi-device sync | Manual — user manages file via iCloud/Dropbox | Automatic cloud sync | PAM loses — sync is entirely the user's problem |
-| Mobile access | Mobile-friendly browser UI; no native app | Native iOS/Android app with Face ID | PAM loses — usable but clunky on phone |
-| **Security model** | | | |
-| Local-only operation | Fully local — no server traffic after page load | Cloud-dependent; requires trust in vendor | PAM wins for offline/air-gapped scenarios |
-| Encryption | AES-256-CBC; v2 format (shipped April 2026) fixes PBKDF2 iteration count and salt entropy bug. Existing v1 files need manual re-save to upgrade. | AES-256, strong PBKDF2 / Argon2 KDFs | Tie — v2 closes the gap; v1 files remain weak until re-saved |
-| Zero-knowledge architecture | Inherently — no server ever sees data | Bitwarden: yes. 1Password: yes | Tie |
-| Audit / breach alerts | None | HaveIBeenPwned integration, Watchtower | PAM loses significantly |
-| **Flexible / non-password data** | | | |
-| Free-form text records | Excellent — first-class textarea fields | Secure notes exist but limited formatting | PAM wins for general text storage |
-| Custom field types | Full HTML input types: text, textarea, url, phone, email, number, html | Fixed item templates; some custom fields | PAM wins — more flexible data model |
-| Medication lists / account numbers | Natural fit — textarea records work well | Possible via secure notes; not purpose-built | PAM wins for structured non-password data |
-| Images / rich HTML in records | html field type renders inline | Attachments only (paid plans) | PAM wins for embedding inline content |
-| Search across all fields | Title, field name, field value; regex support | Vault-wide search | Tie; PAM's regex is a plus |
-| **Usability & setup** | | | |
-| Setup complexity | Open browser URL; file management required | App install + account creation | Comparable; PAM needs no account but needs file discipline |
-| Sharing credentials | Share the file + master password via out-of-band channel | Built-in sharing with fine-grained permissions | PAM loses — coarse sharing only |
-| Offline use | Full — no dependency on external service | Local vault cache; full offline possible | PAM wins — no caching surprises |
-| Cost | Free, open-source (MIT) | Bitwarden free tier; paid for advanced features. 1Password paid only. | PAM wins on cost |
-| **Bottom line** | | | |
-| Recommended for most users? | No — autofill absence is a dealbreaker for daily web login use | Yes — Bitwarden in particular covers the common case well | Direct most users to Bitwarden |
-| PAM shines when… | User wants zero cloud dependency; needs flexible record types for non-password data (meds, account numbers, notes, recipes); is comfortable managing files manually; or needs a fully auditable FOSS tool. | | |
-
-</details>
-
-<details>
 <summary>Table of Contents</summary>
 
 <!--ts-->
@@ -79,8 +39,9 @@ _Analysis: April 2026. Compared against Bitwarden and 1Password as representativ
   * [Introduction](#introduction)
   * [Overview](#overview)
     * [Reasons to not use PAM](#reasons-to-not-use-pam)
-      * [Reason 1: Do Not Need It](#reason-1-do-not-need-it)
-      * [Reason 2: Too Complex](#reason-2-too-complex)
+      * [Reason 1: You want browser autofill](#reason-1-you-want-browser-autofill)
+      * [Reason 2: You already have something that works](#reason-2-you-already-have-something-that-works)
+      * [Reason 3: Too complex](#reason-3-too-complex)
     * [Reasons to consider using PAM](#reasons-to-consider-using-pam)
       * [Reason 1: No Client Server Communications](#reason-1-no-client-server-communications)
       * [Reason 2: Record Model](#reason-2-record-model)
@@ -91,6 +52,7 @@ _Analysis: April 2026. Compared against Bitwarden and 1Password as representativ
       * [Reason 7: Hiding Passwords from Casual Observers](#reason-8-hiding-passwords-from-casual-observers)
       * [Reason 8: Access from mobile devices](#reason-8-access-from-mobile-devices)
       * [Reason 9: FOSS](#reason-9-foss)
+    * [PAM vs mainstream password managers](#pam-vs-mainstream-password-managers)
   * [Records](#records)
     * [Unexpanded View of all Records](#unexpanded-view-of-all-records)
     * [Expanded View of a Record](#expanded-view-of-a-record)
@@ -279,36 +241,38 @@ secure way.
 ### Reasons to not use PAM
 This section talks about why you may not need or want to use _PAM_.
 
-#### Reason 1: Do Not Need It
-It is very reasonable to ask yourself why, if _PAM_ is like an editor,
-you can't simply just use something like an Excel spreadsheet or a
-text file editor or keep passwords on a sheet of paper or use one of
-the many commercially available password managers?
+#### Reason 1: You want browser autofill
+The most important reason not to use PAM is that it has no browser
+integration. Mainstream password managers like
+[Bitwarden](https://bitwarden.com) automatically detect login forms
+and fill in your credentials with a single click or tap. PAM requires
+you to manually copy each field to the clipboard and paste it into
+the browser. For day-to-day web login use, that friction adds up
+quickly.
 
-That is an excellent question. The answer is that you _can_ and, if
-you are already using an Excel spreadsheet or a text file editor or a sheet
-of paper or a password management service or any other method
-that works for you, _you should_.
+If autofill is important to you — and for most people it is — use
+Bitwarden or a similar tool instead.
 
-#### Reason 2: Too Complex
-Even if you do not already have a method for managing passwords _PAM_
-may not be the right choice. _PAM_ requires that you understand a bit
-about HTML input and textarea elements which may be confusing. Also
-the _PAM_ user interface (UI) and record data model may be confusing
-or hard to understand and use because I am not a UI programmer.
+#### Reason 2: You already have something that works
+If you are already using a password manager, an Excel spreadsheet, a
+text file, or any other method that works for you, you should keep
+using it. There is no reason to switch.
 
-The bottom line is that I wrote _PAM_ to provide some features I
-wanted and to address some concerns I had with existing
-approaches. Those features and concerns are discussed in the next
-section to help you understand my reasoning so that you can decide
-whether any of them are important to you. If you don't care about the
-features and the concerns that bother me, there is no reason to use
-this tool.
+#### Reason 3: Too complex
+_PAM_'s record and field model is more flexible than a typical password
+manager, but that flexibility comes with some complexity. Creating
+records, managing field types, and maintaining your own encrypted file
+requires more engagement than simply installing a browser extension.
+If you want something that works without thinking about it, a
+mainstream password manager will serve you better.
+
+The features and design decisions behind PAM are discussed in the next
+section to help you decide whether any of them matter to you.
 
 ### Reasons to consider using PAM
 
 This section presents the nine primary reasons that motivated me to
-develop _PAM_. They are provided to to help you determine whether
+develop _PAM_. They are provided to help you determine whether
 _PAM_ might be interesting to you.
 
 #### Reason 1: No Client Server Communications
@@ -544,20 +508,27 @@ authorized to access the storage service.
 
 Of course you could simply load and save the data to a local file but
 that _might_ restrict your ability to access to it from other devices
-(like mobile phones or tables). Not only that but you would have to be
+(like mobile phones or tablets). Not only that but you would have to be
 very diligent about keeping it backed up so that you would not lose
 data if the local file was corrupted or lost.
 
 #### Reason 6: Secure Context Encryption
 When records are stored in a _PAM_ file they can be encrypted using a
-password. The password is then used by an
-[_NIST certified_](https://csrc.nist.gov/projects/cryptographic-algorithm-validation-program),
-symmetric encryption algorithm: `AES-256-CBC` to encode the records.
+password. As of v2 (April 2026), the password is used with a
+high-iteration PBKDF2-SHA-256 key derivation function and a
+properly random salt to produce an
+[_NIST certified_](https://csrc.nist.gov/projects/cryptographic-algorithm-validation-program)
+AES-256-CBC key.
 
 Using a certified encryption algorithm provides a strong security
 guarantee which means, that if an encrypted _PAM_ file is stolen, the
 record data is considered safe from hackers trying to crack the
 contents _if a strong password was used_.
+
+> **Note for existing users:** PAM v1 files used a lower iteration
+> count and had a salt entropy bug. If you have v1 files, re-save them
+> in PAM to upgrade them to the v2 format. See
+> [MIGRATION.md](./MIGRATION.md) for details.
 
 Passwords like _"secret"_ or _"password123"_ or any other password
 that can be found in freely available password dictionaries like the
@@ -621,7 +592,10 @@ but that does not necessarily imply that the interface is _mobile friendly_.
 What makes _PAM_ mobile friendly is that it is implemented using the
 [bootstrap-5](https://getbootstrap.com/docs/5.0/getting-started/introduction/)
 library to make the interface work better in the browsers present on
-mobile devices.
+mobile devices. PAM also supports installation as a
+[Progressive Web App (PWA)](https://developer.mozilla.org/en-US/docs/Web/Progressive_web_apps/Installing),
+which means you can add it to your home screen and use it like a
+native app without going through an app store.
 
 #### Reason 9: FOSS
 
@@ -629,6 +603,41 @@ Last but not least, one compelling reason to try _PAM_ is that it is
 free and open source software (FOSS) so you can try it without any
 obligation or cost. You can also help find and fix bugs or improve
 the UI.
+
+### PAM vs mainstream password managers
+
+_Analysis: April 2026. Compared against Bitwarden and 1Password as representative mainstream alternatives._
+
+**TL;DR — direct most users to a mainstream product like [Bitwarden](https://bitwarden.com).** PAM has no browser autofill, which is a dealbreaker for everyday web login use. It excels as a flexible encrypted notebook for non-password data (medication lists, account numbers, notes, recipes) and for users who want zero cloud dependency.
+
+| Feature / use case | PAM | Bitwarden / 1Password | Verdict |
+| --- | --- | --- | --- |
+| **Core password management** | | | |
+| Password storage & retrieval | Manual copy/paste only | Automatic, with autofill | PAM loses — friction is high |
+| Browser autofill | None | Browser extension, native app | PAM loses — no browser integration |
+| Password generation | Yes — cryptic and memorable | Yes — cryptic only by default | PAM wins — memorable passwords are unique to PAM |
+| Multi-device sync | File-based — works naturally on iCloud/Dropbox for single users | Automatic cloud sync | PAM loses for teams; single-user sync via iCloud/Dropbox works naturally |
+| Mobile access | Mobile-friendly browser UI; PWA install available; no native app | Native iOS/Android app with Face ID | PAM loses — no native app, though PWA install is available |
+| **Security model** | | | |
+| Local-only operation | Fully local — no server traffic after page load | Cloud-dependent; requires trust in vendor | PAM wins for offline/air-gapped scenarios |
+| Encryption | AES-256-CBC; v2 format (shipped April 2026) fixes PBKDF2 iteration count and salt entropy bug. Existing v1 files need manual re-save to upgrade. | AES-256, strong PBKDF2 / Argon2 KDFs | Tie — v2 closes the gap; v1 files remain weak until re-saved |
+| Zero-knowledge architecture | Inherently — no server ever sees data | Bitwarden: yes. 1Password: yes | Tie |
+| Audit / breach alerts | None | HaveIBeenPwned integration, Watchtower | PAM loses significantly |
+| **Flexible / non-password data** | | | |
+| Free-form text records | Excellent — first-class textarea fields | Secure notes exist but limited formatting | PAM wins for general text storage |
+| Custom field types | Full HTML input types: text, textarea, url, phone, email, number, html | Fixed item templates; some custom fields | PAM wins — more flexible data model |
+| Medication lists / account numbers | Natural fit — textarea records work well | Possible via secure notes; not purpose-built | PAM wins for structured non-password data |
+| Images / rich HTML in records | html field type renders inline | Attachments only; free cloud tier excludes them | PAM wins for embedding inline content |
+| Search across all fields | Title, field name, field value; regex support | Vault-wide search | Tie; PAM's regex is a plus |
+| **Usability & setup** | | | |
+| Setup complexity | Open browser URL; file management required | App install + account creation | Comparable; PAM needs no account but needs file discipline |
+| Sharing credentials | Share the file + master password via out-of-band channel | Built-in sharing with fine-grained permissions | PAM loses — coarse sharing only |
+| Offline use | Full — no dependency on external service | Local vault cache; full offline possible | PAM wins — no caching surprises |
+| Cost | Free, open-source (MIT) | Bitwarden free tier; paid for advanced features. 1Password paid only. | PAM wins on cost |
+| **Bottom line** | | | |
+| Recommended for most users? | No — autofill absence is a dealbreaker for daily web login use | Yes — Bitwarden in particular covers the common case well | Direct most users to Bitwarden |
+
+**PAM shines when** the user wants zero cloud dependency; needs flexible record types for non-password data (medication lists, account numbers, notes, recipes); is comfortable managing files manually; or needs a fully auditable FOSS tool.
 
 ## Records
 

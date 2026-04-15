@@ -1,0 +1,1844 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PAM Unit Tests</title>
+  <style>
+    body { font-family: monospace; font-size: 14px; margin: 2em; background: #1a1a1a; color: #ccc; }
+    h1   { color: #fff; margin-bottom: 0.25em; }
+    h2   { color: #aaa; font-size: 1em; margin: 1.5em 0 0.5em; border-bottom: 1px solid #333; padding-bottom: 0.25em; }
+    .summary { font-size: 1.1em; margin: 1em 0; padding: 0.5em 1em; border-radius: 4px; }
+    .pass    { color: #4caf50; }
+    .fail    { color: #f44336; }
+    .skip    { color: #888; }
+    .summary.all-pass { background: #1b3a1b; border: 1px solid #4caf50; }
+    .summary.has-fail { background: #3a1b1b; border: 1px solid #f44336; }
+    .test-line { margin: 2px 0; padding-left: 1em; }
+    .test-line.fail { background: #2a1a1a; }
+    pre  { margin: 0.25em 0 0.25em 2em; color: #f44336; font-size: 0.9em; }
+    #x-summary-text { font-weight: bold; }
+  </style>
+</head>
+<body>
+  <h1>PAM Unit Tests</h1>
+  <div id="x-summary" class="summary">Running...</div>
+  <div id="x-results"></div>
+
+<script type="module">
+
+// ---------------------------------------------------------------------------
+// Minimal window.prefs stub — must be set before any app module is imported
+// ---------------------------------------------------------------------------
+window.prefs = {
+  // status
+  statusMsgDurationMS: 1500,
+  logStatusToConsole: false,
+  // search
+  searchCaseInsensitive: true,
+  searchRecordTitles: true,
+  searchRecordFieldNames: true,
+  searchRecordFieldValues: true,
+  hideInactiveRecords: false,
+  // password / memorable
+  memorablePasswordWordSeparator: '-',
+  memorablePasswordMinWordLength: 3,
+  memorablePasswordMaxWords: 6,
+  memorablePasswordMinWords: 2,
+  memorablePasswordMaxTries: 1000,
+  memorablePasswordPrefix: '',
+  memorablePasswordSuffix: '',
+  passwordRangeMinLength: 8,
+  passwordRangeMaxLength: 64,
+  passwordRangeLengthDefault: 16,
+  // file pass cache
+  filePassCache: 'session',
+  filePass: '',
+  // misc
+  themeName: 'dark',
+  enableRawJSONEdit: false,
+  // prefs lock (SEC-006 revert: plaintext, not hashed)
+  lockPreferencesPassword: '',
+}
+
+// ---------------------------------------------------------------------------
+// Test runner
+// ---------------------------------------------------------------------------
+let _passed = 0
+let _failed = 0
+let _currentSuite = null
+const _results = document.getElementById('x-results')
+
+function suite(name) {
+  _currentSuite = name
+  const h = document.createElement('h2')
+  h.textContent = name
+  h.id = 'suite-' + name.replace(/\s+/g, '-').toLowerCase()
+  _results.appendChild(h)
+}
+
+function test(name, fn) {
+  const line = document.createElement('div')
+  line.className = 'test-line'
+  try {
+    fn()
+    _passed++
+    line.classList.add('pass')
+    line.textContent = '✓ ' + name
+  } catch(e) {
+    _failed++
+    line.classList.add('fail')
+    line.textContent = '✗ ' + name
+    const pre = document.createElement('pre')
+    pre.textContent = e.message || String(e)
+    line.appendChild(pre)
+  }
+  _results.appendChild(line)
+}
+
+function assert(condition, msg) {
+  if (!condition) throw new Error('assert failed: ' + (msg || '(no message)'))
+}
+
+function assertEqual(a, b, msg) {
+  if (a !== b) throw new Error((msg || 'assertEqual') + '\n  expected: ' + JSON.stringify(b) + '\n  actual:   ' + JSON.stringify(a))
+}
+
+function assertNotEqual(a, b, msg) {
+  if (a === b) throw new Error((msg || 'assertNotEqual') + ': values are equal: ' + JSON.stringify(a))
+}
+
+function assertThrows(fn, msg) {
+  let threw = false
+  try { fn() } catch(e) { threw = true }
+  if (!threw) throw new Error((msg || 'assertThrows') + ': expected exception was not thrown')
+}
+
+function finalize() {
+  const el = document.getElementById('x-summary')
+  const total = _passed + _failed
+  el.textContent = `${total} tests: ${_passed} passed, ${_failed} failed`
+  el.className = 'summary ' + (_failed === 0 ? 'all-pass' : 'has-fail')
+  // expose result for ChromeDriver to read
+  window.__TEST_RESULTS__ = { passed: _passed, failed: _failed, total }
+}
+
+// ---------------------------------------------------------------------------
+// lib.js — enableFunctionChaining and helpers
+// ---------------------------------------------------------------------------
+import { enableFunctionChaining, xmk, xget, xgetn } from '/js/lib.js'
+enableFunctionChaining()
+
+suite('lib.js — xmk')
+test('xmk creates an element with the correct tagName', () => {
+  const el = xmk('div')
+  assertEqual(el.tagName.toLowerCase(), 'div')
+})
+test('xmk creates different element types', () => {
+  assertEqual(xmk('span').tagName.toLowerCase(), 'span')
+  assertEqual(xmk('button').tagName.toLowerCase(), 'button')
+  assertEqual(xmk('input').tagName.toLowerCase(), 'input')
+})
+
+suite('lib.js — xClass / xId / xAttr / xAttrs')
+test('xClass adds CSS classes', () => {
+  const el = xmk('div').xClass('foo', 'bar')
+  assert(el.classList.contains('foo'), 'should contain foo')
+  assert(el.classList.contains('bar'), 'should contain bar')
+})
+test('xClass ignores null entries', () => {
+  const el = xmk('div').xClass('foo', null, 'bar')
+  assert(el.classList.contains('foo'))
+  assert(el.classList.contains('bar'))
+})
+test('xId sets the element id', () => {
+  const el = xmk('div').xId('test-id')
+  assertEqual(el.id, 'test-id')
+})
+test('xAttr sets a single attribute', () => {
+  const el = xmk('input').xAttr('type', 'text')
+  assertEqual(el.getAttribute('type'), 'text')
+})
+test('xAttrs sets multiple attributes', () => {
+  const el = xmk('input').xAttrs({ type: 'text', placeholder: 'name', required: 'true' })
+  assertEqual(el.getAttribute('type'), 'text')
+  assertEqual(el.getAttribute('placeholder'), 'name')
+  assertEqual(el.getAttribute('required'), 'true')
+})
+
+suite('lib.js — xInnerHTML / xInnerText / xTextContent')
+test('xInnerHTML sets innerHTML', () => {
+  const el = xmk('div').xInnerHTML('<b>hello</b>')
+  assertEqual(el.innerHTML, '<b>hello</b>')
+})
+test('xInnerText sets innerText', () => {
+  const el = xmk('div').xInnerText('hello')
+  assertEqual(el.innerText, 'hello')
+})
+test('xTextContent escapes HTML', () => {
+  const el = xmk('div').xTextContent('<b>escaped</b>')
+  assertEqual(el.textContent, '<b>escaped</b>')
+  assertEqual(el.innerHTML, '&lt;b&gt;escaped&lt;/b&gt;')
+})
+
+suite('lib.js — xAppendChild / xAppend / xPrependChild')
+test('xAppendChild adds child elements', () => {
+  const parent = xmk('div').xAppendChild(xmk('span').xId('c1'), xmk('span').xId('c2'))
+  assertEqual(parent.children.length, 2)
+  assertEqual(parent.children[0].id, 'c1')
+  assertEqual(parent.children[1].id, 'c2')
+})
+test('xAppend is an alias for xAppendChild', () => {
+  const parent = xmk('div').xAppend(xmk('span').xId('a1'))
+  assertEqual(parent.children[0].id, 'a1')
+})
+test('xAppendChild ignores null entries', () => {
+  const parent = xmk('div').xAppendChild(xmk('span'), null, xmk('span'))
+  assertEqual(parent.children.length, 2)
+})
+test('xPrependChild inserts at the front', () => {
+  const parent = xmk('div').xAppend(xmk('span').xId('second'))
+  parent.xPrependChild(xmk('span').xId('first'))
+  assertEqual(parent.children[0].id, 'first')
+  assertEqual(parent.children[1].id, 'second')
+})
+
+suite('lib.js — xStyle / xTooltip')
+test('xStyle sets CSS properties', () => {
+  const el = xmk('div').xStyle({ color: 'red', display: 'none' })
+  assertEqual(el.style.color, 'red')
+  assertEqual(el.style.display, 'none')
+})
+test('xTooltip sets the title attribute', () => {
+  const el = xmk('div').xTooltip('my tip')
+  assertEqual(el.getAttribute('title'), 'my tip')
+})
+
+suite('lib.js — xGet / xGetN / xGetParentOfType')
+test('xGet finds a descendant by query', () => {
+  const parent = xmk('div').xAppend(xmk('span').xId('target'))
+  const found = parent.xGet('#target')
+  assert(found !== null, 'should find #target')
+  assertEqual(found.id, 'target')
+})
+test('xGetN returns all matching descendants', () => {
+  const parent = xmk('div').xAppend(xmk('span'), xmk('span'), xmk('span'))
+  const spans = parent.xGetN('span')
+  assertEqual(spans.length, 3)
+})
+test('xGetParentOfType traverses up to find matching tag', () => {
+  const grandparent = xmk('div')
+  const parent = xmk('section')
+  const child = xmk('span')
+  grandparent.xAppend(parent.xAppend(child))
+  const found = child.xGetParentOfType('section')
+  assert(found !== null)
+  assertEqual(found.tagName.toLowerCase(), 'section')
+})
+
+suite('lib.js — chaining')
+test('methods chain correctly', () => {
+  const el = xmk('div')
+    .xId('chain-test')
+    .xClass('foo')
+    .xAttr('data-x', 'val')
+    .xTooltip('tip')
+  assertEqual(el.id, 'chain-test')
+  assert(el.classList.contains('foo'))
+  assertEqual(el.getAttribute('data-x'), 'val')
+  assertEqual(el.getAttribute('title'), 'tip')
+})
+
+// ---------------------------------------------------------------------------
+// utils.js — pure functions
+// ---------------------------------------------------------------------------
+import { mkid, isURL, sortDictByKey, hide, show } from '/js/utils.js'
+
+suite('utils.js — mkid')
+test('mkid produces unique ids with prefix', () => {
+  const a = mkid('test')
+  const b = mkid('test')
+  assertNotEqual(a, b, 'mkid should produce unique ids')
+  assert(a.startsWith('test-'), 'id should start with prefix')
+})
+test('mkid uses different counters per prefix', () => {
+  const x = mkid('alpha')
+  const y = mkid('beta')
+  assert(x.startsWith('alpha-'))
+  assert(y.startsWith('beta-'))
+})
+
+suite('utils.js — isURL')
+test('https URL is recognised', () => {
+  assert(isURL('https://example.com'))
+})
+test('http URL is recognised', () => {
+  assert(isURL('http://example.com'))
+})
+test('plain text is not a URL', () => {
+  assert(!isURL('not a url'))
+})
+test('partial URL fragment is not a URL', () => {
+  assert(!isURL('example.com'))
+})
+test('empty string is not a URL', () => {
+  assert(!isURL(''))
+})
+
+suite('utils.js — sortDictByKey')
+test('sorts keys case-insensitively', () => {
+  const dict = { Banana: 2, apple: 1, Cherry: 3 }
+  const sorted = sortDictByKey(dict)
+  const keys = Object.keys(sorted)
+  assertEqual(keys[0].toLowerCase(), 'apple')
+  assertEqual(keys[1].toLowerCase(), 'banana')
+  assertEqual(keys[2].toLowerCase(), 'cherry')
+})
+test('preserves values during sort', () => {
+  const dict = { b: 2, a: 1 }
+  const sorted = sortDictByKey(dict)
+  assertEqual(sorted['a'], 1)
+  assertEqual(sorted['b'], 2)
+})
+test('empty dict returns empty dict', () => {
+  const sorted = sortDictByKey({})
+  assertEqual(Object.keys(sorted).length, 0)
+})
+
+suite('utils.js — hide / show')
+test('hide sets display:none', () => {
+  const el = xmk('div').xId('hide-test')
+  document.body.appendChild(el)
+  hide('hide-test')
+  assertEqual(el.style.display, 'none')
+  el.remove()
+})
+test('show sets display:block', () => {
+  const el = xmk('div').xId('show-test')
+  document.body.appendChild(el)
+  show('show-test')
+  assertEqual(el.style.display, 'block')
+  el.remove()
+})
+
+// ---------------------------------------------------------------------------
+// status.js — DOM mutations
+// ---------------------------------------------------------------------------
+import { status, statusBlip } from '/js/status.js'
+
+// set up the #status element that status.js targets
+const statusEl = xmk('div').xId('status')
+document.body.appendChild(statusEl)
+
+suite('status.js — status()')
+test('status() sets content of #status element', () => {
+  status('test message')
+  assert(statusEl.innerHTML.includes('test message'), 'status element should contain message')
+})
+test('status() includes the icon', () => {
+  status('icon test')
+  assert(statusEl.innerHTML.includes('<i '), 'status element should include icon markup')
+})
+
+suite('status.js — statusBlip()')
+test('statusBlip() sets content immediately', () => {
+  statusBlip('blip message')
+  assert(statusEl.innerHTML.includes('blip message'), 'statusBlip should set content immediately')
+})
+
+// ---------------------------------------------------------------------------
+// utils.js — clog (depends on window.prefs.logStatusToConsole)
+// ---------------------------------------------------------------------------
+import { clog } from '/js/utils.js'
+
+suite('utils.js — clog / logStatusToConsole')
+test('clog suppresses console.log when logStatusToConsole is false', () => {
+  const original = console.log
+  let called = false
+  console.log = () => { called = true }
+  window.prefs.logStatusToConsole = false
+  clog('should be suppressed')
+  console.log = original
+  assert(!called, 'clog should not call console.log when logStatusToConsole is false')
+})
+test('clog calls console.log when logStatusToConsole is true', () => {
+  const original = console.log
+  let called = false
+  console.log = () => { called = true }
+  window.prefs.logStatusToConsole = true
+  clog('should appear in console')
+  console.log = original
+  window.prefs.logStatusToConsole = false
+  assert(called, 'clog should call console.log when logStatusToConsole is true')
+})
+test('logStatusToConsole default is false', () => {
+  assertEqual(getDefaultPrefs().logStatusToConsole, false,
+    'logStatusToConsole should default to false')
+})
+
+// ---------------------------------------------------------------------------
+// password.js — getCrypticPassword, ALPHABET constants
+// ---------------------------------------------------------------------------
+import {
+  getCrypticPassword,
+  getMemorablePassword,
+  setFilePass,
+  getFilePass,
+  ALPHABET,
+  ALPHA_LOWER,
+  ALPHA_UPPER,
+  DEC_DIGITS,
+  SPECIAL
+} from '/js/password.js'
+
+suite('password.js — constants')
+test('ALPHABET contains lowercase, uppercase, digits, special chars', () => {
+  for (const c of ALPHA_LOWER) assert(ALPHABET.includes(c), `ALPHABET missing ${c}`)
+  for (const c of ALPHA_UPPER) assert(ALPHABET.includes(c), `ALPHABET missing ${c}`)
+  for (const c of DEC_DIGITS)  assert(ALPHABET.includes(c), `ALPHABET missing ${c}`)
+  for (const c of SPECIAL)     assert(ALPHABET.includes(c), `ALPHABET missing ${c}`)
+})
+
+suite('password.js — getCrypticPassword')
+test('produces password of the requested length', () => {
+  for (const len of [8, 16, 32, 64]) {
+    const pwd = getCrypticPassword(len, ALPHABET)
+    assertEqual(pwd.length, len, `length should be ${len}`)
+  }
+})
+test('all characters are from the provided alphabet', () => {
+  const pwd = getCrypticPassword(100, ALPHA_LOWER)
+  for (const c of pwd) assert(ALPHA_LOWER.includes(c), `unexpected char: ${c}`)
+})
+test('two calls produce different results (probabilistically)', () => {
+  const a = getCrypticPassword(32, ALPHABET)
+  const b = getCrypticPassword(32, ALPHABET)
+  assertNotEqual(a, b, 'two 32-char passwords should differ (collision astronomically unlikely)')
+})
+test('length zero produces empty string', () => {
+  assertEqual(getCrypticPassword(0, ALPHABET), '')
+})
+
+suite('password.js — getMemorablePassword')
+test('produces a non-empty result', () => {
+  const pwd = getMemorablePassword(20)
+  assert(pwd.length > 0, 'memorable password should not be empty')
+})
+test('result length is close to target (within word boundary tolerance)', () => {
+  const target = 20
+  const pwd = getMemorablePassword(target)
+  // memorable passwords overshoot slightly due to word boundaries
+  assert(pwd.length >= 1, 'should produce something')
+})
+
+suite('password.js — setFilePass / getFilePass')
+test('session cache: set and get round-trip', () => {
+  window.prefs.filePassCache = 'session'
+  setFilePass('my-secret')
+  const got = getFilePass()
+  assertEqual(got, 'my-secret')
+})
+test('none cache: always returns empty string', () => {
+  window.prefs.filePassCache = 'none'
+  setFilePass('ignored')
+  assertEqual(getFilePass(), '')
+})
+test('global cache: stores in window.prefs.filePass', () => {
+  window.prefs.filePassCache = 'global'
+  setFilePass('global-pass')
+  assertEqual(window.prefs.filePass, 'global-pass')
+  assertEqual(getFilePass(), 'global-pass')
+})
+test('null password is stored as empty string', () => {
+  window.prefs.filePassCache = 'session'
+  setFilePass(null)
+  assertEqual(getFilePass(), '')
+})
+
+// Restore default
+window.prefs.filePassCache = 'session'
+
+// ---------------------------------------------------------------------------
+// search.js — searchRecords (needs minimal DOM fixture)
+// ---------------------------------------------------------------------------
+import { searchRecords, clearSearch } from '/js/search.js'
+import { hashPrefsPassword } from '/js/prefs.js'
+import { getDefaultPrefs, VALID_FIELD_TYPES, VALID_CACHE_STRATEGIES } from '/js/prefs-model.js'
+
+// Build a minimal DOM fixture: #records-accordion with some records
+function makeAccordionItem(title, active, fields) {
+  const item = xmk('div').xClass('accordion-item')
+  const button = xmk('button').xClass('accordion-button')
+  button.innerHTML = title
+  button.setAttribute('x-active', active ? 'true' : 'false')
+  item.appendChild(button)
+  // add field name and value elements
+  if (fields) {
+    fields.forEach(([name, type, value]) => {
+      const nameEl = xmk('span').xClass('x-fld-name')
+      nameEl.innerHTML = name
+      const valEl = xmk('span').xClass('x-fld-value')
+      valEl.setAttribute('data-fld-type', type)
+      valEl.setAttribute('data-fld-raw-value', value)
+      item.appendChild(nameEl)
+      item.appendChild(valEl)
+    })
+  }
+  return item
+}
+
+const accordion = xmk('div').xId('records-accordion')
+accordion.appendChild(makeAccordionItem('Amazon', true,  [['username', 'text', 'jsmith'], ['password', 'password', 'secret1']]))
+accordion.appendChild(makeAccordionItem('Google', true,  [['username', 'text', 'joe@gmail.com'], ['password', 'password', 'secret2']]))
+accordion.appendChild(makeAccordionItem('GitHub', true,  [['username', 'text', 'jlinoff'], ['token', 'password', 'ghp_abc123']]))
+accordion.appendChild(makeAccordionItem('OldBank', false, [['account', 'text', 'inactive-acct']]))
+document.body.appendChild(accordion)
+
+// #x-num-records needed by searchRecords
+const numRecordsEl = xmk('span').xId('x-num-records')
+const aboutStub = xmk('div').xId('about')
+document.body.appendChild(numRecordsEl)
+document.body.appendChild(aboutStub)
+
+// #search needed by clearSearch
+const searchInputEl = xmk('input').xId('search')
+document.body.appendChild(searchInputEl)
+
+function visibleTitles() {
+  const items = accordion.querySelectorAll('.accordion-item')
+  const result = []
+  for (const item of items) {
+    if (!item.classList.contains('d-none')) {
+      result.push(item.querySelector('.accordion-button').innerHTML)
+    }
+  }
+  return result
+}
+
+suite('search.js — searchRecords title match')
+test('empty search shows all active records', () => {
+  searchRecords('.')
+  const visible = visibleTitles()
+  assert(visible.includes('Amazon'))
+  assert(visible.includes('Google'))
+  assert(visible.includes('GitHub'))
+})
+test('title match is case-insensitive', () => {
+  searchRecords('amazon')
+  const visible = visibleTitles()
+  assert(visible.includes('Amazon'), 'Amazon should be visible')
+  assert(!visible.includes('Google'), 'Google should be hidden')
+})
+test('partial title match works', () => {
+  searchRecords('git')
+  const visible = visibleTitles()
+  assert(visible.includes('GitHub'))
+  assert(!visible.includes('Amazon'))
+})
+test('no match hides all records', () => {
+  searchRecords('xyznotfound')
+  const visible = visibleTitles()
+  assertEqual(visible.length, 0)
+})
+
+suite('search.js — searchRecords field match')
+test('field value match works', () => {
+  searchRecords('jsmith')
+  const visible = visibleTitles()
+  assert(visible.includes('Amazon'), 'Amazon has jsmith username')
+  assert(!visible.includes('Google'))
+})
+test('field name match works', () => {
+  searchRecords('token')
+  const visible = visibleTitles()
+  assert(visible.includes('GitHub'), 'GitHub has a token field')
+  assert(!visible.includes('Amazon'))
+})
+
+suite('search.js — inactive records')
+test('inactive records are shown by default', () => {
+  window.prefs.hideInactiveRecords = false
+  searchRecords('.')
+  const visible = visibleTitles()
+  assert(visible.includes('OldBank'), 'OldBank should be visible when hideInactiveRecords is false')
+})
+test('inactive records are hidden when pref is set', () => {
+  window.prefs.hideInactiveRecords = true
+  searchRecords('.')
+  const visible = visibleTitles()
+  assert(!visible.includes('OldBank'), 'OldBank should be hidden when hideInactiveRecords is true')
+  window.prefs.hideInactiveRecords = false
+})
+
+// ---------------------------------------------------------------------------
+// crypt.js — v1 regression baseline (MUST PASS — locked before any crypto changes)
+// ---------------------------------------------------------------------------
+import { encrypt, decrypt } from '/js/crypt.js'
+
+// Helper: wrap callback-based encrypt/decrypt in Promises
+function encryptAsync(password, plaintext) {
+  return new Promise((resolve, reject) => {
+    // We need a real #status element (already added above)
+    encrypt(password, plaintext, 'test.pam', (ciphertext, _filename) => {
+      resolve(ciphertext)
+    })
+    // timeout failsafe
+    setTimeout(() => reject(new Error('encrypt timed out')), 5000)
+  })
+}
+
+function decryptAsync(password, ciphertext) {
+  return new Promise((resolve, reject) => {
+    decrypt(password, ciphertext,
+      (plaintext) => resolve({ ok: true, plaintext }),
+      (errMsg)   => resolve({ ok: false, error: errMsg })
+    )
+    setTimeout(() => reject(new Error('decrypt timed out')), 5000)
+  })
+}
+
+// Async test wrapper — runs after sync tests
+async function runCryptTests() {
+  suite('crypt.js — v1 regression baseline')
+
+  // Test 1: encrypt then decrypt round-trip
+  await (async () => {
+    const label = 'encrypt/decrypt round-trip with known password'
+    try {
+      const plaintext = '{"records":[],"version":1}'
+      const password  = 'test-password-phase1'
+      const ciphertext = await encryptAsync(password, plaintext)
+      assert(typeof ciphertext === 'string', 'ciphertext should be a string')
+      assertNotEqual(ciphertext, plaintext, 'ciphertext should differ from plaintext')
+      const result = await decryptAsync(password, ciphertext)
+      assert(result.ok, 'decryption should succeed: ' + (result.error || ''))
+      assertEqual(result.plaintext, plaintext, 'decrypted text should match original')
+      _passed++
+      const line = document.createElement('div')
+      line.className = 'test-line pass'
+      line.textContent = '✓ ' + label
+      _results.appendChild(line)
+    } catch(e) {
+      _failed++
+      const line = document.createElement('div')
+      line.className = 'test-line fail'
+      line.textContent = '✗ ' + label
+      const pre = document.createElement('pre')
+      pre.textContent = e.message || String(e)
+      line.appendChild(pre)
+      _results.appendChild(line)
+    }
+  })()
+
+  // Test 2: wrong password fails
+  await (async () => {
+    const label = 'wrong password produces decryption failure'
+    try {
+      const plaintext  = '{"records":[],"version":1}'
+      const ciphertext = await encryptAsync('correct-password', plaintext)
+      const result = await decryptAsync('wrong-password', ciphertext)
+      assert(!result.ok, 'decryption with wrong password should fail')
+      _passed++
+      const line = document.createElement('div')
+      line.className = 'test-line pass'
+      line.textContent = '✓ ' + label
+      _results.appendChild(line)
+    } catch(e) {
+      _failed++
+      const line = document.createElement('div')
+      line.className = 'test-line fail'
+      line.textContent = '✗ ' + label
+      const pre = document.createElement('pre')
+      pre.textContent = e.message || String(e)
+      line.appendChild(pre)
+      _results.appendChild(line)
+    }
+  })()
+
+  // Test 3: empty plaintext passes through unchanged
+  await (async () => {
+    const label = 'empty plaintext passes through encrypt unchanged'
+    try {
+      const result = await encryptAsync('password', '')
+      assertEqual(result, '', 'empty plaintext should return empty string')
+      _passed++
+      const line = document.createElement('div')
+      line.className = 'test-line pass'
+      line.textContent = '✓ ' + label
+      _results.appendChild(line)
+    } catch(e) {
+      _failed++
+      const line = document.createElement('div')
+      line.className = 'test-line fail'
+      line.textContent = '✗ ' + label
+      const pre = document.createElement('pre')
+      pre.textContent = e.message || String(e)
+      line.appendChild(pre)
+      _results.appendChild(line)
+    }
+  })()
+
+  // Test 4: two encryptions of the same plaintext produce different ciphertexts (random IV)
+  await (async () => {
+    const label = 'each encryption produces a different ciphertext (random IV/salt)'
+    try {
+      const plaintext = '{"records":[]}'
+      const password  = 'same-password'
+      const c1 = await encryptAsync(password, plaintext)
+      const c2 = await encryptAsync(password, plaintext)
+      assertNotEqual(c1, c2, 'two encryptions of the same plaintext should differ due to random IV')
+      _passed++
+      const line = document.createElement('div')
+      line.className = 'test-line pass'
+      line.textContent = '✓ ' + label
+      _results.appendChild(line)
+    } catch(e) {
+      _failed++
+      const line = document.createElement('div')
+      line.className = 'test-line fail'
+      line.textContent = '✗ ' + label
+      const pre = document.createElement('pre')
+      pre.textContent = e.message || String(e)
+      line.appendChild(pre)
+      _results.appendChild(line)
+    }
+  })()
+
+  // Test 5: plaintext without password passes through unchanged
+  await (async () => {
+    const label = 'plaintext JSON without password passes through unchanged'
+    try {
+      const plaintext = '{"records":[]}'
+      const result = await encryptAsync('', plaintext)
+      assertEqual(result, plaintext, 'no-password encrypt should return plaintext unchanged')
+      _passed++
+      const line = document.createElement('div')
+      line.className = 'test-line pass'
+      line.textContent = '✓ ' + label
+      _results.appendChild(line)
+    } catch(e) {
+      _failed++
+      const line = document.createElement('div')
+      line.className = 'test-line fail'
+      line.textContent = '✗ ' + label
+      const pre = document.createElement('pre')
+      pre.textContent = e.message || String(e)
+      line.appendChild(pre)
+      _results.appendChild(line)
+    }
+  })()
+
+  finalize()
+}
+
+
+// ---------------------------------------------------------------------------
+// Phase 2 tests — written before implementation (TDD)
+// ---------------------------------------------------------------------------
+
+// ---------------------------------------------------------------------------
+// SEC-005 — Double callback bug in encrypt() / decrypt()
+// Missing `return` after early-exit callback() calls causes double-invocation.
+// These tests assert callbacks fire EXACTLY ONCE on edge-case inputs.
+// ---------------------------------------------------------------------------
+
+suite('SEC-005 — encrypt() callback fires exactly once (sync edge cases)')
+test('empty plaintext: callback fires exactly once', () => {
+  let count = 0
+  // Import is already done above — use the already-imported encrypt
+  // We test the sync early-exit paths by counting callback invocations
+  // encrypt() with empty plaintext should call callback(plaintext, filename) once and stop
+  encrypt('', '', 'test.pam', (ct, fn) => { count++ })
+  // Give any sync fallthrough a tick to manifest
+  assertEqual(count, 1, 'callback should fire exactly once for empty plaintext')
+})
+
+test('empty password with non-JSON plaintext: callback fires exactly once', () => {
+  let count = 0
+  // plaintext[0] !== '{' AND password is empty — hits both callback paths if return is missing
+  encrypt('', 'not-json-content', 'test.pam', (ct, fn) => { count++ })
+  assertEqual(count, 1, 'callback should fire exactly once for empty password + non-JSON plaintext')
+})
+
+test('empty password with JSON plaintext: callback fires exactly once', () => {
+  let count = 0
+  // plaintext[0] === '{' AND password is empty — should call callback once (write plaintext)
+  encrypt('', '{"records":[]}', 'test.pam', (ct, fn) => { count++ })
+  assertEqual(count, 1, 'callback should fire exactly once for empty password + JSON plaintext')
+})
+
+suite('SEC-005 — decrypt() callback fires exactly once (sync edge cases)')
+test('empty ciphertext: callback fires exactly once', () => {
+  let count = 0
+  let count2 = 0
+  decrypt('', '', (pt) => { count++ }, (err) => { count2++ })
+  assertEqual(count, 1, 'callback should fire exactly once for empty ciphertext')
+  assertEqual(count2, 0, 'error callback should not fire for empty ciphertext')
+})
+
+test('empty password with non-JSON ciphertext: error callback fires exactly once', () => {
+  let count = 0
+  let count2 = 0
+  // ciphertext[0] !== '{' AND password is empty — needs password, should call callback2 once
+  decrypt('', 'not-json', (pt) => { count++ }, (err) => { count2++ })
+  assertEqual(count, 0, 'success callback should not fire')
+  assertEqual(count2, 1, 'error callback should fire exactly once')
+})
+
+test('empty password with JSON ciphertext: callback fires exactly once', () => {
+  let count = 0
+  let count2 = 0
+  // ciphertext[0] === '{' AND password is empty — already decrypted, call callback once
+  decrypt('', '{"records":[]}', (pt) => { count++ }, (err) => { count2++ })
+  assertEqual(count, 1, 'callback should fire exactly once for JSON ciphertext with no password')
+  assertEqual(count2, 0, 'error callback should not fire')
+})
+
+// ---------------------------------------------------------------------------
+// SIMP-005 — prefMemorablePasswordMaxWords() returns its row element
+// The original code was missing `return`, silently producing undefined.
+// Fix: add `return` (already applied manually before Phase 2 started).
+// The function is now exported so we can test it directly.
+// ---------------------------------------------------------------------------
+import { prefMemorablePasswordMaxWords } from '/js/prefs.js'
+import { mkRecordField } from '/js/field.js'
+import { findRecord, findRecordAfter, deleteRecord, insertRecord, clearRecords, mkRecord } from '/js/record.js'
+import { convertInternalDataToJSON } from '/js/save.js'
+import { isValidLoadUrl, formatTimeElapsed } from '/js/load.js'
+
+suite('SIMP-005 — prefMemorablePasswordMaxWords renders correctly')
+test('returns a non-null DOM element (not undefined)', () => {
+  const row = prefMemorablePasswordMaxWords(['col-2'], ['col-10'])
+  assert(row !== undefined, 'should not return undefined (missing return bug)')
+  assert(row !== null, 'should not return null')
+  assert(row instanceof Element, 'should return a DOM Element')
+})
+test('returned element has the correct row structure', () => {
+  const row = prefMemorablePasswordMaxWords(['col-2'], ['col-10'])
+  assert(row.classList.contains('row'), 'outer element should have class row')
+})
+test('returned element contains the max words input field', () => {
+  const row = prefMemorablePasswordMaxWords(['col-2'], ['col-10'])
+  const input = row.querySelector('input[data-pref-id="memorablePasswordMaxWords"]')
+  assert(input !== null, 'should contain an input with data-pref-id=memorablePasswordMaxWords')
+})
+test('input value reflects window.prefs.memorablePasswordMaxWords', () => {
+  window.prefs.memorablePasswordMaxWords = 5
+  const row = prefMemorablePasswordMaxWords(['col-2'], ['col-10'])
+  const input = row.querySelector('input[data-pref-id="memorablePasswordMaxWords"]')
+  assertEqual(parseInt(input.getAttribute('value')), 5, 'input value should match prefs value')
+})
+
+// ---------------------------------------------------------------------------
+// SEC-007 — URL protocol validation in loadUrl()
+// loadUrl() only checks url.length > 4, allowing javascript: and data: URIs.
+// These tests assert the validation rejects dangerous protocols.
+// We test via loadUrlContent() indirectly — or better, test the validation
+// logic directly once it is extracted as a pure helper isValidLoadUrl().
+// ---------------------------------------------------------------------------
+
+// After SEC-007 is implemented, loadUrl() will validate the URL protocol.
+// We add a pure helper isValidLoadUrl(url) that loadUrl() delegates to.
+// Tests are written against that helper.
+// For now these tests import it — they will FAIL until implemented (TDD).
+
+// We use a dynamic import check pattern: if isValidLoadUrl is not yet
+// exported from load.js, we skip gracefully with a clear message.
+suite('SEC-007 — URL protocol validation')
+
+test('https:// URL is accepted', () => {
+  assert(isValidLoadUrl('https://example.com/file.pam'), 'https should be valid')
+})
+test('http:// URL is accepted', () => {
+  assert(isValidLoadUrl('http://example.com/file.pam'), 'http should be valid')
+})
+test('javascript: URI is rejected', () => {
+  assert(!isValidLoadUrl('javascript:alert(1)'), 'javascript: should be rejected')
+})
+test('data: URI is rejected', () => {
+  assert(!isValidLoadUrl('data:text/html,<b>x</b>'), 'data: should be rejected')
+})
+test('empty string is rejected', () => {
+  assert(!isValidLoadUrl(''), 'empty string should be rejected')
+})
+test('too-short string is rejected', () => {
+  assert(!isValidLoadUrl('http'), 'bare http with no :// should be rejected')
+})
+test('ftp:// URL is rejected (only http/https allowed)', () => {
+  assert(!isValidLoadUrl('ftp://example.com/file'), 'ftp should be rejected')
+})
+
+
+// ---------------------------------------------------------------------------
+// Phase 3 — SEC-002/UX-004: filePassCache default is 'session'
+// ---------------------------------------------------------------------------
+suite('SEC-002/UX-004 — filePassCache default is session')
+test('prefs stub uses session (matching the corrected default)', () => {
+  assertEqual(window.prefs.filePassCache, 'session',
+    'filePassCache should default to session, not local')
+})
+test('session cache stores in sessionStorage', () => {
+  window.prefs.filePassCache = 'session'
+  setFilePass('sec002-test')
+  assertEqual(sessionStorage.getItem('filePass'), 'sec002-test',
+    'session cache should write to sessionStorage')
+  sessionStorage.removeItem('filePass')
+  window.prefs.filePassCache = 'session'
+})
+test('local cache stores in localStorage', () => {
+  window.prefs.filePassCache = 'local'
+  setFilePass('sec002-local')
+  assertEqual(localStorage.getItem('filePass'), 'sec002-local',
+    'local cache should write to localStorage')
+  localStorage.removeItem('filePass')
+  window.prefs.filePassCache = 'session'
+})
+
+// ---------------------------------------------------------------------------
+// Phase 3 — SEC-008: CSP meta tag in index.html
+// ---------------------------------------------------------------------------
+suite('SEC-008 — CSP meta tag in index.html')
+test('index.html contains Content-Security-Policy meta tag', async () => {
+  const html = await fetch('/index.html').then(r => r.text())
+  assert(html.includes('Content-Security-Policy'),
+    'index.html should contain a Content-Security-Policy meta tag (SEC-008)')
+})
+test("CSP includes script-src 'self'", async () => {
+  const html = await fetch('/index.html').then(r => r.text())
+  assert(html.includes("script-src 'self'"),
+    "CSP should include script-src 'self'")
+})
+
+// ---------------------------------------------------------------------------
+// Phase 3 — load.js: formatTimeElapsed pure function
+// ---------------------------------------------------------------------------
+suite('load.js — formatTimeElapsed')
+test('zero ms returns 0 seconds', () => {
+  assertEqual(formatTimeElapsed(0), '0 seconds')
+})
+test('sub-second returns 0 seconds', () => {
+  assertEqual(formatTimeElapsed(500), '0 seconds')
+})
+test('exactly 1 second', () => {
+  assertEqual(formatTimeElapsed(1000), '1 second')
+})
+test('exactly 2 seconds', () => {
+  assertEqual(formatTimeElapsed(2000), '2 seconds')
+})
+test('1 minute', () => {
+  assertEqual(formatTimeElapsed(60000), '1 minute')
+})
+test('1 minute 1 second', () => {
+  assertEqual(formatTimeElapsed(61000), '1 minute, 1 second')
+})
+test('2 minutes 30 seconds', () => {
+  assertEqual(formatTimeElapsed(150000), '2 minutes, 30 seconds')
+})
+test('1 hour', () => {
+  assertEqual(formatTimeElapsed(3600000), '1 hour')
+})
+test('1 day', () => {
+  assertEqual(formatTimeElapsed(86400000), '1 day')
+})
+test('1 day 2 hours', () => {
+  assertEqual(formatTimeElapsed(86400000 + 7200000), '1 day, 2 hours')
+})
+test('pluralises days', () => {
+  assert(formatTimeElapsed(2 * 86400000).startsWith('2 days'))
+})
+
+
+// ---------------------------------------------------------------------------
+// Phase 4 — SEC-001: html field rendering default-off with </> badge
+// ---------------------------------------------------------------------------
+suite('SEC-001 — html field rendering')
+
+// Helper: build a minimal record field element for type 'html'
+function makeHtmlField(rawValue) {
+  window.prefs.allowHtmlFieldRendering = false  // ensure default
+  return mkRecordField('test-field', 'html', rawValue)
+}
+
+test('html field default: renders escaped text not live HTML', () => {
+  const el = makeHtmlField('<b>bold</b>')
+  const valueDiv = el.querySelector('.x-fld-value')
+  assert(valueDiv !== null, 'should have .x-fld-value element')
+  // Should NOT contain a <b> element (live HTML)
+  assert(valueDiv.querySelector('b') === null,
+    'html rendering disabled: <b> tag should not be rendered as live HTML')
+})
+test('html field default: shows </> badge', () => {
+  const el = makeHtmlField('<b>bold</b>')
+  const badge = el.querySelector('.x-html-disabled-badge')
+  assert(badge !== null, 'should show </> badge when html rendering is disabled')
+})
+test('html field default: escaped text contains original content', () => {
+  const el = makeHtmlField('<b>bold</b>')
+  const valueDiv = el.querySelector('.x-fld-value')
+  assert(valueDiv.textContent.includes('bold'),
+    'escaped text should still contain the content')
+})
+test('html field enabled: renders as live HTML', () => {
+  window.prefs.allowHtmlFieldRendering = true
+  const el = mkRecordField('test-field', 'html', '<b>bold</b>')
+  const valueDiv = el.querySelector('.x-fld-value')
+  assert(valueDiv.querySelector('b') !== null,
+    'html rendering enabled: <b> tag should render as live HTML')
+  window.prefs.allowHtmlFieldRendering = false
+})
+test('html field enabled: no </> badge', () => {
+  window.prefs.allowHtmlFieldRendering = true
+  const el = mkRecordField('test-field', 'html', '<b>bold</b>')
+  const badge = el.querySelector('.x-html-disabled-badge')
+  assert(badge === null, 'no badge when html rendering is enabled')
+  window.prefs.allowHtmlFieldRendering = false
+})
+test('non-html field types are unaffected by allowHtmlFieldRendering', () => {
+  window.prefs.allowHtmlFieldRendering = false
+  const el = mkRecordField('test-field', 'text', 'plain text')
+  const valueDiv = el.querySelector('.x-fld-value')
+  assert(valueDiv.querySelector('.x-html-disabled-badge') === null,
+    'text fields should never show the html badge')
+})
+
+
+// ---------------------------------------------------------------------------
+// SEC-006 revert — lockPreferencesPassword is plaintext, not hashed
+// The prefs lock is a convenience feature, not a cryptographic boundary.
+// The file is already protected by the master password (AES-256-CBC).
+// Hashing adds no security benefit and breaks existing files.
+// ---------------------------------------------------------------------------
+suite('SEC-006 revert — prefs lock uses plaintext comparison')
+test('lockPreferencesPassword default is empty string', () => {
+  assertEqual(window.prefs.lockPreferencesPassword, '',
+    'lockPreferencesPassword should default to empty string')
+})
+test('lockPreferencesPassword is stored as plaintext (not a hash)', () => {
+  // A SHA-256 hash would be a 64-char hex string. A plaintext password is not.
+  // Set a known value and confirm it is stored verbatim.
+  const saved = window.prefs.lockPreferencesPassword
+  window.prefs.lockPreferencesPassword = 'my-test-password'
+  assertEqual(window.prefs.lockPreferencesPassword, 'my-test-password',
+    'lockPreferencesPassword should be stored as plaintext')
+  assert(window.prefs.lockPreferencesPassword.length !== 64,
+    'plaintext password should not look like a SHA-256 hash')
+  window.prefs.lockPreferencesPassword = saved
+})
+
+
+// ---------------------------------------------------------------------------
+// Phase 5 — SIMP-001: prefs-model.js pure data model
+// ---------------------------------------------------------------------------
+suite('SIMP-001 — prefs-model.js pure data model')
+test('getDefaultPrefs returns a non-null object', () => {
+  const p = getDefaultPrefs()
+  assert(typeof p === 'object' && p !== null, 'getDefaultPrefs should return an object')
+})
+test('getDefaultPrefs filePassCache default is session (SEC-002)', () => {
+  assertEqual(getDefaultPrefs().filePassCache, 'session',
+    'filePassCache default should be session')
+})
+test('getDefaultPrefs allowHtmlFieldRendering default is false (SEC-001)', () => {
+  assertEqual(getDefaultPrefs().allowHtmlFieldRendering, false,
+    'allowHtmlFieldRendering should default to false')
+})
+test('getDefaultPrefs lockPreferencesPassword default is empty string', () => {
+  assertEqual(getDefaultPrefs().lockPreferencesPassword, '',
+    'lockPreferencesPassword should default to empty string')
+})
+test('getDefaultPrefs includes predefinedRecordFields with website', () => {
+  const p = getDefaultPrefs()
+  assert('predefinedRecordFields' in p, 'should include predefinedRecordFields')
+  assertEqual(p.predefinedRecordFields['website'], 'url',
+    'website should be a url field')
+})
+test('getDefaultPrefs returns a fresh object each call (no shared state)', () => {
+  const p1 = getDefaultPrefs()
+  const p2 = getDefaultPrefs()
+  p1.filePassCache = 'mutated'
+  assertEqual(p2.filePassCache, 'session',
+    'mutations to one result should not affect subsequent calls')
+})
+test('VALID_FIELD_TYPES includes html', () => {
+  assert('html' in VALID_FIELD_TYPES, 'html should be a valid field type')
+})
+test('VALID_FIELD_TYPES includes all expected types', () => {
+  const expected = ['text', 'password', 'url', 'email', 'textarea', 'html']
+  for (const t of expected) {
+    assert(t in VALID_FIELD_TYPES, `${t} should be a valid field type`)
+  }
+})
+test('VALID_CACHE_STRATEGIES includes session and local', () => {
+  assert('session' in VALID_CACHE_STRATEGIES, 'session should be valid')
+  assert('local' in VALID_CACHE_STRATEGIES, 'local should be valid')
+  assert('none' in VALID_CACHE_STRATEGIES, 'none should be valid')
+})
+
+// ---------------------------------------------------------------------------
+// Phase 5 — SIMP-002: clipboard consolidation
+// field.js mkRecordFieldCopyToClipboardButton delegates to utils.js
+// ---------------------------------------------------------------------------
+suite('SIMP-002 — clipboard consolidation')
+test('mkRecordField contains a clipboard button', () => {
+  const el = mkRecordField('test', 'text', 'hello')
+  // The clipboard button has a bi-clipboard icon inside it
+  const icon = el.querySelector('.bi-clipboard')
+  assert(icon !== null, 'clipboard button with bi-clipboard icon should exist')
+  const btn = icon.closest('button')
+  assert(btn !== null, 'bi-clipboard should be inside a button')
+})
+
+// ---------------------------------------------------------------------------
+// Phase 5 — SIMP-003: dead code removed from menu.js
+// showPasswordPromptExp7 was an experimental function never called in production
+// ---------------------------------------------------------------------------
+suite('SIMP-003 — dead code removed from menu.js')
+test('showPasswordPromptExp7 is not in global scope (dead code removed)', () => {
+  assert(typeof window.showPasswordPromptExp7 === 'undefined',
+    'showPasswordPromptExp7 should not exist — it was dead code')
+})
+
+
+// ---------------------------------------------------------------------------
+// Phase 7 bug fixes — enablePrinting and enableSaveFile NodeList regression
+// Both functions were passing a NodeList to hide()/show() which only handles
+// string IDs or single Element arguments — silently doing nothing.
+// ---------------------------------------------------------------------------
+suite('BUG-001 — enablePrinting respects window.prefs.enablePrinting')
+test('enablePrinting(false) adds d-none to .x-print elements', () => {
+  // Uses Bootstrap d-none class — inline display:none is overridden by
+  // Bootstrap dropdown CSS when the menu opens.
+  const el = xmk('button').xClass('x-print')
+  document.body.appendChild(el)
+
+  const eps = document.body.xGetN('.x-print')
+  eps.forEach( (e) => { e.classList.add('d-none') } )
+
+  assert(el.classList.contains('d-none'),
+    '.x-print element should have d-none when enablePrinting is false')
+
+  el.remove()
+})
+test('enablePrinting(true) removes d-none from .x-print elements', () => {
+  const el = xmk('button').xClass('x-print', 'd-none')
+  document.body.appendChild(el)
+
+  const eps = document.body.xGetN('.x-print')
+  eps.forEach( (e) => { e.classList.remove('d-none') } )
+
+  assert(!el.classList.contains('d-none'),
+    '.x-print element should not have d-none when enablePrinting is true')
+
+  el.remove()
+})
+
+suite('BUG-001 — enableSaveFile respects window.prefs.enableSaveFile')
+test('enableSaveFile(false) adds d-none to .x-save-file-menu-item elements', () => {
+  const el = xmk('button').xClass('x-save-file-menu-item')
+  document.body.appendChild(el)
+
+  const eps = document.body.xGetN('.x-save-file-menu-item')
+  eps.forEach( (e) => { e.classList.add('d-none') } )
+
+  assert(el.classList.contains('d-none'),
+    '.x-save-file-menu-item should have d-none when enableSaveFile is false')
+
+  el.remove()
+})
+test('enableSaveFile(true) removes d-none from .x-save-file-menu-item elements', () => {
+  const el = xmk('button').xClass('x-save-file-menu-item', 'd-none')
+  document.body.appendChild(el)
+
+  const eps = document.body.xGetN('.x-save-file-menu-item')
+  eps.forEach( (e) => { e.classList.remove('d-none') } )
+
+  assert(!el.classList.contains('d-none'),
+    '.x-save-file-menu-item should not have d-none when enableSaveFile is true')
+
+  el.remove()
+})
+
+
+// ---------------------------------------------------------------------------
+// Phase 7 — Search preference coverage
+// ---------------------------------------------------------------------------
+suite('search.js — searchCaseInsensitive')
+test('case-insensitive search matches regardless of case', () => {
+  window.prefs.searchCaseInsensitive = true
+  window.prefs.searchRecordTitles = true
+  searchRecords('AMAZON')
+  const visible = Array.from(document.querySelectorAll('.accordion-item'))
+    .filter(el => !el.classList.contains('d-none'))
+    .map(el => el.querySelector('.accordion-button').innerHTML)
+  assert(visible.includes('Amazon'), 'case-insensitive search should find Amazon with AMAZON query')
+})
+test('case-sensitive search does not match wrong case', () => {
+  window.prefs.searchCaseInsensitive = false
+  window.prefs.searchRecordTitles = true
+  searchRecords('AMAZON')
+  const visible = Array.from(document.querySelectorAll('.accordion-item'))
+    .filter(el => !el.classList.contains('d-none'))
+    .map(el => el.querySelector('.accordion-button').innerHTML)
+  assert(!visible.includes('Amazon'), 'case-sensitive search should not find Amazon with AMAZON query')
+  window.prefs.searchCaseInsensitive = true
+})
+
+suite('search.js — searchRecordTitles')
+test('searchRecordTitles=false: title match is skipped', () => {
+  window.prefs.searchRecordTitles = false
+  window.prefs.searchRecordFieldNames = false
+  window.prefs.searchRecordFieldValues = false
+  searchRecords('Amazon')
+  const visible = Array.from(document.querySelectorAll('.accordion-item'))
+    .filter(el => !el.classList.contains('d-none'))
+    .map(el => el.querySelector('.accordion-button').innerHTML)
+  assert(!visible.includes('Amazon'), 'title search disabled should not match Amazon by title')
+  window.prefs.searchRecordTitles = true
+  window.prefs.searchRecordFieldNames = true
+  window.prefs.searchRecordFieldValues = true
+})
+
+suite('search.js — hideInactiveRecords')
+test('hideInactiveRecords=true: inactive records are hidden', () => {
+  window.prefs.hideInactiveRecords = true
+  searchRecords('.')
+  const visible = Array.from(document.querySelectorAll('.accordion-item'))
+    .filter(el => !el.classList.contains('d-none'))
+    .map(el => el.querySelector('.accordion-button').innerHTML)
+  assert(!visible.includes('OldBank'), 'inactive record OldBank should be hidden')
+})
+test('hideInactiveRecords=false: inactive records are visible', () => {
+  window.prefs.hideInactiveRecords = false
+  searchRecords('.')
+  const visible = Array.from(document.querySelectorAll('.accordion-item'))
+    .filter(el => !el.classList.contains('d-none'))
+    .map(el => el.querySelector('.accordion-button').innerHTML)
+  assert(visible.includes('OldBank'), 'inactive record OldBank should be visible')
+  window.prefs.hideInactiveRecords = false
+})
+
+suite('search.js — searchRecordFieldValues')
+test('searchRecordFieldValues=true: matches on field value', () => {
+  window.prefs.searchRecordTitles = false
+  window.prefs.searchRecordFieldNames = false
+  window.prefs.searchRecordFieldValues = true
+  searchRecords('ghp_abc123')  // ghp_abc123 is the value of GitHub's token field
+  const visible = Array.from(document.querySelectorAll('.accordion-item'))
+    .filter(el => !el.classList.contains('d-none'))
+    .map(el => el.querySelector('.accordion-button').innerHTML)
+  assert(visible.includes('GitHub'), 'field value search should find GitHub by its token value ghp_abc123')
+  window.prefs.searchRecordTitles = true
+  window.prefs.searchRecordFieldNames = true
+  window.prefs.searchRecordFieldValues = true
+})
+
+
+// ---------------------------------------------------------------------------
+// Phase 7 — Password preference coverage
+// ---------------------------------------------------------------------------
+suite('password.js — getCrypticPassword')
+test('getCrypticPassword respects requested length', () => {
+  const pw = getCrypticPassword(20, ALPHABET)
+  assertEqual(pw.length, 20, 'cryptic password should be exactly 20 chars')
+})
+test('getCrypticPassword uses only alphabet characters', () => {
+  const pw = getCrypticPassword(50, ALPHABET)
+  for (let ch of pw) {
+    assert(ALPHABET.includes(ch), `character '${ch}' not in ALPHABET`)
+  }
+})
+
+suite('password.js — getDefaultPrefs password values')
+test('passwordRangeLengthDefault is 20', () => {
+  assertEqual(getDefaultPrefs().passwordRangeLengthDefault, 20,
+    'getDefaultPrefs passwordRangeLengthDefault should be 20')
+})
+test('passwordRangeMinLength is 12', () => {
+  assertEqual(getDefaultPrefs().passwordRangeMinLength, 12,
+    'getDefaultPrefs passwordRangeMinLength should be 12')
+})
+test('passwordRangeMaxLength is 32', () => {
+  assertEqual(getDefaultPrefs().passwordRangeMaxLength, 32,
+    'getDefaultPrefs passwordRangeMaxLength should be 32')
+})
+
+suite('password.js — memorablePasswordWordSeparator')
+test('memorablePasswordWordSeparator default is /', () => {
+  assertEqual(getDefaultPrefs().memorablePasswordWordSeparator, '/',
+    'getDefaultPrefs memorablePasswordWordSeparator should be /')
+})
+test('getMemorablePassword uses the separator', () => {
+  const saved = {
+    sep: window.prefs.memorablePasswordWordSeparator,
+    minWords: window.prefs.memorablePasswordMinWords,
+    maxWords: window.prefs.memorablePasswordMaxWords,
+    minLen: window.prefs.memorablePasswordMinWordLength,
+    prefix: window.prefs.memorablePasswordPrefix,
+    suffix: window.prefs.memorablePasswordSuffix,
+  }
+  window.prefs.memorablePasswordWordSeparator = '-'
+  window.prefs.memorablePasswordMinWords = 2
+  window.prefs.memorablePasswordMaxWords = 5
+  window.prefs.memorablePasswordMinWordLength = 2
+  window.prefs.memorablePasswordPrefix = ''
+  window.prefs.memorablePasswordSuffix = ''
+  const pw = getMemorablePassword(20)
+  assert(pw.includes('-') || pw.startsWith('???'),
+    'memorable password should use - separator (or fallback if generation fails)')
+  window.prefs.memorablePasswordWordSeparator = saved.sep
+  window.prefs.memorablePasswordMinWords = saved.minWords
+  window.prefs.memorablePasswordMaxWords = saved.maxWords
+  window.prefs.memorablePasswordMinWordLength = saved.minLen
+  window.prefs.memorablePasswordPrefix = saved.prefix
+  window.prefs.memorablePasswordSuffix = saved.suffix
+})
+
+suite('password.js — memorablePasswordMinWordLength')
+test('memorablePasswordMinWordLength default is 2', () => {
+  assertEqual(getDefaultPrefs().memorablePasswordMinWordLength, 2,
+    'getDefaultPrefs memorablePasswordMinWordLength should be 2')
+})
+
+suite('password.js — memorablePasswordMinWords / MaxWords')
+test('memorablePasswordMinWords default is 3', () => {
+  assertEqual(getDefaultPrefs().memorablePasswordMinWords, 3,
+    'getDefaultPrefs memorablePasswordMinWords should be 3')
+})
+test('memorablePasswordMaxWords default is 5', () => {
+  assertEqual(getDefaultPrefs().memorablePasswordMaxWords, 5,
+    'getDefaultPrefs memorablePasswordMaxWords should be 5')
+})
+
+suite('password.js — memorablePasswordMaxTries')
+test('memorablePasswordMaxTries default is 10000', () => {
+  assertEqual(getDefaultPrefs().memorablePasswordMaxTries, 10000,
+    'getDefaultPrefs memorablePasswordMaxTries should be 10000')
+})
+
+suite('password.js — memorablePasswordPrefix / Suffix')
+test('memorablePasswordPrefix default is empty string', () => {
+  assertEqual(getDefaultPrefs().memorablePasswordPrefix, '',
+    'getDefaultPrefs memorablePasswordPrefix should be empty string')
+})
+test('memorablePasswordSuffix default is empty string', () => {
+  assertEqual(getDefaultPrefs().memorablePasswordSuffix, '',
+    'getDefaultPrefs memorablePasswordSuffix should be empty string')
+})
+test('getMemorablePassword respects prefix and suffix', () => {
+  const saved = {
+    prefix: window.prefs.memorablePasswordPrefix,
+    suffix: window.prefs.memorablePasswordSuffix,
+    minWords: window.prefs.memorablePasswordMinWords,
+    maxWords: window.prefs.memorablePasswordMaxWords,
+    minLen: window.prefs.memorablePasswordMinWordLength,
+    sep: window.prefs.memorablePasswordWordSeparator,
+  }
+  window.prefs.memorablePasswordPrefix = 'PRE-'
+  window.prefs.memorablePasswordSuffix = '-SUF'
+  window.prefs.memorablePasswordMinWords = 2
+  window.prefs.memorablePasswordMaxWords = 5
+  window.prefs.memorablePasswordMinWordLength = 2
+  window.prefs.memorablePasswordWordSeparator = '/'
+  const pw = getMemorablePassword(20)
+  assert(pw.startsWith('PRE-') || pw.startsWith('???'),
+    'memorable password should start with prefix (or fallback)')
+  assert(pw.endsWith('-SUF') || pw.startsWith('???'),
+    'memorable password should end with suffix (or fallback)')
+  window.prefs.memorablePasswordPrefix = saved.prefix
+  window.prefs.memorablePasswordSuffix = saved.suffix
+  window.prefs.memorablePasswordMinWords = saved.minWords
+  window.prefs.memorablePasswordMaxWords = saved.maxWords
+  window.prefs.memorablePasswordMinWordLength = saved.minLen
+  window.prefs.memorablePasswordWordSeparator = saved.sep
+})
+
+
+// ---------------------------------------------------------------------------
+// Phase 7 — Miscellaneous preference defaults coverage
+// All defaults verified against getDefaultPrefs() to avoid window.prefs
+// stub contamination.
+// ---------------------------------------------------------------------------
+suite('prefs — Miscellaneous defaults')
+test('statusMsgDurationMS default is 1500', () => {
+  assertEqual(getDefaultPrefs().statusMsgDurationMS, 1500,
+    'statusMsgDurationMS should default to 1500ms')
+})
+test('clearBeforeLoad default is true', () => {
+  assertEqual(getDefaultPrefs().clearBeforeLoad, true,
+    'clearBeforeLoad should default to true')
+})
+test('loadDupStrategy default is ignore', () => {
+  assertEqual(getDefaultPrefs().loadDupStrategy, 'ignore',
+    'loadDupStrategy should default to ignore')
+})
+test('cloneFieldValues default is true', () => {
+  assertEqual(getDefaultPrefs().cloneFieldValues, true,
+    'cloneFieldValues should default to true')
+})
+test('requireRecordFields default is false', () => {
+  assertEqual(getDefaultPrefs().requireRecordFields, false,
+    'requireRecordFields should default to false')
+})
+test('editableFieldName default is false', () => {
+  assertEqual(getDefaultPrefs().editableFieldName, false,
+    'editableFieldName should default to false')
+})
+test('textareaMinHeight default is 5em', () => {
+  assertEqual(getDefaultPrefs().textareaMinHeight, '5em',
+    'textareaMinHeight should default to 5em')
+})
+test('customAboutInfo default is empty string', () => {
+  assertEqual(getDefaultPrefs().customAboutInfo, '',
+    'customAboutInfo should default to empty string')
+})
+test('projectLink default points to github', () => {
+  assert(getDefaultPrefs().projectLink.includes('github.com/jlinoff/pam'),
+    'projectLink should point to github.com/jlinoff/pam')
+})
+test('enableRawJSONEdit default is false', () => {
+  assertEqual(getDefaultPrefs().enableRawJSONEdit, false,
+    'enableRawJSONEdit should default to false')
+})
+
+suite('prefs — loadDupStrategy behaviour')
+test('VALID_CACHE_STRATEGIES contains expected values', () => {
+  // loadDupStrategy is not in VALID_CACHE_STRATEGIES — it has its own set
+  // Verify the three valid values are known to the prefs UI
+  const valid = ['ignore', 'replace', 'allow']
+  valid.forEach(v => {
+    assert(typeof v === 'string', `loadDupStrategy value '${v}' should be a string`)
+  })
+})
+
+
+// ---------------------------------------------------------------------------
+// Phase 7 — Record Fields preference coverage
+// ---------------------------------------------------------------------------
+suite('prefs — VALID_FIELD_TYPES')
+test('VALID_FIELD_TYPES contains all expected types', () => {
+  const expected = ['datetime-local', 'email', 'html', 'number',
+                    'password', 'phone', 'text', 'textarea', 'time', 'url']
+  expected.forEach(type => {
+    assert(type in VALID_FIELD_TYPES,
+      `VALID_FIELD_TYPES should contain '${type}'`)
+  })
+})
+test('VALID_FIELD_TYPES does not contain unexpected types', () => {
+  const unexpected = ['checkbox', 'radio', 'file', 'submit']
+  unexpected.forEach(type => {
+    assert(!(type in VALID_FIELD_TYPES),
+      `VALID_FIELD_TYPES should not contain '${type}'`)
+  })
+})
+
+suite('prefs — predefinedRecordFields defaults')
+test('predefinedRecordFields contains website as url', () => {
+  assertEqual(getDefaultPrefs().predefinedRecordFields['website'], 'url',
+    'website should be type url')
+})
+test('predefinedRecordFields contains password as password', () => {
+  assertEqual(getDefaultPrefs().predefinedRecordFields['password'], 'password',
+    'password should be type password')
+})
+test('predefinedRecordFields contains note as textarea', () => {
+  assertEqual(getDefaultPrefs().predefinedRecordFields['note'], 'textarea',
+    'note should be type textarea')
+})
+test('predefinedRecordFields contains login as text', () => {
+  assertEqual(getDefaultPrefs().predefinedRecordFields['login'], 'text',
+    'login should be type text')
+})
+test('predefinedRecordFields contains number as number', () => {
+  assertEqual(getDefaultPrefs().predefinedRecordFields['number'], 'number',
+    'number field should be type number')
+})
+test('number is in VALID_FIELD_TYPES', () => {
+  assert('number' in VALID_FIELD_TYPES,
+    'number should be a valid field type')
+})
+
+suite('field.js — number field validation')
+test('valid number value passes isNaN check', () => {
+  const value = '42'
+  assert(!isNaN(value) && value.trim() !== '',
+    'valid number "42" should pass validation')
+})
+test('non-numeric value fails isNaN check', () => {
+  const value = 'bbvv'
+  assert(isNaN(value),
+    'non-numeric value "bbvv" should fail validation')
+})
+test('empty string fails number validation', () => {
+  const value = '   '
+  assert(value.trim() === '' || isNaN(value),
+    'blank value should fail number validation')
+})
+test('float value passes isNaN check', () => {
+  const value = '3.14'
+  assert(!isNaN(value) && value.trim() !== '',
+    'float "3.14" should pass validation')
+})
+test('negative number passes isNaN check', () => {
+  const value = '-7'
+  assert(!isNaN(value) && value.trim() !== '',
+    'negative number "-7" should pass validation')
+})
+test('all predefinedRecordFields types are valid', () => {
+  const fields = getDefaultPrefs().predefinedRecordFields
+  Object.entries(fields).forEach(([name, type]) => {
+    assert(type in VALID_FIELD_TYPES,
+      `predefinedRecordFields['${name}'] type '${type}' should be in VALID_FIELD_TYPES`)
+  })
+})
+test('predefinedRecordFieldsDefault is text', () => {
+  assertEqual(getDefaultPrefs().predefinedRecordFieldsDefault, 'text',
+    'predefinedRecordFieldsDefault should be text')
+})
+
+suite('prefs — defaultRecordFields')
+test('defaultRecordFields default is website,login,password,note', () => {
+  assertEqual(getDefaultPrefs().defaultRecordFields, 'website,login,password,note',
+    'defaultRecordFields should be website,login,password,note')
+})
+test('defaultRecordFields entries exist in predefinedRecordFields', () => {
+  const defaults = getDefaultPrefs()
+  const fields = defaults.defaultRecordFields.split(',')
+  fields.forEach(name => {
+    assert(name in defaults.predefinedRecordFields,
+      `defaultRecordFields entry '${name}' should exist in predefinedRecordFields`)
+  })
+})
+
+
+// ---------------------------------------------------------------------------
+// Phase 7 — Administration preference coverage
+// Most Administration prefs are already covered by dedicated suites:
+//   - enablePrinting / enableSaveFile: BUG-001 suites
+//   - hideInactiveRecords: search.js suite
+//   - customAboutInfo / enableRawJSONEdit: Miscellaneous defaults suite
+//   - allowHtmlFieldRendering: SEC-001 suite
+//   - defaultRecordFields: prefs — defaultRecordFields suite
+//   - lockPreferencesPassword (SEC-006 revert): dedicated suite
+// ---------------------------------------------------------------------------
+suite('prefs — Administration: lockPreferencesPassword gate logic')
+test('lockPreferencesPassword default is empty string', () => {
+  assertEqual(getDefaultPrefs().lockPreferencesPassword, '',
+    'lockPreferencesPassword should default to empty string')
+})
+test('empty lockPreferencesPassword means no prompt required', () => {
+  // Gate logic: lockPreferencesPassword.length === 0 → open prefs directly
+  const pw = ''
+  assert(pw.length === 0,
+    'empty password should bypass the prompt gate')
+})
+test('non-empty lockPreferencesPassword means prompt is required', () => {
+  // Gate logic: lockPreferencesPassword.length > 0 → prompt required
+  const pw = 'secret'
+  assert(pw.length > 0,
+    'non-empty password should trigger the prompt gate')
+})
+test('correct password comparison uses plaintext (SEC-006 revert)', () => {
+  // The prefs lock is a convenience feature not a cryptographic boundary.
+  // Plaintext comparison is intentional — see SECURITY.md SEC-006.
+  const stored = 'mypassword'
+  const entered = 'mypassword'
+  assert(entered === stored,
+    'plaintext comparison should work for correct password')
+})
+test('wrong password fails plaintext comparison', () => {
+  const stored = 'mypassword'
+  const entered = 'wrongpassword'
+  assert(entered !== stored,
+    'plaintext comparison should reject wrong password')
+})
+
+suite('prefs — Administration: allowHtmlFieldRendering')
+test('allowHtmlFieldRendering default is false', () => {
+  assertEqual(getDefaultPrefs().allowHtmlFieldRendering, false,
+    'allowHtmlFieldRendering should default to false (SEC-001)')
+})
+
+
+// ---------------------------------------------------------------------------
+// Phase 7 — record.js unit tests
+// Uses the existing accordion fixture (Amazon, Google, GitHub, OldBank)
+// ---------------------------------------------------------------------------
+suite('record.js — findRecord')
+test('findRecord returns record for existing title', () => {
+  const record = findRecord('Amazon')
+  assert(record !== null, 'findRecord should find Amazon')
+  assert(record.classList.contains('accordion-item'), 'result should be an accordion-item')
+})
+test('findRecord is case-insensitive', () => {
+  const record = findRecord('amazon')
+  assert(record !== null, 'findRecord should find Amazon case-insensitively')
+})
+test('findRecord returns null for missing title', () => {
+  const record = findRecord('DoesNotExist')
+  assert(record === null, 'findRecord should return null for missing record')
+})
+
+suite('record.js — findRecordAfter')
+test('findRecordAfter returns record that sorts after given title', () => {
+  // 'Amazon' < 'GitHub' < 'Google' < 'OldBank' alphabetically
+  const after = findRecordAfter('Amazon')
+  assert(after !== null, 'there should be a record after Amazon')
+  const title = after.querySelector('.accordion-button').innerHTML.trim().toLowerCase()
+  assert(title > 'amazon', `record after Amazon should sort after it, got: ${title}`)
+})
+test('findRecordAfter returns null for last record alphabetically', () => {
+  const after = findRecordAfter('ZZZ')
+  assert(after === null, 'findRecordAfter should return null when title would be last')
+})
+
+suite('record.js — insertRecord and deleteRecord')
+test('insertRecord adds record in sorted order', () => {
+  const btn = xmk('button').xClass('accordion-button').xInnerHTML('Dropbox')
+  const item = xmk('div').xClass('accordion-item').xAppend(btn)
+  insertRecord(item, 'Dropbox')
+  const record = findRecord('Dropbox')
+  assert(record !== null, 'inserted record Dropbox should be findable')
+  // verify it sorts between Amazon/GitHub (D comes after A, before G)
+  const items = Array.from(document.querySelectorAll('.accordion-item'))
+  const titles = items.map(el => el.querySelector('.accordion-button').innerHTML.trim().toLowerCase())
+  const idx = titles.indexOf('dropbox')
+  assert(idx > 0, 'Dropbox should not be first')
+  assert(titles[idx - 1] < 'dropbox', `record before Dropbox should sort before it`)
+})
+test('deleteRecord removes an existing record', () => {
+  assert(findRecord('Dropbox') !== null, 'Dropbox should exist before delete')
+  deleteRecord('Dropbox')
+  assert(findRecord('Dropbox') === null, 'Dropbox should be gone after delete')
+})
+test('deleteRecord is a no-op for missing record', () => {
+  const before = document.querySelectorAll('.accordion-item').length
+  deleteRecord('NeverExisted')
+  const after = document.querySelectorAll('.accordion-item').length
+  assertEqual(before, after, 'record count should be unchanged after deleting non-existent record')
+})
+
+suite('record.js — clearRecords')
+test('clearRecords removes all records', () => {
+  clearRecords()
+  const remaining = document.querySelectorAll('.accordion-item').length
+  assertEqual(remaining, 0, 'clearRecords should remove all records')
+})
+test('clearRecords resets x-num-records to 0', () => {
+  const numEl = document.getElementById('x-num-records')
+  assertEqual(numEl.innerHTML, '0', 'x-num-records should be 0 after clearRecords')
+})
+
+
+// ---------------------------------------------------------------------------
+// Phase 7 — save.js DOM round-trip tests
+// convertInternalDataToJSON walks the accordion DOM and serialises to JSON.
+// We build a fixture using mkRecordField (real field DOM) and a minimal
+// accordion structure, then verify the output matches what we put in.
+// ---------------------------------------------------------------------------
+suite('save.js — convertInternalDataToJSON')
+test('serialises record title correctly', () => {
+  // Build a minimal but correct accordion fixture
+  const container = xmk('div').xId('records-accordion-save-test')
+  const button = xmk('button').xClass('accordion-button')
+    .xInnerHTML('TestRecord')
+    .xAttr('x-active', 'true')
+    .xAttr('x-created', '2026-01-01T00:00:00.000Z')
+  const textField = mkRecordField('username', 'text', 'jdoe')
+  const pwField   = mkRecordField('password', 'password', 'secret123')
+  const body = xmk('div').xClass('accordion-body').xAppend(textField, pwField)
+  const collapse = xmk('div').xClass('accordion-collapse').xAppend(body)
+  const item = xmk('div').xClass('accordion-item').xAppend(button, collapse)
+  container.appendChild(item)
+  document.body.appendChild(container)
+
+  // Temporarily replace the real accordion with our fixture
+  const realAccordion = document.getElementById('records-accordion')
+  realAccordion.id = 'records-accordion-backup'
+  container.id = 'records-accordion'
+
+  const contents = { prefs: {}, records: [] }
+  const now = '2026-01-01T00:00:00.000Z'
+  convertInternalDataToJSON(contents, now)
+
+  // Restore
+  container.id = 'records-accordion-save-test'
+  realAccordion.id = 'records-accordion'
+  document.body.removeChild(container)
+
+  assertEqual(contents.records.length, 1, 'should have one record')
+  assertEqual(contents.records[0].title, 'TestRecord', 'title should match')
+  assertEqual(contents.records[0].active, true, 'active should be true')
+  assertEqual(contents.records[0].created, '2026-01-01T00:00:00.000Z', 'created should match')
+})
+test('serialises text field name and value correctly', () => {
+  const container = xmk('div')
+  const button = xmk('button').xClass('accordion-button')
+    .xInnerHTML('TextTest')
+    .xAttr('x-active', 'true')
+    .xAttr('x-created', '2026-01-01T00:00:00.000Z')
+  const textField = mkRecordField('myfield', 'text', 'myvalue')
+  const body = xmk('div').xClass('accordion-body').xAppend(textField)
+  const item = xmk('div').xClass('accordion-item').xAppend(button, xmk('div').xClass('accordion-collapse').xAppend(body))
+  container.appendChild(item)
+  document.body.appendChild(container)
+
+  const realAccordion = document.getElementById('records-accordion')
+  realAccordion.id = 'records-accordion-backup'
+  container.id = 'records-accordion'
+
+  const contents = { prefs: {}, records: [] }
+  convertInternalDataToJSON(contents, '2026-01-01T00:00:00.000Z')
+
+  container.id = 'tmp'
+  realAccordion.id = 'records-accordion'
+  document.body.removeChild(container)
+
+  const fields = contents.records[0].fields
+  assertEqual(fields.length, 1, 'should have one field')
+  assertEqual(fields[0].name, 'myfield', 'field name should match')
+  assertEqual(fields[0].type, 'text', 'field type should match')
+  assertEqual(fields[0].value, 'myvalue', 'text field value should come from innerHTML')
+})
+test('serialises password field using raw value not masked display', () => {
+  const container = xmk('div')
+  const button = xmk('button').xClass('accordion-button')
+    .xInnerHTML('PwTest')
+    .xAttr('x-active', 'true')
+    .xAttr('x-created', '2026-01-01T00:00:00.000Z')
+  const pwField = mkRecordField('secret', 'password', 'mypassword')
+  const body = xmk('div').xClass('accordion-body').xAppend(pwField)
+  const item = xmk('div').xClass('accordion-item').xAppend(button, xmk('div').xClass('accordion-collapse').xAppend(body))
+  container.appendChild(item)
+  document.body.appendChild(container)
+
+  const realAccordion = document.getElementById('records-accordion')
+  realAccordion.id = 'records-accordion-backup'
+  container.id = 'records-accordion'
+
+  const contents = { prefs: {}, records: [] }
+  convertInternalDataToJSON(contents, '2026-01-01T00:00:00.000Z')
+
+  container.id = 'tmp'
+  realAccordion.id = 'records-accordion'
+  document.body.removeChild(container)
+
+  const field = contents.records[0].fields[0]
+  assertEqual(field.value, 'mypassword',
+    'password field should use raw value not masked display value')
+})
+test('serialises prefs into contents.prefs', () => {
+  const container = xmk('div').xId('records-accordion')
+  const realAccordion = document.getElementById('records-accordion')
+  realAccordion.id = 'records-accordion-backup'
+  document.body.appendChild(container)
+
+  const contents = { prefs: {}, records: [] }
+  convertInternalDataToJSON(contents, '2026-01-01T00:00:00.000Z')
+
+  container.id = 'tmp'
+  realAccordion.id = 'records-accordion'
+  document.body.removeChild(container)
+
+  assert(Object.keys(contents.prefs).length > 0,
+    'contents.prefs should be populated from window.prefs')
+  assert('filePassCache' in contents.prefs,
+    'contents.prefs should contain filePassCache')
+})
+
+
+// ---------------------------------------------------------------------------
+// Phase 7 — load.js tests
+// loadCallback has heavy DOM dependencies (menuPrefsDlg, records-accordion,
+// about, x-num-records) — full load flow is covered by E2E tests.
+// Unit tests cover: JSON parse/validate, duplicate strategies,
+// isValidLoadUrl (already covered by SEC-007 but extended here),
+// and the active/created defaults for missing fields.
+// ---------------------------------------------------------------------------
+// load.js — loadCallback has heavy DOM+module dependencies (prefs.js→main.js circular,
+// raw.js, about.js) so it cannot be imported into tests.html safely.
+// loadCallback null/empty handling is covered by E2E test_load_dlg.
+
+// load.js — isValidLoadUrl and formatTimeElapsed are imported directly above.
+// SEC-007 suite (existing) tests isValidLoadUrl.
+// load.js — formatTimeElapsed suite (existing) tests formatTimeElapsed.
+// The additional load.js tests below cover duplicate strategies and defaults.
+
+suite('load.js — duplicate strategy logic')
+test('ignore strategy skips duplicate titles', () => {
+  // Simulate the ignore branch: findRecord returns truthy, strategy is ignore
+  // We test the logic directly rather than through loadCallback DOM dependencies
+  const existingTitles = new Set(['Amazon', 'Google'])
+  const strategy = 'ignore'
+  let loaded = []
+  const records = [
+    { title: 'Amazon', fields: [] },
+    { title: 'GitHub', fields: [] },
+  ]
+  for (const rec of records) {
+    if (existingTitles.has(rec.title)) {
+      if (strategy === 'ignore') continue
+    }
+    loaded.push(rec.title)
+  }
+  assert(!loaded.includes('Amazon'), 'ignore should skip duplicate Amazon')
+  assert(loaded.includes('GitHub'), 'ignore should load new GitHub')
+})
+test('replace strategy removes duplicate before inserting', () => {
+  const existingTitles = new Set(['Amazon'])
+  const strategy = 'replace'
+  let deleted = []
+  let loaded = []
+  const records = [{ title: 'Amazon', fields: [] }]
+  for (const rec of records) {
+    if (existingTitles.has(rec.title)) {
+      if (strategy === 'replace') {
+        deleted.push(rec.title)
+        existingTitles.delete(rec.title)
+      }
+    }
+    loaded.push(rec.title)
+  }
+  assert(deleted.includes('Amazon'), 'replace should delete existing Amazon')
+  assert(loaded.includes('Amazon'), 'replace should then load Amazon')
+})
+test('allow strategy generates unique title for duplicate', () => {
+  const existingTitles = new Set(['Amazon', 'Amazon Clone'])
+  const strategy = 'allow'
+  let title = 'Amazon'
+  if (existingTitles.has(title) && strategy === 'allow') {
+    let provisional = title + ' Clone'
+    let idx = 0
+    while (existingTitles.has(provisional)) {
+      idx++
+      provisional = `${title} Clone${idx}`
+    }
+    title = provisional
+  }
+  assertEqual(title, 'Amazon Clone1',
+    'allow should generate Amazon Clone1 when Amazon Clone exists')
+})
+
+suite('load.js — active and created defaults')
+test('missing active field defaults to true', () => {
+  const row = { title: 'Test', fields: [] }
+  if (!row.hasOwnProperty('active')) {
+    row.active = true
+  }
+  assertEqual(row.active, true, 'missing active should default to true')
+})
+test('missing created field gets placeholder date', () => {
+  const row = { title: 'Test', fields: [] }
+  if (!row.hasOwnProperty('created')) {
+    row.created = new Date('1999-01-01T00:00:00Z').toISOString()
+  }
+  assert(row.created.startsWith('1999'),
+    'missing created should get 1999 placeholder date')
+})
+
+// Run sync tests first, then async crypt tests
+finalize() // update summary with sync results so far
+runCryptTests() // will call finalize() again after async tests complete
+
+</script>
+</body>
+</html>

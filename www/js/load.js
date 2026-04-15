@@ -70,7 +70,6 @@ export function menuLoadDlg() {
                                    'btn-secondary',
                                    'close the dialogue with no changes',
                                    (el) => {
-                                       //console.log(el)
                                        return true
                                    })
     let b2 = xmk('span').xAppendChild(
@@ -78,7 +77,6 @@ export function menuLoadDlg() {
                               'btn-primary',
                               'load using the password',
                               (el) => {
-                                  //console.log(el)
                                   let password = el.xGet('#x-load-password').value.trim()
                                   let input = document.body.xGet('#x-load-file-select-input')
                                   setFilePass(password)
@@ -108,7 +106,6 @@ export function menuLoadDlg() {
                     reader.readAsText(file)
                     reader.onload = (event3) => {
                         let content = event3.target.result
-                        //console.log('debug', content.slice(0,10))
                         const filename = file.name
                         let password = document.body.xGet('#x-load-password').value.trim()
                         loadFileContent(filename, password, content)
@@ -171,7 +168,6 @@ function loadUrlContent(url) {
             return response.text()
         })
         .then((content) => {
-            //console.log(data)
             let size = content.length
             if (content[0] === '{') {
                 // This file is plain json, it is not encrypted
@@ -190,12 +186,31 @@ function loadUrlContent(url) {
         })
 }
 
+// Validate that a URL uses an acceptable protocol for loading.
+// Only http:// and https:// are permitted — javascript: and data: URIs
+// are explicitly rejected to prevent XSS via the URL load path (SEC-007).
+/**
+ * Validate that a URL is safe to load from.
+ *
+ * Only https:// and http:// protocols are accepted. javascript:, data:, ftp:,
+ * and all other URI schemes are rejected to prevent XSS via the URL load path (SEC-007).
+ *
+ * @param {string} url - The URL to validate.
+ * @returns {boolean} True if the URL is safe to load, false otherwise.
+ */
+export function isValidLoadUrl(url) {
+    if (!url || url.length === 0) {
+        return false
+    }
+    return url.startsWith('https://') || url.startsWith('http://')
+}
+
 function loadUrl() {
     let url = prompt('URL:').trim()
-    if (url.length > 4 ) {
+    if (isValidLoadUrl(url)) {
         loadUrlContent(url)
     } else {
-        alert(`WARNING: invalid url specified: ${url}`)
+        alert(`WARNING: invalid url specified: "${url}"\nOnly https:// and http:// URLs are permitted.`)
     }
 }
 
@@ -346,7 +361,6 @@ export function loadCallback(text) {
     let thenDateString = json.meta['date-saved']
     let thenDate = new Date(thenDateString)
     let elapsed = now.getTime() - thenDate.getTime() // ms
-    //let days = elapsed / (1000 * 3600 * 24)
     let fet = formatTimeElapsed(elapsed)
     window.prefs.lastUpdated = now.toISOString()  // for use in reporting
     setDarkLightTheme(window.prefs.themeName)
@@ -385,7 +399,21 @@ function invalidPasswordCallback(error) {
 // 3 days, 1 hour, 5 minutes
 // It pluralizes values for day, hour, minute, and second that are greater than one.
 // It ignores zero values for day, hour, minute, second.
-function formatTimeElapsed(ms) {
+/**
+ * Format a duration in milliseconds as a human-readable string.
+ *
+ * Returns a comma-separated list of the largest non-zero time units.
+ * Returns '0 seconds' for zero or sub-second input.
+ *
+ * @param {number} ms - Duration in milliseconds.
+ * @returns {string} Human-readable duration, e.g. '1 day, 2 hours, 3 minutes, 4 seconds'.
+ *
+ * @example
+ * formatTimeElapsed(0)        // '0 seconds'
+ * formatTimeElapsed(61000)    // '1 minute, 1 second'
+ * formatTimeElapsed(86400000) // '1 day'
+ */
+export function formatTimeElapsed(ms) {
     let es = Math.floor(ms / 1000)
     let em = Math.floor(es / 60)
     let eh = Math.floor(em / 60)

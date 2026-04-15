@@ -42,7 +42,7 @@ all: clean default test web  ## Make a release: make clean && make && make test 
 	@ls -lh pam-www.tar
 
 .PHONY: clean
-clean:	 # clean up
+clean:	 ## clean up back to basic git managed source files
 	$(call hdr,"$@")
 	-[ -d .git ] && git clean -xdf -e keep . || true
 
@@ -177,7 +177,20 @@ run: init  ## Run the server on port PORT
 KILL_SERVER := lsof -i :$(PORT) && kill -9 $$(lsof -F pcuftDsin -i :$(PORT) | grep ^p | sed -e 's/^p//')
 
 .PHONY: test
-test: init lint | tests/test_chrome.py ## Run local tests
+test: unit-test e2e-test ## Run all tests (unit + e2e)
+
+.PHONY: unit-test
+unit-test: init lint ## Run vanilla JS unit tests in tests/tests.html via ChromeDriver
+	$(call hdr,"$@")
+	-$(KILL_SERVER)
+	( cd www && pipenv run python -m http.server $(PORT) > /dev/null 2>&1 ) &
+	sleep 2
+	lsof -i :$(PORT)
+	pipenv run python3 -m pytest -v -s tests/test_unit.py
+	$(KILL_SERVER)
+
+.PHONY: e2e-test
+e2e-test: init lint ## Run Selenium E2E tests in tests/test_chrome.py
 	$(call hdr,"$@")
 	pipenv run python3 --version
 	lsof -v
@@ -200,7 +213,7 @@ run-single-test: init lint | tests/test_pam.py
 	pipenv run python3 -m pytest -k test_pam_setup tests/test_chrome.py
 
 .PHONY: app-help
-app-help: www/help/index.html  ## generate the pam help
+app-help: www/help/index.html www/help/quickstart.html www/help/security.html www/help/architecture.html www/help/history.html  ## generate the pam help
 
 # requires sed 4.8 or later
 www/help/index.html: Makefile README.md www/help/index.css \
@@ -214,15 +227,46 @@ www/help/index.html: Makefile README.md www/help/index.css \
 	sed -i 's@<img src="www/icons/blue/@<img src="../icons/black/@' tmp.md
 	sed -i "s/__VERSION__/$$(cat VERSION | tr -d ' \n')/g" tmp.md
 	sed -i "s/__BOOTSTRAP_VERSION__/$(BS_VER)/g" tmp.md
-	sed -i "s/__BUILD__/$$(git show -s --format=%ci $$(git rev-parse --short HEAD | tr -d ' \n'))/g" tmp.md
+	sed -i "s|__BUILD__|$$(git show -s --format=%ci $$(git rev-parse --short HEAD | tr -d ' \n'))|g" tmp.md
 	sed -i "s/__GIT_COMMIT_ID__/$$(git rev-parse --short HEAD | tr -d ' \n')/g" tmp.md
-	sed -i "s/__GIT_BRANCH__/$$(git rev-parse --abbrev-ref HEAD | tr -d ' \n')/g" tmp.md
+	sed -i "s|__GIT_BRANCH__|$$(git rev-parse --abbrev-ref HEAD | tr -d ' \n')|g" tmp.md
 	sed -i "s/<!-- PP: //g" tmp.md
 	sed -i "s/ PP: -->//g" tmp.md
 	cat tmp.md | grep -v '\[!\[Release\](' | grep -v '!\[Workflow\](' > tmp1.md
 	mv tmp1.md tmp.md
+	echo '' >> tmp.md
+	echo '---' >> tmp.md
+	echo '[&lt;- Back to PAM](../index.html)' >> tmp.md
 	pandoc -s --css index.css -s --metadata title='PAM - help' --html-q-tags -o $@ tmp.md
 	rm -f tmp*.md
+
+www/help/quickstart.html: Makefile QUICKSTART.md www/help/index.css
+	$(call hdr,"quickstart")
+	printf '[&lt;- Back to PAM](../index.html)\n\n---\n\n' > tmp_doc.md
+	cat QUICKSTART.md >> tmp_doc.md
+	pandoc -s --css index.css -s --metadata title='PAM - Quick Start' --html-q-tags -o $@ tmp_doc.md
+	rm -f tmp_doc.md
+
+www/help/security.html: Makefile SECURITY.md www/help/index.css
+	$(call hdr,"security")
+	printf '[&lt;- Back to PAM](../index.html)\n\n---\n\n' > tmp_doc.md
+	cat SECURITY.md >> tmp_doc.md
+	pandoc -s --css index.css -s --metadata title='PAM - Security' --html-q-tags -o $@ tmp_doc.md
+	rm -f tmp_doc.md
+
+www/help/architecture.html: Makefile ARCHITECTURE.md www/help/index.css
+	$(call hdr,"architecture")
+	printf '[&lt;- Back to PAM](../index.html)\n\n---\n\n' > tmp_doc.md
+	cat ARCHITECTURE.md >> tmp_doc.md
+	pandoc -s --css index.css -s --metadata title='PAM - Architecture' --html-q-tags -o $@ tmp_doc.md
+	rm -f tmp_doc.md
+
+www/help/history.html: Makefile HISTORY.md www/help/index.css
+	$(call hdr,"history")
+	printf '[&lt;- Back to PAM](../index.html)\n\n---\n\n' > tmp_doc.md
+	cat HISTORY.md >> tmp_doc.md
+	pandoc -s --css index.css -s --metadata title='PAM - History' --html-q-tags -o $@ tmp_doc.md
+	rm -f tmp_doc.md
 
 SRC_FILES := VERSION README.md \
 		www/index.html www/help/index.css \
@@ -290,10 +334,10 @@ web-min: app-help app-version  ## (EXPERIMENTAL) create a minimized web release 
 help:  ## this help message
 	$(call hdr,"$@")
 	@printf "\n\033[35;1m%s\n" "Targets"
-	@grep -E '^[ ]*[^:]*[ ]*:.*##' $(MAKEFILE_LIST) 2>/dev/null | \
+	@grep -E '^[^.[:space:]][^[:space:]]*:.*[[:space:]]##' $(MAKEFILE_LIST) 2>/dev/null | \
 		grep -E -v '^ *#' | \
 		grep -E -v "egrep|sort|sed|MAKEFILE" | \
-		sed -e 's/: .*##/##/' -e 's/^[^:#]*://' | \
+		sed -e 's/:[[:space:]].*##/##/' -e 's/^[^:#]*://' | \
 		awk -F'##' '{printf("%-18s %s\n",$$1,$$2)}' | \
 		sort -f | \
 		sed -e 's@^@   @'

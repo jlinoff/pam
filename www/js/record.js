@@ -173,13 +173,18 @@ export function mkRecord(title, active, created, ...recordFields) {
                 .xInnerHTML('&nbsp;Active'))
 
     let deleteButton = xmk('button')
-        .xClass('btn', 'fs-6', 'm-1')
+        .xClass('btn', 'fs-6', 'm-1', 'x-record-delete-btn')
         .xAttrs({'title': 'delete this record permanently'})
         .xAppend(
             icon('bi-trash', 'delete this record permanently'),
             xmk('span').xInnerHTML('&nbsp;Delete'))
         .xAddEventListener('click', (event) => {
             let ai = event.target.xGetParentWithClass('accordion-item')
+            let title = ai.xGet('.accordion-button').innerHTML
+            // UX-002: require confirmation before deleting
+            if (!confirm(`Delete record "${title}"?\nThis cannot be undone.`)) {
+                return
+            }
             ai.remove()
             setNumRecords()
             searchRecords() // refresh
@@ -387,7 +392,6 @@ export function checkRecordEditDlg(event, allowCloneTitle) {
         return
     } else {
         for (let i=0; i<flds.length; i++) {
-            //console.log(`fld[${i}]`, flds[i])
             let nameElem = flds[i].xGet('.x-fld-name')
             let name = 'undefined'
             if (!!nameElem) {
@@ -402,6 +406,20 @@ export function checkRecordEditDlg(event, allowCloneTitle) {
             let valueElem = flds[i].xGet('.x-fld-value')
             if (!!valueElem) {
                 let value = valueElem.value.trim()
+                let type = valueElem.getAttribute('data-fld-type')
+
+                // For number fields, an empty value means the browser rejected
+                // the input (e.g. 'bbvv' in <input type="number"> returns '').
+                // Give a specific message before the generic empty-value check.
+                if (type === 'number' && value === '') {
+                    let raw = valueElem.getAttribute('data-fld-raw-value') || ''
+                    let msg = `"${name}" must be a valid number (integer or decimal). ` +
+                              `Example: 42 or 3.14`
+                    clog(`WARNING: ${msg}`)
+                    container.xAttr('data-check-failed', msg)
+                    return
+                }
+
                 if (!value) {
                     let msg = `undefined field value in "${name}" in record: "${title}"`
                     clog(`WARNING: ${msg}`)
@@ -409,7 +427,6 @@ export function checkRecordEditDlg(event, allowCloneTitle) {
                     return
                 }
 
-                let type = valueElem.getAttribute('data-fld-type')
                 if (type === 'url' ) {
                     if (!isURL(value)) {
                         let msg = `"${name}" is not a valid website URL "${value}" in record: "${title}"`
@@ -430,7 +447,6 @@ function mkRecordFields(container) {
     let recordFields = []
     let flds = container.xGetN('.x-new-rec-fld')
     for (let i=0; i<flds.length; i++) {
-        //console.log(`save.row[${i}]`, flds[i])
         let nameElem = flds[i].xGet('.x-fld-name')
         let valueElem = flds[i].xGet('.x-fld-value')
         if (!nameElem || !valueElem) {
@@ -449,11 +465,8 @@ function mkRecordFields(container) {
 // save the record
 export function saveRecordEditDlg(event, active, created) {
     let container = event.xGet('.container')
-    //console.log('save', container)
     let rows = container.xGetN('.row')
-    //console.log('save.rows', rows)
     let title = container.xGet('.x-record-title').value
-    //console.log('save.title', title)
     // Create the accordion item with all of the record information.
     // Accordions in bootstrap only allow one to item to be expanded at a time.
     let recordFields = mkRecordFields(container)
@@ -479,7 +492,6 @@ function editRecordDlg(title) {
                                           'btn-secondary',
                                           'close the dialogue with no changes',
                                           (event) => {
-                                              //console.log(event)
                                               cleanRecordEditDlg(event)
                                               return true
                                           })
@@ -487,7 +499,6 @@ function editRecordDlg(title) {
                                          'btn-primary',
                                          'save the changes and close the dialogue',
                                          (event) => {
-                                             //console.log(event)
                                              checkRecordEditDlg(event, true)
                                              let container = event.xGet('.container')
                                              if (container.getAttribute('data-check-failed')) {

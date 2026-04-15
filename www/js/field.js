@@ -1,9 +1,8 @@
 // record fields
 import { xmk } from './lib.js'
-import { icon, isURL, mkDraggableRow, sortDictByKey } from './utils.js'
+import { icon, isURL, mkDraggableRow, sortDictByKey, copyTextToClipboard } from './utils.js'
 import { findRecord } from './record.js'
 import { mkGeneratePasswordDlg } from './password.js'
-import { statusBlip } from './status.js'
 
 // Make record field with the name, type and value.
 export function mkRecordField(name, type, value) {
@@ -29,7 +28,20 @@ export function mkRecordField(name, type, value) {
         fieldValue = `<pre>${rawValue}</pre>` // needed to keep line breaks in HTML
         break
     case 'html':
-        fieldValue = `${rawValue}` // user HTML
+        if (window.prefs.allowHtmlFieldRendering) {
+            fieldValue = rawValue // render as live HTML (SEC-001: only when explicitly enabled)
+        } else {
+            // Default: render as escaped plain text with </> badge (SEC-001)
+            let escaped = rawValue
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+            fieldValue = '<span class="badge bg-secondary me-1 x-html-disabled-badge" title="HTML rendering disabled (SEC-001)">&lt;/&gt;</span>' + escaped
+        }
+        break
+    case 'number':
+        // HTML number input — display raw value as plain text with clipboard button.
+        // Edit mode already uses <input type="number"> via mkRecordEditField.
         break
     default:
         break
@@ -73,7 +85,8 @@ function mkRecordFldElement(name, type, fieldValue, rawValue, ...buttons) {
     )
 }
 
-// Make a button whose action is to copy to the clipboard
+// Make a button whose action is to copy to the clipboard.
+// Delegates to copyTextToClipboard() in utils.js (SIMP-002).
 export function mkRecordFieldCopyToClipboardButton(raw_value) {
     const value = raw_value
     return xmk('button')
@@ -81,34 +94,8 @@ export function mkRecordFieldCopyToClipboardButton(raw_value) {
         .xAttrs({'type': 'button'})
         .xAppend(icon('bi-clipboard', 'copy to clipboard')) // also bi-files
         .xAddEventListener('click', (event) => {
-            statusBlip(`copying ${value.length} bytes to clipboard`)
-            //console.log(status)
-            if (navigator.clipboard) {
-                navigator.clipboard
-                    .writeText(value)
-                    .then(
-                        (text) => {
-                            // succeeded
-                            statusBlip(`copied ${value.length} bytes to clipboard`)
-                        },
-                        (error) => {
-                            // failed
-                            const msg = `internal error:\nnavigator.clipboard.writeText() error:\n${error}`
-                            statusBlip(msg)
-                            alert(msg)
-                        }
-                    )
-                    .catch((error) => {
-                        const msg = `internal error:\nnavigator.clipboard.writeText() exception:\n${error}`
-                        statusBlip(msg)
-                        alert(msg)
-                    })
-            } else {
-                const msg = `internal error:\nnavigator.clipboard not found\ncould be a permissions problem`
-                statusBlip(msg)
-                alert(msg)
-            }
-         })
+            copyTextToClipboard(value)
+        })
 }
 
 // Make a button whose action is to show or hide a password value
@@ -156,7 +143,6 @@ function mkRecordFieldNameListEntry(name, type) {
             let row = event.target.xGetParentWithClass('row')
 
             // Create the draggable field.
-            //console.log(`selected ${name}`)
             let container = event.target.xGetParentWithClass('container')
             container.xAppend(mkRecordEditField(name, type, container))
         })
@@ -174,7 +160,6 @@ function mkRecordFieldNameListItems(nameTypeMap) {
         }
         entries.push(e)
     })
-    //console.log(entries)
     return entries
 }
 
@@ -185,13 +170,9 @@ export function mkRecordEditField(name, type, container, value) {
     // See if name was already used, if so, append a number to the name to make it unique.
     let names = container.xGetN('.x-fld-name')
     let dups = {} // make sure it is not renamed to something that already exists
-    //console.log('.x-fld-name', names)
     names.forEach( (n) => {
-        //console.log('n.value', n.value)
         if (n.value.includes(name)) {
-            //console.log('name', name)
             let pos = n.value.search(/\d/);
-            //console.log('pos', pos)
             if (pos < 0) {
                 name = name + '1'
             } else {
@@ -283,7 +264,6 @@ export function mkRecordEditField(name, type, container, value) {
             .xAppend(icon('bi-eye', 'show or hide password'))
             .xAddEventListener('click', (event) => {
                 let button = event.target.parentElement
-                //console.log(button)
                 let row = button.xGetParentWithClass('row')
                 let passwordInput = row.xGet('.x-fld-value')
                 let icon = button.xGet('i')
@@ -361,9 +341,7 @@ export function mkRecordEditField(name, type, container, value) {
                         .xAddEventListener('click', (event) => {
                             let row = event.target.xGetParentWithClass('row')
                             let field = row.xGet('.x-fld-value')
-                            //console.log(field)
                             let ftype = field.getAttribute('data-fld-type')
-                            //console.log(ftype)
                             if (ftype === 'textarea') {
                                 field.value = ''
                             } else if (ftype === 'password') {

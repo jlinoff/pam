@@ -8,15 +8,26 @@ import { mkGeneratePasswordDlg, mkLoadSavePassword, setFilePass } from './passwo
 import { encrypt } from './crypt.js'
 import { setAboutFileInfo } from './about.js'
 
+/**
+ * Show or hide the Save File menu entry based on window.prefs.enableSaveFile.
+ * Called on prefs change and on initial load.
+ */
 export function enableSaveFile() {
+    // Use Bootstrap's d-none class rather than inline display:none —
+    // Bootstrap dropdown CSS overrides inline styles when the menu opens.
     let eps = document.body.xGetN('.x-save-file-menu-item')
     if ( window.prefs.enableSaveFile ) {
-        show(eps)
+        eps.forEach( (el) => { el.classList.remove('d-none') } )
     } else {
-        hide(eps)
+        eps.forEach( (el) => { el.classList.add('d-none') } )
     }
 }
 // Called from the top level menu.
+/**
+ * Build and return the Save File modal dialog element.
+ * The dialog lets the user set a filename, enter a master password, and save.
+ * @returns {Element} The modal dialog element.
+ */
 export function menuSaveDlg() {
     let body = xmk('span')
         .xAppendChild(
@@ -79,14 +90,12 @@ export function menuSaveDlg() {
                                  'btn-secondary',
                                  'close the dialogue with no changes',
                                  (el) => {
-                                    //console.log(el)
                                     return true
                                 })
     let b2 = mkPopupModalDlgButton('Save',
                                  'btn-primary',
                                  'save using the password',
                                  (el) => {
-                                     //console.log(el)
                                      let fn = el.xGet('#x-save-filename').value.trim()
                                      let fp = el.xGet('#x-save-password').value.trim()
                                      document.body.xGet('#x-save-password').value = fp
@@ -102,10 +111,22 @@ export function menuSaveDlg() {
 }
 
 // Convert internal data to JSON.
+/**
+ * Serialise the current in-memory state (prefs + records) to a JSON-compatible object.
+ *
+ * This function reads directly from the DOM — it walks the records accordion and
+ * extracts field names, types, and values from the DOM structure. There is no
+ * separate in-memory data store.
+ *
+ * @param {object} contents - An object with a `prefs` key and a `records` array.
+ *   Both are populated by this function. The caller must initialise them:
+ *   `{ prefs: {}, records: [] }`.
+ * @param {string} now - ISO 8601 timestamp used as the `created` value for
+ *   records that do not already have one.
+ */
 export function convertInternalDataToJSON(contents, now) {
     // Save the preferencess
     for (const [key, value] of Object.entries(window.prefs)) {
-        //console.log(`SAVE: ${key} = "${value}"`)
         contents.prefs[key] = value
     }
 

@@ -13,6 +13,7 @@ import { refreshAbout } from './about.js'
 import { toggleMainPasswordGenerator } from './password.js'
 import { toggleRawJSONDataEdit } from './raw.js'
 import { enablePrinting } from './print.js'
+import { enableSaveFile } from './save.js'
 import { enableRawJSONEdit } from './raw.js'
 
 /**
@@ -25,9 +26,17 @@ window.onresize = () => { refreshAbout() }
 /**
  * Main entry point for the application.
  */
+// Update the HTML rendering indicator in the toolbar.
+// Call this whenever window.prefs.allowHtmlFieldRendering changes.
+export function updateHtmlRenderingIndicator() {
+    let indicator = document.getElementById('x-html-rendering-indicator')
+    if (indicator) {
+        indicator.style.display = window.prefs.allowHtmlFieldRendering ? 'inline' : 'none'
+    }
+}
+
 export function main() {
     // Enable the extra "x" prototype functions for elements.
-    //console.log('window.isSecureContext: ', window.isSecureContext)
     enableFunctionChaining()
     initPrefs()  // sets window.prefs
     initialize() // requires window.prefs
@@ -36,6 +45,7 @@ export function main() {
     setDarkLightTheme(window.prefs.themeName)
     //setTimeout(() => {adjust()}, 1000)
     enablePrinting()
+    enableSaveFile()
     enableRawJSONEdit()
     addDefaultRecordFields()
     const secure = window.isSecureContext? '(secure)' : ''
@@ -125,6 +135,12 @@ function topLayout() {
                         .xId('status')
                         .xStyle({'width': '80%'})
                         .xAttrs({'title': 'dynamic status messages appear here'}),
+                    xmk('span')
+                        .xId('x-html-rendering-indicator')
+                        .xClass('badge', 'bg-warning', 'text-dark', 'ms-2')
+                        .xStyle({'display': 'none'})
+                        .xAttrs({'title': 'HTML field rendering is ENABLED — only use with trusted files (SEC-001)'})
+                        .xInnerHTML('&#x26A0; HTML ON'),
                     xmk('button')
                         .xId('x-generate-password')
                         .xClass('btn')

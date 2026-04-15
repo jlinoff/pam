@@ -137,6 +137,7 @@ the on-line help is generated.
     * [Share Credentials for a Small Group](#share-credentials-for-a-small-group)
     * [Recipes](#recipes)
     * [Books](#books)
+    * [Decrypting and encrypting PAM files from the command line](#decrypting-and-encrypting-pam-files-from-the-command-line)
   * [Developer Notes](#developer-notes)
     * [License](#license)
     * [Build PAM](#build-pam)
@@ -1347,9 +1348,9 @@ is provided that should allows you to figure it out pretty easily.
 5. Then save it again _with a password_.
 
 The reason that this has to be done without a password is because
-I have not yet written a command line utility to encrypt/decrypt
-the files. It should be straightforward to do because it uses
-the standard `"AWS_256-CBC"` algorithm.
+editing an encrypted file directly is not practical. If you need to
+encrypt or decrypt a PAM file from the command line, see
+[Decrypting and encrypting PAM files from the command line](#decrypting-and-encrypting-pam-files-from-the-command-line).
 
 <details>
 <summary>Click here to see an example javascript file</summary>
@@ -2413,6 +2414,68 @@ using the methodology described in the recipes section above.
 
 To search by author, set the "Search Record Field Values" preference
 to true by clicking or tapping on it and then saving it.
+
+### Decrypting and encrypting PAM files from the command line
+
+PAM files are standard AES-256-CBC encrypted data and can be decrypted
+or encrypted using `openssl` on any Unix-like system (macOS, Linux, WSL).
+This is useful for automation, backup verification, or simply confirming
+that your data is not locked into a proprietary format.
+
+> **v1 files:** If you have files saved before PAM v2 (April 2026),
+> load them in PAM and re-save them before attempting command-line
+> operations. v1 files used a different key derivation that is both
+> weaker and harder to replicate outside the browser. See
+> [MIGRATION.md](./MIGRATION.md) for details.
+
+The v2 file format is structured as follows:
+
+```
+"PAMv2:" + Base64( [16-byte salt] [16-byte IV] [ciphertext] )
+```
+
+#### Decrypt a PAM v2 file
+
+```bash
+# Strip the PAMv2: prefix and decode from Base64
+sed 's/^PAMv2://' myfile.txt | base64 -d > raw.bin
+
+# Slice out salt (bytes 0-15), IV (bytes 16-31), ciphertext (bytes 32+)
+dd if=raw.bin bs=1 count=16 of=salt.bin 2>/dev/null
+dd if=raw.bin bs=1 skip=16 count=16 of=iv.bin 2>/dev/null
+dd if=raw.bin bs=1 skip=32 of=cipher.bin 2>/dev/null
+
+# Decrypt
+openssl enc -d -aes-256-cbc \
+  -pbkdf2 -iter 600000 -md sha256 \
+  -S $(xxd -p salt.bin) \
+  -iv $(xxd -p iv.bin) \
+  -in cipher.bin \
+  -out decrypted.json \
+  -pass pass:yourpassword
+```
+
+#### Encrypt a file to PAM v2 format
+
+```bash
+# Generate random salt and IV
+openssl rand 16 > salt.bin
+openssl rand 16 > iv.bin
+
+# Encrypt
+openssl enc -aes-256-cbc \
+  -pbkdf2 -iter 600000 -md sha256 \
+  -S $(xxd -p salt.bin) \
+  -iv $(xxd -p iv.bin) \
+  -in plaintext.json \
+  -out cipher.bin \
+  -pass pass:yourpassword
+
+# Concatenate salt + IV + ciphertext, Base64-encode, and add the PAMv2: prefix
+cat salt.bin iv.bin cipher.bin | base64 | tr -d '\n' | sed 's/^/PAMv2:/' > myfile.txt
+```
+
+The resulting file can be loaded directly into PAM.
 
 ## Developer Notes
 

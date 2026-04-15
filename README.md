@@ -613,8 +613,7 @@ _Analysis: April 2026. Compared against Bitwarden and 1Password as representativ
 | Feature / use case | PAM | Bitwarden / 1Password | Verdict |
 | --- | --- | --- | --- |
 | **Core password management** | | | |
-| Password storage & retrieval | Manual copy/paste only | Automatic, with autofill | PAM loses — friction is high |
-| Browser autofill | None | Browser extension, native app | PAM loses — no browser integration |
+| Password storage & retrieval | Manual copy/paste — no browser integration so credentials must be copied to the clipboard and pasted into login forms | Automatic autofill via browser extension or native app | PAM loses — manual copy/paste for every login is significant friction |
 | Password generation | Yes — cryptic and memorable | Yes — cryptic only by default | PAM wins — memorable passwords are unique to PAM |
 | Multi-device sync | File-based — works naturally on iCloud/Dropbox for single users | Automatic cloud sync | PAM loses for teams; single-user sync via iCloud/Dropbox works naturally |
 | Mobile access | Mobile-friendly browser UI; PWA install available; no native app | Native iOS/Android app with Face ID | PAM loses — no native app, though PWA install is available |

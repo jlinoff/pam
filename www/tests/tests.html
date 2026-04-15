@@ -1675,7 +1675,7 @@ test('defaultRecordFields entries exist in predefinedRecordFields', () => {
 //   - enablePrinting / enableSaveFile: BUG-001 suites
 //   - hideInactiveRecords: search.js suite
 //   - customAboutInfo / enableRawJSONEdit: Miscellaneous defaults suite
-//   - allowHtmlFieldRendering: SEC-001 suite
+//   - allowHtmlFieldRendering: SEC-001 suite + BUG (UI wiring) suite below
 //   - defaultRecordFields: prefs — defaultRecordFields suite
 //   - lockPreferencesPassword (SEC-006 revert): dedicated suite
 // ---------------------------------------------------------------------------
@@ -1715,6 +1715,46 @@ suite('prefs — Administration: allowHtmlFieldRendering')
 test('allowHtmlFieldRendering default is false', () => {
   assertEqual(getDefaultPrefs().allowHtmlFieldRendering, false,
     'allowHtmlFieldRendering should default to false (SEC-001)')
+})
+
+// BUG — prefAllowHtmlFieldRendering was defined in prefs.js but never wired
+// into the Administration tab UI, so the checkbox was invisible to users.
+// The following tests verify the fix: the checkbox must be present and
+// functional in the rendered tab pane.
+import { prefAllowHtmlFieldRendering } from '/js/prefs.js'
+
+suite('BUG — prefAllowHtmlFieldRendering wired into Administration tab UI')
+test('prefAllowHtmlFieldRendering returns a DOM element', () => {
+  const row = prefAllowHtmlFieldRendering(['col-4'], ['col-8'])
+  assert(row !== undefined, 'should not return undefined')
+  assert(row !== null, 'should not return null')
+  assert(row instanceof Element, 'should return a DOM Element')
+})
+test('prefAllowHtmlFieldRendering contains input with correct data-pref-id', () => {
+  const row = prefAllowHtmlFieldRendering(['col-4'], ['col-8'])
+  const button = row.querySelector('button[data-pref-id="allowHtmlFieldRendering"]')
+  assert(button !== null, 'Administration tab must contain button[data-pref-id="allowHtmlFieldRendering"]')
+})
+test('checkbox is unchecked by default (SEC-001)', () => {
+  window.prefs.allowHtmlFieldRendering = false
+  const row = prefAllowHtmlFieldRendering(['col-4'], ['col-8'])
+  const button = row.querySelector('button[data-pref-id="allowHtmlFieldRendering"]')
+  assert(button !== null, 'button must exist')
+  const i = button.querySelector('i')
+  assert(i !== null, 'icon element must exist')
+  assert(i.classList.contains('bi-square'),
+    'icon should be bi-square (unchecked) when allowHtmlFieldRendering is false')
+})
+test('checkbox is checked when pref is true', () => {
+  window.prefs.allowHtmlFieldRendering = true
+  const row = prefAllowHtmlFieldRendering(['col-4'], ['col-8'])
+  const button = row.querySelector('button[data-pref-id="allowHtmlFieldRendering"]')
+  assert(button !== null, 'button must exist')
+  const i = button.querySelector('i')
+  assert(i !== null, 'icon element must exist')
+  assert(i.classList.contains('bi-check2-square'),
+    'icon should be bi-check2-square (checked) when allowHtmlFieldRendering is true')
+  window.prefs.allowHtmlFieldRendering = false  // restore default
 })
 
 

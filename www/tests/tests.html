@@ -573,7 +573,7 @@ test('inactive records are hidden when pref is set', () => {
 // ---------------------------------------------------------------------------
 // crypt.js — v1 regression baseline (MUST PASS — locked before any crypto changes)
 // ---------------------------------------------------------------------------
-import { encrypt, decrypt } from '/js/crypt.js'
+import { encrypt, decrypt, encryptV2, decryptV2 } from '/js/crypt.js'
 
 // Helper: wrap callback-based encrypt/decrypt in Promises
 function encryptAsync(password, plaintext) {
@@ -594,6 +594,25 @@ function decryptAsync(password, ciphertext) {
       (errMsg)   => resolve({ ok: false, error: errMsg })
     )
     setTimeout(() => reject(new Error('decrypt timed out')), 5000)
+  })
+}
+
+function encryptV2Async(password, plaintext) {
+  return new Promise((resolve, reject) => {
+    encryptV2(password, plaintext, 'test.pam', (ciphertext, _filename) => {
+      resolve(ciphertext)
+    })
+    setTimeout(() => reject(new Error('encryptV2 timed out')), 5000)
+  })
+}
+
+function decryptV2Async(password, ciphertext) {
+  return new Promise((resolve, reject) => {
+    decryptV2(password, ciphertext,
+      (plaintext) => resolve({ ok: true, plaintext }),
+      (errMsg)   => resolve({ ok: false, error: errMsg })
+    )
+    setTimeout(() => reject(new Error('decryptV2 timed out')), 5000)
   })
 }
 
@@ -711,6 +730,146 @@ async function runCryptTests() {
       const plaintext = '{"records":[]}'
       const result = await encryptAsync('', plaintext)
       assertEqual(result, plaintext, 'no-password encrypt should return plaintext unchanged')
+      _passed++
+      const line = document.createElement('div')
+      line.className = 'test-line pass'
+      line.textContent = '✓ ' + label
+      _results.appendChild(line)
+    } catch(e) {
+      _failed++
+      const line = document.createElement('div')
+      line.className = 'test-line fail'
+      line.textContent = '✗ ' + label
+      const pre = document.createElement('pre')
+      pre.textContent = e.message || String(e)
+      line.appendChild(pre)
+      _results.appendChild(line)
+    }
+  })()
+
+
+  suite('crypt.js — v2 round-trip and format')
+
+  // v2 Test 1: encryptV2 then decryptV2 round-trip
+  await (async () => {
+    const label = 'v2 encrypt/decrypt round-trip with known password'
+    try {
+      const plaintext = '{"records":[],"version":2}'
+      const password  = 'test-password-v2'
+      const ciphertext = await encryptV2Async(password, plaintext)
+      assert(typeof ciphertext === 'string', 'v2 ciphertext should be a string')
+      assert(ciphertext.startsWith('PAMv2:'), 'v2 ciphertext must start with PAMv2: prefix')
+      const result = await decryptV2Async(password, ciphertext)
+      assert(result.ok, 'v2 decryption should succeed: ' + (result.error || ''))
+      assertEqual(result.plaintext, plaintext, 'v2 decrypted text should match original')
+      _passed++
+      const line = document.createElement('div')
+      line.className = 'test-line pass'
+      line.textContent = '✓ ' + label
+      _results.appendChild(line)
+    } catch(e) {
+      _failed++
+      const line = document.createElement('div')
+      line.className = 'test-line fail'
+      line.textContent = '✗ ' + label
+      const pre = document.createElement('pre')
+      pre.textContent = e.message || String(e)
+      line.appendChild(pre)
+      _results.appendChild(line)
+    }
+  })()
+
+  // v2 Test 2: wrong password fails
+  await (async () => {
+    const label = 'v2 wrong password produces decryption failure'
+    try {
+      const plaintext  = '{"records":[],"version":2}'
+      const ciphertext = await encryptV2Async('correct-password', plaintext)
+      const result = await decryptV2Async('wrong-password', ciphertext)
+      assert(!result.ok, 'v2 decryption with wrong password should fail')
+      _passed++
+      const line = document.createElement('div')
+      line.className = 'test-line pass'
+      line.textContent = '✓ ' + label
+      _results.appendChild(line)
+    } catch(e) {
+      _failed++
+      const line = document.createElement('div')
+      line.className = 'test-line fail'
+      line.textContent = '✗ ' + label
+      const pre = document.createElement('pre')
+      pre.textContent = e.message || String(e)
+      line.appendChild(pre)
+      _results.appendChild(line)
+    }
+  })()
+
+  // v2 Test 3: cross-path rejection — v1 ciphertext rejected by decryptV2
+  await (async () => {
+    const label = 'v2 path rejects ciphertext without PAMv2: prefix'
+    try {
+      const plaintext  = '{"records":[]}'
+      const v1cipher   = await encryptAsync('password', plaintext)
+      assert(!v1cipher.startsWith('PAMv2:'), 'v1 ciphertext should not have PAMv2: prefix')
+      const result = await decryptV2Async('password', v1cipher)
+      assert(!result.ok, 'decryptV2 should reject ciphertext without PAMv2: prefix')
+      _passed++
+      const line = document.createElement('div')
+      line.className = 'test-line pass'
+      line.textContent = '✓ ' + label
+      _results.appendChild(line)
+    } catch(e) {
+      _failed++
+      const line = document.createElement('div')
+      line.className = 'test-line fail'
+      line.textContent = '✗ ' + label
+      const pre = document.createElement('pre')
+      pre.textContent = e.message || String(e)
+      line.appendChild(pre)
+      _results.appendChild(line)
+    }
+  })()
+
+  // v2 Test 4: unified decrypt() dispatches v2 ciphertext to v2 path
+  await (async () => {
+    const label = 'unified decrypt() dispatches PAMv2: prefix to v2 path'
+    try {
+      const plaintext  = '{"records":[],"version":2}'
+      const password   = 'dispatch-test-password'
+      const ciphertext = await encryptV2Async(password, plaintext)
+      assert(ciphertext.startsWith('PAMv2:'), 'v2 ciphertext must have PAMv2: prefix')
+      const result = await decryptAsync(password, ciphertext)
+      assert(result.ok, 'unified decrypt should succeed on v2 ciphertext: ' + (result.error || ''))
+      assertEqual(result.plaintext, plaintext, 'unified decrypt should return correct plaintext')
+      _passed++
+      const line = document.createElement('div')
+      line.className = 'test-line pass'
+      line.textContent = '✓ ' + label
+      _results.appendChild(line)
+    } catch(e) {
+      _failed++
+      const line = document.createElement('div')
+      line.className = 'test-line fail'
+      line.textContent = '✗ ' + label
+      const pre = document.createElement('pre')
+      pre.textContent = e.message || String(e)
+      line.appendChild(pre)
+      _results.appendChild(line)
+    }
+  })()
+
+  // v2 Test 5: v2 and v1 ciphertexts are not interchangeable
+  await (async () => {
+    const label = 'v2 ciphertext cannot be decrypted by v1 path'
+    try {
+      const plaintext  = '{"records":[]}'
+      const password   = 'cross-version-password'
+      const v2cipher   = await encryptV2Async(password, plaintext)
+      // Strip the PAMv2: prefix to trick v1 path into trying to decrypt it
+      const stripped   = v2cipher.slice('PAMv2:'.length)
+      const result     = await decryptAsync(password, stripped)
+      // v1 path will fail because the key derivation is different (raw salt vs encoded)
+      assert(!result.ok, 'v1 path should fail to decrypt v2 ciphertext (different key derivation)')
       _passed++
       const line = document.createElement('div')
       line.className = 'test-line pass'

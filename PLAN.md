@@ -2,7 +2,7 @@
 
 **Project:** [jlinoff/pam](https://github.com/jlinoff/pam)  
 **Version at time of audit:** 1.2.5 (commit 75904b3, 2025-09-10)  
-**Plan version:** 2.7 (Phase 8 complete — UX-003 done, VERSION 1.3.0; crypto moves to 2.0)  
+**Plan version:** 2.8 (Phase 9 in progress — v2 crypto implemented, save.js wired, tests written)  
 **Collaboration model:** Option B — file uploads per session, changes returned as files/diffs, committed by Joe
 
 ---
@@ -547,24 +547,21 @@ default flip. This is cleaner than the original plan: users get the security
 improvement immediately on first save, with zero breaking changes for readers.
 v1 decrypt is retained permanently — no existing file ever becomes unreadable.
 
-- [ ] Write unit tests first (TDD — all must fail before implementation):
-  - v2 encrypt/decrypt round-trip
-  - Cross-path rejection: v2-only path rejects ciphertext without `PAMv2:` prefix
-  - Legacy file detection: no prefix → v1 decrypt path
-  - File format header: assert v2 output starts with `PAMv2:`
-  - v1 regression baseline: confirm existing v1 tests still pass unchanged
-- [ ] Implement `PAMv2:` file format header prefix
-- [ ] Implement v2 encrypt path (600k iterations, raw salt bytes, `PAMv2:` prefix)
-- [ ] Implement v2 decrypt path (strips prefix, uses raw salt)
-- [ ] Implement unified `decrypt()` dispatcher: `PAMv2:` → v2 path, else → v1 path
-- [ ] Preserve v1 encrypt path in code (commented out, not removed) with explicit comment explaining the bugs are intentional
-- [ ] Remove v1 encrypt from the UI entirely — PAM 1.3 always writes v2
-- [ ] Confirm v1 regression baseline still passes
-- [ ] Write E2E test: save a file → reload → verify records intact (exercises full v2 round-trip)
-- [ ] **Add v2 format detection guard:** if a pre-v1.3 PAM somehow encounters a v2 file, it sees an unrecognised Base64 string (not `{`) and reports a decrypt failure — document this in MIGRATION.md rather than trying to handle it in old code
-- [ ] **Write MIGRATION.md:** v1 weaknesses, practical risk assessment, migration path (just save — no user action needed beyond that), backward compatibility guarantee, old version availability
-- [ ] **GitHub release notes for v1.3:** direct, honest, calibrated for a technical/security audience
+- [x] Write unit tests first (TDD): 5 v2 tests added (round-trip, wrong password, cross-path rejection, unified dispatch, cross-version non-interchangeable)
+- [x] Implement `PAMv2:` file format header prefix
+- [x] Implement v2 encrypt path (600k iterations, raw salt bytes, `PAMv2:` prefix) — encryptV2()
+- [x] Implement v2 decrypt path (strips prefix, uses raw salt) — decryptV2()
+- [x] Implement unified `decrypt()` dispatcher: `PAMv2:` → v2 path, else → v1 path
+- [x] Preserve v1 encrypt path in code — encrypt() retained, not removed; bugs intentional and documented in JSDoc
+- [x] Remove v1 encrypt from the UI — save.js now calls encryptV2(); encrypt() no longer called from UI
+- [ ] Confirm v1 regression baseline still passes (run make test)
+- [x] E2E test: test_save_and_reload_round_trip already covers save→reload→verify (Phase 7)
+- [x] v2 format detection guard: documented in crypt.js JSDoc — pre-2.0 PAM sees unrecognised Base64, reports decrypt failure
+- [ ] **Write MIGRATION.md:** v1 weaknesses, practical risk assessment, migration path, backward compatibility guarantee
+- [ ] **GitHub release notes for v2.0:** direct, honest, calibrated for a technical/security audience
 - [ ] **Open pinned GitHub issue:** "Encryption format migration v1→v2 (tracking)"
+- [ ] Final coverage report, target ≥75%
+- [ ] Update README, tag v2.0
 - [ ] Final coverage report, target ≥75%
 - [ ] Update README — deferred to Phase 8, tag v2.0
 

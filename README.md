@@ -622,7 +622,7 @@ _Analysis: April 2026. Compared against Bitwarden and 1Password as representativ
 | Local-only operation | Fully local — no server traffic after page load | Cloud-dependent; requires trust in vendor | PAM wins for offline/air-gapped scenarios |
 | Encryption | AES-256-CBC; v2 format (shipped April 2026) fixes PBKDF2 iteration count and salt entropy bug. Existing v1 files need manual re-save to upgrade. | AES-256, strong PBKDF2 / Argon2 KDFs | Tie — v2 closes the gap; v1 files remain weak until re-saved |
 | Zero-knowledge architecture | Inherently — no server ever sees data | Bitwarden: yes. 1Password: yes | Tie |
-| Audit / breach alerts | None | HaveIBeenPwned integration, Watchtower | PAM loses significantly |
+| Audit / breach alerts | None — if a third-party site you use is breached and your credentials leaked, PAM has no way to notify you. PAM's own encrypted data remains secure. | Bitwarden checks passwords against HaveIBeenPwned; 1Password's Watchtower flags breached, weak, and reused passwords automatically | PAM loses on monitoring — not because PAM's data is at risk, but because it cannot alert you when third-party sites you have accounts on are breached |
 | **Flexible / non-password data** | | | |
 | Free-form text records | Excellent — first-class textarea fields | Secure notes exist but limited formatting | PAM wins for general text storage |
 | Custom field types | Full HTML input types: text, textarea, url, phone, email, number, html | Fixed item templates; some custom fields | PAM wins — more flexible data model |

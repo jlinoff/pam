@@ -232,6 +232,8 @@ www/help/index.html: Makefile README.md www/help/index.css \
 	sed -i "s|__GIT_BRANCH__|$$(git rev-parse --abbrev-ref HEAD | tr -d ' \n')|g" tmp.md
 	sed -i "s/<!-- PP: //g" tmp.md
 	sed -i "s/ PP: -->//g" tmp.md
+	sed -i 's|./QUICKSTART.md|./quickstart.html|g' tmp.md
+	sed -i 's|./HISTORY.md|./history.html|g' tmp.md
 	cat tmp.md | grep -v '\[!\[Release\](' | grep -v '!\[Workflow\](' > tmp1.md
 	mv tmp1.md tmp.md
 	echo '' >> tmp.md

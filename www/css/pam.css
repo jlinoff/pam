@@ -1,0 +1,15 @@
+/* Dark mode security badge styling (SEC-001, SEC-002)
+ *
+ * Bootstrap's bg-warning (#ffc107) is visually disruptive on dark
+ * backgrounds, especially on small mobile screens. In dark mode, swap
+ * to a muted dark-amber that remains visible and meaningful without
+ * the high-contrast glare.
+ *
+ * No preference or JS change is needed — this rule activates
+ * automatically when setDarkLightTheme() sets data-bs-theme="dark"
+ * on document.body.
+ */
+[data-bs-theme="dark"] .badge.bg-warning {
+    background-color: #7a6000 !important;
+    color: #f0c040 !important;
+}

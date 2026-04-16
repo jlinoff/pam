@@ -2161,6 +2161,64 @@ test('indicator is visible when allowHtmlFieldRendering is true', () => {
   window.prefs.allowHtmlFieldRendering = false  // restore default
 })
 
+// pam.css — dark mode badge muting
+suite('pam.css — dark mode badge contrast')
+test('badge has muted background in dark mode', () => {
+  // Inject the pam.css rule into the test document
+  const style = document.createElement('style')
+  style.id = 'x-pam-css-test'
+  style.textContent = `
+    [data-bs-theme="dark"] .badge.bg-warning {
+      background-color: #7a6000 !important;
+      color: #f0c040 !important;
+    }
+  `
+  document.head.appendChild(style)
+
+  // Set dark mode on body
+  document.body.setAttribute('data-bs-theme', 'dark')
+
+  const badge = document.createElement('span')
+  badge.classList.add('badge', 'bg-warning')
+  document.body.appendChild(badge)
+
+  const bg = getComputedStyle(badge).backgroundColor
+  // rgb(122, 96, 0) === #7a6000
+  assertEqual(bg, 'rgb(122, 96, 0)',
+    'badge background should be muted amber in dark mode')
+
+  badge.remove()
+  document.body.removeAttribute('data-bs-theme')
+  style.remove()
+})
+
+test('badge retains warning background in light mode', () => {
+  // Inject Bootstrap's bg-warning so the light mode value is defined
+  const style = document.createElement('style')
+  style.id = 'x-pam-css-light-test'
+  style.textContent = `
+    .badge.bg-warning { background-color: #ffc107 !important; }
+    [data-bs-theme="dark"] .badge.bg-warning {
+      background-color: #7a6000 !important;
+      color: #f0c040 !important;
+    }
+  `
+  document.head.appendChild(style)
+
+  // No data-bs-theme on body (light mode)
+  const badge = document.createElement('span')
+  badge.classList.add('badge', 'bg-warning')
+  document.body.appendChild(badge)
+
+  const bg = getComputedStyle(badge).backgroundColor
+  // rgb(255, 193, 7) === #ffc107
+  assertEqual(bg, 'rgb(255, 193, 7)',
+    'badge background should be Bootstrap warning yellow in light mode')
+
+  badge.remove()
+  style.remove()
+})
+
 // Run sync tests first, then async crypt tests
 finalize() // update summary with sync results so far
 runCryptTests() // will call finalize() again after async tests complete

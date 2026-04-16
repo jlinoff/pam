@@ -2,7 +2,8 @@
 www/js/bootstrap.bundle.js
 www/js/bootstrap.bundle.js.map
 www/font
-www/css
+www/css/bootstrap.min.css
+www/css/bootstrap.min.css.map
 www/Pipfile
 bootstrap-*
 www/help/index.html

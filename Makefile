@@ -239,6 +239,7 @@ www/help/index.html: Makefile README.md www/help/index.css \
 	echo '' >> tmp.md
 	echo '---' >> tmp.md
 	echo '[&lt;- Back to PAM](../index.html)' >> tmp.md
+	printf '[&lt;- Back to PAM](../index.html)\n\n---\n\n' | cat - tmp.md > tmp2.md && mv tmp2.md tmp.md
 	pandoc -s --css index.css -s --metadata title='PAM - help' --html-q-tags -o $@ tmp.md
 	rm -f tmp*.md
 

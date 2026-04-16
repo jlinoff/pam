@@ -8,7 +8,7 @@ import { enableSaveFile } from './save.js'
 import { setDarkLightTheme } from './utils.js'
 import { searchRecords } from './search.js'
 import { enableRawJSONEdit } from './raw.js'
-import { updateHtmlRenderingIndicator } from './main.js'
+import { updateHtmlRenderingIndicator, updateFilePassCacheIndicator } from './main.js'
 
 // These are the input types that the tool knows how to handle.
 export const VALID_FIELD_TYPES = {
@@ -229,18 +229,6 @@ export function menuPrefsDlg() {
                 prefTextareaMinHeight(labelClasses, inputClasses),
                 prefPromptDesc('Define the minimum height of the textareas for notes and HTML input. '+
                                'This is useful in mobile browsers where resize is not available.'),
-                prefFilePassCacheStrategy(labelClasses, inputClasses),
-                prefPromptDesc('Define the browser cache strategy for the file (master) password.<br>'+
-                               'The most secure option is <code>none</code> because it does not save '+
-                               'the password which means that you must enter it <i>every</i> time '+
-                               'you load or save a file.<br>'+
-                               'The <code>global</code> option stores the password in a global window variable. '+
-                               'It persists until the page is reloaded or closed.<br>'+
-                               'The <code>local</code> option a stores the password in localStorage where '+
-                               'persists until all windows that share the same URL are closed. '+
-                               'This is a good option for personal use because it is so convenient.<br>'+
-                               'The <code>session</code> option a stores the password in sessionStorage '+
-                               'where is persists for a single browser tab until it is closed.'),
             ),
             mkTabPane('prefs-tab-fields', false,
                 prefPromptDesc('These are the pre-defined fields shown in the pulldown menu that a user can '+
@@ -305,7 +293,20 @@ export function menuPrefsDlg() {
                 prefPromptDesc('WARNING (SEC-001): Only enable for trusted files you authored yourself. ' +
                                'When enabled, <code>html</code> field values render as live HTML, ' +
                                'which is an XSS risk if you load files from untrusted sources. ' +
-                               'A persistent warning badge will appear in the toolbar while this is active.'),
+                               'A <b>⚠ HTML ON</b> warning badge will appear in the toolbar while this is active.'),
+                prefFilePassCacheStrategy(labelClasses, inputClasses),
+                prefPromptDesc('Define the browser cache strategy for the file (master) password. ' +
+                               'The most secure option is <code>none</code> because it does not save ' +
+                               'the password which means that you must enter it <i>every</i> time ' +
+                               'you load or save a file.<br>' +
+                               'The <code>global</code> option stores the password in a global window variable. ' +
+                               'It persists until the page is reloaded or closed.<br>' +
+                               'The <code>local</code> option stores the password in localStorage where it ' +
+                               'persists until all windows that share the same URL are closed. ' +
+                               'This is convenient for personal use but is a security risk on shared devices. ' +
+                               'A <b>⚠ PASS: LOCAL</b> warning badge will appear in the toolbar while this is active.<br>' +
+                               'The <code>session</code> option stores the password in sessionStorage ' +
+                               'where it persists for a single browser tab until it is closed.'),
                 prefEnableRawJSONEdit(labelClasses, inputClasses),
                 prefPromptDesc('Enable editing of the raw internal JSON data. '+
                                'This is not recommended unless you really know what you are doing '+
@@ -499,6 +500,7 @@ function savePrefs(el) {
 
     setDarkLightTheme(window.prefs.themeName)
     updateHtmlRenderingIndicator()  // SEC-001: update toolbar badge
+    updateFilePassCacheIndicator()  // SEC-002: update toolbar badge
     searchRecords()  // refresh
     return checkDefaultRecordFields(true)
 }
@@ -723,7 +725,7 @@ function prefTextareaMinHeight(labelClasses, inputClasses) {
     )
 }
 
-function prefFilePassCacheStrategy(labelClasses, inputClasses) {
+export function prefFilePassCacheStrategy(labelClasses, inputClasses) {
     let value = window.prefs.filePassCache
     let list_items = []
     Object.entries(VALID_CACHE_STRATEGIES).forEach(([key1,value1]) => {

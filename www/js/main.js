@@ -35,6 +35,13 @@ export function updateHtmlRenderingIndicator() {
     }
 }
 
+export function updateFilePassCacheIndicator() {
+    let indicator = document.getElementById('x-filepass-cache-indicator')
+    if (indicator) {
+        indicator.style.display = window.prefs.filePassCache === 'local' ? 'inline' : 'none'
+    }
+}
+
 export function main() {
     // Enable the extra "x" prototype functions for elements.
     enableFunctionChaining()
@@ -141,6 +148,12 @@ function topLayout() {
                         .xStyle({'display': 'none'})
                         .xAttrs({'title': 'HTML field rendering is ENABLED — only use with trusted files (SEC-001)'})
                         .xInnerHTML('&#x26A0; HTML ON'),
+                    xmk('span')
+                        .xId('x-filepass-cache-indicator')
+                        .xClass('badge', 'bg-warning', 'text-dark', 'ms-2')
+                        .xStyle({'display': 'none'})
+                        .xAttrs({'title': 'File password is cached in localStorage — clears only when explicitly reset (SEC-002)'})
+                        .xInnerHTML('&#x26A0; PASS: LOCAL'),
                     xmk('button')
                         .xId('x-generate-password')
                         .xClass('btn')

@@ -44,7 +44,7 @@ export function getDefaultPrefs() {
         enableSaveFile: true,
         fileName: 'example.txt',
         filePass: '',
-        filePassCache: 'session',
+        filePassCache: 'local',
         textareaMinHeight: '5em',
         editableFieldName: false,
         searchCaseInsensitive: true,

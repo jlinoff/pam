@@ -301,6 +301,11 @@ export function menuPrefsDlg() {
                                'Typically you might add something like administrator contact information. '+
                                'An example would be '+
                                '<code>This implementation supported by admin@example.com</code>.'),
+                prefAllowHtmlFieldRendering(labelClasses, inputClasses),
+                prefPromptDesc('WARNING (SEC-001): Only enable for trusted files you authored yourself. ' +
+                               'When enabled, <code>html</code> field values render as live HTML, ' +
+                               'which is an XSS risk if you load files from untrusted sources. ' +
+                               'A persistent warning badge will appear in the toolbar while this is active.'),
                 prefEnableRawJSONEdit(labelClasses, inputClasses),
                 prefPromptDesc('Enable editing of the raw internal JSON data. '+
                                'This is not recommended unless you really know what you are doing '+
@@ -540,7 +545,7 @@ function prefLockPreferencesPassword(labelClasses, inputClasses) {
     )
 }
 
-function prefAllowHtmlFieldRendering(labelClasses, inputClasses) {
+export function prefAllowHtmlFieldRendering(labelClasses, inputClasses) {
     return mkPrefsCheckBox(labelClasses,
                            inputClasses,
                            'allowHtmlFieldRendering',

@@ -63,7 +63,7 @@ export function initPrefs() {
         enableSaveFile: true,
         fileName: 'example.txt',
         filePass: '',
-        filePassCache: 'session',  // options: none, global, local, session — default session (SEC-002)
+        filePassCache: 'local',   // options: none, global, local, session — default local (SEC-002 revert)
         textareaMinHeight: '5em',
         editableFieldName: false, // if true, allow field names to be changed
         searchCaseInsensitive: true,

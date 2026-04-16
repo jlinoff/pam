@@ -55,6 +55,8 @@ export function main() {
     enableSaveFile()
     enableRawJSONEdit()
     addDefaultRecordFields()
+    updateHtmlRenderingIndicator()   // SEC-001: show badge if enabled at startup
+    updateFilePassCacheIndicator()   // SEC-002: show badge if local at startup
     const secure = window.isSecureContext? '(secure)' : ''
     statusBlip(`initializing PAM... ${secure} ${window.screen.width}x${window.screen.height}`)
 }

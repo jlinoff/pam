@@ -111,8 +111,6 @@ the on-line help is generated.
       * [Clone Field Values when Cloning Records](#clone-field-values-when-cloning-records)
       * [Require Record Fields](#require-record-fields)
       * [Enable Editable Field Name](#enable-editable-field-name)
-    * [Administration Preferences](#administration-preferences)
-      * [Allow HTML Field Rendering](#allow-html-field-rendering)
       * [filePass Cache Strategy](#filepass-cache-strategy)
       * [Custom About](#custom-about)
     * [Record Fields](#record-fields)
@@ -145,6 +143,7 @@ the on-line help is generated.
     * [Build PAM](#build-pam)
     * [Create Favicon](#create-favicon)
     * [Test PAM](#test-pam)
+      * [Interactive unit testing in the browser](#interactive-unit-testing-in-the-browser)
     * [Release PAM](#release-pam)
     * [History](#history)
 
@@ -1951,44 +1950,11 @@ It is remembered until the browser tab is closed.
 
 The `local` option means that the file password is stored in `localStorage`.
 The file password is remembered for the file load and save operations.
-It is remembered until it is explicitly reset. Because the password persists
-across browser restarts, this option is a security risk on shared or unattended
-devices. When `local` is active, a **⚠ PASS: LOCAL** warning badge is shown
-in the toolbar as a reminder.
+It is remembered until it is explicitly reset.
 
 The `session` option means that the file password is stored in `sessionStorage`.
 The file password is remembered for the file load and save operations.
 It is remembered until the browser tab is closed.
-
-#### Custom About
-Customized HTML that is added to the about page. It can be used
-in cases where the field records have been customized to provide
-an explanation or link to internal documentation.
-
-Its use is described in the [About](#about) section.
-
-### Administration Preferences
-
-These preferences control security-sensitive settings. Two of them display a
-persistent warning badge in the toolbar when active so you are always aware
-of the current security posture of the app.
-
-#### Allow HTML Field Rendering
-
-When enabled, fields of type `html` render as live HTML rather than escaped
-plain text. This is useful for records that embed images or formatted content
-such as the recipes example.
-
-**Security note (SEC-001):** Only enable this for files you authored yourself.
-If you load a PAM file from an untrusted source, an `html` field could contain
-malicious scripts. When this setting is active, a **⚠ HTML ON** warning badge
-is shown in the toolbar as a reminder.
-
-The default is disabled.
-
-#### filePass Cache Strategy
-
-See [filePass Cache Strategy](#filepass-cache-strategy) above.
 
 #### Custom About
 Customized HTML that is added to the about page. It can be used
@@ -2615,6 +2581,34 @@ The test infrastructure uses Python, pytest, and Selenium (ChromeDriver) to
 automate user interactions. Unit tests run in the browser via a vanilla JS
 test runner in `www/tests/tests.html`. E2E tests drive the full app in
 headless Chrome via `tests/test_chrome.py`.
+
+#### Interactive unit testing in the browser
+
+The unit test runner can also be opened directly in a browser for interactive
+debugging, which is particularly useful when a test failure is hard to diagnose
+from the pytest output alone.
+
+Start the local server if it is not already running:
+
+```bash
+make run
+```
+
+Then open [http://localhost:8081/tests/tests.html](http://localhost:8081/tests/tests.html)
+in Chrome or Firefox. The test runner executes immediately and displays a
+colour-coded results page — green for passing, red for failing — with the
+exact assertion message for each failure.
+
+This is especially valuable for JavaScript module import errors, which show up
+in pytest as a 30-second timeout with no useful detail but appear immediately
+as a clear error in the browser console (`F12 → Console`). When you see:
+
+```
+AssertionError: Test results not found after 30s — page may have failed to load
+```
+
+open the page directly in the browser and check the console first — the root
+cause is almost always visible there within seconds.
 
 ### Release PAM
 

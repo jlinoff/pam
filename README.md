@@ -1937,7 +1937,7 @@ entered.
 #### filePass Cache Strategy
 
 This defines the browser cache strategy for the file password.
-The options are `none`, `prefs`, `local` and `session`.
+The options are `none`, `global`, `local` and `session`.
 
 The `none` option means that the file password is never stored.
 The file password is _not_ remembered for the file load and save operations.
@@ -1949,12 +1949,18 @@ The file password is remembered for the file load and save operations.
 It is remembered until the browser tab is closed.
 
 The `local` option means that the file password is stored in `localStorage`.
-The file password is remembered for the file load and save operations.
-It is remembered until it is explicitly reset.
+The file password is remembered across sessions and power cycles until
+explicitly cleared. This is convenient for personal use but is a security
+risk on shared devices. A **⚠ PASS: LOCAL** warning badge appears in the
+toolbar while this is active.
 
-The `session` option means that the file password is stored in `sessionStorage`.
-The file password is remembered for the file load and save operations.
-It is remembered until the browser tab is closed.
+The `session` option (default) means that the file password is stored in
+`sessionStorage`. The file password is remembered for the file load and save
+operations. It is remembered until the browser tab is closed.
+
+Your chosen strategy is stored per-device in `localStorage` under the key
+`pamCacheStrategy` and is restored automatically each time PAM starts,
+independently of the PAM file.
 
 #### Custom About
 Customized HTML that is added to the about page. It can be used

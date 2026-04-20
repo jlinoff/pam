@@ -86,18 +86,39 @@ not against the trusted file itself being compromised.</p>
 caching</h2>
 <p>The master file password can be cached in browser storage to avoid
 re-entry on every save/load. The cache strategy is controlled in
-<strong>Preferences → Security → filePass Cache Strategy</strong>.</p>
+<strong>Preferences → Administration → filePass Cache
+Strategy</strong>.</p>
 <p><strong>Options:</strong> - <code>session</code> (default) — password
-is cached for the current browser session only and cleared when the tab
-is closed. - <code>local</code> — password persists in
-<code>localStorage</code> indefinitely across sessions. <strong>Use with
-caution.</strong> - <code>global</code> — password is held in memory
-only (lost on page reload). - <code>none</code> — password is never
-cached.</p>
+is cached in <code>sessionStorage</code> for the current browser tab
+only and cleared when the tab is closed. - <code>local</code> — password
+persists in <code>localStorage</code> across sessions and power cycles.
+<strong>Use with caution on shared devices.</strong> A <strong>⚠ PASS:
+LOCAL</strong> warning badge appears in the toolbar while this is
+active. - <code>global</code> — password is held in a JavaScript
+variable only (lost on page reload). - <code>none</code> — password is
+never cached; must be re-entered on every load/save.</p>
+<p><strong>Per-device strategy persistence:</strong></p>
+<p>The chosen strategy is stored per-device in <code>localStorage</code>
+under the key <code>pamCacheStrategy</code>. On startup, PAM reads this
+key and applies it before loading any file, solving the chicken-and-egg
+problem where the PAM file (which contains preferences) cannot be opened
+without first knowing the cache strategy.</p>
+<p>This means the user’s strategy choice persists across page reloads,
+browser restarts, and power cycles, independently of the PAM file. It
+can be changed at any time in Preferences and takes effect immediately.
+When the strategy is changed, the password is cleared from the previous
+storage location before the new strategy is applied.</p>
+<p><strong>History:</strong> - v2.0.3 — default changed from
+<code>local</code> to <code>session</code> as a security improvement
+(SEC-002). - v2.0.5 — default reverted to <code>local</code> due to PWA
+reload behaviour causing excessive re-entry friction;
+<code>⚠ PASS: LOCAL</code> badge added as compensating control. - v2.0.7
+— default changed back to <code>session</code>; per-device
+<code>pamCacheStrategy</code> persistence introduced so the user’s
+choice survives reloads without being tied to the PAM file default.</p>
 <p><strong>Recommendation:</strong> Use <code>session</code> (the
-default) unless you have a specific reason to use <code>local</code>.
-The <code>local</code> option is a convenience feature that reduces
-security — only enable it on a trusted, personal device.</p>
+default) for most environments. Use <code>local</code> only on a trusted
+personal device where re-entry friction is a genuine concern.</p>
 <hr />
 <h2 id="sec-003-sec-004-encryption-format-v1-vs-v2">SEC-003 / SEC-004 —
 Encryption format (v1 vs v2)</h2>

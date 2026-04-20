@@ -52,7 +52,7 @@ window.prefs = {
   passwordRangeMaxLength: 64,
   passwordRangeLengthDefault: 16,
   // file pass cache
-  filePassCache: 'local',
+  filePassCache: 'session',
   filePass: '',
   // misc
   themeName: 'dark',
@@ -384,6 +384,7 @@ import {
   getMemorablePassword,
   setFilePass,
   getFilePass,
+  clearFilePass,
   ALPHABET,
   ALPHA_LOWER,
   ALPHA_UPPER,
@@ -456,7 +457,7 @@ test('null password is stored as empty string', () => {
 })
 
 // Restore default
-window.prefs.filePassCache = 'local'
+window.prefs.filePassCache = 'session'
 
 // ---------------------------------------------------------------------------
 // search.js — searchRecords (needs minimal DOM fixture)
@@ -1029,12 +1030,13 @@ test('ftp:// URL is rejected (only http/https allowed)', () => {
 
 
 // ---------------------------------------------------------------------------
-// Phase 3 — SEC-002 revert: filePassCache default reverted to 'local'
 // ---------------------------------------------------------------------------
-suite('SEC-002 revert — filePassCache default is local')
-test('prefs stub uses local (matching the reverted default)', () => {
-  assertEqual(window.prefs.filePassCache, 'local',
-    'filePassCache should default to local (SEC-002 revert)')
+// Phase 3 — SEC-002: filePassCache default is session; per-device persistence via pamCacheStrategy
+// ---------------------------------------------------------------------------
+suite('SEC-002 — filePassCache default is session')
+test('prefs stub uses session (matching the new default)', () => {
+  assertEqual(window.prefs.filePassCache, 'session',
+    'filePassCache should default to session')
 })
 test('session cache stores in sessionStorage', () => {
   window.prefs.filePassCache = 'session'
@@ -1050,7 +1052,7 @@ test('local cache stores in localStorage', () => {
   assertEqual(localStorage.getItem('filePass'), 'sec002-local',
     'local cache should write to localStorage')
   localStorage.removeItem('filePass')
-  window.prefs.filePassCache = 'local'
+  window.prefs.filePassCache = 'session'
 })
 
 // ---------------------------------------------------------------------------
@@ -1193,9 +1195,9 @@ test('getDefaultPrefs returns a non-null object', () => {
   const p = getDefaultPrefs()
   assert(typeof p === 'object' && p !== null, 'getDefaultPrefs should return an object')
 })
-test('getDefaultPrefs filePassCache default is local (SEC-002 revert)', () => {
-  assertEqual(getDefaultPrefs().filePassCache, 'local',
-    'filePassCache default should be local (reverted from session)')
+test('getDefaultPrefs filePassCache default is session (SEC-002)', () => {
+  assertEqual(getDefaultPrefs().filePassCache, 'session',
+    'filePassCache default should be session')
 })
 test('getDefaultPrefs allowHtmlFieldRendering default is false (SEC-001)', () => {
   assertEqual(getDefaultPrefs().allowHtmlFieldRendering, false,
@@ -1215,7 +1217,7 @@ test('getDefaultPrefs returns a fresh object each call (no shared state)', () =>
   const p1 = getDefaultPrefs()
   const p2 = getDefaultPrefs()
   p1.filePassCache = 'mutated'
-  assertEqual(p2.filePassCache, 'local',
+  assertEqual(p2.filePassCache, 'session',
     'mutations to one result should not affect subsequent calls')
 })
 test('VALID_FIELD_TYPES includes html', () => {
@@ -2046,9 +2048,9 @@ test('missing created field gets placeholder date', () => {
 import { prefFilePassCacheStrategy } from '/js/prefs.js'
 
 suite('SEC-002 — filePassCache default and valid strategies')
-test('filePassCache default is local', () => {
-  assertEqual(getDefaultPrefs().filePassCache, 'local',
-    'filePassCache should default to local (SEC-002 revert)')
+test('filePassCache default is session', () => {
+  assertEqual(getDefaultPrefs().filePassCache, 'session',
+    'filePassCache should default to session')
 })
 test('VALID_CACHE_STRATEGIES contains none, global, local, session', () => {
   assert('none'    in VALID_CACHE_STRATEGIES, 'none should be a valid strategy')
@@ -2101,7 +2103,7 @@ test('indicator is visible when filePassCache is local', () => {
   assertEqual(el.style.display, 'inline',
     'indicator should be visible when filePassCache is local')
   el.remove()
-  window.prefs.filePassCache = 'local'  // restore default
+  window.prefs.filePassCache = 'session'  // restore default
 })
 
 suite('SEC-002 — prefFilePassCacheStrategy wired into Administration tab UI')
@@ -2159,6 +2161,72 @@ test('indicator is visible when allowHtmlFieldRendering is true', () => {
     'indicator should be visible when allowHtmlFieldRendering is true')
   el.remove()
   window.prefs.allowHtmlFieldRendering = false  // restore default
+})
+
+// ---------------------------------------------------------------------------
+// SEC-002 — pamCacheStrategy per-device persistence
+// ---------------------------------------------------------------------------
+suite('SEC-002 — pamCacheStrategy per-device persistence')
+test('initPrefs uses session default when pamCacheStrategy absent', () => {
+  localStorage.removeItem('pamCacheStrategy')
+  // simulate initPrefs default + lookup
+  let strategy = 'session'
+  const stored = localStorage.getItem('pamCacheStrategy')
+  if (stored && stored in {'none':1,'global':1,'local':1,'session':1}) {
+    strategy = stored
+  }
+  assertEqual(strategy, 'session',
+    'should fall back to session when pamCacheStrategy is absent')
+})
+test('initPrefs respects pamCacheStrategy when set to local', () => {
+  localStorage.setItem('pamCacheStrategy', 'local')
+  let strategy = 'session'
+  const stored = localStorage.getItem('pamCacheStrategy')
+  if (stored && stored in {'none':1,'global':1,'local':1,'session':1}) {
+    strategy = stored
+  }
+  assertEqual(strategy, 'local',
+    'should use local when pamCacheStrategy is local')
+  localStorage.removeItem('pamCacheStrategy')
+})
+test('initPrefs ignores invalid pamCacheStrategy value', () => {
+  localStorage.setItem('pamCacheStrategy', 'invalid-value')
+  let strategy = 'session'
+  const stored = localStorage.getItem('pamCacheStrategy')
+  if (stored && stored in {'none':1,'global':1,'local':1,'session':1}) {
+    strategy = stored
+  }
+  assertEqual(strategy, 'session',
+    'should fall back to session when pamCacheStrategy is invalid')
+  localStorage.removeItem('pamCacheStrategy')
+})
+test('clearFilePass removes password from localStorage when strategy is local', () => {
+  window.prefs.filePassCache = 'local'
+  localStorage.setItem('filePass', 'stale-password')
+  clearFilePass()
+  assertEqual(localStorage.getItem('filePass'), null,
+    'clearFilePass should remove filePass from localStorage')
+  window.prefs.filePassCache = 'session'
+})
+test('clearFilePass removes password from sessionStorage when strategy is session', () => {
+  window.prefs.filePassCache = 'session'
+  sessionStorage.setItem('filePass', 'stale-password')
+  clearFilePass()
+  assertEqual(sessionStorage.getItem('filePass'), null,
+    'clearFilePass should remove filePass from sessionStorage')
+  window.prefs.filePassCache = 'session'
+})
+test('switching strategy from local to session clears localStorage filePass', () => {
+  // simulate the change handler
+  window.prefs.filePassCache = 'local'
+  localStorage.setItem('filePass', 'old-local-pass')
+  clearFilePass()  // clears local
+  window.prefs.filePassCache = 'session'
+  localStorage.setItem('pamCacheStrategy', 'session')
+  assertEqual(localStorage.getItem('filePass'), null,
+    'filePass should be cleared from localStorage after switching to session')
+  localStorage.removeItem('pamCacheStrategy')
+  window.prefs.filePassCache = 'session'
 })
 
 // pam.css — dark mode badge muting

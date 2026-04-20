@@ -356,10 +356,12 @@ export function showMainPasswordGeneratorDlg() {
 }
 
 // Regenerate the password options in the modal body.
-function refreshMainPasswordGeneratorDlg(dlg) {
+function refreshMainPasswordGeneratorDlg(dlg, len) {
     const body = dlg.querySelector('.modal-body')
     body.innerHTML = ''
-    const len = window.prefs.passwordRangeLengthDefault || 20
+    if (!len) {
+        len = window.prefs.passwordRangeLengthDefault || 20
+    }
     const num = 5
     const cp0 = getCrypticPassword(len, ALPHABET)
 
@@ -384,11 +386,33 @@ function refreshMainPasswordGeneratorDlg(dlg) {
         mpBtns.push(mkCopyButton(getMemorablePassword(len)))
     }
 
+    // Length slider — regenerates passwords live as the user drags
+    const lenLabel = xmk('span').xClass('fs-5', 'ms-2').xInnerHTML(len)
+    const slider = xmk('input')
+        .xClass('form-range', 'w-50')
+        .xAttrs({
+            'type': 'range',
+            'value': len,
+            'title': 'password length',
+            'min': window.prefs.passwordRangeMinLength || 12,
+            'max': window.prefs.passwordRangeMaxLength || 32,
+        })
+        .xAddEventListener('input', (event) => {
+            const newLen = parseInt(event.target.value)
+            lenLabel.innerHTML = newLen
+            refreshMainPasswordGeneratorDlg(dlg, newLen)
+        })
+
     body.appendChild(
         xmk('div').xClass('p-2').xAppend(
             xmk('p').xClass('fs-6').xInnerHTML(
                 'Click a password to copy it to the clipboard. ' +
                 'Click <b>Regenerate</b> to generate a new set.'),
+            xmk('div').xClass('mb-3').xAppend(
+                xmk('span').xClass('fs-5').xInnerHTML('Length&nbsp;'),
+                slider,
+                lenLabel,
+            ),
             xmk('p').xClass('fs-5', 'mb-1').xInnerHTML('Cryptic Password'),
             mkCopyButton(cp0),
             xmk('p').xClass('fs-5', 'mb-1', 'mt-3').xInnerHTML('Memorable Passwords'),

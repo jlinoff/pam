@@ -9,6 +9,7 @@ import { setDarkLightTheme } from './utils.js'
 import { searchRecords } from './search.js'
 import { enableRawJSONEdit } from './raw.js'
 import { updateHtmlRenderingIndicator, updateFilePassCacheIndicator } from './main.js'
+import { clearFilePass } from './password.js'
 
 // These are the input types that the tool knows how to handle.
 export const VALID_FIELD_TYPES = {
@@ -63,7 +64,7 @@ export function initPrefs() {
         enableSaveFile: true,
         fileName: 'example.txt',
         filePass: '',
-        filePassCache: 'local',   // options: none, global, local, session — default local (SEC-002 revert)
+        filePassCache: 'session',   // options: none, global, local, session — default session; overridden per-device by pamCacheStrategy in localStorage
         textareaMinHeight: '5em',
         editableFieldName: false, // if true, allow field names to be changed
         searchCaseInsensitive: true,
@@ -120,6 +121,15 @@ export function initPrefs() {
         encryptionFormat: 'v1',  // v1 (default) or v2 — see SECURITY.md SEC-003/SEC-004
     }
     setHelpLinks()
+
+    // Per-device cache strategy override (SEC-002).
+    // If the user has previously chosen a strategy on this device, honour it
+    // regardless of the compiled-in default.  This survives page reloads and
+    // power cycles because localStorage is persistent.
+    const deviceStrategy = localStorage.getItem('pamCacheStrategy')
+    if (deviceStrategy && deviceStrategy in VALID_CACHE_STRATEGIES) {
+        window.prefs.filePassCache = deviceStrategy
+    }
 }
 
 function mkFieldset(legend) {
@@ -302,11 +312,13 @@ export function menuPrefsDlg() {
                                'The <code>global</code> option stores the password in a global window variable. ' +
                                'It persists until the page is reloaded or closed.<br>' +
                                'The <code>local</code> option stores the password in localStorage where it ' +
-                               'persists until all windows that share the same URL are closed. ' +
+                               'persists across sessions and power cycles until explicitly cleared. ' +
                                'This is convenient for personal use but is a security risk on shared devices. ' +
                                'A <b>⚠ PASS: LOCAL</b> warning badge will appear in the toolbar while this is active.<br>' +
-                               'The <code>session</code> option stores the password in sessionStorage ' +
-                               'where it persists for a single browser tab until it is closed.'),
+                               'The <code>session</code> option (default) stores the password in sessionStorage ' +
+                               'where it persists for a single browser tab until it is closed.<br>' +
+                               'Your chosen strategy is stored per-device in localStorage as <code>pamCacheStrategy</code> ' +
+                               'and will be restored automatically on next launch.'),
                 prefEnableRawJSONEdit(labelClasses, inputClasses),
                 prefPromptDesc('Enable editing of the raw internal JSON data. '+
                                'This is not recommended unless you really know what you are doing '+
@@ -739,7 +751,10 @@ export function prefFilePassCacheStrategy(labelClasses, inputClasses) {
                 let dm = event.target.xGetParentWithClass('dropdown-menu')
                 let button = dm.parentElement.xGet('.dropdown-toggle')
                 button.innerHTML = new_value
+                clearFilePass()  // remove password from current storage before switching
                 window.prefs.filePassCache = new_value
+                localStorage.setItem('pamCacheStrategy', new_value)  // persist per-device
+                updateFilePassCacheIndicator()
             })
         if (key1 === value) {
             a.xClass('active')

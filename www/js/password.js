@@ -327,6 +327,27 @@ export function getFilePass() {
     return password
 }
 
+// Clear the password from whichever storage the current strategy uses.
+// Call this before switching strategies to avoid leaving stale passwords.
+export function clearFilePass() {
+    switch (window.prefs.filePassCache) {
+    case 'local':
+        localStorage.removeItem('filePass')
+        break
+    case 'session':
+        sessionStorage.removeItem('filePass')
+        break
+    case 'global':
+        window.prefs.filePass = ''
+        break
+    case 'none':
+        break
+    default:
+        clog(`ERROR: internal error, invalid value "${window.prefs.filePassCache}"`)
+        break
+    }
+}
+
 export function toggleMainPasswordGenerator() {
     let fakeRow = document.getElementById('x-main-passgen-row')
     if (!!fakeRow) {

@@ -71,7 +71,7 @@ the on-line help is generated.
       * [Search](#search)
       * [Menu](#menu)
     * [Records Section](#records-section)
-    * [Status Section](#status-section)
+    * [Status and Controls Section](#status-and-controls-section)
   * [Menu Functions](#menu-functions)
     * [About](#about)
     * [Create New Record](#create-new-record)
@@ -670,8 +670,8 @@ To get the information for an account you click or tap the button.
 At the top of the screen is the search bar and, at the far right, the
 menu.
 
-At the bottom of the screen is a status bar that shows status
-messages. On the right side of the status bar are two buttons: the
+At the bottom of the screen is a status and controls section that shows status
+messages. On the right side of the status and controls section are two buttons: the
 dark/light mode toggle and a **✨ Pwd Gen** button that opens a
 standalone password generator. The standalone generator is useful when
 creating a new account somewhere and you need a strong password before
@@ -1015,7 +1015,13 @@ how to define the prefix and suffixes for memorable passwords.
 ## Layout
 _PAM_ is a simple single page web application (SPA). It consists of three
 basic parts: the menu and search section, the records section and the
-status section.
+status and controls section.
+
+The status and controls section (footer) contains the dark/light mode toggle buttons
+on the left, a status message area in the center, and on the right a
+**✨ Pwd Gen** button for the standalone password generator. If the
+file password cache strategy is set to `local`, a **⚠ PASS: LOCAL**
+warning badge also appears on the right.
 
 It looks something like this
 
@@ -1144,8 +1150,8 @@ Each of the record management options is discussed in more detail in the
 [Functions](#functions) section.
 
 
-### Status Section
-Below the records section, at the bottom, is the status section where
+### Status and Controls Section
+Below the records section, at the bottom, is the status and controls section where
 ephemeral status messages are displayed. The messages disappear after
 about 1.5 seconds but the duration is controlled by a preference that
 you can set. See the [Preferences](#preferences) section for more

@@ -671,7 +671,12 @@ At the top of the screen is the search bar and, at the far right, the
 menu.
 
 At the bottom of the screen is a status bar that shows status
-messages.
+messages. On the right side of the status bar are two buttons: the
+dark/light mode toggle and a **✨ Pwd Gen** button that opens a
+standalone password generator. The standalone generator is useful when
+creating a new account somewhere and you need a strong password before
+you have a PAM record to attach it to. Click a generated password to
+copy it to the clipboard, then paste it wherever you need it.
 
 ### Expanded View of a Record
 Once you click on or tap a record it expands as shown below where
@@ -961,7 +966,22 @@ To hide the password, click or tap on the
 <img src="www/icons/blue/eye-slash.svg" height="32" width="32" alt="eye"/> icon.
 
 ### Password Generator
-This is what the password field dialogue looks like with no generator.
+PAM has two password generators:
+
+1. **Record field generator** — opened by clicking the
+<img src="www/icons/blue/gear.svg" height='32' width='32' />
+icon on a password field inside a record. The generated password is
+inserted directly into the field when you click it.
+
+2. **Standalone generator** — opened by clicking the **✨ Pwd Gen**
+button in the toolbar footer. Use this when you need a strong password
+for a new account before you have created a PAM record for it. Click
+any generated password to copy it to the clipboard.
+
+Both generators produce the same set of options: one cryptic password
+and five memorable passwords.
+
+This is what the record field password dialogue looks like with no generator.
 
 <img src="www/help/pam-password-no-generator.png" width="400" alt="password-no-generator">
 
@@ -983,20 +1003,7 @@ This is what the password generator looks like with annotations.
 
 <img src="www/help/pam-password-generator-annotated.png" width="400" alt="password-generator-annotated">
 
-If you click or tap on the <img src="www/icons/blue/gear.svg" height='32' width='32' /> icon
-a second time, new passwords will be generated.
-
-You must click or tap on the <img src="www/icons/blue/x-circle.svg" height='32' width='32' /> icon
-to close the dialogue.
-
-I chose this approach because I wanted the
-<img src="www/icons/blue/gear.svg" height='32' width='32' />
-icon to be used to generate new passwords.
-
-> In retrospect, that choice may not have been the most intuitive way
-> to implement closing the generator dialogue it but it works well
-> enough and can easily be changed if it turns out to be too
-> cumbersome.
+Click or tap on the <b>Regenerate</b> button to generate a new set of passwords.
 
 To choose a generated password simply click or tap on it and it will
 be added to the field value.

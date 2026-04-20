@@ -2,8 +2,7 @@
 import { xmk } from './lib.js'
 import { statusBlip } from './status.js'
 import { words } from './en_words.js'
-import { icon, clog, hide, show, setDarkLightTheme, copyTextToClipboard } from './utils.js'
-import { mkRecordEditField } from './field.js'
+import { icon, clog, setDarkLightTheme, copyTextToClipboard, mkPopupModalDlg, mkPopupModalDlgButton } from './utils.js'
 
 export const ALPHA_LOWER = "abcdefghijklmnopqrstuvwxyz"
 export const ALPHA_UPPER = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
@@ -348,92 +347,74 @@ export function clearFilePass() {
     }
 }
 
-export function toggleMainPasswordGenerator() {
-    let fakeRow = document.getElementById('x-main-passgen-row')
-    if (!!fakeRow) {
-        // The password generator is present, turn it off.
-        removeMainPasswordGenerator()
-    } else {
-        // The password generator is not present, turn it on.
-        mkMainPasswordGenerator()
-    }
+// Show the main password generator modal.
+export function showMainPasswordGeneratorDlg() {
+    const dlg = document.getElementById('mainPasswordGeneratorDlg')
+    const modal = bootstrap.Modal.getOrCreateInstance(dlg)
+    refreshMainPasswordGeneratorDlg(dlg)
+    modal.show()
 }
 
-function removeMainPasswordGenerator() {
-    let fakeTopdiv = document.getElementById('x-main-passgen-topdiv')
-    if (!!fakeTopdiv) {
-        fakeTopdiv.remove()
+// Regenerate the password options in the modal body.
+function refreshMainPasswordGeneratorDlg(dlg) {
+    const body = dlg.querySelector('.modal-body')
+    body.innerHTML = ''
+    const len = window.prefs.passwordRangeLengthDefault || 20
+    const num = 5
+    const cp0 = getCrypticPassword(len, ALPHABET)
+
+    // Clipboard copy helper — copies text and shows a status blip
+    function mkCopyButton(pwd) {
+        return xmk('button')
+            .xClass('btn', 'btn-secondary', 'border-dark', 'm-2', 'font-monospace')
+            .xAttrs({'title': 'click to copy to clipboard'})
+            .xAppend(
+                icon('bi-clipboard', 'copy'),
+                xmk('span').xClass('ms-2').xInnerHTML(pwd)
+            )
+            .xAddEventListener('click', (event) => {
+                const pwd = event.currentTarget.querySelector('span').textContent
+                copyTextToClipboard(pwd)
+                statusBlip('Password copied to clipboard')
+            })
     }
 
-    show('top-section')
-    show('mid-section')
-    enableRawJSONEdit()
+    const mpBtns = []
+    for (let i = 0; i < num; i++) {
+        mpBtns.push(mkCopyButton(getMemorablePassword(len)))
+    }
+
+    body.appendChild(
+        xmk('div').xClass('p-2').xAppend(
+            xmk('p').xClass('fs-6').xInnerHTML(
+                'Click a password to copy it to the clipboard. ' +
+                'Click <b>Regenerate</b> to generate a new set.'),
+            xmk('p').xClass('fs-5', 'mb-1').xInnerHTML('Cryptic Password'),
+            mkCopyButton(cp0),
+            xmk('p').xClass('fs-5', 'mb-1', 'mt-3').xInnerHTML('Memorable Passwords'),
+            ...mpBtns,
+        )
+    )
+    setDarkLightTheme(window.prefs.themeName)
 }
 
-function mkMainPasswordGenerator() {
-    // Create fake scafolding for the password generation logic on the main page.
-
-    // Disable raw JSON editing if it is enabled to avoid overlay conflicts
-    if (window.prefs.enableRawJSONEdit) {
-        hide('x-edit-raw-json-data')
-    }
-
-    hide('top-section')
-    hide('mid-section')
-
-    // Create the fake row scafolding, including a fake event.
-    let fakeTopdiv = xmk('div')
-        .xId('x-main-passgen-topdiv')
-        .xStyle({'padding-left':'1em',
-                 'padding-top':'0',
-                 'margin-top': '0'})
-    let fakeRow = xmk('div')
-        .xId('x-main-passgen-row')
-        .xClass('row', 'x-fake')
-    let fakePassword = mkRecordEditField('Password', 'password', fakeRow, '')
-    let fakeCliboardCopyButton = xmk('button')
-        .xClass('btn', 'btn-lg', 'p-0', 'ms-2')
-        .xAttrs({'type': 'button'})
-        .xAppend(icon('bi-clipboard', 'copy to clipboard')) // also bi-files
-        .xAddEventListener('click', (event) => {
-            let input = event.target.xGetParentWithClass('row').getElementsByClassName('x-fld-value')[0]
-            let value = input.value
-            input.focus()
-            copyTextToClipboard(value)
+// Build the modal DOM element — called once during initialization.
+export function mkMainPasswordGeneratorDlg() {
+    const body = xmk('div')  // populated on each open by refreshMainPasswordGeneratorDlg
+    const closeBtn = mkPopupModalDlgButton('Close', 'btn-secondary', 'Close the password generator', () => true)
+    const regenBtn = xmk('button')
+        .xClass('btn', 'btn-primary', 'btn-lg')
+        .xAttrs({'type': 'button', 'title': 'Generate a new set of passwords'})
+        .xInnerHTML('Regenerate')
+        .xAddEventListener('click', () => {
+            const dlg = document.getElementById('mainPasswordGeneratorDlg')
+            refreshMainPasswordGeneratorDlg(dlg)
         })
-
-    // Insert the clipboard copy button.
-    let div = fakePassword.getElementsByClassName('bi-gear')[0].parentElement.parentElement
-    div.xAppend(xmk('span').xInnerHTML('&nbsp;&nbsp;'), fakeCliboardCopyButton)
-    let fakeEvent = {'target': {'parentElement': fakeRow}}
-
-    // Now make the password generation dialogue.
-    fakeTopdiv.xAppend(fakeRow,
-                       xmk('div').xStyle({'height': '80px'}) // for scrolling over footer
-                      )
-    fakeRow.xAppend(fakePassword)
-    document.body.appendChild(fakeTopdiv)
-    mkGeneratePasswordDlg(fakeEvent)
-
-    // Find the buttons needed for the event overlays.
-    let button1 = null
-    let button2 = null
-    let btns = fakeRow.getElementsByClassName('btn')
-    for (let i=0; i<btns.length; i++) {
-        let b = btns[i]
-        if (b.innerHTML.includes('Close Password Generator')) {
-            button1 = b
-        }
-        if (b.innerHTML.includes('Delete Field')) {
-            button2 = b
-        }
-    }
-    // Add the additional event handlers to clean up.
-    button1.addEventListener('click', (event) => {
-        button2.click()
-    })
-    button2.addEventListener('click', (event) => {
-        button1.click()
-        removeMainPasswordGenerator()
-    })
+    return mkPopupModalDlg(
+        'mainPasswordGeneratorDlg',
+        '&#10024; Password Generator',
+        body,
+        regenBtn,
+        closeBtn,
+    )
 }

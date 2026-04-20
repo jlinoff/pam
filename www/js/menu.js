@@ -13,6 +13,7 @@ import { menuPrefsDlg, addDefaultRecordFields, resetPrefs } from './prefs.js'
 import { menuSaveDlg, enableSaveFile } from './save.js'
 import { menuLoadDlg } from './load.js'
 import { printRecords, enablePrinting } from './print.js'
+import { mkMainPasswordGeneratorDlg } from './password.js'
 import { enableRawJSONEdit } from './raw.js'
 
 function menuEntryDivider() {
@@ -219,6 +220,7 @@ export function mkMenu() {
     document.body.xAppendChild(menuClearDlg())
     document.body.xAppendChild(menuLoadDlg())
     document.body.xAppendChild(menuSaveDlg())
+    document.body.xAppendChild(mkMainPasswordGeneratorDlg())
     return e
 }
 

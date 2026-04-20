@@ -385,6 +385,7 @@ import {
   setFilePass,
   getFilePass,
   clearFilePass,
+  mkMainPasswordGeneratorDlg,
   ALPHABET,
   ALPHA_LOWER,
   ALPHA_UPPER,
@@ -458,6 +459,39 @@ test('null password is stored as empty string', () => {
 
 // Restore default
 window.prefs.filePassCache = 'session'
+
+// ---------------------------------------------------------------------------
+// password.js — mkMainPasswordGeneratorDlg
+// ---------------------------------------------------------------------------
+suite('password.js — mkMainPasswordGeneratorDlg')
+test('mkMainPasswordGeneratorDlg returns a DOM element', () => {
+  const dlg = mkMainPasswordGeneratorDlg()
+  assert(dlg instanceof Element, 'should return a DOM Element')
+})
+test('mkMainPasswordGeneratorDlg has correct id', () => {
+  const dlg = mkMainPasswordGeneratorDlg()
+  assertEqual(dlg.id, 'mainPasswordGeneratorDlg',
+    'dialog id should be mainPasswordGeneratorDlg')
+})
+test('mkMainPasswordGeneratorDlg contains a Close button', () => {
+  const dlg = mkMainPasswordGeneratorDlg()
+  const buttons = Array.from(dlg.querySelectorAll('button'))
+  const closeBtn = buttons.find(b => b.textContent.includes('Close'))
+  assert(closeBtn !== undefined, 'dialog should contain a Close button')
+})
+test('mkMainPasswordGeneratorDlg contains a Regenerate button', () => {
+  const dlg = mkMainPasswordGeneratorDlg()
+  const buttons = Array.from(dlg.querySelectorAll('button'))
+  const regenBtn = buttons.find(b => b.textContent.includes('Regenerate'))
+  assert(regenBtn !== undefined, 'dialog should contain a Regenerate button')
+})
+test('mkMainPasswordGeneratorDlg title contains Password Generator', () => {
+  const dlg = mkMainPasswordGeneratorDlg()
+  const title = dlg.querySelector('.modal-title')
+  assert(title !== null, 'dialog should have a modal-title element')
+  assert(title.textContent.includes('Password Generator'),
+    'modal title should contain "Password Generator"')
+})
 
 // ---------------------------------------------------------------------------
 // search.js — searchRecords (needs minimal DOM fixture)

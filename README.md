@@ -185,11 +185,11 @@ It looks _something_ like this on my iphone in dark mode for the fictitious
 example records that are provided by PAM to practice with, as described
 in the [Load File](#load-file) section later on.
 
-<img src="www/help/pam-iphone-screenshot-dark.jpg" alt="iphone-screenshot-light-mode" width="400">
+<img src="www/help/pam-iphone-screenshot-dark.png" alt="iphone-screenshot-light-mode" width="400">
 
 And _something_ like this in light mode.
 
-<img src="www/help/pam-iphone-screenshot-light.jpg" alt="iphone-screenshot-dark-mode" width="400">
+<img src="www/help/pam-iphone-screenshot-light.png" alt="iphone-screenshot-dark-mode" width="400">
 
 At the bottom left of the screen there is a button that allows you to toggle between
 light and dark mode. It looks like a sun (switch to light) in dark mode:
@@ -998,10 +998,6 @@ implementation which only had a single choice.
 > The decision to present five memorable passwords was completely
 > arbitrary but it seems to work well enough for my needs and can easily be
 > changed.
-
-This is what the password generator looks like with annotations.
-
-<img src="www/help/pam-password-generator-annotated.png" width="400" alt="password-generator-annotated">
 
 Click or tap on the <b>Regenerate</b> button to generate a new set of passwords.
 

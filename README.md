@@ -71,7 +71,7 @@ the on-line help is generated.
       * [Search](#search)
       * [Menu](#menu)
     * [Records Section](#records-section)
-    * [Status Section](#status-section)
+    * [Status and Controls Section](#status-and-controls-section)
   * [Menu Functions](#menu-functions)
     * [About](#about)
     * [Create New Record](#create-new-record)
@@ -185,11 +185,11 @@ It looks _something_ like this on my iphone in dark mode for the fictitious
 example records that are provided by PAM to practice with, as described
 in the [Load File](#load-file) section later on.
 
-<img src="www/help/pam-iphone-screenshot-dark.jpg" alt="iphone-screenshot-light-mode" width="400">
+<img src="www/help/pam-iphone-screenshot-dark.png" alt="iphone-screenshot-light-mode" width="400">
 
 And _something_ like this in light mode.
 
-<img src="www/help/pam-iphone-screenshot-light.jpg" alt="iphone-screenshot-dark-mode" width="400">
+<img src="www/help/pam-iphone-screenshot-light.png" alt="iphone-screenshot-dark-mode" width="400">
 
 At the bottom left of the screen there is a button that allows you to toggle between
 light and dark mode. It looks like a sun (switch to light) in dark mode:
@@ -670,8 +670,13 @@ To get the information for an account you click or tap the button.
 At the top of the screen is the search bar and, at the far right, the
 menu.
 
-At the bottom of the screen is a status bar that shows status
-messages.
+At the bottom of the screen is a status and controls section that shows status
+messages. On the right side of the status and controls section are two buttons: the
+dark/light mode toggle and a **✨ Pwd Gen** button that opens a
+standalone password generator. The standalone generator is useful when
+creating a new account somewhere and you need a strong password before
+you have a PAM record to attach it to. Click a generated password to
+copy it to the clipboard, then paste it wherever you need it.
 
 ### Expanded View of a Record
 Once you click on or tap a record it expands as shown below where
@@ -961,7 +966,22 @@ To hide the password, click or tap on the
 <img src="www/icons/blue/eye-slash.svg" height="32" width="32" alt="eye"/> icon.
 
 ### Password Generator
-This is what the password field dialogue looks like with no generator.
+PAM has two password generators:
+
+1. **Record field generator** — opened by clicking the
+<img src="www/icons/blue/gear.svg" height='32' width='32' />
+icon on a password field inside a record. The generated password is
+inserted directly into the field when you click it.
+
+2. **Standalone generator** — opened by clicking the **✨ Pwd Gen**
+button in the toolbar footer. Use this when you need a strong password
+for a new account before you have created a PAM record for it. Click
+any generated password to copy it to the clipboard.
+
+Both generators produce the same set of options: one cryptic password
+and five memorable passwords.
+
+This is what the record field password dialogue looks like with no generator.
 
 <img src="www/help/pam-password-no-generator.png" width="400" alt="password-no-generator">
 
@@ -979,24 +999,7 @@ implementation which only had a single choice.
 > arbitrary but it seems to work well enough for my needs and can easily be
 > changed.
 
-This is what the password generator looks like with annotations.
-
-<img src="www/help/pam-password-generator-annotated.png" width="400" alt="password-generator-annotated">
-
-If you click or tap on the <img src="www/icons/blue/gear.svg" height='32' width='32' /> icon
-a second time, new passwords will be generated.
-
-You must click or tap on the <img src="www/icons/blue/x-circle.svg" height='32' width='32' /> icon
-to close the dialogue.
-
-I chose this approach because I wanted the
-<img src="www/icons/blue/gear.svg" height='32' width='32' />
-icon to be used to generate new passwords.
-
-> In retrospect, that choice may not have been the most intuitive way
-> to implement closing the generator dialogue it but it works well
-> enough and can easily be changed if it turns out to be too
-> cumbersome.
+Click or tap on the <b>Regenerate</b> button to generate a new set of passwords.
 
 To choose a generated password simply click or tap on it and it will
 be added to the field value.
@@ -1008,7 +1011,13 @@ how to define the prefix and suffixes for memorable passwords.
 ## Layout
 _PAM_ is a simple single page web application (SPA). It consists of three
 basic parts: the menu and search section, the records section and the
-status section.
+status and controls section.
+
+The status and controls section (footer) contains the dark/light mode toggle buttons
+on the left, a status message area in the center, and on the right a
+**✨ Pwd Gen** button for the standalone password generator. If the
+file password cache strategy is set to `local`, a **⚠ PASS: LOCAL**
+warning badge also appears on the right.
 
 It looks something like this
 
@@ -1137,8 +1146,8 @@ Each of the record management options is discussed in more detail in the
 [Functions](#functions) section.
 
 
-### Status Section
-Below the records section, at the bottom, is the status section where
+### Status and Controls Section
+Below the records section, at the bottom, is the status and controls section where
 ephemeral status messages are displayed. The messages disappear after
 about 1.5 seconds but the duration is controlled by a preference that
 you can set. See the [Preferences](#preferences) section for more

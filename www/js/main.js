@@ -10,7 +10,7 @@ import { initPrefs, addDefaultRecordFields } from './prefs.js'
 import { mkMenu } from './menu.js'
 import { mkSearchInputElement, searchRecords } from './search.js'
 import { refreshAbout } from './about.js'
-import { toggleMainPasswordGenerator } from './password.js'
+import { showMainPasswordGeneratorDlg } from './password.js'
 import { toggleRawJSONDataEdit } from './raw.js'
 import { enablePrinting } from './print.js'
 import { enableSaveFile } from './save.js'
@@ -160,9 +160,11 @@ function topLayout() {
                         .xId('x-generate-password')
                         .xClass('btn')
                         .xStyle({'float': 'right', 'margin-right': '1em'})
-                        .xAttrs({'title': 'generate password'})
-                        .xAppend(icon('bi-key', 'generate password'))  // in dark mode
-                        .xAddEventListener('click', (event) => {toggleMainPasswordGenerator()}),
+                        .xAttrs({'title': 'Open Password Generator'})
+                        .xAppend(
+                            icon('bi-stars', 'password generator'),
+                            xmk('span').xInnerHTML('&nbsp;Pwd Gen'))
+                        .xAddEventListener('click', (event) => {showMainPasswordGeneratorDlg()}),
                     xmk('button')
                         .xId('x-edit-raw-json-data')
                         .xClass('btn')

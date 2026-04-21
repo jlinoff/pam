@@ -580,37 +580,61 @@ def test_preferences_dialog_opens_and_closes():
 
 def test_password_generator():
     '''
-    UX-001: Open the toolbar password generator, verify the panel appears,
-    then close it and verify it is gone.
+    UX-001: Open the toolbar password generator modal, verify it appears
+    with password buttons, test Regenerate, then close it.
     '''
     driver = get_driver()
     driver.get('http://localhost:8081/')
     time.sleep(1)
 
-    # Click the key icon in the toolbar to open the generator
-    key_btn = driver.find_element(By.ID, 'x-generate-password')
-    scroll_and_click(driver, key_btn)
+    # Click the Pwd Gen button in the toolbar footer
+    gen_btn = driver.find_element(By.ID, 'x-generate-password')
+    scroll_and_click(driver, gen_btn)
     time.sleep(0.5)
 
-    # The generator panel should be visible (id=x-main-passgen-topdiv)
+    # The modal should be visible
     wait = WebDriverWait(driver, 5)
-    gen_panel = wait.until(
-        EC.presence_of_element_located((By.ID, 'x-main-passgen-topdiv'))
+    modal = wait.until(
+        EC.visibility_of_element_located((By.ID, 'mainPasswordGeneratorDlg'))
     )
-    assert gen_panel is not None, 'Password generator panel should appear'
-    assert gen_panel.is_displayed(), 'Password generator panel should be visible'
+    assert modal.is_displayed(), 'Password generator modal should be visible'
 
-    # The generated password input should exist
-    pw_input = driver.find_element(By.ID, 'x-main-passgen-row')
-    assert pw_input is not None, 'Password generator row should exist'
+    # Modal title should contain 'Password Generator'
+    title = modal.find_element(By.CLASS_NAME, 'modal-title')
+    assert 'Password Generator' in title.text, \
+        f'Modal title should contain "Password Generator", got: "{title.text}"'
 
-    # Close the generator by clicking the key button again
-    scroll_and_click(driver, key_btn)
+    # Should contain at least 6 password copy buttons (1 cryptic + 5 memorable)
+    body = modal.find_element(By.CLASS_NAME, 'modal-body')
+    pwd_btns = body.find_elements(By.CLASS_NAME, 'btn-secondary')
+    assert len(pwd_btns) >= 6, \
+        f'Expected at least 6 password buttons, got {len(pwd_btns)}'
+
+    # Each button should contain non-empty text (the password)
+    for btn in pwd_btns:
+        spans = btn.find_elements(By.TAG_NAME, 'span')
+        pwd_text = spans[-1].text if spans else ''
+        assert len(pwd_text) > 0, 'Password button should contain a non-empty password'
+
+    # Capture current passwords then click Regenerate
+    before = [btn.find_elements(By.TAG_NAME, 'span')[-1].text for btn in pwd_btns]
+    regen_btn = modal.find_element(By.XPATH, ".//button[contains(text(),'Regenerate')]")
+    scroll_and_click(driver, regen_btn)
     time.sleep(0.5)
 
-    # Panel should be gone
-    panels = driver.find_elements(By.ID, 'x-main-passgen-topdiv')
-    assert len(panels) == 0, 'Password generator panel should be removed after close'
+    # Passwords should have changed (at least one should differ)
+    body = modal.find_element(By.CLASS_NAME, 'modal-body')
+    after_btns = body.find_elements(By.CLASS_NAME, 'btn-secondary')
+    after = [btn.find_elements(By.TAG_NAME, 'span')[-1].text for btn in after_btns]
+    assert before != after, 'Regenerate should produce different passwords'
+
+    # Close the modal
+    close_btn = modal.find_element(By.XPATH, ".//button[contains(text(),'Close')]")
+    scroll_and_click(driver, close_btn)
+    time.sleep(0.5)
+
+    # Modal should no longer be visible
+    assert not modal.is_displayed(), 'Password generator modal should be hidden after close'
 
     driver.quit()
 

@@ -52,10 +52,15 @@ The chosen strategy is stored per-device in `localStorage` under the key `pamCac
 
 This means the user's strategy choice persists across page reloads, browser restarts, and power cycles, independently of the PAM file. It can be changed at any time in Preferences and takes effect immediately. When the strategy is changed, the password is cleared from the previous storage location before the new strategy is applied.
 
+**PWA note:**
+
+When PAM is installed as a Progressive Web App (home screen shortcut) on iOS Safari, each launch may start a fresh browser session, wiping `sessionStorage`. If your PAM file has `filePassCache` set to `local` in its preferences, PAM now correctly detects this after decrypting the file and re-stores the password in `localStorage`, persisting the strategy as `pamCacheStrategy` so subsequent launches use the same bucket. (BUG-002)
+
 **History:**
 - v2.0.3 — default changed from `local` to `session` as a security improvement (SEC-002).
 - v2.0.5 — default reverted to `local` due to PWA reload behaviour causing excessive re-entry friction; `⚠ PASS: LOCAL` badge added as compensating control.
 - v2.0.7 — default changed back to `session`; per-device `pamCacheStrategy` persistence introduced so the user's choice survives reloads without being tied to the PAM file default.
+- v1.3.1 — BUG-002 fixed: password was stored in the wrong storage bucket when the loaded file's `filePassCache` pref differed from the startup default. Manifested as lost password on iOS PWA relaunch when the file specified `local` but the device had no prior `pamCacheStrategy` set.
 
 **Recommendation:** Use `session` (the default) for most environments. Use `local` only on a trusted personal device where re-entry friction is a genuine concern.
 

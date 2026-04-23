@@ -1090,6 +1090,77 @@ test('local cache stores in localStorage', () => {
 })
 
 // ---------------------------------------------------------------------------
+// BUG-002: password stored in wrong bucket when file's filePassCache differs
+// from the active strategy at load time (manifests as lost password on iOS
+// PWA relaunch when the file specifies 'local' but startup defaulted to 'session').
+// ---------------------------------------------------------------------------
+suite('BUG-002 — filePassCache strategy mismatch on load')
+test('password re-stored in correct bucket after file prefs override strategy', () => {
+  // Simulate startup state: active strategy is 'session' (compiled-in default)
+  window.prefs.filePassCache = 'session'
+  sessionStorage.removeItem('filePass')
+  localStorage.removeItem('filePass')
+
+  // Simulate setFilePass() being called during load mechanics (before loadCallback)
+  setFilePass('hunter2')
+  assertEqual(sessionStorage.getItem('filePass'), 'hunter2',
+    'password should initially land in sessionStorage when strategy is session')
+  assertEqual(localStorage.getItem('filePass'), null,
+    'localStorage should be empty before strategy switch')
+
+  // Simulate loadCallback applying file prefs that specify 'local'
+  window.prefs.filePassCache = 'local'
+  setFilePass('hunter2')  // the fix: re-store under the now-correct strategy
+
+  assertEqual(localStorage.getItem('filePass'), 'hunter2',
+    'password should be in localStorage after strategy switches to local')
+  assertEqual(getFilePass(), 'hunter2',
+    'getFilePass() should return the password after strategy switch')
+
+  // Cleanup
+  clearFilePass()
+  sessionStorage.removeItem('filePass')  // clear the old bucket too
+  localStorage.removeItem('pamCacheStrategy')
+  window.prefs.filePassCache = 'session'
+})
+test('old sessionStorage bucket does not survive simulated PWA relaunch', () => {
+  // Simulate the pre-fix failure: password stored under 'session' but prefs say 'local'
+  window.prefs.filePassCache = 'session'
+  setFilePass('hunter2')
+  // Switch strategy without re-storing (what happened before the fix)
+  window.prefs.filePassCache = 'local'
+  // Simulate iOS PWA relaunch: sessionStorage is wiped
+  sessionStorage.clear()
+  // Without the fix, getFilePass() returns '' here
+  assertEqual(getFilePass(), '',
+    'without re-storing, password is lost after sessionStorage wipe — confirms the bug existed')
+  // Cleanup
+  localStorage.removeItem('filePass')
+  window.prefs.filePassCache = 'session'
+})
+test('no cross-bucket leak: re-storing clears old sessionStorage entry', () => {
+  window.prefs.filePassCache = 'session'
+  sessionStorage.removeItem('filePass')
+  localStorage.removeItem('filePass')
+  setFilePass('hunter2')
+  assertEqual(sessionStorage.getItem('filePass'), 'hunter2', 'in sessionStorage initially')
+
+  // Apply fix: clear old bucket, switch strategy, re-store
+  clearFilePass()  // removes from sessionStorage
+  window.prefs.filePassCache = 'local'
+  setFilePass('hunter2')
+
+  assertEqual(sessionStorage.getItem('filePass'), null,
+    'old sessionStorage bucket should be cleared after strategy switch')
+  assertEqual(localStorage.getItem('filePass'), 'hunter2',
+    'password should be in new localStorage bucket')
+
+  // Cleanup
+  clearFilePass()
+  window.prefs.filePassCache = 'session'
+})
+
+// ---------------------------------------------------------------------------
 // Phase 3 — SEC-008: CSP meta tag in index.html
 // ---------------------------------------------------------------------------
 suite('SEC-008 — CSP meta tag in index.html')

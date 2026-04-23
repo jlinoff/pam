@@ -1,6 +1,6 @@
 '''
 PAM pytest module.
-'''
+'''  # pylint: disable=too-many-lines
 import json
 import os
 import time
@@ -973,5 +973,73 @@ def test_prefs_tabbed_navigation():
     close_btn = dlg.find_element(By.CLASS_NAME, 'x-fld-record-close')
     scroll_and_click(driver, close_btn)
     time.sleep(0.3)
+
+    driver.quit()
+
+
+def test_bug002_filepass_survives_session_teardown():
+    '''
+    BUG-002: password must survive a sessionStorage wipe (iOS Safari PWA
+    relaunch) when the loaded file specifies filePassCache=local.
+    Exercises via JS injection: prime post-fix storage state, wipe
+    sessionStorage, reload, verify password is still retrievable.
+    '''
+    driver = get_driver()
+    driver.get('http://localhost:8081/')
+    time.sleep(2)
+
+    test_password = 'pwa-test-password-bug002'
+
+    # Prime the post-fix state: password in localStorage, strategy persisted.
+    driver.execute_script(f"""
+        localStorage.setItem('filePass', '{test_password}')
+        localStorage.setItem('pamCacheStrategy', 'local')
+        sessionStorage.setItem('filePass', '{test_password}')
+    """)
+
+    # Simulate iOS PWA relaunch: wipe sessionStorage and reload.
+    driver.execute_script('sessionStorage.clear()')
+    driver.refresh()
+    time.sleep(2)
+
+    result = driver.execute_script("""
+        return {
+            strategy: localStorage.getItem('pamCacheStrategy'),
+            pass: localStorage.getItem('filePass')
+        }
+    """)
+
+    assert result['strategy'] == 'local', \
+        f"pamCacheStrategy should be 'local' after reload, got: {result['strategy']}"
+    assert result['pass'] == test_password, \
+        f"Password should survive sessionStorage wipe (got: '{result['pass']}')"
+
+    # Negative case: session strategy loses password after session teardown.
+    driver.execute_script("""
+        localStorage.removeItem('filePass')
+        localStorage.setItem('pamCacheStrategy', 'session')
+        sessionStorage.setItem('filePass', arguments[0])
+    """, test_password)
+    driver.execute_script('sessionStorage.clear()')
+    driver.refresh()
+    time.sleep(2)
+
+    result2 = driver.execute_script("""
+        return {
+            strategy: localStorage.getItem('pamCacheStrategy'),
+            pass: sessionStorage.getItem('filePass')
+        }
+    """)
+    assert result2['strategy'] == 'session', \
+        "pamCacheStrategy should be 'session' in negative case"
+    assert result2['pass'] is None, \
+        "Password should be gone after sessionStorage wipe with session strategy"
+
+    # Cleanup
+    driver.execute_script("""
+        localStorage.removeItem('filePass')
+        localStorage.removeItem('pamCacheStrategy')
+        sessionStorage.removeItem('filePass')
+    """)
 
     driver.quit()

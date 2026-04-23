@@ -281,6 +281,27 @@ export function loadCallback(text) {
         let newMenuPrefsDlg = menuPrefsDlg() // make the new menuPrefsDlg
         oldMenuPrefsDlg.replaceWith(newMenuPrefsDlg)
         addDefaultRecordFields()
+
+        // BUG-002: Re-store the password under the strategy now specified by the
+        // loaded file.  setFilePass() was called earlier (before loadCallback ran)
+        // using whatever strategy was active at that moment — typically 'session'
+        // (the compiled-in default) — which may differ from the filePassCache pref
+        // embedded in the file.  Now that window.prefs.filePassCache reflects the
+        // file's intent, call setFilePass() again so the password lands in the
+        // correct storage bucket.
+        //
+        // Also persist the file's strategy as the per-device preference so that
+        // subsequent launches (especially PWA relaunches on iOS Safari, where
+        // sessionStorage is wiped) use the same bucket.  This mirrors what the
+        // prefs UI does when the user changes the strategy manually.
+        if ('filePassCache' in json.prefs) {
+            const loadPasswordEl = document.body.xGet('#x-load-password')
+            const currentPassword = loadPasswordEl ? loadPasswordEl.value.trim() : ''
+            if (currentPassword) {
+                setFilePass(currentPassword)  // re-store in the correct bucket
+            }
+            localStorage.setItem('pamCacheStrategy', window.prefs.filePassCache)
+        }
     }
 
     let warned = 0

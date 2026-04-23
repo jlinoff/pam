@@ -515,6 +515,7 @@ fixes any recently discovered bugs, and ensures the system is stable.
 The crypto implementation moves to Phase 8.
 
 - [x] BUG-001: enablePrinting and enableSaveFile NodeList regression — fixed in print.js, save.js, menu.js, main.js; regression tests added
+- [x] BUG-002: password stored in wrong storage bucket when loaded file's `filePassCache` pref differed from active startup strategy — fixed in load.js (loadCallback now re-calls setFilePass() and persists pamCacheStrategy after applying file prefs); 3 unit tests + 1 E2E test added
 - [x] Expand unit tests for `record.js`: findRecord, findRecordAfter, deleteRecord, insertRecord, clearRecords (10 tests, 4 suites)
 - [x] Expand unit tests for `save.js`: convertInternalDataToJSON round-trip — title, active, created, text/password fields, prefs (4 tests)
 - [x] Expand unit tests for `load.js`: duplicate strategies (ignore/replace/allow), active/created defaults (5 tests, 2 suites). Note: loadCallback cannot be imported due to prefs.js→main.js circular dependency; tested via E2E
@@ -731,11 +732,11 @@ Last updated: Phase 7 (April 2026). Coverage = unit tests + E2E tests combined.
 | `utils.js` | ✅ Full — mkid, isURL, sortDictByKey, hide/show, clog/logStatusToConsole, clipboard | — | copyTextToClipboard not unit-tested (SIMP-002 confirms delegation) |
 | `status.js` | ✅ Full — status(), statusBlip() | — | None |
 | `search.js` | ✅ Full — title/field/value match, case sensitivity, inactive records, all prefs | ✅ test_search_filters_records | None |
-| `password.js` | ✅ Full — getCrypticPassword, getMemorablePassword, setFilePass/getFilePass, all prefs | ✅ test_password_generator | Toolbar generator DOM interaction not unit-tested |
+| `password.js` | ✅ Full — getCrypticPassword, getMemorablePassword, setFilePass/getFilePass, all prefs; BUG-002 strategy-mismatch scenarios | ✅ test_password_generator | Toolbar generator DOM interaction not unit-tested |
 | `crypt.js` | ✅ v1 regression baseline (encrypt/decrypt round-trip, wrong password, edge cases) | — | v2 tests written but not yet implemented (Phase 8) |
 | `record.js` | ✅ findRecord, findRecordAfter, insertRecord, deleteRecord, clearRecords | ✅ test_record_create_and_delete | mkRecord not unit-tested (DOM complexity); checkRecordEditDlg not unit-tested |
 | `save.js` | ✅ convertInternalDataToJSON (title, active, created, text field, password raw value, prefs) | ✅ test_save_dlg | saveUsingAnchorLink, saveUsingPromises, saveCallback not unit-tested |
-| `load.js` | ✅ formatTimeElapsed, isValidLoadUrl, duplicate strategies (ignore/replace/allow), active/created defaults | ✅ test_load_dlg, test_example_records | loadCallback not importable (module graph); loadFileContent not unit-tested |
+| `load.js` | ✅ formatTimeElapsed, isValidLoadUrl, duplicate strategies (ignore/replace/allow), active/created defaults; BUG-002 filePassCache strategy mismatch on load | ✅ test_load_dlg, test_example_records, test_bug002_filepass_survives_session_teardown | loadCallback not importable (module graph); loadFileContent not unit-tested |
 | `field.js` | ✅ mkRecordField (html rendering SEC-001), number validation | ✅ (via record create/edit E2E) | mkRecordEditField, copyRecordFieldsToEditDlg not unit-tested |
 | `prefs-model.js` | ✅ Full — getDefaultPrefs, VALID_FIELD_TYPES, VALID_CACHE_STRATEGIES, hashPrefsPassword | — | None |
 | `prefs.js` | ✅ All preference defaults and behaviour via prefs-model.js; enablePrinting/enableSaveFile | ✅ test_prefs_dlg | savePrefs, menuPrefsDlg DOM rendering not unit-tested |
@@ -781,6 +782,7 @@ Last updated: Phase 7 (April 2026). Coverage = unit tests + E2E tests combined.
 | 12 | 2026-04-13 | Phase 0 implemented: 64 dead lines removed, webmanifest fixed, Makefile sed delimiters fixed, pylint false positive suppressed | `65f1ebd` | www/js/*.js, www/site.webmanifest, Makefile, tests/test_chrome.py |
 | 14 | 2026-04-13 | SEC-006 revert added to Phase 5 scope: prefs lock is convenience not cryptographic boundary; hashPrefsPassword stays in prefs-model.js for Phase 7 | — | PLAN.md |
 | 15 | 2026-04-14 | Phase 6 implemented: QUICKSTART.md, ARCHITECTURE.md, HISTORY.md, JSDoc, E2E tests, README corrections, Makefile doc targets, attribution | — | QUICKSTART.md, ARCHITECTURE.md, HISTORY.md, README.md, HISTORY.md, Makefile, www/js/crypt.js, www/js/load.js, www/js/save.js, tests/test_chrome.py |
+| 16 | 2026-04-23 | BUG-002 fixed: password stored in wrong bucket when file's filePassCache differed from startup strategy; manifested as lost password on iOS PWA relaunch; 3 unit tests + 1 E2E test added; SECURITY.md, PLAN.md updated | — | www/js/load.js, www/tests/tests.html, tests/test_chrome.py, SECURITY.md, PLAN.md |
 
 ---
 

@@ -740,7 +740,7 @@ Last updated: Phase 7 (April 2026). Coverage = unit tests + E2E tests combined.
 | `field.js` | ✅ mkRecordField (html rendering SEC-001), number validation | ✅ (via record create/edit E2E) | mkRecordEditField, copyRecordFieldsToEditDlg not unit-tested |
 | `prefs-model.js` | ✅ Full — getDefaultPrefs, VALID_FIELD_TYPES, VALID_CACHE_STRATEGIES, hashPrefsPassword | — | None |
 | `prefs.js` | ✅ All preference defaults and behaviour via prefs-model.js; enablePrinting/enableSaveFile | ✅ test_prefs_dlg | savePrefs, menuPrefsDlg DOM rendering not unit-tested |
-| `print.js` | ✅ enablePrinting NodeList fix (BUG-001) | ✅ test_print_dialog_opens | printRecords, genRecordsDocument not unit-tested |
+| `print.js` | ✅ enablePrinting NodeList fix (BUG-001); genRecordsDocument two-column redesign | ✅ test_print_dialog_opens | printRecords, genRecordsDocument not unit-tested; pam-prefs-enable-printing-example.png screenshot pending retake |
 | `about.js` | — | ✅ test_about_dlg, test_about_dialog_shows_version | Unit tests not written |
 | `menu.js` | ✅ SIMP-003 dead code removal | ✅ All dialog open/close E2E tests | mkMenu, menuNewDlg, menuClearDlg not unit-tested |
 | `main.js` | — | ✅ test_basic_setup, test_pam_setup | startup sequence not unit-testable without full DOM |
@@ -783,6 +783,7 @@ Last updated: Phase 7 (April 2026). Coverage = unit tests + E2E tests combined.
 | 14 | 2026-04-13 | SEC-006 revert added to Phase 5 scope: prefs lock is convenience not cryptographic boundary; hashPrefsPassword stays in prefs-model.js for Phase 7 | — | PLAN.md |
 | 15 | 2026-04-14 | Phase 6 implemented: QUICKSTART.md, ARCHITECTURE.md, HISTORY.md, JSDoc, E2E tests, README corrections, Makefile doc targets, attribution | — | QUICKSTART.md, ARCHITECTURE.md, HISTORY.md, README.md, HISTORY.md, Makefile, www/js/crypt.js, www/js/load.js, www/js/save.js, tests/test_chrome.py |
 | 16 | 2026-04-23 | BUG-002 fixed: password stored in wrong bucket when file's filePassCache differed from startup strategy; manifested as lost password on iOS PWA relaunch; 3 unit tests + 1 E2E test added; SECURITY.md, PLAN.md updated | — | www/js/load.js, www/tests/tests.html, tests/test_chrome.py, SECURITY.md, PLAN.md |
+| 17 | 2026-04-23 | Print format redesigned: two-column CSS column layout, compact card style, reverse-video #666 title bar, empty fields skipped, cover block with metadata, fixed confidential footer; pam-prefs-enable-printing-example.png screenshot pending retake | — | www/js/print.js, PLAN.md, README.md |
 
 ---
 

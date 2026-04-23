@@ -1861,8 +1861,10 @@ the menu as shown below.
 
 <img src="www/help/pam-prefs-enable-printing-menu.png" width="400" alt="pam-prefs-enable-printing-menu">
 
-When you click on "Print", PAM will print the records with the
-passwords visible. This is what it looks like for the example records.
+When you click on "Print", PAM will open a print-ready document showing
+all visible records with passwords in plain text, formatted as a compact
+two-column card layout suitable for estate planning. This is what it
+looks like for the example records.
 
 <img src="www/help/pam-prefs-enable-printing-example.png" width="400" alt="pam-prefs-enable-printing-example">
 

@@ -1,0 +1,122 @@
+/* Reset  */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+/* Page  */
+@page { margin: 18mm 16mm 16mm; }
+body {
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: 10.5pt;
+  color: #111;
+  padding: 10mm 12mm 8mm;
+}
+
+/* Cover block */
+.cover {
+  text-align: center;
+  padding-bottom: 0.9em;
+  margin-bottom: 1.1em;
+  border-bottom: 1px solid #555;
+}
+.cover h1 {
+  font-family: Helvetica, Arial, sans-serif;
+  font-size: 17pt;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: #111;
+  margin-bottom: 0.2em;
+}
+.cover .meta {
+  font-size: 8.5pt;
+  color: #555;
+  line-height: 1.7;
+}
+.cover .confidential {
+  display: inline-block;
+  margin-top: 0.45em;
+  padding: 0.15em 0.7em;
+  border: 1px solid #c00;
+  color: #c00;
+  font-size: 7pt;
+  font-family: Helvetica, Arial, sans-serif;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+/* Two-column grid  */
+/* CSS grid is more reliably honoured by Chrome's print engine     */
+/* than column-count.                                               */
+.grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.9em 1.2em;
+  align-items: start;
+}
+
+/* Record card */
+.card {
+  break-inside: avoid;
+  page-break-inside: avoid;
+  border: 1px solid #ccc;
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+/* Reverse-video title bar */
+.ct {
+  background: #666 !important;
+  -webkit-print-color-adjust: exact !important;
+  print-color-adjust: exact !important;
+  color: #fff !important;
+  font-family: Helvetica, Arial, sans-serif;
+  font-size: 8.5pt;
+  font-weight: 700;
+  padding: 0.2em 0.55em;
+  letter-spacing: 0.02em;
+}
+
+/* Field table */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 8.5pt;
+}
+tr:not(:last-child) td { border-bottom: 1px solid #efefef; }
+
+/* Field name cell */
+td.fn {
+  font-family: Helvetica, Arial, sans-serif;
+  font-size: 7pt;
+  font-weight: 600;
+  color: #666;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 0.2em 0.4em 0.2em 0.55em;
+  vertical-align: top;
+  white-space: nowrap;
+  width: 1%;
+  border-right: 1px solid #e0e0e0;
+}
+
+/* Field value cell */
+td.fv {
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 8pt;
+  padding: 0.2em 0.55em;
+  vertical-align: top;
+  word-break: break-all;
+  white-space: pre-wrap;
+  color: #111;
+}
+
+/* Page footer */
+.footer {
+  position: fixed;
+  bottom: 0; left: 0; right: 0;
+  font-size: 7pt;
+  font-family: Helvetica, Arial, sans-serif;
+  color: #999;
+  text-align: center;
+  border-top: 1px solid #ddd;
+  padding-top: 3pt;
+}

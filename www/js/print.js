@@ -49,7 +49,12 @@ export function printRecords() {
     // Inject the absolute CSS URL before writing so the stylesheet loads
     // as part of the iframe document — inline <style> is blocked by CSP
     // style-src 'self' but <link href="[same-origin]"> is explicitly allowed.
-    let cssUrl = window.location.origin + '/css/print-report.css'
+    // Derive the CSS URL relative to the page base rather than the origin,
+    // so it works on GitHub Pages and other sub-path deployments where
+    // window.location.origin alone gives the wrong path.
+    let base = document.querySelector('base')
+    let cssBase = base ? base.href : window.location.href.replace(/\/[^\/]*$/, '/')
+    let cssUrl = new URL('css/print-report.css', cssBase).href
     html = html.replace('href="" id="x-print-report-css"',
                         `href="${cssUrl}" id="x-print-report-css"`)
     // Set onload on the contentWindow AFTER idoc.open() would have reset it,

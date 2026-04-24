@@ -111,8 +111,8 @@ td.fv {
 
 /* Page footer */
 .footer {
-  position: fixed;
-  bottom: 0; left: 0; right: 0;
+  display: block;
+  margin-top: 2em;
   font-size: 7pt;
   font-family: Helvetica, Arial, sans-serif;
   color: #999;

@@ -23,43 +23,82 @@ export function enablePrinting() {
 export function printRecords() {
     statusBlip(`generating print document...`)
     let html = genRecordsDocument()
-    // Blob URLs inherit the parent page's CSP (style-src 'self'), which
-    // blocks inline <style> blocks in the generated document.  Solution:
-    // write into a hidden <iframe> on the same origin — the iframe shares
-    // the parent origin so inline styles are permitted, and document.write()
-    // works reliably for a same-origin iframe (unlike a new window).
+
+    // Derive the CSS URL relative to the page base so it works on GitHub
+    // Pages and other sub-path deployments (window.location.origin alone
+    // gives the wrong path there).
+    let base = document.querySelector('base')
+    let cssBase = base ? base.href : window.location.href.replace(/\/[^\/]*$/, '/')
+    let cssUrl = new URL('css/print-report.css', cssBase).href
+    html = html.replace('href="" id="x-print-report-css"',
+                        `href="${cssUrl}" id="x-print-report-css"`)
+
+    // Detect iPadOS — it uses the native AirPrint sheet which snapshots
+    // iframe content before onload fires, producing a blank page.
+    // All other platforms use the iframe path which handles CSP correctly.
+    let isIpadOS = /iPad/.test(navigator.userAgent) ||
+        (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)
+
+    // E2E test hook — always uses iframe so the hook receives a real DOM
+    // element.  Production code uses the appropriate path below.
+    if (typeof window._pamPrintHook === 'function') {
+        let iframe = document.createElement('iframe')
+        iframe.style.cssText = 'position:fixed;top:-9999px;left:-9999px;' +
+                               'width:210mm;height:297mm;border:none;'
+        document.body.appendChild(iframe)
+        let idoc = iframe.contentDocument || iframe.contentWindow.document
+        idoc.open()
+        iframe.contentWindow.onload = function() {
+            window._pamPrintHook(iframe)
+            document.body.removeChild(iframe)
+        }
+        idoc.write(html)
+        idoc.close()
+        return
+    }
+
+    if (isIpadOS) {
+        // iPadOS path: window.open() — AirPrint handles a new window
+        // correctly but snapshots iframe content before onload fires.
+        let win = window.open('', '_blank')
+        if (!win) {
+            statusBlip('Pop-up blocked — please allow pop-ups and try again.')
+            return
+        }
+        win.document.open()
+        win.document.write(html)
+        win.document.close()
+        win.focus()
+        // Poll for the CSS link to finish loading, then print.
+        // link.onload is unreliable after document.write() in some browsers.
+        let link = win.document.getElementById('x-print-report-css')
+        let attempts = 0
+        let poll = setInterval(function() {
+            attempts++
+            let loaded = !link || link.sheet !== null
+            if (loaded || attempts > 20) {
+                clearInterval(poll)
+                win.print()
+                win.onafterprint = function() { win.close() }
+            }
+        }, 100)
+        return
+    }
+
+    // Desktop / iPhone path: hidden iframe shares the parent origin so
+    // the linked stylesheet is permitted by CSP style-src 'self'.
     let iframe = document.createElement('iframe')
     iframe.style.cssText = 'position:fixed;top:-9999px;left:-9999px;' +
                            'width:210mm;height:297mm;border:none;'
     function triggerPrint() {
         iframe.contentWindow.focus()
-        // window._pamPrintHook is set by E2E tests to capture the iframe HTML
-        // without opening the native print dialog.  Production code ignores it.
-        if (typeof window._pamPrintHook === 'function') {
-            window._pamPrintHook(iframe)
-        } else {
-            iframe.contentWindow.print()
-        }
+        iframe.contentWindow.print()
         iframe.contentWindow.onafterprint = function() {
             document.body.removeChild(iframe)
         }
     }
     document.body.appendChild(iframe)
     let idoc = iframe.contentDocument || iframe.contentWindow.document
-    // Inject the absolute CSS URL before writing so the stylesheet loads
-    // as part of the iframe document — inline <style> is blocked by CSP
-    // style-src 'self' but <link href="[same-origin]"> is explicitly allowed.
-    // Derive the CSS URL relative to the page base rather than the origin,
-    // so it works on GitHub Pages and other sub-path deployments where
-    // window.location.origin alone gives the wrong path.
-    let base = document.querySelector('base')
-    let cssBase = base ? base.href : window.location.href.replace(/\/[^\/]*$/, '/')
-    let cssUrl = new URL('css/print-report.css', cssBase).href
-    html = html.replace('href="" id="x-print-report-css"',
-                        `href="${cssUrl}" id="x-print-report-css"`)
-    // Set onload on the contentWindow AFTER idoc.open() would have reset it,
-    // but BEFORE idoc.write()/close() triggers the load — this is the only
-    // assignment that survives the full document.write() navigation cycle.
     idoc.open()
     iframe.contentWindow.onload = triggerPrint
     idoc.write(html)

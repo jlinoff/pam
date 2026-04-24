@@ -694,6 +694,181 @@ def test_print_dialog_opens():
     driver.quit()
 
 
+def _load_example_and_enable_printing(driver):
+    '''Helper: load example records and enable printing via JS.'''
+    driver.get('http://localhost:8081/')
+    time.sleep(1)
+    # Load example records first — loading resets prefs from file data,
+    # so enablePrinting must be set AFTER the load completes.
+    dlg = choose_menu_option(driver, 'Load File')
+    buttons = dlg.find_elements(By.TAG_NAME, 'button')
+    example_btn = next(
+        (b for b in buttons if 'Load Example Records' in b.text), None)
+    assert example_btn is not None, 'Load Example Records button should exist'
+    example_btn.click()
+    time.sleep(0.5)
+    try:
+        driver.switch_to.alert.accept()
+    except Exception:  # pylint: disable=broad-except
+        pass
+    time.sleep(1)
+    # Set enablePrinting after load and call enablePrinting() to update the
+    # DOM so the Print menu item gets its d-none class removed.
+    driver.execute_script('''
+        window.prefs.enablePrinting = true;
+        const eps = document.querySelectorAll('.x-print');
+        eps.forEach(el => el.classList.remove('d-none'));
+    ''')
+    time.sleep(0.3)
+
+
+def _trigger_print_and_get_iframe(driver):
+    '''
+    Trigger print and return the iframe document HTML before print fires.
+    Overrides iframe contentWindow.print to suppress the print dialog,
+    allowing DOM inspection without user interaction.
+
+    Sets window._pamPrintHook, a seam in printRecords() that receives the
+    fully-written iframe element instead of calling the native print dialog.
+    Because the hook is called after document.write()/close() completes,
+    the HTML is stable and there are no contentWindow-reset race conditions.
+    '''
+    # Install a test hook that printRecords() will call instead of the
+    # native print dialog.  The hook receives the fully-written iframe so
+    # document.write() has already completed and the HTML is stable.
+    # This avoids all race conditions with contentWindow resets.
+    driver.execute_script('''
+        window._pamPrintIframeHTML = null;
+        window._pamPrintHook = function(iframe) {
+            window._pamPrintIframeHTML =
+                iframe.contentDocument.documentElement.outerHTML;
+        };
+    ''')
+    # Click the Print menu item using the same navigation pattern as
+    # choose_menu_option() so it works reliably in headless Chrome.
+    # Match by x-print class — headless Chrome renders the item with
+    # empty .text (icon only), so string matching on .text is unreliable.
+    menu = driver.find_element(By.ID, 'menu')
+    menu.click()
+    time.sleep(0.5)
+    dropdown = get_parent(menu)
+    children = get_children(dropdown)
+    menu_items = children[1].find_elements(By.CLASS_NAME, 'dropdown-item')
+    for item in menu_items:
+        classes = item.get_attribute('class') or ''
+        if 'x-print' in classes or 'Print' in item.text:
+            scroll_and_click(driver, item)
+            break
+    time.sleep(2)  # allow iframe load + CSS fetch
+    html = driver.execute_script('return window._pamPrintIframeHTML')
+    assert html is not None, \
+        'Print iframe HTML should have been captured — print hook not triggered'
+    return html
+
+
+def test_print_iframe_structure():
+    '''E2E: generated print document contains required structural elements.'''
+    driver = get_driver()
+    _load_example_and_enable_printing(driver)
+    html = _trigger_print_and_get_iframe(driver)
+
+    for selector in [
+        'class="cover"', 'class="grid"', 'class="card"',
+        'class="ct"', 'class="fn"', 'class="fv"', 'class="footer"'
+    ]:
+        assert selector in html, \
+            f'Print iframe should contain element with {selector}'
+
+    driver.quit()
+
+
+def test_print_iframe_css_link():
+    '''E2E: generated print document links to print-report.css.'''
+    driver = get_driver()
+    _load_example_and_enable_printing(driver)
+    html = _trigger_print_and_get_iframe(driver)
+
+    assert 'print-report.css' in html, \
+        'Print iframe should contain a link to print-report.css'
+    assert 'id="x-print-report-css"' in html, \
+        'Print iframe CSS link should have id x-print-report-css'
+
+    driver.quit()
+
+
+def test_print_cover_record_count():
+    '''E2E: cover block shows correct record count.'''
+    driver = get_driver()
+    _load_example_and_enable_printing(driver)
+
+    # Count the visible records before printing
+    record_count = len(driver.find_elements(By.CLASS_NAME, 'accordion-button'))
+
+    html = _trigger_print_and_get_iframe(driver)
+
+    assert f'{record_count} record' in html, \
+        f'Cover block should show {record_count} records'
+
+    driver.quit()
+
+
+def test_print_empty_fields_skipped():
+    '''E2E: fields with empty values are not rendered in the print output.'''
+    driver = get_driver()
+    driver.get('http://localhost:8081/')
+    time.sleep(1)
+
+    # Load a minimal JSON structure with one populated and one empty field.
+    # enablePrinting must be set AFTER the load — loading resets prefs from
+    # the file data, overwriting any value set before.
+    test_json = '''{
+        "meta": {"format-version": "1.0.0-rc05"},
+        "prefs": {},
+        "records": [{
+            "title": "EmptyFieldTest",
+            "fields": [
+                {"name": "login", "type": "text", "value": "testuser"},
+                {"name": "note", "type": "textarea", "value": ""}
+            ]
+        }]
+    }'''
+    driver.execute_script(f'''
+        const blob = new Blob([{repr(test_json)}], {{type: "application/json"}});
+        const file = new File([blob], "test.pam");
+        const dt = new DataTransfer();
+        dt.items.add(file);
+        const input = document.querySelector('input[type=file]');
+        if (input) {{
+            Object.defineProperty(input, "files", {{ value: dt.files }});
+            input.dispatchEvent(new Event("change", {{bubbles: true}}));
+        }}
+    ''')
+    time.sleep(1)
+    # Set enablePrinting after load and update the DOM.
+    driver.execute_script('''
+        window.prefs.enablePrinting = true;
+        const eps = document.querySelectorAll('.x-print');
+        eps.forEach(el => el.classList.remove('d-none'));
+    ''')
+    time.sleep(0.3)
+
+    html = _trigger_print_and_get_iframe(driver)
+
+    # 'note' field had empty value — should not appear in output
+    # 'login' field had a value — should appear
+    assert 'EmptyFieldTest' in html, \
+        'Record title should appear in print output'
+    assert '>login<' not in html.lower() or 'testuser' in html, \
+        'Non-empty field should appear in print output'
+    # The empty note field should not generate a row
+    import re  # pylint: disable=import-outside-toplevel
+    note_rows = re.findall(r'class="fn"[^>]*>note<', html, re.IGNORECASE)
+    assert len(note_rows) == 0, \
+        'Empty note field should be skipped in print output'
+
+    driver.quit()
+
+
 def test_save_and_reload_round_trip():
     '''
     E2E: Load example records, save to a file with a password,

@@ -31,31 +31,34 @@ export function printRecords() {
     let iframe = document.createElement('iframe')
     iframe.style.cssText = 'position:fixed;top:-9999px;left:-9999px;' +
                            'width:210mm;height:297mm;border:none;'
+    function triggerPrint() {
+        iframe.contentWindow.focus()
+        // window._pamPrintHook is set by E2E tests to capture the iframe HTML
+        // without opening the native print dialog.  Production code ignores it.
+        if (typeof window._pamPrintHook === 'function') {
+            window._pamPrintHook(iframe)
+        } else {
+            iframe.contentWindow.print()
+        }
+        iframe.contentWindow.onafterprint = function() {
+            document.body.removeChild(iframe)
+        }
+    }
     document.body.appendChild(iframe)
     let idoc = iframe.contentDocument || iframe.contentWindow.document
     // Inject the absolute CSS URL before writing so the stylesheet loads
     // as part of the iframe document — inline <style> is blocked by CSP
     // style-src 'self' but <link href="[same-origin]"> is explicitly allowed.
-    // iframe.onload fires after all subresources (including the CSS) have loaded.
     let cssUrl = window.location.origin + '/css/print-report.css'
     html = html.replace('href="" id="x-print-report-css"',
                         `href="${cssUrl}" id="x-print-report-css"`)
+    // Set onload on the contentWindow AFTER idoc.open() would have reset it,
+    // but BEFORE idoc.write()/close() triggers the load — this is the only
+    // assignment that survives the full document.write() navigation cycle.
     idoc.open()
+    iframe.contentWindow.onload = triggerPrint
     idoc.write(html)
     idoc.close()
-    function triggerPrint() {
-        iframe.contentWindow.focus()
-        iframe.contentWindow.print()
-        iframe.contentWindow.onafterprint = function() {
-            document.body.removeChild(iframe)
-        }
-    }
-    // Use onload if available, otherwise wait for readyState === 'complete'
-    if (idoc.readyState === 'complete') {
-        triggerPrint()
-    } else {
-        iframe.onload = triggerPrint
-    }
 }
 
 // The new Sanitizer API is not yet widely available.
@@ -149,9 +152,7 @@ function genRecordsDocument() {
             if (type !== 'html') {
                 value = sanitize(value)
             }
-            let pwStyle = type === 'password'
-                ? 'color:#1a3a6e;'
-                : ''
+            let pwStyle = (type === 'password') ? 'color:#1a3a6e;' : ''
             fieldRows += `
               <tr>
                 <td class="fn">${name}</td>

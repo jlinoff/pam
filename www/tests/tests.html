@@ -2392,6 +2392,47 @@ test('badge retains warning background in light mode', () => {
   style.remove()
 })
 
+// ---------------------------------------------------------------------------
+// print.js — print-report.css availability and genRecordsDocument structure
+// ---------------------------------------------------------------------------
+suite('print.js — print-report.css')
+test('print-report.css is served with status 200', async () => {
+  const resp = await fetch('/css/print-report.css')
+  assertEqual(resp.status, 200,
+    'print-report.css should be served at /css/print-report.css (status 200)')
+})
+test('print-report.css content-type is text/css', async () => {
+  const resp = await fetch('/css/print-report.css')
+  const ct = resp.headers.get('content-type') || ''
+  assert(ct.includes('text/css'),
+    `print-report.css content-type should include text/css, got: ${ct}`)
+})
+test('print-report.css contains required selectors', async () => {
+  const css = await fetch('/css/print-report.css').then(r => r.text())
+  for (const sel of ['.cover', '.grid', '.card', '.ct', 'td.fn', 'td.fv', '.footer']) {
+    assert(css.includes(sel),
+      `print-report.css should contain selector: ${sel}`)
+  }
+})
+test('print-report.css specifies two-column grid', async () => {
+  const css = await fetch('/css/print-report.css').then(r => r.text())
+  assert(css.includes('grid-template-columns: repeat(2, 1fr)'),
+    'print-report.css should define a two-column grid layout')
+})
+test('print-report.css specifies page-break-inside: avoid on .card', async () => {
+  const css = await fetch('/css/print-report.css').then(r => r.text())
+  // Find the .card block and check it contains page-break-inside: avoid
+  const cardIdx = css.indexOf('.card {')
+  const cardBlock = css.substring(cardIdx, css.indexOf('}', cardIdx))
+  assert(cardBlock.includes('page-break-inside: avoid'),
+    '.card rule should include page-break-inside: avoid')
+})
+test('print-report.css specifies print-color-adjust on .ct', async () => {
+  const css = await fetch('/css/print-report.css').then(r => r.text())
+  assert(css.includes('print-color-adjust'),
+    '.ct rule should include print-color-adjust for title bar background')
+})
+
 // Run sync tests first, then async crypt tests
 finalize() // update summary with sync results so far
 runCryptTests() // will call finalize() again after async tests complete

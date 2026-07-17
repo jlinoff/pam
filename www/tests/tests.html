@@ -69,6 +69,14 @@ let _failed = 0
 let _currentSuite = null
 const _results = document.getElementById('x-results')
 
+// Explicit async-completion signal for the Selenium runner (test_unit.py).
+// finalize() runs once after the sync tests and again after the async suites,
+// so the summary class is already 'all-pass'/'has-fail' before async work
+// finishes — inferring completion from it can capture the sync-only snapshot.
+// The runner waits on this flag instead; it is set true only after the last
+// async suite has finalized. See the tail of this script.
+window.__TESTS_COMPLETE__ = false
+
 function suite(name) {
   _currentSuite = name
   const h = document.createElement('h2')
@@ -112,6 +120,25 @@ function assertThrows(fn, msg) {
   let threw = false
   try { fn() } catch(e) { threw = true }
   if (!threw) throw new Error((msg || 'assertThrows') + ': expected exception was not thrown')
+}
+
+async function runAsyncTest(name, fn) {
+  const line = document.createElement('div')
+  line.className = 'test-line'
+  try {
+    await fn()
+    _passed++
+    line.classList.add('pass')
+    line.textContent = '✓ ' + name
+  } catch(e) {
+    _failed++
+    line.classList.add('fail')
+    line.textContent = '✗ ' + name
+    const pre = document.createElement('pre')
+    pre.textContent = e.message || String(e)
+    line.appendChild(pre)
+  }
+  _results.appendChild(line)
 }
 
 function finalize() {
@@ -618,7 +645,7 @@ function encryptAsync(password, plaintext) {
       resolve(ciphertext)
     })
     // timeout failsafe
-    setTimeout(() => reject(new Error('encrypt timed out')), 5000)
+    setTimeout(() => reject(new Error('encrypt timed out')), 15000)
   })
 }
 
@@ -628,7 +655,7 @@ function decryptAsync(password, ciphertext) {
       (plaintext) => resolve({ ok: true, plaintext }),
       (errMsg)   => resolve({ ok: false, error: errMsg })
     )
-    setTimeout(() => reject(new Error('decrypt timed out')), 5000)
+    setTimeout(() => reject(new Error('decrypt timed out')), 15000)
   })
 }
 
@@ -637,7 +664,7 @@ function encryptV2Async(password, plaintext) {
     encryptV2(password, plaintext, 'test.pam', (ciphertext, _filename) => {
       resolve(ciphertext)
     })
-    setTimeout(() => reject(new Error('encryptV2 timed out')), 5000)
+    setTimeout(() => reject(new Error('encryptV2 timed out')), 15000)
   })
 }
 
@@ -647,7 +674,7 @@ function decryptV2Async(password, ciphertext) {
       (plaintext) => resolve({ ok: true, plaintext }),
       (errMsg)   => resolve({ ok: false, error: errMsg })
     )
-    setTimeout(() => reject(new Error('decryptV2 timed out')), 5000)
+    setTimeout(() => reject(new Error('decryptV2 timed out')), 15000)
   })
 }
 
@@ -2433,9 +2460,180 @@ test('print-report.css specifies print-color-adjust on .ct', async () => {
     '.ct rule should include print-color-adjust for title bar background')
 })
 
-// Run sync tests first, then async crypt tests
+// ---------------------------------------------------------------------------
+// utils.js — mkPopupModalDlgButton class-token generation
+// Regression (iPadOS "Save does nothing"): the "Save As…" button was the
+// first modal button label containing whitespace. mkPopupModalDlgButton
+// derives a CSS class from the label, and 'x-fld-record-save as…' fed to
+// classList.add() throws InvalidCharacterError on the whitespace. The bug
+// only *surfaced* on the iPadOS path (that button exists only there), but the
+// fault is platform-independent and reproduces in any browser — which is what
+// makes it testable here without a device.
+// ---------------------------------------------------------------------------
+import { mkPopupModalDlgButton } from '/js/utils.js'
+
+suite('utils.js — mkPopupModalDlgButton class tokens')
+
+test('DOMTokenList rejects a whitespace token (documents the underlying fault)', () => {
+  const el = document.createElement('div')
+  assertThrows(() => el.classList.add('x-fld-record-save as'),
+    'classList.add must reject a token containing whitespace')
+})
+
+test('multi-word label "Save As…" does not throw and yields a valid token', () => {
+  // The exact call that broke the iPadOS save path.
+  const btn = mkPopupModalDlgButton('Save As\u2026', 'btn-primary', 'tip', () => true)
+  assert(btn && btn.tagName.toLowerCase() === 'button', 'button should be created')
+  assert(btn.classList.contains('x-fld-record-save-as'),
+    'slug should be x-fld-record-save-as, got: ' + btn.className)
+  btn.classList.forEach((t) => {
+    assert(!/\s/.test(t), 'no class token may contain whitespace: ' + t)
+    assert(!t.includes('\u2026'), 'no class token may contain the ellipsis: ' + t)
+  })
+})
+
+test('single-word labels keep their original tokens (guards E2E selectors)', () => {
+  const cases = {
+    'Save': 'x-fld-record-save', 'Close': 'x-fld-record-close',
+    'Clear': 'x-fld-record-clear', 'Download': 'x-fld-record-download',
+    'Cancel': 'x-fld-record-cancel', 'Load': 'x-fld-record-load',
+  }
+  for (const [label, token] of Object.entries(cases)) {
+    const btn = mkPopupModalDlgButton(label, 'btn-secondary', 'tip', () => true)
+    assert(btn.classList.contains(token),
+      label + ' should map to ' + token + ', got: ' + btn.className)
+  }
+})
+
+// ---------------------------------------------------------------------------
+// save.js — iPadOS platform detection and share-capability probe
+// isIpadOS() gates the download-ready dialog; canShareFile() gates the
+// "Save As…" (share sheet) button and must degrade to false — never throw —
+// when Web Share misbehaves, as it does in an installed PWA on some builds.
+// ---------------------------------------------------------------------------
+import { isIpadOS, canShareFile } from '/js/save.js'
+
+suite('save.js — platform + share detection')
+
+test('isIpadOS() returns a boolean (false on the Chrome test runner)', () => {
+  const v = isIpadOS()
+  assert(typeof v === 'boolean', 'isIpadOS must return a boolean')
+  assertEqual(v, false, 'the headless Chrome runner is not iPadOS')
+})
+
+test('canShareFile() never throws and returns a boolean', () => {
+  // Must be safe even where navigator.canShare is absent or throws.
+  let result
+  const call = () => { result = canShareFile('records.pam') }
+  call() // must not throw
+  assert(typeof result === 'boolean', 'canShareFile must return a boolean')
+})
+
+test('canShareFile() returns false when navigator.canShare throws', () => {
+  const orig = navigator.canShare
+  try {
+    Object.defineProperty(navigator, 'canShare', {
+      value: () => { throw new Error('simulated PWA standalone failure') },
+      configurable: true,
+    })
+    assertEqual(canShareFile('records.pam'), false,
+      'a throwing canShare must degrade to false, not propagate')
+  } finally {
+    if (orig === undefined) {
+      delete navigator.canShare
+    } else {
+      Object.defineProperty(navigator, 'canShare', { value: orig, configurable: true })
+    }
+  }
+})
+
+// ---------------------------------------------------------------------------
+// crypt.js — error surfacing regression (encrypt paths no longer swallow)
+// Regression: encryptV2()/encrypt() delivered success via callback but routed
+// every rejection to a bare clog(), so any failure — including a throw inside
+// the consumer callback (exactly what the whitespace-class bug did) — was
+// invisible; the Save button appeared to do nothing. The fix surfaces errors
+// via alert/statusBlip and reports a callback throw as a 'save' failure, not
+// an 'encryption' failure (encryption had in fact succeeded).
+// ---------------------------------------------------------------------------
+async function runSaveRegressionTests() {
+  suite('crypt.js — error surfacing regression')
+
+  // Drive encryptV2 with a callback that throws (as the download dialog did)
+  // and capture what the user would actually see.
+  function encryptV2WithThrowingCallback(password, plaintext, thrown) {
+    return new Promise((resolve, reject) => {
+      const origAlert = window.alert
+      let alertMsg = null
+      let sawCiphertext = false
+      window.alert = (m) => { alertMsg = m }
+      encryptV2(password, plaintext, 'test.pam', (ciphertext) => {
+        sawCiphertext = typeof ciphertext === 'string' && ciphertext.length > 0
+        throw new Error(thrown)
+      })
+      const t0 = Date.now()
+      const poll = () => {
+        if (alertMsg !== null) {
+          window.alert = origAlert
+          resolve({ alertMsg, sawCiphertext })
+          return
+        }
+        if (Date.now() - t0 > 15000) {
+          window.alert = origAlert
+          reject(new Error('timed out waiting for the error alert'))
+          return
+        }
+        setTimeout(poll, 20)
+      }
+      poll()
+    })
+  }
+
+  await runAsyncTest('a throw inside the callback surfaces a visible error (not swallowed)', async () => {
+    const r = await encryptV2WithThrowingCallback('pw', '{"records":[]}', 'boom')
+    assert(r.alertMsg !== null, 'the user must see an alert when the callback throws')
+  })
+
+  await runAsyncTest('a callback throw is reported as a save failure, not encryption', async () => {
+    const r = await encryptV2WithThrowingCallback('pw', '{"records":[]}', 'boom')
+    assert(r.sawCiphertext, 'encryption itself should have succeeded before the callback threw')
+    assert(r.alertMsg.includes('save'),
+      'error must be labelled a save failure: ' + r.alertMsg)
+    assert(!r.alertMsg.includes('encryption'),
+      'error must NOT be mislabelled an encryption failure: ' + r.alertMsg)
+  })
+
+  await runAsyncTest('normal encryptV2 callback still succeeds (happy path intact)', async () => {
+    const ct = await encryptV2Async('pw', '{"records":[]}')
+    assert(typeof ct === 'string' && ct.startsWith('PAMv2:'),
+      'ciphertext should be a v2 string, got: ' + ct)
+  })
+
+  finalize()
+}
+
+// Run sync tests first, then the async suites (each finalizes when done).
+// Keep `.then(() => { window.__TESTS_COMPLETE__ = true })` as the final link
+// in the chain: it signals the Selenium runner that all async work — the last
+// finalize() included — has completed, so it never reads a sync-only snapshot.
 finalize() // update summary with sync results so far
-runCryptTests() // will call finalize() again after async tests complete
+runCryptTests()
+  .then(runSaveRegressionTests)
+  .catch((err) => {
+    // A throw in an async runner itself (not an individual test — those are
+    // caught) would otherwise leave the flag false and strand the Selenium
+    // runner until its timeout. Record it as a failure so it surfaces.
+    _failed++
+    const line = document.createElement('div')
+    line.className = 'test-line fail'
+    line.textContent = '✗ async test runner crashed'
+    const pre = document.createElement('pre')
+    pre.textContent = (err && err.message) || String(err)
+    line.appendChild(pre)
+    _results.appendChild(line)
+    finalize()
+  })
+  .then(() => { window.__TESTS_COMPLETE__ = true })
 
 </script>
 </body>

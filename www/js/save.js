@@ -213,34 +213,35 @@ function copyToClipboard(text, filename) {
     }
 }
 
-function saveUsingPromises(text, filename) {
-    // new experimental approach - did not work reliably in testing
-    // especially in mobile browsers.
-    // https://developer.mozilla.org/en-US/docs/Web/API/File_System_Access_API
-    let options = {suggestedName: filename}
-    window.showSaveFilePicker(options)
-        .then( (fileHandle) => {
-            clog(fileHandle)
-            fileHandle.createWritable()
-                .then( (writableStream) => {
-                    writableStream.write(text)
-                    writableStream.close()
-                })
-                .catch( (error) => {
-                    const msg = `internal error:\nfileHandle.createWritable() exception:\n${error}`
-                    statusBlip(msg)
-                    alert(msg)
-                })
-        })
-        .catch( (error) => {
-            const msg = `internal error:\nwindow.showSaveFilePicker(options) exception:\n${error}`
-            statusBlip(msg)
-            alert(msg)
-        })
+/**
+ * Detect iPadOS.
+ * Same test as print.js — iPadOS 13+ reports 'MacIntel' with touch support.
+ * @returns {boolean} True if running on iPadOS.
+ */
+export function isIpadOS() {
+    return /iPad/.test(navigator.userAgent) ||
+        (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)
 }
 
-function saveUsingAnchorLink(text, filename) {
-   // old approach using a link.
+/**
+ * Download text as a file via a same-origin blob: URL and a synchronous
+ * anchor click.
+ *
+ * IMPORTANT: on iPadOS this MUST be called synchronously from inside a
+ * user gesture handler (a tap).  WebKit gates downloads on transient
+ * user activation and silently drops download clicks that occur after
+ * the activation window expires.  Do not wrap the call in setTimeout()
+ * and do not call it at the end of a long promise chain.
+ *
+ * A blob: URL is used instead of the old data: URI because:
+ *   1. data: URI downloads are a long-standing fragile path in WebKit.
+ *   2. The page CSP (default-src 'self') only allows data: for img-src;
+ *      blob: URLs created here are same-origin and unaffected.
+ *
+ * @param {string} text - The file contents.
+ * @param {string} filename - The download filename.
+ */
+function saveViaAnchor(text, filename) {
     let check = xmk('a')
     if (check.download === undefined) {
         let msg ='cannot save: check.download not supported'
@@ -249,24 +250,159 @@ function saveUsingAnchorLink(text, filename) {
         return
     }
 
-    // Create anchor element, add the data and click it.
-    let data = 'data:text/plain;charset=utf-8,' + encodeURIComponent(text)
+    let blob = new Blob([text], {'type': 'application/octet-stream'})
+    let url = URL.createObjectURL(blob)
     let a = xmk('a')
         .xStyle({
             'display': 'none'
             })
         .xAttrs({
-            'href': data,
+            'href': url,
             'download': filename
         })
     document.body.appendChild(a)
+    a.click() // synchronous — preserves transient user activation
+    statusBlip(`downloading ${text.length} bytes to ${filename}`)
     setTimeout( () => {
-        a.click()
-        statusBlip(`downloading ${text.length} bytes to ${filename}`)
-        setTimeout( () => {a.remove()}, 2000)
-    }, 500)
+        a.remove()
+        URL.revokeObjectURL(url) // the in-flight download is not affected
+    }, 2000)
 }
 
+/**
+ * Share text as a file via the native share sheet (Web Share Level 2).
+ *
+ * On iPadOS the share sheet's "Save to Files" entry gives the user a
+ * full location picker — any folder on the device or in iCloud — which
+ * a plain anchor download cannot offer (downloads always go to the
+ * Safari download location).  The sheet also offers AirDrop and other
+ * share targets.
+ *
+ * Like downloads, navigator.share() requires transient user activation,
+ * so this MUST be called synchronously from inside a tap handler.
+ *
+ * @param {string} text - The file contents.
+ * @param {string} filename - The suggested filename.
+ */
+function shareViaSheet(text, filename) {
+    let file = new File([text], filename, {'type': 'text/plain'})
+    navigator.share({'files': [file]})
+        .then( () => {
+            statusBlip(`shared ${text.length} bytes as ${filename}`)
+        })
+        .catch( (error) => {
+            // AbortError means the user dismissed the sheet — not an error.
+            if (error.name !== 'AbortError') {
+                const msg = `internal error:\nnavigator.share() error:\n${error}`
+                statusBlip(msg)
+                alert(msg)
+            }
+        })
+}
+
+/**
+ * Report whether the browser can share the named file via the share sheet.
+ * @param {string} filename - The filename to test.
+ * @returns {boolean} True if Web Share Level 2 file sharing is available.
+ */
+export function canShareFile(filename) {
+    // Wrapped defensively: in an installed PWA (standalone display mode)
+    // some iPadOS builds throw from canShare()/File construction rather
+    // than returning false.  Any failure here must degrade to the plain
+    // Download dialog, never abort the save.
+    try {
+        if (typeof navigator.canShare !== 'function' ||
+            typeof navigator.share !== 'function') {
+            return false
+        }
+        let probe = new File([''], filename, {'type': 'text/plain'})
+        return navigator.canShare({'files': [probe]})
+    } catch (error) {
+        clog(`canShareFile() unavailable: ${error}`)
+        return false
+    }
+}
+
+/**
+ * Show a "file ready" dialogue with Download and (when available)
+ * Save As... buttons.
+ *
+ * This exists solely for iPadOS.  By the time encryptV2() finishes
+ * (600k PBKDF2 iterations plus AES, all async WebCrypto), the transient
+ * user activation from the original Save tap has expired, so a
+ * programmatic download click is silently ignored.  This dialogue
+ * re-arms activation: the user's tap on a button IS the gesture, and
+ * saveViaAnchor() / shareViaSheet() run synchronously inside it.
+ *
+ * Download sends the file to the Safari download location.  Save As...
+ * opens the native share sheet so the user can pick any destination
+ * ("Save to Files" -> any folder, AirDrop, other apps).
+ *
+ * @param {string} text - The encrypted file contents.
+ * @param {string} filename - The download filename.
+ */
+function mkDownloadReadyDlg(text, filename) {
+    let shareable = canShareFile(filename)
+    let p = xmk('p')
+    p.appendChild(document.createTextNode(
+        'The encrypted file is ready. Tap Download to save '))
+    let code = xmk('code')
+    code.textContent = filename // textContent — filename is user input
+    p.appendChild(code)
+    let tail = '.'
+    if (shareable) {
+        tail = ' to the Safari download location, or Save As\u2026 ' +
+            'to choose a destination.'
+    }
+    p.appendChild(document.createTextNode(tail))
+    let body = xmk('span').xAppendChild(p)
+
+    let buttons = []
+    buttons.push(mkPopupModalDlgButton('Cancel',
+                                 'btn-secondary',
+                                 'close the dialogue without downloading',
+                                 (el) => {
+                                    return true
+                                }))
+    buttons.push(mkPopupModalDlgButton('Download',
+                                 shareable ? 'btn-secondary' : 'btn-primary',
+                                 'download to the Safari download location',
+                                 (el) => {
+                                     // Runs synchronously inside the tap
+                                     // gesture — do not defer.
+                                     saveViaAnchor(text, filename)
+                                     return true
+                                }))
+    if (shareable) {
+        buttons.push(mkPopupModalDlgButton('Save As\u2026',
+                                 'btn-primary',
+                                 'choose where to save via the share sheet',
+                                 (el) => {
+                                     // Runs synchronously inside the tap
+                                     // gesture — do not defer.
+                                     shareViaSheet(text, filename)
+                                     return true
+                                }))
+    }
+    let e = mkPopupModalDlg('menuDownloadReadyDlg', 'Download File', body,
+                            ...buttons)
+    document.body.appendChild(e)
+    e.addEventListener('hidden.bs.modal', () => { e.remove() }, {'once': true})
+    let modal = new bootstrap.Modal(e)
+    modal.show()
+}
+
+/**
+ * Callback invoked by encryptV2() with the encrypted text.
+ *
+ * Filename '.' copies to the clipboard (mobile browser workaround).
+ * On iPadOS the download is deferred to a tap in mkDownloadReadyDlg()
+ * to satisfy WebKit's transient user activation requirement.  On all
+ * other platforms the download is triggered immediately.
+ *
+ * @param {string} text - The encrypted file contents.
+ * @param {string} filename - The download filename or '.'.
+ */
 function saveCallback(text, filename) {
     if (!text || text.length === 0 ) {
         return
@@ -276,8 +412,19 @@ function saveCallback(text, filename) {
     if ( filename === '.' ) {
         copyToClipboard(text, filename)
         return
-    } else {
-        //saveUsingPromises(text, filename) // newer
-        saveUsingAnchorLink(text, filename) // old
     }
- }
+    // encryptV2() invokes this callback from inside a promise chain whose
+    // only error handler logs and discards.  Catch here so a failure is
+    // visible to the user instead of manifesting as a dead Save button.
+    try {
+        if (isIpadOS()) {
+            mkDownloadReadyDlg(text, filename)
+        } else {
+            saveViaAnchor(text, filename)
+        }
+    } catch (error) {
+        const msg = `internal error:\nsave failed:\n${error}`
+        statusBlip(msg)
+        alert(msg)
+    }
+}

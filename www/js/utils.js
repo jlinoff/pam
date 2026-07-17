@@ -204,7 +204,14 @@ export function mkDraggableRow(type) {
  * Make a modal record button (usually Quit or Save).
  */
 export function mkPopupModalDlgButton(text, type, tooltip, callback) {
-    let xcls = 'x-fld-record-' + text.toLowerCase()
+    // Derive a stable CSS class from the label.  classList.add() throws
+    // InvalidCharacterError on any token containing whitespace, so collapse
+    // every run of non-alphanumeric characters to a single hyphen and trim
+    // trailing hyphens.  Single-word labels are unaffected (e.g. 'Save' ->
+    // 'x-fld-record-save'), so existing selectors keep working; multi-word
+    // labels like 'Save As\u2026' become 'x-fld-record-save-as'.
+    let slug = text.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/-+$/, '')
+    let xcls = 'x-fld-record-' + slug
     let dlg = xmk('button')
         .xClass('btn', type, 'btn-lg', xcls) // btn-secondary
         .xAttrs({

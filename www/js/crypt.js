@@ -83,6 +83,25 @@ const PBKDF2 = async (password, salt, iterations, length, hash, algorithm = 'AES
     }
 
 /**
+ * Report a fatal error from an encryption promise chain to the user.
+ *
+ * The encrypt paths deliver success via a callback but have no error
+ * callback, so rejections were previously routed to a bare clog() — visible
+ * only in the developer console.  To the UI the operation simply appeared to
+ * do nothing.  This surfaces the failure via the status line and an alert,
+ * matching how save.js reports its own internal errors.
+ *
+ * @param {string} context - Short label for the failing stage (e.g. 'encryption (v2)').
+ * @param {*} error - The caught error or rejection reason.
+ */
+function cryptError(context, error) {
+    const msg = `internal error:\n${context} failed:\n${error}`
+    clog(error)
+    statusBlip(msg)
+    alert(msg)
+}
+
+/**
  * Encrypt plaintext JSON using AES-256-CBC.
  *
  * This function is asynchronous — the result is delivered via callback, not returned.
@@ -127,14 +146,22 @@ export function encrypt(password, plaintext, filename, callback) {
                     .then( (encrypted) => {
                         ciphertext = toBase64([...salt, ...iv, ...new Uint8Array(encrypted)])
                         statusBlip(`encrypted ${plaintext.length}B -> ${ciphertext.length}B ...`)
-                        callback(ciphertext, filename)
+                        // A throw inside callback() is a consumer/save
+                        // failure, not an encryption failure — isolate it so
+                        // it is reported correctly and does not fall through
+                        // to the crypto .catch below.
+                        try {
+                            callback(ciphertext, filename)
+                        } catch (error) {
+                            cryptError('save', error)
+                        }
                     })
                     .catch( (error) => {
-                        clog(error)
+                        cryptError('encryption', error)
                     })
             })
             .catch((error) => {
-                clog(error)
+                cryptError('encryption', error)
             })
     } else {
         statusBlip('encryption not enabled')
@@ -258,10 +285,18 @@ export function encryptV2(password, plaintext, filename, callback) {
                 ).then((encrypted) => {
                     const ciphertext = V2_PREFIX + toBase64([...salt, ...iv, ...new Uint8Array(encrypted)])
                     statusBlip(`encrypted (v2) ${plaintext.length}B -> ${ciphertext.length}B`)
-                    callback(ciphertext, filename)
-                }).catch((error) => { clog(error) })
-            }).catch((error) => { clog(error) })
-        }).catch((error) => { clog(error) })
+                    // A throw inside callback() is a consumer/save failure,
+                    // not an encryption failure — isolate it so it is reported
+                    // correctly and does not fall through to the crypto
+                    // .catch below.
+                    try {
+                        callback(ciphertext, filename)
+                    } catch (error) {
+                        cryptError('save', error)
+                    }
+                }).catch((error) => { cryptError('encryption (v2)', error) })
+            }).catch((error) => { cryptError('encryption (v2)', error) })
+        }).catch((error) => { cryptError('encryption (v2)', error) })
     } else {
         statusBlip('encryption not enabled')
     }

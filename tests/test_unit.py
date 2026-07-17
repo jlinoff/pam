@@ -49,30 +49,31 @@ def test_unit_tests_pass():
     try:
         driver.get(URL)
 
-        # Wait for async tests to complete — poll for window.__TEST_RESULTS__
-        # with a generous timeout (crypt tests use SubtleCrypto, may take a few seconds)
-        timeout = 30
+        # Wait for the page to signal that ALL tests — including the async
+        # SubtleCrypto suites — have finished, via window.__TESTS_COMPLETE__.
+        # This is an explicit done-flag rather than inferring completion from
+        # the summary class, which finalize() sets after the sync tests too
+        # (a race that could capture the sync-only snapshot). The timeout must
+        # stay above the page's per-op failsafes (15s each) so those convert
+        # into clean per-test failures before this layer gives up; ordering is
+        # JS failsafe (15s) < this wait (90s) < the job timeout.
+        timeout = 90
         results = None
         for _ in range(timeout * 2):
             try:
-                results = driver.execute_script('return window.__TEST_RESULTS__')
-                if results and isinstance(results, dict):
-                    # Also verify finalize() has been called after async tests
-                    summary = driver.execute_script(
-                        "return document.getElementById('x-summary').className"
-                    )
-                    if 'all-pass' in summary or 'has-fail' in summary:
-                        # async tests have completed (finalize called twice — once
-                        # after sync, once after async; second call is the final state)
-                        # Wait a moment more to ensure the second finalize() ran
-                        time.sleep(0.5)
-                        results = driver.execute_script('return window.__TEST_RESULTS__')
-                        break
+                done = driver.execute_script('return window.__TESTS_COMPLETE__ === true')
+                if done:
+                    results = driver.execute_script('return window.__TEST_RESULTS__')
+                    break
             except Exception:  # pylint: disable=broad-except
                 pass
             time.sleep(0.5)
 
-        assert results is not None, f'Test results not found after {timeout}s — page may have failed to load: {URL}'
+        assert results is not None, (
+            f'Tests did not complete within {timeout}s (window.__TESTS_COMPLETE__ '
+            f'never became true) — the page may have failed to load or an async '
+            f'runner hung: {URL}'
+        )
 
         passed = results.get('passed', 0)
         failed = results.get('failed', 0)

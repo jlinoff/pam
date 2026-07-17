@@ -69,6 +69,14 @@ let _failed = 0
 let _currentSuite = null
 const _results = document.getElementById('x-results')
 
+// Explicit async-completion signal for the Selenium runner (test_unit.py).
+// finalize() runs once after the sync tests and again after the async suites,
+// so the summary class is already 'all-pass'/'has-fail' before async work
+// finishes — inferring completion from it can capture the sync-only snapshot.
+// The runner waits on this flag instead; it is set true only after the last
+// async suite has finalized. See the tail of this script.
+window.__TESTS_COMPLETE__ = false
+
 function suite(name) {
   _currentSuite = name
   const h = document.createElement('h2')
@@ -637,7 +645,7 @@ function encryptAsync(password, plaintext) {
       resolve(ciphertext)
     })
     // timeout failsafe
-    setTimeout(() => reject(new Error('encrypt timed out')), 5000)
+    setTimeout(() => reject(new Error('encrypt timed out')), 15000)
   })
 }
 
@@ -647,7 +655,7 @@ function decryptAsync(password, ciphertext) {
       (plaintext) => resolve({ ok: true, plaintext }),
       (errMsg)   => resolve({ ok: false, error: errMsg })
     )
-    setTimeout(() => reject(new Error('decrypt timed out')), 5000)
+    setTimeout(() => reject(new Error('decrypt timed out')), 15000)
   })
 }
 
@@ -656,7 +664,7 @@ function encryptV2Async(password, plaintext) {
     encryptV2(password, plaintext, 'test.pam', (ciphertext, _filename) => {
       resolve(ciphertext)
     })
-    setTimeout(() => reject(new Error('encryptV2 timed out')), 5000)
+    setTimeout(() => reject(new Error('encryptV2 timed out')), 15000)
   })
 }
 
@@ -666,7 +674,7 @@ function decryptV2Async(password, ciphertext) {
       (plaintext) => resolve({ ok: true, plaintext }),
       (errMsg)   => resolve({ ok: false, error: errMsg })
     )
-    setTimeout(() => reject(new Error('decryptV2 timed out')), 5000)
+    setTimeout(() => reject(new Error('decryptV2 timed out')), 15000)
   })
 }
 
@@ -2570,7 +2578,7 @@ async function runSaveRegressionTests() {
           resolve({ alertMsg, sawCiphertext })
           return
         }
-        if (Date.now() - t0 > 5000) {
+        if (Date.now() - t0 > 15000) {
           window.alert = origAlert
           reject(new Error('timed out waiting for the error alert'))
           return
@@ -2605,8 +2613,27 @@ async function runSaveRegressionTests() {
 }
 
 // Run sync tests first, then the async suites (each finalizes when done).
+// Keep `.then(() => { window.__TESTS_COMPLETE__ = true })` as the final link
+// in the chain: it signals the Selenium runner that all async work — the last
+// finalize() included — has completed, so it never reads a sync-only snapshot.
 finalize() // update summary with sync results so far
-runCryptTests().then(runSaveRegressionTests)
+runCryptTests()
+  .then(runSaveRegressionTests)
+  .catch((err) => {
+    // A throw in an async runner itself (not an individual test — those are
+    // caught) would otherwise leave the flag false and strand the Selenium
+    // runner until its timeout. Record it as a failure so it surfaces.
+    _failed++
+    const line = document.createElement('div')
+    line.className = 'test-line fail'
+    line.textContent = '✗ async test runner crashed'
+    const pre = document.createElement('pre')
+    pre.textContent = (err && err.message) || String(err)
+    line.appendChild(pre)
+    _results.appendChild(line)
+    finalize()
+  })
+  .then(() => { window.__TESTS_COMPLETE__ = true })
 
 </script>
 </body>

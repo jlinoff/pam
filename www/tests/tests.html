@@ -1607,14 +1607,35 @@ test('hideInactiveRecords=false: inactive records are visible', () => {
 
 suite('search.js — searchRecordFieldValues')
 test('searchRecordFieldValues=true: matches on field value', () => {
+  // Uses GitHub's username, a text field. This test previously searched for
+  // ghp_abc123, the value of GitHub's *token* field — which is password-typed
+  // and is now excluded from value search by default, so that value no longer
+  // demonstrates anything about value search in general. See the companion
+  // test below and the 'search.js — password value search' suite.
   window.prefs.searchRecordTitles = false
   window.prefs.searchRecordFieldNames = false
   window.prefs.searchRecordFieldValues = true
-  searchRecords('ghp_abc123')  // ghp_abc123 is the value of GitHub's token field
+  searchRecords('jlinoff')  // jlinoff is the value of GitHub's username field
   const visible = Array.from(document.querySelectorAll('.accordion-item'))
     .filter(el => !el.classList.contains('d-none'))
     .map(el => el.querySelector('.accordion-button').innerHTML)
-  assert(visible.includes('GitHub'), 'field value search should find GitHub by its token value ghp_abc123')
+  assert(visible.includes('GitHub'), 'field value search should find GitHub by its username jlinoff')
+  window.prefs.searchRecordTitles = true
+  window.prefs.searchRecordFieldNames = true
+  window.prefs.searchRecordFieldValues = true
+})
+test('searchRecordFieldValues=true: does NOT match on a password-typed value', () => {
+  // The behaviour change: a password-typed field is excluded even when its
+  // name is not 'password'. GitHub stores its secret in a field named 'token'.
+  window.prefs.searchRecordTitles = false
+  window.prefs.searchRecordFieldNames = false
+  window.prefs.searchRecordFieldValues = true
+  window.prefs.searchPasswordFieldValues = false
+  searchRecords('ghp_abc123')  // the value of GitHub's password-typed token field
+  const visible = Array.from(document.querySelectorAll('.accordion-item'))
+    .filter(el => !el.classList.contains('d-none'))
+    .map(el => el.querySelector('.accordion-button').innerHTML)
+  assert(!visible.includes('GitHub'), 'a password-typed value must not be searchable by default')
   window.prefs.searchRecordTitles = true
   window.prefs.searchRecordFieldNames = true
   window.prefs.searchRecordFieldValues = true

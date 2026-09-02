@@ -148,6 +148,15 @@ Four mutations were checked against the real module: reinstating the oracle,
 ignoring the preference, keying off the field name instead of the type, and
 breaking non-password value search. Each fails the suite.
 
+One pre-existing test changed. `searchRecordFieldValues=true: matches on field
+value` searched for `ghp_abc123` to prove value search worked — but that is the
+value of GitHub's `token` field, which is password-typed and is now excluded.
+The test used a secret to demonstrate a general capability, so it no longer
+demonstrates anything about value search. It now searches for `jlinoff`,
+GitHub's username, and a companion test asserts that `ghp_abc123` is *not*
+found. The behaviour change is recorded in the suite where a reader would
+look for it, not only in the new one.
+
 To find which record uses a password you already know, use the reuse dialog
 rather than the search box.
 

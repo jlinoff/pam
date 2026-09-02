@@ -51,6 +51,7 @@ export function getDefaultPrefs() {
         searchRecordTitles: true,
         searchRecordFieldNames: false,
         searchRecordFieldValues: false,
+        searchPasswordFieldValues: false,
         hideInactiveRecords: true,
         passwordRangeLengthDefault: 20,
         passwordRangeMinLength: 12,

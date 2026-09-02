@@ -617,6 +617,101 @@ test('field name match works', () => {
   assert(!visible.includes('Amazon'))
 })
 
+suite('search.js — password value search')
+test('password values are NOT matched by default', () => {
+  // The oracle this guards against: with password matching on, typing a
+  // character and watching which records survive recovers the password one
+  // character at a time, without it ever appearing on screen.
+  window.prefs.searchRecordFieldValues = true
+  window.prefs.searchPasswordFieldValues = false
+  searchRecords('secret1')
+  const visible = visibleTitles()
+  assert(!visible.includes('Amazon'), 'Amazon password is secret1 and must not match')
+  window.prefs.searchRecordFieldValues = false
+  searchRecords('.')
+})
+test('password values ARE matched when explicitly enabled', () => {
+  window.prefs.searchRecordFieldValues = true
+  window.prefs.searchPasswordFieldValues = true
+  searchRecords('secret1')
+  const visible = visibleTitles()
+  assert(visible.includes('Amazon'), 'opting in must restore the old behaviour')
+  assert(!visible.includes('Google'), 'Google password is secret2')
+  window.prefs.searchPasswordFieldValues = false
+  window.prefs.searchRecordFieldValues = false
+  searchRecords('.')
+})
+test('non-password values still match with the pref off', () => {
+  window.prefs.searchRecordFieldValues = true
+  window.prefs.searchPasswordFieldValues = false
+  searchRecords('jsmith')
+  const visible = visibleTitles()
+  assert(visible.includes('Amazon'), 'excluding passwords must not break value search')
+  window.prefs.searchRecordFieldValues = false
+  searchRecords('.')
+})
+test('a partial password prefix does not leak through the filter', () => {
+  // Character-by-character narrowing is the actual attack, so test prefixes
+  // rather than only the whole value.
+  //
+  // These prefixes are chosen to be unique to the password 'secret1'. Shorter
+  // ones are useless as evidence: 's' occurs in the username 'jsmith' and 'se'
+  // in the field name 'username', so Amazon matches those legitimately and a
+  // test using them would report a leak that is not there.
+  window.prefs.searchRecordFieldValues = true
+  window.prefs.searchPasswordFieldValues = false
+  for (const prefix of ['sec', 'secr', 'secre', 'secret', 'secret1']) {
+    searchRecords(prefix)
+    assert(!visibleTitles().includes('Amazon'),
+           'prefix ' + prefix + ' selected on password content')
+  }
+  window.prefs.searchRecordFieldValues = false
+  searchRecords('.')
+})
+test('regex probes cannot select on password content', () => {
+  // Search compiles its input as a regular expression, so the oracle this
+  // guards against is a binary search, not a linear walk. These are the
+  // probes an attacker would actually use: anchors, character classes,
+  // positional wildcards and length assertions. None may select Amazon,
+  // whose password is 'secret1'.
+  window.prefs.searchRecordFieldValues = true
+  window.prefs.searchPasswordFieldValues = false
+  const probes = ['^sec', 'secret.$', '^[n-z]ecret1', 'sec.et1', 's.{5}1', '^.{7}$']
+  for (const probe of probes) {
+    searchRecords(probe)
+    assert(!visibleTitles().includes('Amazon'),
+           'probe ' + probe + ' selected on password content')
+  }
+  window.prefs.searchRecordFieldValues = false
+  searchRecords('.')
+})
+test('regex probes DO select on password content when opted in', () => {
+  // The mirror image: confirms the probes above are real attacks rather than
+  // patterns that happen to match nothing. Without this, the test above could
+  // pass because the probes are broken.
+  window.prefs.searchRecordFieldValues = true
+  window.prefs.searchPasswordFieldValues = true
+  for (const probe of ['^sec', 'secret.$', '^[n-z]ecret1', 'sec.et1', 's.{5}1']) {
+    searchRecords(probe)
+    assert(visibleTitles().includes('Amazon'),
+           'probe ' + probe + ' should match secret1 when opted in')
+  }
+  window.prefs.searchPasswordFieldValues = false
+  window.prefs.searchRecordFieldValues = false
+  searchRecords('.')
+})
+test('password field type is respected regardless of field name', () => {
+  // GitHub stores its secret in a field named "token", not "password".
+  // Exclusion keys off the type, not the name.
+  window.prefs.searchRecordFieldValues = true
+  window.prefs.searchPasswordFieldValues = false
+  searchRecords('ghp_abc123')
+  const visible = visibleTitles()
+  assert(!visible.includes('GitHub'), 'a password-typed field named token is still a secret')
+  window.prefs.searchRecordFieldValues = false
+  searchRecords('.')
+})
+
 suite('search.js — inactive records')
 test('inactive records are shown by default', () => {
   window.prefs.hideInactiveRecords = false
@@ -1651,6 +1746,15 @@ test('getMemorablePassword respects prefix and suffix', () => {
 // All defaults verified against getDefaultPrefs() to avoid window.prefs
 // stub contamination.
 // ---------------------------------------------------------------------------
+suite('prefs — searchPasswordFieldValues')
+test('defaults to false', () => {
+  assertEqual(getDefaultPrefs().searchPasswordFieldValues, false,
+              'matching password values must be opt-in')
+})
+test('is a known preference key', () => {
+  assert('searchPasswordFieldValues' in getDefaultPrefs())
+})
+
 suite('prefs — Miscellaneous defaults')
 test('statusMsgDurationMS default is 1500', () => {
   assertEqual(getDefaultPrefs().statusMsgDurationMS, 1500,

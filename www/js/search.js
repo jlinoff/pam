@@ -91,7 +91,23 @@ export function searchRecords(value) {
                 let values = accordionItem.xGetN('.x-fld-value')
                 for (let element of values) {
                     let type = element.getAttribute('data-fld-type')
-                    // how should passwords be managed? using the raw value
+                    // Password values are excluded unless explicitly enabled.
+                    //
+                    // data-fld-raw-value holds the plaintext, so matching
+                    // against it turns the search box into an oracle. The
+                    // value never appears on screen, but the filter results
+                    // and the record count answer a yes/no question about it
+                    // on every keystroke, with nothing written to the screen,
+                    // the clipboard, or a log.
+                    //
+                    // Because this search compiles the input as a regular
+                    // expression, the oracle is a binary search rather than a
+                    // linear walk: ^[a-m] halves the space in one query,
+                    // ^..x probes a position, .{12} yields the length. Brief
+                    // access to an unlocked vault is enough.
+                    if (type === 'password' && !window.prefs.searchPasswordFieldValues) {
+                        continue
+                    }
                     let value = element.getAttribute('data-fld-raw-value')
                     if (value.match(regex)) {
                         matched = true

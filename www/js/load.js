@@ -12,7 +12,7 @@ import { enableSaveFile } from './save.js'
 import { enableRawJSONEdit } from './raw.js'
 import { setAboutFileInfo } from './about.js'
 import { searchRecords } from './search.js'
-import { updateHtmlRenderingIndicator, updateFilePassCacheIndicator } from './main.js'
+import { updateHtmlRenderingIndicator, updateFilePassCacheIndicator, updatePasswordSearchIndicator } from './main.js'
 
 // load a file
 export function menuLoadDlg() {
@@ -388,6 +388,7 @@ export function loadCallback(text) {
     setDarkLightTheme(window.prefs.themeName)
     updateHtmlRenderingIndicator()   // SEC-001: reflect loaded prefs in toolbar
     updateFilePassCacheIndicator()   // SEC-002: reflect loaded prefs in toolbar
+    updatePasswordSearchIndicator()  // reflect loaded prefs in toolbar
     setAboutFileInfo(`Loaded ${numActive} active and ${numInactive} inactive records on ${now.toISOString()}.<br>` +
                      `Records were last updated on ${thenDate.toISOString()} (${fet}).`)
     searchRecords('.')

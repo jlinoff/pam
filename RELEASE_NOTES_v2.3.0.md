@@ -104,9 +104,69 @@ collision described above.
 
 ---
 
+---
+
+## Fixed: search matched against password plaintext
+
+`search.js` matched the value-search regex against `data-fld-raw-value`, which
+holds the plaintext of `password` fields. With `searchRecordFieldValues`
+enabled, that made the search box a **password oracle**. The password never
+appears on screen, but the filter results and the record count answer a yes/no
+question about it on every keystroke, with nothing written to the screen, the
+clipboard, or a log.
+
+`searchRecords()` compiles its input with `new RegExp()`, so this is a binary
+search rather than a linear walk. `^[n-z]` halves the remaining possibilities
+in a single query, `^..x` probes a specific position, and `.{12}` yields the
+length outright. A password that would take thousands of guesses one character
+at a time falls in a few dozen queries. Brief access to an unlocked vault is
+enough.
+
+The existing code had `let type = element.getAttribute('data-fld-type')` sitting
+unused above the comment "how should passwords be managed? using the raw
+value", so the hazard had been noticed and the fix left unfinished. `unused` is
+off in `jshint.json`, so nothing flagged the dangling variable.
+
+Password-typed fields are now excluded from value search unless the new
+`searchPasswordFieldValues` preference is enabled. It defaults to false, sits on
+the Administration tab beside the other two security settings, and raises a
+**⚠ PW SEARCH** toolbar badge while active — matching the existing treatment of
+`allowHtmlFieldRendering` and `filePassCache`.
+
+Exclusion keys off the field **type**, not the field name, so a password stored
+in a field named `token` is still protected. There is a test for exactly that.
+
+Seven tests cover this, including the regex probes an attacker would actually
+use. They come in mirrored pairs: one asserting the probes cannot select on
+password content with the preference off, and one asserting they *can* with it
+on. The second exists because a negative test alone can pass for the wrong
+reason — and it did. The probe `^[a-m]ecret1` cannot match `secret1`, since
+`s` is not in `a-m`, so it was matching nothing and proving nothing. Only the
+mirror test caught it.
+
+Four mutations were checked against the real module: reinstating the oracle,
+ignoring the preference, keying off the field name instead of the type, and
+breaking non-password value search. Each fails the suite.
+
+To find which record uses a password you already know, use the reuse dialog
+rather than the search box.
+
+### Note on the retired-address use case
+
+Finding every record that references a retired email is already supported:
+enable `searchRecordFieldValues` and type the address. It is off by default,
+which is why it is easy to miss. That is a search problem — known value, find
+the records — and it stays in search. Reuse detection is the opposite shape:
+unknown values, find the collisions among them. It cannot be a search, because
+you would have to know the password already and would be typing a live secret
+into the search box.
+
+---
+
 ## Not in this release
 
-- UI wiring for both features
+- UI wiring for the fingerprint (About dialog) and the reuse badge and dialog
+- The `showPasswordReuseWarning` preference
 - Vault diff, which is blocked on records having a durable identifier;
   today "same entry" can only be inferred from title plus field names, which
   breaks as soon as either is edited

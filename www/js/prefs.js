@@ -9,6 +9,7 @@ import { setDarkLightTheme } from './utils.js'
 import { searchRecords } from './search.js'
 import { enableRawJSONEdit } from './raw.js'
 import { updateHtmlRenderingIndicator, updateFilePassCacheIndicator, updatePasswordSearchIndicator } from './main.js'
+import { updateReuseIndicator } from './vault-ui.js'
 import { clearFilePass } from './password.js'
 
 // These are the input types that the tool knows how to handle.
@@ -304,6 +305,18 @@ export function menuPrefsDlg() {
                                'When enabled, <code>html</code> field values render as live HTML, ' +
                                'which is an XSS risk if you load files from untrusted sources. ' +
                                'A <b>⚠ HTML ON</b> warning badge will appear in the toolbar while this is active.'),
+                prefShowPasswordReuseWarning(labelClasses, inputClasses),
+                prefPromptDesc('Show a <b>\u26A0 REUSED</b> badge in the toolbar when a stored ' +
+                               'password is used by more than one entry. Click the badge for the ' +
+                               'list. Enabled by default.<br>' +
+                               'Turning this off hides the badge only. The check still runs and ' +
+                               'the count is still reported in the <code>About</code> dialogue, so ' +
+                               'there is no state in which PAM knows a password is reused and has ' +
+                               'no way to tell you.<br>' +
+                               'A password shared between entries is only as safe as the least safe ' +
+                               'of them: if any one site is breached, every entry sharing that ' +
+                               'password is exposed. No breach corpus can detect this \u2014 it is a ' +
+                               'property of your vault, not of the password.'),
                 prefSearchPasswordFieldValues(labelClasses, inputClasses),
                 prefPromptDesc('WARNING: this only applies when <code>Search Record Field Values</code> ' +
                                'is also enabled. It allows the search box to match against the ' +
@@ -534,6 +547,7 @@ function savePrefs(el) {
     updateHtmlRenderingIndicator()  // SEC-001: update toolbar badge
     updateFilePassCacheIndicator()  // SEC-002: update toolbar badge
     updatePasswordSearchIndicator()  // update toolbar badge
+    updateReuseIndicator()           // reuse badge follows showPasswordReuseWarning
     searchRecords()  // refresh
     return checkDefaultRecordFields(true)
 }
@@ -588,6 +602,14 @@ export function prefAllowHtmlFieldRendering(labelClasses, inputClasses) {
                            'WARNING (SEC-001): Only enable for trusted files distributed on a read-only volume. ' +
                            'Enabling this allows HTML fields to render as live HTML, which is an XSS risk if ' +
                            'loading files from untrusted sources.')
+}
+
+export function prefShowPasswordReuseWarning(labelClasses, inputClasses) {
+    return mkPrefsCheckBox(labelClasses,
+                           inputClasses,
+                           'showPasswordReuseWarning',
+                           'Show Password Reuse Warning',
+                           'show a toolbar badge when a stored password is used more than once')
 }
 
 export function prefSearchPasswordFieldValues(labelClasses, inputClasses) {

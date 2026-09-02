@@ -3,6 +3,7 @@ PAM pytest module.
 '''  # pylint: disable=too-many-lines
 import json
 import os
+import re
 import time
 
 from selenium import webdriver
@@ -102,7 +103,9 @@ def choose_menu_option(driver, option):
     children = get_children(dropdown)
     assert len(children) == 2
     menu_items = children[1].find_elements(By.CLASS_NAME, 'dropdown-item')
-    assert len(menu_items) == 8
+    # A hard count rather than a lookup, deliberately: it catches an
+    # accidental menu change. Raised from 8 to 9 by the Reused Passwords entry.
+    assert len(menu_items) == 9, f'unexpected menu size: {[m.text for m in menu_items]}'
     #breakpoint()
     for menu_item in menu_items:
         if option in menu_item.text:
@@ -504,6 +507,143 @@ def test_record_create_and_delete():
     driver.quit()
 
 
+def _make_record_with_password(driver, title, password):
+    '''Helper: create a record with a single password field via the UI.
+
+    Goes through the New Record dialogue rather than injecting DOM state, so
+    the insertRecord -> setNumRecords -> scheduleVaultStatsRefresh path is
+    actually exercised.
+    '''
+    dlg = choose_menu_option(driver, 'New Record')
+    title_input = dlg.find_element(By.CSS_SELECTOR, 'input[placeholder="Record Title"]')
+    title_input.clear()
+    title_input.send_keys(title)
+
+    # Strip the default fields, then add a single password field.
+    driver.execute_script(
+        "var menu = document.getElementById('menuNewDlg');"
+        "var body = menu.getElementsByClassName('container')[0];"
+        "while (body.children.length > 2) {"
+        "  body.removeChild(body.children[body.children.length-1]); }"
+    )
+    add_buttons = dlg.find_elements(By.CSS_SELECTOR, 'button[title="add a new field"]')
+    assert add_buttons, 'New Record dialogue should have an add-field button'
+    scroll_and_click(driver, add_buttons[0])
+    time.sleep(0.3)
+
+    name_inputs = dlg.find_elements(By.CSS_SELECTOR, 'input.x-fld-name-input')
+    assert name_inputs, 'a new field should expose a name input'
+    name_inputs[-1].clear()
+    name_inputs[-1].send_keys('password')
+    time.sleep(0.3)
+
+    value_inputs = dlg.find_elements(By.CSS_SELECTOR, 'input[type="password"]')
+    assert value_inputs, 'a password-typed field should render a password input'
+    value_inputs[-1].clear()
+    value_inputs[-1].send_keys(password)
+
+    save_button = dlg.find_element(By.CLASS_NAME, 'x-fld-record-save')
+    scroll_and_click(driver, save_button)
+    time.sleep(1)
+
+
+def test_reuse_badge_and_dialog():
+    '''
+    E2E: the reuse badge stays hidden for a clean vault, appears when a
+    password is shared, and the dialogue names both entries without ever
+    showing the password.
+
+    Mirrored on purpose. The example records contain no reuse, so a test that
+    only checked the clean case would pass whether or not the feature works —
+    an empty list is also what a broken implementation returns.
+    '''
+    driver = get_driver()
+    driver.get('http://localhost:8081/')
+    time.sleep(1)
+
+    badge = driver.find_element(By.ID, 'x-reuse-indicator')
+
+    # 1. Clean baseline: example records share no password.
+    load_example_records(driver)
+    time.sleep(1)
+    assert not badge.is_displayed(), \
+        'the badge must be hidden when no password is reused'
+
+    dlg = choose_menu_option(driver, 'Reused Passwords')
+    assert dlg is not None, 'Reused Passwords dialogue should open'
+    assert 'No stored password' in dlg.text, \
+        f'clean vault should say so plainly, got: {dlg.text[:200]}'
+    close_btn = dlg.find_element(By.CLASS_NAME, 'x-fld-record-close')
+    scroll_and_click(driver, close_btn)
+    time.sleep(0.5)
+
+    # 2. Create two records sharing a password.
+    shared = 'ZZ-shared-secret-ZZ'
+    _make_record_with_password(driver, 'E2E Reuse One', shared)
+    _make_record_with_password(driver, 'E2E Reuse Two', shared)
+    time.sleep(1)
+
+    assert badge.is_displayed(), 'the badge must appear once a password is shared'
+    assert 'REUSED: 2' in badge.text, f'badge should count fields, got: {badge.text}'
+
+    # 3. The dialogue names both entries and never shows the secret.
+    dlg = choose_menu_option(driver, 'Reused Passwords')
+    assert 'E2E Reuse One' in dlg.text, f'first entry missing: {dlg.text[:300]}'
+    assert 'E2E Reuse Two' in dlg.text, f'second entry missing: {dlg.text[:300]}'
+    assert shared not in dlg.text, 'the shared password must never be rendered'
+    close_btn = dlg.find_element(By.CLASS_NAME, 'x-fld-record-close')
+    scroll_and_click(driver, close_btn)
+    time.sleep(0.5)
+
+    # 4. The preference suppresses the badge but not the check.
+    #
+    # execute_async_script, not execute_script: the dynamic import returns a
+    # promise, and execute_script would return before the module resolved.
+    # The assertion below would then pass without the code under test having
+    # run at all.
+    driver.execute_script('window.prefs.showPasswordReuseWarning = false')
+    driver.execute_async_script(
+        'var done = arguments[arguments.length - 1];'
+        "import('/js/vault-ui.js').then(function(m) {"
+        '  m.updateReuseIndicator(); done(true);'
+        '}).catch(function(e) { done(String(e)); });'
+    )
+    time.sleep(0.5)
+    assert not badge.is_displayed(), 'the preference should hide the badge'
+    dlg = choose_menu_option(driver, 'Reused Passwords')
+    assert 'E2E Reuse One' in dlg.text, \
+        'the check must still run with the warning suppressed'
+    close_btn = dlg.find_element(By.CLASS_NAME, 'x-fld-record-close')
+    scroll_and_click(driver, close_btn)
+
+    driver.quit()
+
+
+def test_about_dialog_shows_fingerprint():
+    '''
+    E2E: the About dialogue reports a vault fingerprint.
+    '''
+    driver = get_driver()
+    driver.get('http://localhost:8081/')
+    time.sleep(1)
+    load_example_records(driver)
+    time.sleep(1.5)
+
+    dlg = choose_menu_option(driver, 'About')
+    assert dlg is not None, 'About dialogue should open'
+    assert 'Fingerprint' in dlg.text, \
+        f'About should show a vault fingerprint, got: {dlg.text[:300]}'
+
+    fingerprint = driver.execute_script(
+        "return document.getElementById('x-about-fingerprint').textContent")
+    assert re.search(r'[0-9a-f]{4} [0-9a-f]{4} [0-9a-f]{4} [0-9a-f]{4}', fingerprint), \
+        f'unexpected fingerprint format: {fingerprint}'
+
+    close_btn = dlg.find_element(By.CLASS_NAME, 'x-fld-record-close')
+    scroll_and_click(driver, close_btn)
+    driver.quit()
+
+
 def test_search_filters_records():
     '''
     E2E: Load example records and verify search filters correctly.
@@ -861,7 +1001,6 @@ def test_print_empty_fields_skipped():
     assert '>login<' not in html.lower() or 'testuser' in html, \
         'Non-empty field should appear in print output'
     # The empty note field should not generate a row
-    import re  # pylint: disable=import-outside-toplevel
     note_rows = re.findall(r'class="fn"[^>]*>note<', html, re.IGNORECASE)
     assert len(note_rows) == 0, \
         'Empty note field should be skipped in print output'

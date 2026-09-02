@@ -9,6 +9,7 @@ import { checkRecordEditDlg,
          saveRecordEditDlg } from './record.js'
 import { mkRecordEditDlg } from './field.js'
 import { menuAboutDlg } from './about.js'
+import { menuReuseDlg } from './vault-ui.js'
 import { menuPrefsDlg, addDefaultRecordFields, resetPrefs } from './prefs.js'
 import { menuSaveDlg, enableSaveFile } from './save.js'
 import { menuLoadDlg } from './load.js'
@@ -124,6 +125,10 @@ export function mkMenu() {
                               'About',
                               'bi-info-circle',
                               'Information about this app.'),
+                    menuEntry('menuReuseDlg',
+                              'Reused Passwords',
+                              'bi-files',
+                              'entries that share a password'),
                     menuEntry('menuPrefsDlg',
                               'Preferences',
                               'bi-gear',
@@ -220,6 +225,7 @@ export function mkMenu() {
     document.body.xAppendChild(menuClearDlg())
     document.body.xAppendChild(menuLoadDlg())
     document.body.xAppendChild(menuSaveDlg())
+    document.body.xAppendChild(menuReuseDlg())
     document.body.xAppendChild(mkMainPasswordGeneratorDlg())
     return e
 }

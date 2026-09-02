@@ -172,10 +172,95 @@ into the search box.
 
 ---
 
+---
+
+## UI: reuse badge, duplicates dialogue, fingerprint in About
+
+`www/js/vault-ui.js` holds everything that touches the DOM, so `vault.js`
+stays pure and unit-testable with plain object literals.
+
+### Reuse badge
+
+A `⚠ REUSED: n` badge in the toolbar, alongside the existing `⚠ HTML ON` and
+`⚠ PASS: LOCAL` indicators and using the same show/hide mechanism. It is
+hidden when the count is zero, so a clean vault costs no screen space at all
+— the common case adds nothing to the display. Clicking it opens the
+duplicates dialogue.
+
+### Duplicates dialogue
+
+Reachable from the badge and from a `Reused Passwords` menu entry, since the
+badge is hidden most of the time and a feature you can only reach when
+something is wrong is hard to discover.
+
+Entries are listed by record title and field name. The shared password is the
+grouping key and is never rendered: you learn that two entries collide
+without being shown the secret they collide on. There is a test asserting the
+dialogue's text does not contain the password.
+
+### `showPasswordReuseWarning`
+
+Defaults to true, on the Administration tab. It suppresses the **badge only**
+— the check still runs and the count is still available, so there is no state
+in which PAM knows a password is reused and has no way to tell you.
+
+Note this is a new category for PAM: the two existing badges cannot be
+dismissed, only fixed. This one can be silenced.
+
+### `refreshVaultStats()` and coalescing
+
+Every path that adds, edits, clones or deletes a record already funnels
+through `setNumRecords()`, so that is the single hook rather than six
+scattered call sites. `clearRecords()` bypasses it and is hooked separately,
+as is the end of a file load.
+
+The refresh is **coalesced**, not immediate. Loading a file calls
+`insertRecord()` once per record and each of those calls `setNumRecords()`;
+walking the whole accordion each time would be quadratic. Repeated requests
+in the same tick collapse into one.
+
+The fingerprint is asynchronous (`crypto.subtle`) while the About dialogue is
+built synchronously, so About reads a cached value and is updated in place
+when the hash arrives. If `crypto.subtle` is unavailable — it requires a
+secure context — About says the fingerprint is unavailable rather than
+showing a stale or empty value.
+
+### Import cycle
+
+`record.js -> vault-ui.js -> save.js -> record.js`. ES modules tolerate this
+because every binding is used at call time rather than during module
+evaluation, and it was verified by loading the graph rather than assumed. If
+that ever becomes fragile, the fix is to move `convertInternalDataToJSON()`
+out of `save.js` into a module of its own.
+
+### Tests
+
+Ten unit tests for the badge, the dialogue and the preference default. Two
+e2e tests.
+
+The e2e reuse test is **mirrored on purpose**. The example records contain no
+reused passwords, so a test that only loaded them and checked the badge was
+hidden would pass whether or not the feature works — an empty list is also
+what a broken implementation returns. It therefore establishes the clean
+baseline, then creates two records sharing a password through the New Record
+dialogue, and asserts the badge appears and the dialogue names both entries.
+Going through the UI rather than injecting DOM state means the
+`insertRecord -> setNumRecords -> scheduleVaultStatsRefresh` path is actually
+exercised.
+
+`example.txt` was deliberately left alone. It is user-facing documentation,
+and seeding it with a reused password to make a test convenient would teach
+the wrong thing in the one file new users read.
+
+One pre-existing e2e helper changed: `choose_menu_option()` asserts a hard
+menu-item count, raised from 8 to 9 by the new entry. The hard count is worth
+keeping — it catches an accidental menu change — so it was updated rather
+than loosened.
+
+---
+
 ## Not in this release
 
-- UI wiring for the fingerprint (About dialog) and the reuse badge and dialog
-- The `showPasswordReuseWarning` preference
 - Vault diff, which is blocked on records having a durable identifier;
   today "same entry" can only be inferred from title plus field names, which
   breaks as soon as either is edited

@@ -3,6 +3,7 @@ import { icon, clog, isURL, mkid,  mkPopupModalDlg, mkPopupModalDlgButton } from
 import { copyRecordFieldsToEditDlg, mkRecordEditDlg, mkRecordField } from './field.js'
 import { searchRecords } from './search.js'
 import { clearAbout } from './about.js'
+import { scheduleVaultStatsRefresh } from './vault-ui.js'
 
 let INACTIVE = '<small>*INACTIVE*</small>&nbsp;'
 
@@ -32,9 +33,16 @@ function getNumRecords() {
 }
 
 // set the number of records
+//
+// Every path that adds, edits, clones or deletes a record ends up here, so
+// this is the single hook for recomputing the vault statistics. The refresh
+// is coalesced rather than immediate: loading a file calls insertRecord()
+// once per record, and walking the whole accordion each time would be
+// quadratic.
 function setNumRecords() {
     let numrecs = getNumRecords()
     document.body.xGet('#x-num-records').xInnerHTML(numrecs)
+    scheduleVaultStatsRefresh()
 }
 
 // find the record that would appear after this one
@@ -94,6 +102,7 @@ export function clearRecords() {
     }
     nodeList.forEach((n) => { n.remove() })
     document.body.xGet('#x-num-records').xInnerHTML('0')
+    scheduleVaultStatsRefresh()   // clearRecords bypasses setNumRecords
     clearAbout()
 }
 

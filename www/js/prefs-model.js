@@ -96,6 +96,7 @@ export function getDefaultPrefs() {
         requireRecordFields: false,
         lockPreferencesPassword: '',
         allowHtmlFieldRendering: false,
+        showPasswordReuseWarning: true,
         defaultRecordFields: 'website,login,password,note',
         enableRawJSONEdit: false,
     }

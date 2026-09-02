@@ -2975,6 +2975,154 @@ async function runVaultFingerprintTests() {
   })
 }
 
+
+// ---------------------------------------------------------------------------
+// vault-ui.js — reuse badge, dialogue, and stats refresh
+// ---------------------------------------------------------------------------
+import {
+  getCurrentRecords, refreshVaultStats, updateReuseIndicator, menuReuseDlg,
+  getCachedReuseCount, getCachedReuseGroups
+} from '/js/vault-ui.js'
+
+// A second accordion, swapped in for these tests only. convertInternalDataToJSON
+// reads #records-accordion, so the id has to move rather than the element.
+function mkVaultUiItem(title, active, fields) {
+  const item = xmk('div').xClass('accordion-item')
+  const btn = xmk('button').xClass('accordion-button')
+  btn.innerHTML = title
+  btn.setAttribute('x-active', active ? 'true' : 'false')
+  btn.setAttribute('x-created', '2026-01-01T00:00:00.000Z')
+  item.appendChild(btn)
+  const body = xmk('div').xClass('accordion-body')
+  fields.forEach(([name, type, value]) => {
+    const row = xmk('div').xClass('row')
+    const n = xmk('div').xClass('x-fld-name'); n.innerHTML = name
+    const v = xmk('div').xClass('x-fld-value')
+    v.setAttribute('data-fld-type', type)
+    v.setAttribute('data-fld-raw-value', value)
+    v.innerHTML = value
+    row.appendChild(n); row.appendChild(v); body.appendChild(row)
+  })
+  item.appendChild(body)
+  return item
+}
+
+function withVaultUiFixture(items, fn) {
+  const real = document.getElementById('records-accordion')
+  if (real) { real.removeAttribute('id') }
+  const fixture = xmk('div').xId('records-accordion')
+  items.forEach(i => fixture.appendChild(i))
+  document.body.appendChild(fixture)
+  const badge = xmk('span').xId('x-reuse-indicator')
+  badge.style.display = 'none'
+  document.body.appendChild(badge)
+  try {
+    fn(badge)
+  } finally {
+    fixture.remove()
+    badge.remove()
+    if (real) { real.setAttribute('id', 'records-accordion') }
+  }
+}
+
+const REUSED_ITEMS = () => [
+  mkVaultUiItem('github', true, [['username','text','joe'],['password','password','SAME']]),
+  mkVaultUiItem('gitlab', true, [['username','text','joe'],['password','password','SAME']]),
+  mkVaultUiItem('bank',   true, [['username','text','jl'], ['password','password','OTHER']]),
+]
+
+suite('vault-ui.js — getCurrentRecords')
+test('reads records out of the accordion', () => {
+  withVaultUiFixture(REUSED_ITEMS(), () => {
+    const records = getCurrentRecords()
+    assertEqual(records.length, 3)
+    assertEqual(records[0].title, 'github')
+  })
+})
+
+suite('vault-ui.js — reuse badge')
+test('is shown when a password is reused', () => {
+  withVaultUiFixture(REUSED_ITEMS(), (badge) => {
+    window.prefs.showPasswordReuseWarning = true
+    refreshVaultStats()
+    assertEqual(badge.style.display, 'inline')
+    assertEqual(getCachedReuseCount(), 2, 'counts fields, not groups')
+    assertEqual(getCachedReuseGroups().length, 1)
+  })
+})
+test('is hidden when nothing is reused', () => {
+  const unique = [
+    mkVaultUiItem('a', true, [['password','password','one']]),
+    mkVaultUiItem('b', true, [['password','password','two']]),
+  ]
+  withVaultUiFixture(unique, (badge) => {
+    window.prefs.showPasswordReuseWarning = true
+    refreshVaultStats()
+    assertEqual(badge.style.display, 'none', 'a clean vault must cost no screen space')
+    assertEqual(getCachedReuseCount(), 0)
+  })
+})
+test('is hidden when the preference is off', () => {
+  withVaultUiFixture(REUSED_ITEMS(), (badge) => {
+    window.prefs.showPasswordReuseWarning = false
+    refreshVaultStats()
+    assertEqual(badge.style.display, 'none')
+    window.prefs.showPasswordReuseWarning = true
+  })
+})
+test('the count is still computed when the preference is off', () => {
+  // The preference suppresses the badge, not the check. There must be no
+  // state in which PAM knows a password is reused and cannot tell you.
+  withVaultUiFixture(REUSED_ITEMS(), () => {
+    window.prefs.showPasswordReuseWarning = false
+    refreshVaultStats()
+    assertEqual(getCachedReuseCount(), 2, 'the check must still run')
+    window.prefs.showPasswordReuseWarning = true
+  })
+})
+test('reports the count in its text', () => {
+  withVaultUiFixture(REUSED_ITEMS(), (badge) => {
+    window.prefs.showPasswordReuseWarning = true
+    refreshVaultStats()
+    assert(badge.innerHTML.indexOf('REUSED: 2') > -1, badge.innerHTML)
+  })
+})
+
+suite('vault-ui.js — reuse dialogue')
+test('names the colliding entries', () => {
+  withVaultUiFixture(REUSED_ITEMS(), () => {
+    refreshVaultStats()
+    const dlg = menuReuseDlg()
+    assert(dlg.textContent.indexOf('github') > -1, 'github should be listed')
+    assert(dlg.textContent.indexOf('gitlab') > -1, 'gitlab should be listed')
+  })
+})
+test('never renders the shared password', () => {
+  // The whole point: you learn that two entries collide without being shown
+  // the secret they collide on.
+  withVaultUiFixture(REUSED_ITEMS(), () => {
+    refreshVaultStats()
+    const dlg = menuReuseDlg()
+    assert(dlg.textContent.indexOf('SAME') === -1, 'the shared password leaked into the dialogue')
+  })
+})
+test('says so plainly when there is no reuse', () => {
+  const unique = [mkVaultUiItem('a', true, [['password','password','one']])]
+  withVaultUiFixture(unique, () => {
+    refreshVaultStats()
+    const dlg = menuReuseDlg()
+    assert(dlg.textContent.indexOf('not used more than once') > -1 ||
+           dlg.textContent.indexOf('No stored password') > -1, dlg.textContent)
+  })
+})
+
+suite('prefs — showPasswordReuseWarning')
+test('defaults to true', () => {
+  assertEqual(getDefaultPrefs().showPasswordReuseWarning, true,
+              'the nag is on by default; suppressing it is a deliberate act')
+})
+
+
 finalize() // update summary with sync results so far
 runCryptTests()
   .then(runSaveRegressionTests)

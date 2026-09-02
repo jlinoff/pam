@@ -1,6 +1,7 @@
 // about dialogue
 import { xmk, xget, xgetn, enableFunctionChaining } from './lib.js'
 import { mkPopupModalDlgButton, mkPopupModalDlg } from './utils.js'
+import { fingerprintHTML } from './vault-ui.js'
 import { BOOTSTRAP_VERSION,
          VERSION,
          COMMIT_ID,
@@ -28,6 +29,7 @@ function mkAbout() {
                 xmk('div').xInnerHTML(`avail: ${window.screen.availWidth}x${window.screen.availHeight}`),
                 xmk('div').xInnerHTML(`inner: ${window.innerWidth}x${window.innerHeight}`),
             ),*/
+            xmk(el).xClass('fs-6').xId('x-about-fingerprint').xInnerHTML(fingerprintHTML()),
             xmk(el).xId('x-about-info').xInnerHTML(custom),
             xmk(el).xClass('fs-6', 'fw-lighter').xId('x-about-file-info').xInnerHTML(''),
         )

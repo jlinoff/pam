@@ -325,6 +325,13 @@ web-min: app-help app-version  ## (EXPERIMENTAL) create a minimized web release 
 	@cd web-min && tar Jcf ../pam-www-min.tar pam
 	@ls -l pam-www-min.tar
 
+.PHONY: zip
+zip:  project.zip  ## Make the project.zip file from git repo contents.
+
+GIT_SRC_FILES := $(shell git ls-files)
+project.zip: $(GIT_SRC_FILES)
+	zip "$@" $(GIT_SRC_FILES)
+
 # could replace
 #   awk -F'##' '{printf("%-16s %s\n",$1,$2)}'
 # with

@@ -2616,9 +2616,244 @@ async function runSaveRegressionTests() {
 // Keep `.then(() => { window.__TESTS_COMPLETE__ = true })` as the final link
 // in the chain: it signals the Selenium runner that all async work — the last
 // finalize() included — has completed, so it never reads a sync-only snapshot.
+
+// ---------------------------------------------------------------------------
+// vault.js — minimum-disclosure queries (fingerprint, reuse)
+// ---------------------------------------------------------------------------
+import {
+  canonicalizeRecords, vaultFingerprint, secretFields, reuseGroups, reuseCount
+} from '/js/vault.js'
+
+// Records in the shape convertInternalDataToJSON() produces. Plain literals —
+// these functions never touch the DOM, so no accordion fixture is needed.
+function mkrec(title, fields, active, created) {
+  return {
+    title: title,
+    active: active === undefined ? true : active,
+    created: created || '2026-01-01T00:00:00.000Z',
+    fields: fields,
+  }
+}
+function fld(name, type, value) {
+  return {name: name, type: type, value: value}
+}
+
+const VAULT_A = [
+  mkrec('github', [fld('username', 'text', 'joe'), fld('password', 'password', 'aaa')]),
+  mkrec('gitlab', [fld('username', 'text', 'joe'), fld('password', 'password', 'bbb')]),
+  mkrec('bank',   [fld('username', 'text', 'jl'),  fld('password', 'password', 'ccc')]),
+]
+
+suite('vault.js — canonicalizeRecords')
+test('is stable under record reordering', () => {
+  const shuffled = [VAULT_A[2], VAULT_A[0], VAULT_A[1]]
+  assertEqual(canonicalizeRecords(shuffled), canonicalizeRecords(VAULT_A),
+              'record order must not change the canonical form')
+})
+test('is stable under field reordering within a record', () => {
+  const a = [mkrec('x', [fld('u', 'text', '1'), fld('p', 'password', '2')])]
+  const b = [mkrec('x', [fld('p', 'password', '2'), fld('u', 'text', '1')])]
+  assertEqual(canonicalizeRecords(a), canonicalizeRecords(b),
+              'field order is presentation, not content')
+})
+test('ignores created, which is stamped with the current time on save', () => {
+  const a = [mkrec('x', [fld('p', 'password', '1')], true, '2020-01-01T00:00:00.000Z')]
+  const b = [mkrec('x', [fld('p', 'password', '1')], true, '2026-06-06T00:00:00.000Z')]
+  assertEqual(canonicalizeRecords(a), canonicalizeRecords(b),
+              'a differing created must not read as a differing vault')
+})
+test('distinguishes a changed value', () => {
+  const b = [mkrec('x', [fld('p', 'password', '2')])]
+  assertNotEqual(canonicalizeRecords([mkrec('x', [fld('p', 'password', '1')])]),
+                 canonicalizeRecords(b))
+})
+test('distinguishes a changed title', () => {
+  assertNotEqual(canonicalizeRecords([mkrec('x', [fld('p', 'password', '1')])]),
+                 canonicalizeRecords([mkrec('y', [fld('p', 'password', '1')])]))
+})
+test('distinguishes a changed active flag', () => {
+  assertNotEqual(canonicalizeRecords([mkrec('x', [fld('p', 'password', '1')], true)]),
+                 canonicalizeRecords([mkrec('x', [fld('p', 'password', '1')], false)]))
+})
+test('distinguishes a changed field name', () => {
+  assertNotEqual(canonicalizeRecords([mkrec('x', [fld('p', 'password', '1')])]),
+                 canonicalizeRecords([mkrec('x', [fld('q', 'password', '1')])]))
+})
+test('distinguishes a changed field type', () => {
+  assertNotEqual(canonicalizeRecords([mkrec('x', [fld('p', 'password', '1')])]),
+                 canonicalizeRecords([mkrec('x', [fld('p', 'text', '1')])]))
+})
+test('no separator character lets one vault masquerade as another', () => {
+  // Delimiter-agnostic on purpose. An earlier version of this test hardcoded
+  // the separator the implementation happened to use, so it passed even when
+  // the separator was changed to something forgeable — it was checking that
+  // one specific character was absent, not that boundaries cannot be faked.
+  // For each candidate separator, these two vaults differ but would collide
+  // if the canonical form were a naive join on that character.
+  const candidates = [':', '|', ',', '\t', '\n', '\u001f', '\u001e', '-', ' ', '/']
+  for (const sep of candidates) {
+    const a = [mkrec('x', [fld('p', 'password', 'u' + sep + 'v')])]
+    const b = [mkrec('x', [fld('p', 'password' + sep + 'u', 'v')])]
+    assertNotEqual(canonicalizeRecords(a), canonicalizeRecords(b),
+                   'collision when separator is ' + JSON.stringify(sep))
+  }
+})
+test('an empty vault canonicalizes without throwing', () => {
+  assertEqual(canonicalizeRecords([]), '[]')
+})
+test('an empty vault differs from a populated one', () => {
+  assertNotEqual(canonicalizeRecords([]), canonicalizeRecords(VAULT_A))
+})
+test('a record with no fields canonicalizes without throwing', () => {
+  assert(canonicalizeRecords([mkrec('x', [])]).length > 0)
+})
+
+suite('vault.js — secretFields')
+test('collects only password-typed fields', () => {
+  const recs = [mkrec('x', [fld('u', 'text', 'joe'), fld('p', 'password', 'secret'),
+                            fld('n', 'textarea', 'notes')])]
+  const got = secretFields(recs)
+  assertEqual(got.length, 1, 'only the password field is a secret')
+  assertEqual(got[0].value, 'secret')
+  assertEqual(got[0].title, 'x')
+  assertEqual(got[0].name, 'p')
+})
+test('skips empty password values', () => {
+  assertEqual(secretFields([mkrec('x', [fld('p', 'password', '')])]).length, 0)
+})
+test('collects several password fields from one record', () => {
+  const recs = [mkrec('x', [fld('p1', 'password', 'a'), fld('p2', 'password', 'b')])]
+  assertEqual(secretFields(recs).length, 2, 'a record may hold more than one secret')
+})
+
+suite('vault.js — reuseGroups')
+test('reports nothing when every password is unique', () => {
+  assertEqual(reuseGroups(VAULT_A).length, 0)
+})
+test('groups two entries that share a password', () => {
+  const recs = [
+    mkrec('github', [fld('password', 'password', 'same')]),
+    mkrec('gitlab', [fld('password', 'password', 'same')]),
+    mkrec('bank',   [fld('password', 'password', 'other')]),
+  ]
+  const groups = reuseGroups(recs)
+  assertEqual(groups.length, 1, 'one shared password')
+  assertEqual(groups[0].length, 2, 'shared by two entries')
+  assertEqual(groups[0][0].title, 'github')
+  assertEqual(groups[0][1].title, 'gitlab')
+})
+test('never returns the password itself', () => {
+  const recs = [
+    mkrec('a', [fld('password', 'password', 'hunter2')]),
+    mkrec('b', [fld('password', 'password', 'hunter2')]),
+  ]
+  const serialised = JSON.stringify(reuseGroups(recs))
+  assert(serialised.indexOf('hunter2') === -1,
+         'the secret is the grouping key and must never be disclosed')
+})
+test('detects reuse between two fields of the same record', () => {
+  const recs = [mkrec('x', [fld('p1', 'password', 'same'), fld('p2', 'password', 'same')])]
+  const groups = reuseGroups(recs)
+  assertEqual(groups.length, 1, 'reuse is a property of fields, not records')
+  assertEqual(groups[0].length, 2)
+})
+test('ignores identical values in non-password fields', () => {
+  const recs = [
+    mkrec('a', [fld('username', 'text', 'joe')]),
+    mkrec('b', [fld('username', 'text', 'joe')]),
+  ]
+  assertEqual(reuseGroups(recs).length, 0, 'a shared username is not password reuse')
+})
+test('is stable under record reordering', () => {
+  const recs = [
+    mkrec('a', [fld('password', 'password', 'same')]),
+    mkrec('b', [fld('password', 'password', 'same')]),
+  ]
+  const forward = JSON.stringify(reuseGroups(recs))
+  const reverse = JSON.stringify(reuseGroups([recs[1], recs[0]]))
+  assertEqual(forward, reverse, 'display order must not depend on input order')
+})
+
+suite('vault.js — reuseCount')
+test('is zero for a vault with no reuse', () => {
+  assertEqual(reuseCount(VAULT_A), 0)
+})
+test('counts fields rather than groups', () => {
+  const recs = [
+    mkrec('a', [fld('password', 'password', 'same')]),
+    mkrec('b', [fld('password', 'password', 'same')]),
+    mkrec('c', [fld('password', 'password', 'same')]),
+  ]
+  assertEqual(reuseGroups(recs).length, 1, 'one group')
+  assertEqual(reuseCount(recs), 3, 'but three passwords to change')
+})
+
+
+// ---------------------------------------------------------------------------
+// vault.js — vaultFingerprint (async: crypto.subtle)
+// ---------------------------------------------------------------------------
+async function runVaultFingerprintTests() {
+  suite('vault.js — vaultFingerprint')
+
+  await runAsyncTest('is stable under record reordering', async () => {
+    // The whole point of the feature. Two identical vaults serialised in
+    // different orders must agree; an order-sensitive comparison reports a
+    // difference that is not there.
+    const shuffled = [VAULT_A[2], VAULT_A[0], VAULT_A[1]]
+    assertEqual(await vaultFingerprint(shuffled), await vaultFingerprint(VAULT_A))
+  })
+
+  await runAsyncTest('is stable under field reordering', async () => {
+    const a = [mkrec('x', [fld('u', 'text', '1'), fld('p', 'password', '2')])]
+    const b = [mkrec('x', [fld('p', 'password', '2'), fld('u', 'text', '1')])]
+    assertEqual(await vaultFingerprint(a), await vaultFingerprint(b))
+  })
+
+  await runAsyncTest('ignores created', async () => {
+    const a = [mkrec('x', [fld('p', 'password', '1')], true, '2020-01-01T00:00:00.000Z')]
+    const b = [mkrec('x', [fld('p', 'password', '1')], true, '2026-06-06T00:00:00.000Z')]
+    assertEqual(await vaultFingerprint(a), await vaultFingerprint(b))
+  })
+
+  await runAsyncTest('changes when a password changes', async () => {
+    const a = [mkrec('x', [fld('p', 'password', '1')])]
+    const b = [mkrec('x', [fld('p', 'password', '2')])]
+    assertNotEqual(await vaultFingerprint(a), await vaultFingerprint(b))
+  })
+
+  await runAsyncTest('changes when a record is added', async () => {
+    const extra = VAULT_A.concat([mkrec('extra', [fld('p', 'password', 'z')])])
+    assertNotEqual(await vaultFingerprint(VAULT_A), await vaultFingerprint(extra))
+  })
+
+  await runAsyncTest('changes when a record is removed', async () => {
+    assertNotEqual(await vaultFingerprint(VAULT_A),
+                   await vaultFingerprint(VAULT_A.slice(0, 2)))
+  })
+
+  await runAsyncTest('is deterministic across calls', async () => {
+    assertEqual(await vaultFingerprint(VAULT_A), await vaultFingerprint(VAULT_A))
+  })
+
+  await runAsyncTest('formats as four groups of four hex characters', async () => {
+    const fp = await vaultFingerprint(VAULT_A)
+    assert(/^[0-9a-f]{4}( [0-9a-f]{4}){3}$/.test(fp), 'unexpected format: ' + fp)
+  })
+
+  await runAsyncTest('handles an empty vault', async () => {
+    const fp = await vaultFingerprint([])
+    assert(/^[0-9a-f]{4}( [0-9a-f]{4}){3}$/.test(fp), 'unexpected format: ' + fp)
+  })
+
+  await runAsyncTest('an empty vault differs from a populated one', async () => {
+    assertNotEqual(await vaultFingerprint([]), await vaultFingerprint(VAULT_A))
+  })
+}
+
 finalize() // update summary with sync results so far
 runCryptTests()
   .then(runSaveRegressionTests)
+  .then(runVaultFingerprintTests)
   .catch((err) => {
     // A throw in an async runner itself (not an individual test — those are
     // caught) would otherwise leave the flag false and strand the Selenium

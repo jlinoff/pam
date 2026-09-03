@@ -40,10 +40,13 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 # the menu walk and the example-record load are all already solved there.
 # pytest only collects test_*.py, so this module is not picked up as a test.
 from test_chrome import (  # pylint: disable=wrong-import-position
-    get_driver, choose_menu_option, scroll_and_click, load_example_records,
+    get_driver, choose_menu_option, scroll_and_click,
     get_parent, get_children, set_theme,
 )
 from selenium.webdriver.common.by import By  # pylint: disable=wrong-import-position
+from selenium.common.exceptions import (  # pylint: disable=wrong-import-position
+    NoAlertPresentException, UnexpectedAlertPresentException,
+)
 
 # get_driver() uses 1920x1080, and chromedriver's element screenshot stops at
 # the viewport: a dialogue taller than the window is silently cut off, and the
@@ -115,6 +118,42 @@ def stub_volatile(driver):
 SETTLE = 0.6
 
 
+def load_examples(driver, timeout=10.0):
+    """Load the example records, waiting for the outcome rather than a delay.
+
+    load_example_records() in test_chrome.py accepts the confirm() alert after
+    a fixed 0.5s sleep, inside a try that swallows NoAlertPresentException. If
+    the alert is slow the accept is skipped, and the alert then blocks the
+    next WebDriver command with UnexpectedAlertPresentException — which is how
+    this surfaced: not on the load, but on a set_window_size two shots later.
+
+    A screenshot run reloads between every capture, so it hits that race far
+    more often than the test suite does.
+    """
+    dlg = choose_menu_option(driver, 'Load File')
+    buttons = dlg.find_elements(By.TAG_NAME, 'button')
+    example = next((b for b in buttons if 'Load Example Records' in b.text), None)
+    if example is None:
+        raise RuntimeError('no "Load Example Records" button in the Load File dialogue')
+    example.click()
+
+    deadline = time.time() + timeout
+    accepted = False
+    while time.time() < deadline:
+        try:
+            driver.switch_to.alert.accept()
+            accepted = True
+            time.sleep(0.4)
+        except NoAlertPresentException:
+            if accepted and driver.find_elements(By.CLASS_NAME, 'accordion-button'):
+                time.sleep(0.4)
+                return
+            time.sleep(0.2)
+    raise RuntimeError(
+        f'example records did not load within {timeout}s '
+        f'(confirm accepted: {accepted})')
+
+
 def set_viewport_size(driver, width, height):
     """Size the window so the *viewport* ends up width x height.
 
@@ -124,7 +163,15 @@ def set_viewport_size(driver, width, height):
     portable way to get a known viewport size, since the offset varies by
     platform and Chrome version.
     """
-    driver.set_window_size(width, height)
+    try:
+        driver.set_window_size(width, height)
+    except UnexpectedAlertPresentException:
+        # Something left a dialog open. Clear it and say so rather than
+        # failing three frames deep in Selenium.
+        driver.switch_to.alert.accept()
+        raise RuntimeError(
+            'an unhandled browser alert was open when resizing the window; '
+            'a previous capture left one behind') from None
     time.sleep(0.3)
     for _ in range(5):
         inner = driver.execute_script(
@@ -349,6 +396,98 @@ def shot_status_msg(driver):
     return Viewport(driver)
 
 
+# ---------------------------------------------------------------------------
+# Phase 3: dialogues needing preference or state setup
+# ---------------------------------------------------------------------------
+
+# Matches what the hand-made pam-about-custom.png showed, so the README prose
+# describing "a simple custom message that uses bootstrap formatting classes"
+# still matches the picture.
+CUSTOM_ABOUT = ('<div class="bg-primary text-white p-3 rounded">'
+                '<h4>Custom Stuff</h4><div>custom stuff here!</div></div>')
+
+
+def shot_about_custom(driver):
+    '''About with a custom message set through the preferences.
+
+    mkAbout() reads customAboutInfo when it builds, and menuAboutDlg() runs
+    once at startup — so setting the preference is not enough on its own.
+    refreshAbout() rebuilds the dialogue body from the current value, which is
+    what the Preferences dialogue itself calls after a save.
+    '''
+    driver.execute_script('window.prefs.customAboutInfo = arguments[0];', CUSTOM_ABOUT)
+    driver.execute_async_script(
+        'var done = arguments[arguments.length - 1];'
+        "import('/js/about.js').then(function(m) {"
+        '  m.refreshAbout(); done(true);'
+        '}).catch(function(e) { done(String(e)); });'
+    )
+    time.sleep(0.4)
+    dlg = choose_menu_option(driver, 'About')
+    time.sleep(SETTLE)
+    stub_volatile(driver)
+    content = modal_content(dlg)
+    if 'Custom Stuff' not in content.text:
+        raise RuntimeError(
+            'the custom About message did not render — customAboutInfo may no '
+            'longer be read when the dialogue is built')
+    return content
+
+
+def shot_file_save(driver):
+    '''The Save File dialogue.'''
+    dlg = choose_menu_option(driver, 'Save File')
+    time.sleep(SETTLE)
+    return modal_content(dlg)
+
+
+def shot_file_load(driver):
+    '''The Load File dialogue.'''
+    dlg = choose_menu_option(driver, 'Load File')
+    time.sleep(SETTLE)
+    return modal_content(dlg)
+
+
+def shot_password_generator(driver):
+    '''The standalone password generator, opened from the footer.'''
+    button = driver.find_element(By.ID, 'x-generate-password')
+    scroll_and_click(driver, button)
+    time.sleep(SETTLE)
+    dlg = driver.find_element(By.ID, 'mainPasswordGeneratorDlg')
+    return dlg.find_element(By.CLASS_NAME, 'modal-content')
+
+
+def shot_prefs_printing_check(driver):
+    '''The Enable Printing preference, on the Administration tab.'''
+    return open_prefs_tab(driver, 'prefs-tab-admin')
+
+
+def shot_menu_with_print(driver):
+    '''The menu with Print showing, which needs enablePrinting set first.
+
+    enablePrinting() toggles Bootstrap's d-none on the .x-print entries rather
+    than an inline style, so the preference alone is not enough — the function
+    has to run.
+    '''
+    driver.execute_script('window.prefs.enablePrinting = true;')
+    driver.execute_async_script(
+        'var done = arguments[arguments.length - 1];'
+        "import('/js/print.js').then(function(m) {"
+        '  m.enablePrinting(); done(true);'
+        '}).catch(function(e) { done(String(e)); });'
+    )
+    time.sleep(0.4)
+    menu = driver.find_element(By.ID, 'menu')
+    scroll_and_click(driver, menu)
+    time.sleep(SETTLE)
+    items = get_children(get_parent(menu))[1]
+    labels = [i.get_attribute('textContent').strip()
+              for i in items.find_elements(By.CLASS_NAME, 'dropdown-item')]
+    if 'Print' not in labels:
+        raise RuntimeError(f'Print is not in the menu: {labels}')
+    return items
+
+
 # (filename, capture function, window size)
 SHOTS = [
     ('pam-menu.png', shot_menu, WINDOW),
@@ -368,6 +507,13 @@ SHOTS = [
     ('pam-search-g-re.png', shot_search_g_re, NARROW),
     ('pam-search.png', shot_records_dark, NARROW),
     ('pam-status-msg.png', shot_status_msg, NARROW),
+
+    ('pam-about-custom.png', shot_about_custom, WINDOW),
+    ('pam-file-save.png', shot_file_save, WINDOW),
+    ('pam-file-load.png', shot_file_load, WINDOW),
+    ('pam-password-generator.png', shot_password_generator, WINDOW),
+    ('pam-prefs-enable-printing-check.png', shot_prefs_printing_check, WINDOW),
+    ('pam-prefs-enable-printing-menu.png', shot_menu_with_print, WINDOW),
 ]
 
 
@@ -423,8 +569,7 @@ def main():
     try:
         driver.get(URL)
         time.sleep(1)
-        load_example_records(driver)
-        time.sleep(1)
+        load_examples(driver)
 
         for filename, func, window in SHOTS:
             set_viewport_size(driver, *window)
@@ -440,8 +585,7 @@ def main():
             # lays out at the size the next shot expects.
             driver.get(URL)
             time.sleep(0.8)
-            load_example_records(driver)
-            time.sleep(0.8)
+            load_examples(driver)
     finally:
         driver.quit()
 

@@ -9,7 +9,7 @@ import { setDarkLightTheme } from './utils.js'
 import { searchRecords } from './search.js'
 import { enableRawJSONEdit } from './raw.js'
 import { updateHtmlRenderingIndicator, updateFilePassCacheIndicator, updatePasswordSearchIndicator } from './main.js'
-import { updateReuseIndicator } from './vault-ui.js'
+import { updateReuseIndicator, scheduleVaultStatsRefresh } from './vault-ui.js'
 import { clearFilePass } from './password.js'
 
 // These are the input types that the tool knows how to handle.
@@ -547,6 +547,7 @@ function savePrefs(el) {
     updateHtmlRenderingIndicator()  // SEC-001: update toolbar badge
     updateFilePassCacheIndicator()  // SEC-002: update toolbar badge
     updatePasswordSearchIndicator()  // update toolbar badge
+    scheduleVaultStatsRefresh()      // hideInactiveRecords changes the reuse scope
     updateReuseIndicator()           // reuse badge follows showPasswordReuseWarning
     searchRecords()  // refresh
     return checkDefaultRecordFields(true)

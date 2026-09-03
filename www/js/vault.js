@@ -78,6 +78,25 @@ export function canonicalizeRecords(records) {
 }
 
 /**
+ * Split records into [active, inactive].
+ *
+ * @param {Array} records - records as produced by convertInternalDataToJSON.
+ * @returns {Array} [activeRecords, inactiveRecords]
+ */
+export function partitionByActive(records) {
+    let active = []
+    let inactive = []
+    for (const record of records) {
+        if (record.active) {
+            active.push(record)
+        } else {
+            inactive.push(record)
+        }
+    }
+    return [active, inactive]
+}
+
+/**
  * A short fingerprint of the vault's content, for comparing two vaults by eye.
  *
  * 64 bits shown as four groups. This is a comparison aid between vaults the

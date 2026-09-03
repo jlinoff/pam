@@ -40,7 +40,32 @@ tested with plain object literals rather than accordion fixtures.
 
 Sixty-four bits of SHA-256 over a canonical form, rendered as four hex groups
 (`3f2a 91c4 0e88 d517`). Two devices showing the same four groups hold the
-same vault.
+same records.
+
+The About dialogue publishes **two** fingerprints, partitioned by `active`:
+
+```
+Fingerprint (active)    3f2a 91c4 0e88 d517
+Fingerprint (inactive)  b7c1 4e02 aa39 6d85
+```
+
+The inactive line appears only when there are inactive records. With none,
+nothing sits outside the active view and the line would be noise; when it does
+appear, its presence is itself the signal that something is there.
+
+Partitioning rather than nesting, because the two hashes are then independent
+facts. Matching active lines with differing inactive lines tells you your live
+credentials are in sync and the difference is confined to archived records. A
+single hash over both would say only that something changed, and a single hash
+over the active records alone would be worse: device A with three active and
+two inactive records, and device B with the same three active and none of the
+inactive, would report as identical — and the user would never learn that two
+records they deliberately kept (they deactivated rather than deleted them) are
+missing from B. There is a test for exactly that scenario.
+
+A 64-bit digest reveals no titles, no fields and no count, so publishing the
+inactive line does not surface the records themselves. It only makes their
+absence detectable.
 
 Sorting is load-bearing: records and fields are ordered by content before
 hashing, so two identical vaults serialised differently agree. That is the
@@ -58,6 +83,20 @@ into any record lacking one, so a fingerprint covering it would change on
 every call. The question is "same content?", not "same content and same save
 history?". `title`, `active`, and every field's name, type and value are
 included.
+
+### Inactive records and the reuse report
+
+The reuse report honours `hideInactiveRecords`. An inactive record is a
+retired credential: a collision with one is not something to act on, and
+reporting it would be noise that teaches people to ignore the badge. The
+dialogue states when records have been excluded, since an absence is the
+hardest thing for a user to notice.
+
+The fingerprints are deliberately not filtered this way. The report is a view;
+the fingerprint is an identity, and one whose meaning silently depends on a
+setting cannot do the job it exists for. Note also that `hideInactiveRecords`
+is stored inside the vault file, so a filtered fingerprint would not be a
+function of the vault's contents at all.
 
 ### `reuseGroups(records)` → `Array`
 
@@ -268,6 +307,13 @@ a comment explaining that index 6 was reserved for Print. That is now a
 single ordered comparison against the full expected list: a mismatch reports
 the whole menu rather than one item, and inserting an entry is one edit
 rather than five renumberings.
+
+The comparison reads `textContent` rather than Selenium's `.text`. Print
+carries Bootstrap's `d-none` unless `enablePrinting` is set, and Selenium
+reports `''` for the text of a non-displayed element — which is why the
+original check skipped that index rather than asserting on it. Reading
+`textContent` covers the whole menu including entries that are currently
+hidden, so the assertion is stronger than the one it replaced.
 
 ---
 

@@ -7,12 +7,27 @@
 import { xmk, xget } from './lib.js'
 import { mkPopupModalDlgButton, mkPopupModalDlg } from './utils.js'
 import { convertInternalDataToJSON } from './save.js'
-import { vaultFingerprint, reuseGroups, reuseCount } from './vault.js'
+import { vaultFingerprint, reuseGroups, reuseCount, partitionByActive } from './vault.js'
 
 // Last computed values. The fingerprint is asynchronous (crypto.subtle) but
 // the About dialogue is built synchronously, so it reads this cache and gets
 // refreshed when the value arrives.
-let cachedFingerprint = ''
+// Two independent fingerprints rather than one over everything.
+//
+// Splitting them means a mismatch says WHERE the vaults differ: matching
+// active lines with differing inactive lines tells you your live credentials
+// are in sync and the difference is confined to archived records. A single
+// hash over both would say only that something changed.
+//
+// The inactive fingerprint is published even when hideInactiveRecords is set.
+// Hiding it would let two vaults that differ only in inactive records show
+// identical fingerprints and be reported the same — and a deactivated record
+// is one the user chose to keep rather than delete. A 64-bit digest reveals
+// no titles, no fields and no count, so this does not surface the records
+// themselves; it only makes their absence detectable.
+let cachedActiveFingerprint = ''
+let cachedInactiveFingerprint = ''
+let cachedHasInactive = false
 let cachedReuseGroups = []
 let cachedReuseCount = 0
 
@@ -37,7 +52,11 @@ export function getCurrentRecords() {
 }
 
 export function getCachedFingerprint() {
-    return cachedFingerprint
+    return cachedActiveFingerprint
+}
+
+export function getCachedInactiveFingerprint() {
+    return cachedInactiveFingerprint
 }
 
 export function getCachedReuseGroups() {
@@ -86,13 +105,24 @@ export function refreshVaultStats() {
         // The accordion may not exist yet during startup. Nothing to report.
         return
     }
-    cachedReuseGroups = reuseGroups(records)
-    cachedReuseCount = reuseCount(records)
+    let [active, inactive] = partitionByActive(records)
+    cachedHasInactive = inactive.length > 0
+
+    // The reuse report honours hideInactiveRecords. A deactivated record is a
+    // retired credential: a collision with one is not something to act on, and
+    // reporting it would be noise that teaches people to ignore the badge.
+    let reported = window.prefs.hideInactiveRecords ? active : records
+    cachedReuseGroups = reuseGroups(reported)
+    cachedReuseCount = reuseCount(reported)
     updateReuseIndicator()
     refreshReuseDlgBody()
 
-    vaultFingerprint(records).then((fingerprint) => {
-        cachedFingerprint = fingerprint
+    Promise.all([
+        vaultFingerprint(active),
+        inactive.length ? vaultFingerprint(inactive) : Promise.resolve(''),
+    ]).then((fingerprints) => {
+        cachedActiveFingerprint = fingerprints[0]
+        cachedInactiveFingerprint = fingerprints[1]
         let element = document.getElementById('x-about-fingerprint')
         if (element) {
             element.innerHTML = fingerprintHTML()
@@ -100,7 +130,8 @@ export function refreshVaultStats() {
     }).catch(() => {
         // crypto.subtle is unavailable outside a secure context. Say so
         // rather than showing a stale or empty value.
-        cachedFingerprint = ''
+        cachedActiveFingerprint = ''
+        cachedInactiveFingerprint = ''
     })
 }
 
@@ -118,10 +149,18 @@ export function scheduleVaultStatsRefresh() {
 }
 
 export function fingerprintHTML() {
-    if (!cachedFingerprint) {
+    if (!cachedActiveFingerprint) {
         return 'Fingerprint unavailable'
     }
-    return 'Fingerprint <code>' + cachedFingerprint + '</code>'
+    let html = 'Fingerprint (active) <code>' + cachedActiveFingerprint + '</code>'
+    if (cachedHasInactive && cachedInactiveFingerprint) {
+        // Shown only when there are inactive records. With none there is
+        // nothing outside the active view, so the line would be noise — and
+        // its appearance is itself the signal that something sits outside it.
+        html += '<br>Fingerprint (inactive) <code>' +
+                cachedInactiveFingerprint + '</code>'
+    }
+    return html
 }
 
 // Build the contents of the duplicates dialogue.
@@ -131,9 +170,13 @@ export function fingerprintHTML() {
 // without being shown the secret they collide on.
 function mkReuseDlgBody() {
     let body = xmk('div').xId('x-reuse-dlg-body')
+    let scope = ''
+    if (window.prefs.hideInactiveRecords) {
+        scope = ' Inactive records are excluded, per the Hide Inactive Records preference.'
+    }
     if (cachedReuseCount === 0) {
         return body.xAppendChild(
-            xmk('p').xInnerHTML('No stored password is used more than once.'))
+            xmk('p').xInnerHTML('No stored password is used more than once.' + scope))
     }
     let plural = cachedReuseCount === 1 ? 'password is' : 'passwords are'
     body.xAppendChild(
@@ -144,7 +187,7 @@ function mkReuseDlgBody() {
             'of them: if any one is breached, every entry in its group is exposed.'),
         xmk('p').xClass('fst-italic').xInnerHTML(
             'The passwords themselves are not shown. They are used only to group ' +
-            'the entries below.'))
+            'the entries below.' + scope))
     for (let i = 0; i < cachedReuseGroups.length; i++) {
         let group = cachedReuseGroups[i]
         let list = xmk('ul').xClass('x-reuse-group')

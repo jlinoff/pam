@@ -2746,7 +2746,8 @@ async function runSaveRegressionTests() {
 // vault.js — minimum-disclosure queries (fingerprint, reuse)
 // ---------------------------------------------------------------------------
 import {
-  canonicalizeRecords, vaultFingerprint, secretFields, reuseGroups, reuseCount
+  canonicalizeRecords, vaultFingerprint, secretFields, reuseGroups, reuseCount,
+  partitionByActive
 } from '/js/vault.js'
 
 // Records in the shape convertInternalDataToJSON() produces. Plain literals —
@@ -2831,6 +2832,27 @@ test('an empty vault differs from a populated one', () => {
 })
 test('a record with no fields canonicalizes without throwing', () => {
   assert(canonicalizeRecords([mkrec('x', [])]).length > 0)
+})
+
+suite('vault.js — partitionByActive')
+test('splits active from inactive', () => {
+  const recs = [mkrec('a', [fld('p','password','1')], true),
+                mkrec('b', [fld('p','password','2')], false),
+                mkrec('c', [fld('p','password','3')], true)]
+  const [active, inactive] = partitionByActive(recs)
+  assertEqual(active.length, 2)
+  assertEqual(inactive.length, 1)
+  assertEqual(inactive[0].title, 'b')
+})
+test('handles an all-active vault', () => {
+  const [active, inactive] = partitionByActive(VAULT_A)
+  assertEqual(active.length, 3)
+  assertEqual(inactive.length, 0)
+})
+test('handles an empty vault', () => {
+  const [active, inactive] = partitionByActive([])
+  assertEqual(active.length, 0)
+  assertEqual(inactive.length, 0)
 })
 
 suite('vault.js — secretFields')
@@ -2973,6 +2995,44 @@ async function runVaultFingerprintTests() {
   await runAsyncTest('an empty vault differs from a populated one', async () => {
     assertNotEqual(await vaultFingerprint([]), await vaultFingerprint(VAULT_A))
   })
+
+  // The reason the About dialogue publishes two fingerprints rather than one.
+  //
+  // Device A holds three active and two inactive records; device B holds the
+  // same three active records and none of the inactive ones. A single
+  // active-only fingerprint would report the two vaults as identical, and the
+  // user would never learn that two records they deliberately kept — they
+  // deactivated rather than deleted them — are missing from B.
+  await runAsyncTest('a missing inactive record is detectable', async () => {
+    const deviceA = [
+      mkrec('a', [fld('p','password','1')], true),
+      mkrec('b', [fld('p','password','2')], true),
+      mkrec('old', [fld('p','password','x')], false),
+    ]
+    const deviceB = [
+      mkrec('a', [fld('p','password','1')], true),
+      mkrec('b', [fld('p','password','2')], true),
+    ]
+    const [aActive, aInactive] = partitionByActive(deviceA)
+    const [bActive, bInactive] = partitionByActive(deviceB)
+
+    assertEqual(await vaultFingerprint(aActive), await vaultFingerprint(bActive),
+                'the live credentials really are in sync, and must say so')
+    assertNotEqual(await vaultFingerprint(aInactive), await vaultFingerprint(bInactive),
+                   'the archived difference must not be silently equal')
+  })
+
+  await runAsyncTest('active and inactive fingerprints are independent', async () => {
+    // Changing an inactive record must not disturb the active fingerprint.
+    const base = [mkrec('a', [fld('p','password','1')], true),
+                  mkrec('old', [fld('p','password','x')], false)]
+    const edited = [mkrec('a', [fld('p','password','1')], true),
+                    mkrec('old', [fld('p','password','CHANGED')], false)]
+    const [baseA, baseI] = partitionByActive(base)
+    const [editA, editI] = partitionByActive(edited)
+    assertEqual(await vaultFingerprint(baseA), await vaultFingerprint(editA))
+    assertNotEqual(await vaultFingerprint(baseI), await vaultFingerprint(editI))
+  })
 }
 
 
@@ -3113,6 +3173,59 @@ test('says so plainly when there is no reuse', () => {
     const dlg = menuReuseDlg()
     assert(dlg.textContent.indexOf('not used more than once') > -1 ||
            dlg.textContent.indexOf('No stored password') > -1, dlg.textContent)
+  })
+})
+
+suite('vault-ui.js — hideInactiveRecords scope')
+test('inactive records are excluded from the report when the pref is set', () => {
+  // The user's framing: an inactive record is a retired credential. A
+  // collision with one is not something to act on, and reporting it is noise.
+  const items = [
+    mkVaultUiItem('live',    true,  [['password','password','SHARED']]),
+    mkVaultUiItem('retired', false, [['password','password','SHARED']]),
+  ]
+  withVaultUiFixture(items, (badge) => {
+    window.prefs.showPasswordReuseWarning = true
+    window.prefs.hideInactiveRecords = true
+    refreshVaultStats()
+    assertEqual(getCachedReuseCount(), 0, 'a retired collision must not be reported')
+    assertEqual(badge.style.display, 'none')
+  })
+})
+test('inactive records are included when the pref is clear', () => {
+  const items = [
+    mkVaultUiItem('live',    true,  [['password','password','SHARED']]),
+    mkVaultUiItem('retired', false, [['password','password','SHARED']]),
+  ]
+  withVaultUiFixture(items, (badge) => {
+    window.prefs.showPasswordReuseWarning = true
+    window.prefs.hideInactiveRecords = false
+    refreshVaultStats()
+    assertEqual(getCachedReuseCount(), 2, 'showing inactive records must show their collisions')
+    assertEqual(badge.style.display, 'inline')
+    window.prefs.hideInactiveRecords = true
+  })
+})
+test('reuse between two active records is reported either way', () => {
+  const items = [
+    mkVaultUiItem('one', true, [['password','password','SHARED']]),
+    mkVaultUiItem('two', true, [['password','password','SHARED']]),
+    mkVaultUiItem('old', false, [['password','password','UNRELATED']]),
+  ]
+  withVaultUiFixture(items, () => {
+    window.prefs.hideInactiveRecords = true
+    refreshVaultStats()
+    assertEqual(getCachedReuseCount(), 2, 'filtering must not drop an active collision')
+  })
+})
+test('the dialogue says when inactive records were excluded', () => {
+  const items = [mkVaultUiItem('a', true, [['password','password','one']])]
+  withVaultUiFixture(items, () => {
+    window.prefs.hideInactiveRecords = true
+    refreshVaultStats()
+    const dlg = menuReuseDlg()
+    assert(dlg.textContent.indexOf('Inactive records are excluded') > -1,
+           'a filtered report must say so; an absence is the hardest thing to notice')
   })
 })
 

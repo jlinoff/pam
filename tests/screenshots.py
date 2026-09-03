@@ -74,13 +74,39 @@ NARROW = (800, 1600)
 # clipping anything: the result is a real screenshot of a shorter window, not
 # a cropped image.
 #
-# Deliberately NOT applied to the iPhone captures. Those exist to show PAM at
-# phone proportions, and trimming them to content would defeat the point.
+# Deliberately NOT applied to the iPhone captures; see IPHONE below.
 FIT = 'fit'
 
 # Never shrink below this. A viewport too short to hold the fixed header and
 # footer produces a nonsense image rather than a compact one.
 MIN_FIT_HEIGHT = 320
+
+# A real iPhone viewport: 393x852 CSS pixels, the iPhone 15 / 16 logical size.
+#
+# CSS pixels, not device pixels. An iPhone 15 is physically 1179x2556, but
+# setting a 786-wide viewport would lay the page out at tablet width and
+# render nothing like a phone — PAM is responsive, so the CSS width is what
+# determines the layout. The resulting image is 393x852 at 1x; a retina-density
+# capture would need --force-device-scale-factor on the driver, which
+# get_driver() does not set and which the e2e tests share.
+#
+# The README says of these two captures "it looks something like this on my
+# iphone", so the empty space below the records is not waste — it is what the
+# claim asserts, and eight records really do leave a phone screen mostly
+# empty. The other full-page shots are fitted to content precisely because
+# they make no such claim.
+#
+# Without this they would be identical to pam-example-records and
+# pam-basic-sections: same theme, same data, same viewport. The genuine phone
+# dimensions are what earn them separate files.
+IPHONE = (393, 852)
+
+# Chrome will not make a window narrower than about 500px on macOS, so a
+# 393px viewport is unreachable by resizing. Device emulation via the Chrome
+# DevTools Protocol sets the viewport independently of the window, which also
+# makes a 2x capture possible — the retina density that plain resizing could
+# not give.
+IPHONE_SCALE = 2
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 HELP = os.path.join(os.path.dirname(HERE), 'www', 'help')
@@ -185,6 +211,31 @@ OVERFLOW_JS = (
     "const mid = document.getElementById('mid-section');"
     "return mid ? mid.scrollHeight - mid.clientHeight : 0;"
 )
+
+
+def set_device_metrics(driver, width, height, scale=1, mobile=True):
+    """Emulate a device viewport through the DevTools Protocol.
+
+    set_window_size() cannot produce a phone-width viewport: Chrome enforces a
+    minimum window width around 500px on macOS, so asking for 393 yields 500.
+    Emulation.setDeviceMetricsOverride sets the viewport directly, and takes a
+    deviceScaleFactor, so the capture can be retina density as well.
+
+    Chrome-specific, which is fine — the whole harness is ChromeDriver.
+    """
+    driver.execute_cdp_cmd('Emulation.setDeviceMetricsOverride', {
+        'width': width,
+        'height': height,
+        'deviceScaleFactor': scale,
+        'mobile': mobile,
+    })
+    time.sleep(0.4)
+
+
+def clear_device_metrics(driver):
+    """Drop any device emulation, so later shots size normally."""
+    driver.execute_cdp_cmd('Emulation.clearDeviceMetricsOverride', {})
+    time.sleep(0.3)
 
 
 def fit_viewport_to_content(driver, width, start_height):
@@ -563,8 +614,8 @@ SHOTS = [
     ('pam-prefs-admin.png', shot_prefs_admin, WINDOW),
 
     ('pam-example-records.png', shot_records_dark, (800, FIT)),
-    ('pam-iphone-screenshot-dark.png', shot_records_dark, NARROW),
-    ('pam-iphone-screenshot-light.png', shot_records_light, NARROW),
+    ('pam-iphone-screenshot-dark.png', shot_records_dark, IPHONE),
+    ('pam-iphone-screenshot-light.png', shot_records_light, IPHONE),
     ('pam-basic-sections.png', shot_records_dark, (800, FIT)),
     ('pam-search-g.png', shot_search_g, (800, FIT)),
     ('pam-search-g-re.png', shot_search_g_re, (800, FIT)),
@@ -585,10 +636,21 @@ def png_size(data):
     return (int.from_bytes(data[16:20], 'big'), int.from_bytes(data[20:24], 'big'))
 
 
-def capture(driver, filename, func, check_only):
-    '''Capture one screenshot. Returns 'new', 'changed' or 'same'.'''
+def capture(driver, filename, func, check_only, fit=False):
+    '''Capture one screenshot. Returns (state, (width, height)).
+
+    When `fit` is set the viewport is shrunk to the content AFTER the shot
+    function has run, not before. The shot is what arranges the state — it
+    filters the record list, or expands a record — so fitting first measures
+    the wrong thing: the search captures came out sized for all eight records
+    when the filter leaves three, and the expanded record in pam-status-msg
+    was sized as though it were collapsed.
+    '''
     path = os.path.join(HELP, filename)
     element = func(driver)
+    if fit:
+        fit_viewport_to_content(driver, NARROW[0], NARROW[1])
+        time.sleep(0.3)
 
     # A hidden or collapsed element yields "Cannot take screenshot with 0
     # width" from chromedriver, several frames deep and without naming the
@@ -621,7 +683,7 @@ def capture(driver, filename, func, check_only):
     if state != 'same' and not check_only:
         with open(path, 'wb') as handle:
             handle.write(png)
-    return state
+    return state, png_size(png)
 
 
 def main():
@@ -635,20 +697,31 @@ def main():
         load_examples(driver)
 
         for filename, func, window in SHOTS:
-            if window[1] == FIT:
-                fit_viewport_to_content(driver, window[0], NARROW[1])
+            fit = window[1] == FIT
+            if window == IPHONE:
+                set_device_metrics(driver, *IPHONE, scale=IPHONE_SCALE)
             else:
-                set_viewport_size(driver, *window)
-            state = capture(driver, filename, func, check_only)
+                clear_device_metrics(driver)
+                # For a fitting shot this is only the starting size; the shot
+                # runs at full height and capture() shrinks afterwards.
+                set_viewport_size(driver, window[0], NARROW[1] if fit else window[1])
+            state, (shot_w, shot_h) = capture(driver, filename, func, check_only, fit)
             marker = {'new': 'NEW    ', 'changed': 'CHANGED', 'same': 'same   '}[state]
-            print(f'  {marker}  {filename}')
+            print(f'  {marker}  {filename:38} {shot_w}x{shot_h}')
             if state != 'same':
                 changed.append(filename)
             # Every capture leaves state behind — an open dialogue, a search
             # term, a changed theme or preference. Reloading resets all of it,
             # which is cheaper to reason about than tracking what each surface
-            # needs undone. The window is resized before the reload so the page
-            # lays out at the size the next shot expects.
+            # needs undone.
+            #
+            # Reloading does NOT reset the window, though, and a fitted shot
+            # leaves it short: after pam-search-g-re the viewport is 320px
+            # tall, and in that window the fixed footer overlaps the dropdown
+            # menu, so the next Load File click is intercepted by the Pwd Gen
+            # button. Restore a roomy viewport before the reset.
+            clear_device_metrics(driver)
+            set_viewport_size(driver, *WINDOW)
             driver.get(URL)
             time.sleep(0.8)
             load_examples(driver)

@@ -281,9 +281,27 @@ silently clipped, so it grows by the shortfall and rechecks. `MIN_FIT_HEIGHT`
 stops it shrinking below a viewport that can hold the fixed bars.
 
 Applied to `pam-example-records`, `pam-basic-sections`, `pam-search*` and
-`pam-status-msg`. **Deliberately not applied to the iPhone captures** — those
-exist to show PAM at phone proportions, and trimming them to content would
-defeat the point.
+`pam-status-msg`.
+
+**Not applied to the iPhone captures.** Those are taken at a genuine iPhone
+viewport instead — 393x852 CSS pixels, the iPhone 15 / 16 logical size. The
+README says "it looks something like this on my iphone", so the empty space
+below the records is what the claim asserts rather than waste: eight records
+really do leave a phone screen mostly empty.
+
+Note this is **CSS pixels, not device pixels**. An iPhone 15 is physically
+1179x2556, but a 786-wide viewport would lay the page out at tablet width and
+render nothing like a phone, since PAM is responsive and the CSS width drives
+the layout. The image is therefore 393x852 at 1x; a retina-density capture
+would need `--force-device-scale-factor` on the driver, which `get_driver()`
+does not set and which the e2e tests share.
+
+Without the distinct viewport, `pam-iphone-screenshot-dark`,
+`pam-example-records` and `pam-basic-sections` would be **the same image** —
+same theme, same data, same size. The phone dimensions are what earn the
+iPhone shots separate files. The other three still are the same picture, and
+consolidating them to one file referenced from three places is worth doing in
+the README pass.
 
 Note this makes those images vary in height with the example data. Adding a
 record makes them taller. That is correct behaviour, but it means they will

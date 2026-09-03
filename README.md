@@ -978,6 +978,8 @@ button in the toolbar footer. Use this when you need a strong password
 for a new account before you have created a PAM record for it. Click
 any generated password to copy it to the clipboard.
 
+<img src="www/help/pam-password-generator-standalone.png" width="400" alt="standalone password generator">
+
 Both generators produce the same set of options: one cryptic password
 and five memorable passwords.
 

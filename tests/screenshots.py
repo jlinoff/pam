@@ -562,8 +562,15 @@ def shot_file_load(driver):
     return modal_content(dlg)
 
 
-def shot_password_generator(driver):
-    '''The standalone password generator, opened from the footer.'''
+def shot_password_generator_standalone(driver):
+    '''The standalone password generator, opened from the footer Pwd Gen button.
+
+    NOT pam-password-generator.png. That file documents the *record field*
+    generator — the gear icon on a password field inside a record — which is a
+    different dialogue reached a different way, and belongs in the
+    record-interaction phase. The standalone generator is described in the
+    README prose but has never had an image, so this one is new.
+    '''
     button = driver.find_element(By.ID, 'x-generate-password')
     scroll_and_click(driver, button)
     time.sleep(SETTLE)
@@ -625,7 +632,7 @@ SHOTS = [
     ('pam-about-custom.png', shot_about_custom, WINDOW),
     ('pam-file-save.png', shot_file_save, WINDOW),
     ('pam-file-load.png', shot_file_load, WINDOW),
-    ('pam-password-generator.png', shot_password_generator, WINDOW),
+    ('pam-password-generator-standalone.png', shot_password_generator_standalone, WINDOW),
     ('pam-prefs-enable-printing-check.png', shot_prefs_printing_check, WINDOW),
     ('pam-prefs-enable-printing-menu.png', shot_menu_with_print, WINDOW),
 ]

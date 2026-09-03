@@ -181,10 +181,14 @@ a YouTube favicon in a captured bookmarks bar, in one case.
    message, so `statusMsgDurationMS` is raised during capture. The Layout
    section of the README was rewritten to name each region in prose, and
    gained a table of the four toolbar warning badges.
-3. **Written, not yet verified — 6 shots.** Dialogues needing preference or
-   state setup: `pam-about-custom`, `pam-file-load`, `pam-file-save`,
-   `pam-password-generator`, `pam-prefs-enable-printing-check`,
+3. **Done — 6 shots.** Dialogues needing preference or state setup:
+   `pam-about-custom`, `pam-file-load`, `pam-file-save`,
+   `pam-password-generator-standalone`, `pam-prefs-enable-printing-check`,
    `pam-prefs-enable-printing-menu`.
+
+   The phase originally listed `pam-password-generator`, which was a
+   mis-scoping: that image is the *record field* generator, reached from
+   inside a record, so it belongs in phase 4. See below.
 
    Two need more than opening a dialogue. `customAboutInfo` is read by
    `mkAbout()` at build time and `menuAboutDlg()` runs once at startup, so the
@@ -195,7 +199,23 @@ a YouTube favicon in a captured bookmarks bar, in one case.
 
    `pam-prefs-enable-printing-example.png` is deferred to a later phase: it is
    the printed report, which opens in a separate window.
-4. **Not started.** Record interaction states: `pam-record-expanded*`,
+
+   `pam-password-generator.png` was captured wrongly at first. PAM has two
+   generators, and that file documents the **record field** one — the gear
+   icon on a password field inside a record — not the standalone footer
+   dialogue. The standalone capture is now
+   `pam-password-generator-standalone.png`, an image the README never had, and
+   the record-field generator moves to phase 4 with the other record
+   interactions. The mistake overwrote the original file, which had to be
+   restored with `git checkout`.
+
+   Worth noting the guards did not catch this: the element was present, the
+   right size and not truncated. It was simply the wrong dialogue. Nothing
+   mechanical distinguishes "captured a dialogue" from "captured the dialogue
+   the README is talking about".
+4. **Not started.** Record interaction states: `pam-password-generator` and
+   `pam-password-no-generator` (both the record field generator),
+   `pam-record-expanded*`,
    `pam-password-hidden` / `-shown`, `pam-google-account`, `pam-google-record`.
    Four of these are annotated; the "First field (url) / Second field (login) /
    Third field (password)" labels become prose describing the expanded record's

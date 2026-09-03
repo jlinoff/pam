@@ -84,6 +84,29 @@ every call. The question is "same content?", not "same content and same save
 history?". `title`, `active`, and every field's name, type and value are
 included.
 
+### The INACTIVE display marker
+
+`record.js` prefixes a deactivated record's accordion title with
+`<small>*INACTIVE*</small>&nbsp;`, and `convertInternalDataToJSON()` copies
+that innerHTML verbatim — so the marker is part of every title string these
+functions see, and it reached the reuse dialogue as literal escaped text.
+
+`stripInactiveMarker()` removes it. The dialogue draws an `INACTIVE` badge
+from the record's `active` flag instead, so the distinction is still visible.
+
+Rendering the title as HTML would have been the shorter fix and the wrong one:
+titles are user-controlled, and treating a user-controlled string as markup is
+exactly what PAM refuses to do by default for field values
+(`allowHtmlFieldRendering`). A new dialogue should not quietly opt out of that.
+
+The strip is anchored, so a title that merely mentions the text mid-string is
+left alone. It also applies to the fingerprint, which is now independent of the
+marker: `active` already records whether a record is deactivated, and the title
+need not encode it a second time.
+
+`reuseGroups()` members gained an `active` field so callers can draw the label
+themselves.
+
 ### Inactive records and the reuse report
 
 The reuse report honours `hideInactiveRecords`. An inactive record is a

@@ -2747,7 +2747,7 @@ async function runSaveRegressionTests() {
 // ---------------------------------------------------------------------------
 import {
   canonicalizeRecords, vaultFingerprint, secretFields, reuseGroups, reuseCount,
-  partitionByActive
+  partitionByActive, stripInactiveMarker
 } from '/js/vault.js'
 
 // Records in the shape convertInternalDataToJSON() produces. Plain literals —
@@ -2832,6 +2832,57 @@ test('an empty vault differs from a populated one', () => {
 })
 test('a record with no fields canonicalizes without throwing', () => {
   assert(canonicalizeRecords([mkrec('x', [])]).length > 0)
+})
+
+suite('vault.js — stripInactiveMarker')
+test('removes the marker record.js prepends to a deactivated title', () => {
+  // convertInternalDataToJSON copies the accordion button's innerHTML
+  // verbatim, so the marker really is part of the title string.
+  assertEqual(stripInactiveMarker('<small>*INACTIVE*</small>&nbsp;FedEx Web Print'),
+              'FedEx Web Print')
+})
+test('handles a literal non-breaking space as well as the entity', () => {
+  assertEqual(stripInactiveMarker('<small>*INACTIVE*</small>\u00a0LaunchPad'),
+              'LaunchPad')
+})
+test('handles the marker with no separator', () => {
+  assertEqual(stripInactiveMarker('<small>*INACTIVE*</small>NoSpace'), 'NoSpace')
+})
+test('leaves an ordinary title untouched', () => {
+  assertEqual(stripInactiveMarker('Consumer Reports'), 'Consumer Reports')
+})
+test('is anchored: it does not strip the text from mid-title', () => {
+  const title = 'A title mentioning <small>*INACTIVE*</small> in the middle'
+  assertEqual(stripInactiveMarker(title), title)
+})
+test('the marker does not reach the reuse report', () => {
+  const recs = [
+    mkrec('<small>*INACTIVE*</small>&nbsp;old', [fld('p','password','SAME')], false),
+    mkrec('live', [fld('p','password','SAME')], true),
+  ]
+  const groups = reuseGroups(recs)
+  assertEqual(groups.length, 1)
+  const titles = groups[0].map(m => m.title).sort()
+  assertEqual(titles.join('|'), 'live|old', 'titles must arrive clean')
+})
+test('reuse group members carry the active flag', () => {
+  // So the dialogue can draw its own label rather than rendering the
+  // user-controlled title as markup.
+  const recs = [
+    mkrec('<small>*INACTIVE*</small>&nbsp;old', [fld('p','password','SAME')], false),
+    mkrec('live', [fld('p','password','SAME')], true),
+  ]
+  const members = reuseGroups(recs)[0]
+  const inactive = members.filter(m => m.active === false)
+  assertEqual(inactive.length, 1)
+  assertEqual(inactive[0].title, 'old')
+})
+test('the fingerprint ignores the display marker', () => {
+  // active already records the state; the title need not encode it twice.
+  const marked = canonicalizeRecords(
+    [mkrec('<small>*INACTIVE*</small>&nbsp;x', [fld('p','password','1')], false)])
+  const plain = canonicalizeRecords([mkrec('x', [fld('p','password','1')], false)])
+  assertEqual(marked, plain)
 })
 
 suite('vault.js — partitionByActive')
@@ -3155,6 +3206,25 @@ test('names the colliding entries', () => {
     const dlg = menuReuseDlg()
     assert(dlg.textContent.indexOf('github') > -1, 'github should be listed')
     assert(dlg.textContent.indexOf('gitlab') > -1, 'gitlab should be listed')
+  })
+})
+test('marks an inactive entry with a badge, not raw markup', () => {
+  const items = [
+    mkVaultUiItem('live', true, [['password','password','SHARED']]),
+    mkVaultUiItem('<small>*INACTIVE*</small>&nbsp;old', false,
+                  [['password','password','SHARED']]),
+  ]
+  withVaultUiFixture(items, () => {
+    window.prefs.hideInactiveRecords = false
+    refreshVaultStats()
+    const dlg = menuReuseDlg()
+    assert(dlg.textContent.indexOf('<small>') === -1,
+           'the raw marker must not appear as text: ' + dlg.textContent)
+    assert(dlg.textContent.indexOf('INACTIVE') > -1,
+           'the distinction must still be visible')
+    assert(dlg.querySelectorAll('.badge').length === 1,
+           'exactly one entry should carry the badge')
+    window.prefs.hideInactiveRecords = true
   })
 })
 test('never renders the shared password', () => {

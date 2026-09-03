@@ -192,10 +192,20 @@ function mkReuseDlgBody() {
         let group = cachedReuseGroups[i]
         let list = xmk('ul').xClass('x-reuse-group')
         for (const member of group) {
-            list.xAppendChild(
-                xmk('li').xAppend(
-                    xmk('span').xClass('fw-bold').xTextContent(member.title),
-                    xmk('span').xClass('text-secondary').xTextContent(' \u2014 ' + member.name)))
+            let item = xmk('li')
+            if (member.active === false) {
+                // The title's own INACTIVE marker is stripped by vault.js, so
+                // draw the distinction as an element rather than rendering a
+                // user-controlled string as markup.
+                item.xAppendChild(
+                    xmk('span')
+                        .xClass('badge', 'bg-secondary', 'me-2')
+                        .xTextContent('INACTIVE'))
+            }
+            item.xAppend(
+                xmk('span').xClass('fw-bold').xTextContent(member.title),
+                xmk('span').xClass('text-secondary').xTextContent(' \u2014 ' + member.name))
+            list.xAppendChild(item)
         }
         body.xAppendChild(
             xmk('div').xClass('mb-3').xAppend(

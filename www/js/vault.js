@@ -35,6 +35,27 @@ function compareGroups(a, b) {
     return compareByTitleThenName(a[0], b[0])
 }
 
+// A record's title carries a display marker when the record is deactivated:
+// record.js prefixes the accordion button's innerHTML with
+// '<small>*INACTIVE*</small>&nbsp;', and convertInternalDataToJSON() copies
+// that innerHTML verbatim. The marker is therefore part of every title string
+// this module sees.
+//
+// It is stripped here rather than rendered. Rendering it would mean treating a
+// user-controlled string as markup, which is exactly what PAM refuses to do by
+// default for field values (allowHtmlFieldRendering). Callers that want to show
+// the distinction should use the record's `active` flag and draw their own
+// label.
+//
+// Stripping also keeps the fingerprint independent of a rendering artefact:
+// `active` already captures whether a record is deactivated, so the title
+// need not encode it a second time.
+const INACTIVE_MARKER = /^<small>\*INACTIVE\*<\/small>(&nbsp;|\u00a0)?/
+
+export function stripInactiveMarker(title) {
+    return String(title).replace(INACTIVE_MARKER, '')
+}
+
 // Field types whose values are secrets. A record may have none of these, or
 // several: reuse is a property of a (record, field) pair, not of a record.
 const SECRET_TYPES = ['password']
@@ -71,7 +92,7 @@ export function canonicalizeRecords(records) {
         }
         // Field order within a record is presentation, not content.
         fields.sort(compareJSON)
-        entries.push([record.title, Boolean(record.active), fields])
+        entries.push([stripInactiveMarker(record.title), Boolean(record.active), fields])
     }
     entries.sort(compareJSON)
     return JSON.stringify(entries)
@@ -122,14 +143,17 @@ export async function vaultFingerprint(records) {
  * Every secret-bearing field in the vault, flattened.
  *
  * @param {Array} records - records as produced by convertInternalDataToJSON.
- * @returns {Array} [{title, name, value}]
+ * @returns {Array} [{title, name, active, value}]
  */
 export function secretFields(records) {
     let out = []
     for (const record of records) {
         for (const field of record.fields) {
             if (SECRET_TYPES.includes(field.type) && field.value) {
-                out.push({title: record.title, name: field.name, value: field.value})
+                out.push({title: stripInactiveMarker(record.title),
+                          name: field.name,
+                          active: Boolean(record.active),
+                          value: field.value})
             }
         }
     }
@@ -148,7 +172,7 @@ export function secretFields(records) {
  * network, no corpus, and no privacy tradeoff.
  *
  * @param {Array} records - records as produced by convertInternalDataToJSON.
- * @returns {Array} [[{title, name}, ...], ...] — one array per shared password,
+ * @returns {Array} [[{title, name, active}, ...], ...] — one per shared password,
  *   each with two or more members. Sorted for stable display.
  */
 export function reuseGroups(records) {
@@ -157,7 +181,9 @@ export function reuseGroups(records) {
         if (!byValue.has(field.value)) {
             byValue.set(field.value, [])
         }
-        byValue.get(field.value).push({title: field.title, name: field.name})
+        byValue.get(field.value).push({title: field.title,
+                                       name: field.name,
+                                       active: field.active})
     }
     let groups = []
     for (const members of byValue.values()) {

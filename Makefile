@@ -95,7 +95,7 @@ lint:  ## lint the source code
 	@if rg '\s$$' www/js/*js ; then printf '\033[31;1mERROR: trailing whitespace found\033[0m\n'; exit 1 ; fi
 	jshint --config jshint.json www
 	diff <(ls -1 www/icons/black/) <(ls -1 www/icons/blue)
-	pipenv run pylint tests/test_chrome.py
+	pipenv run pylint tests/test_chrome.py tests/screenshots.py
 	@printf '\033[35;1m$@: PASSED\033[0m\n'
 
 # Make sure that the icons in www/icons/black and icons/blue/blue are the same.
@@ -199,6 +199,26 @@ e2e-test: init lint ## Run Selenium E2E tests in tests/test_chrome.py
 	sleep 2
 	lsof -i :$(PORT)
 	pipenv run python3 -m pytest -v tests/test_chrome.py
+	$(KILL_SERVER)
+
+.PHONY: screenshots
+screenshots: init ## Capture the README screenshots that go stale when the UI changes.
+	$(call hdr,"$@")
+	@echo "NOTE: rendering is not reproducible across machines. Regenerate on"
+	@echo "      one machine only, or the images churn with no content change."
+	-$(KILL_SERVER)
+	( cd www && pipenv run python -m http.server $(PORT) > /dev/null 2>&1 ) &
+	sleep 2
+	pipenv run python3 tests/screenshots.py
+	$(KILL_SERVER)
+
+.PHONY: screenshots-check
+screenshots-check: init ## Report which README screenshots are stale. Writes nothing.
+	$(call hdr,"$@")
+	-$(KILL_SERVER)
+	( cd www && pipenv run python -m http.server $(PORT) > /dev/null 2>&1 ) &
+	sleep 2
+	CHECK=1 pipenv run python3 tests/screenshots.py
 	$(KILL_SERVER)
 
 # This is an example to build off of for debugging

@@ -646,7 +646,7 @@ Records composed of fields are a key concept in _PAM_ as described in
 [Reason 2: Record Model](#reason-2-record-model).
 
 This section talks about how records are presented in _PAM_ using an
-example with seven records that contain confidential information for
+example with nine records that contain confidential information for
 "Amazon", "Email", "Facebook", "Github", "Google", "Netflix" and
 "Stack Exchange" fictional accounts from the [Load File](#load-file) example.
 

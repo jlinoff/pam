@@ -436,7 +436,10 @@ def test_example_records():
     driver.switch_to.alert.accept()
     time.sleep(0.5)
     records = driver.find_elements(By.CLASS_NAME, 'accordion-button')
-    assert len(records) == 7
+    # Nine example records: eight active plus a deactivated Toys-R-Us. All
+    # nine are inserted into the DOM; the inactive one is hidden rather than
+    # absent, so this count includes it.
+    assert len(records) == 9, f'unexpected example count: {[r.text for r in records]}'
     assert 'Amazon' in records[0].text
 
     # All done
@@ -514,6 +517,13 @@ def test_record_create_and_delete():
     driver.quit()
 
 
+# Facebook's password in www/examples/example.txt. Instagram shares it
+# deliberately, so the example vault demonstrates the reuse report. If the
+# example data changes this value the reuse assertions below fail loudly
+# rather than silently checking nothing.
+FACEBOOK_PASSWORD = 'dOa#DirgJge67okTKtEzp.LSl'
+
+
 def _make_record_with_password(driver, title, password):
     '''Helper: create a record with a single password field via the UI.
 
@@ -562,13 +572,17 @@ def _make_record_with_password(driver, title, password):
 
 def test_reuse_badge_and_dialog():
     '''
-    E2E: the reuse badge stays hidden for a clean vault, appears when a
+    E2E: the reuse badge is hidden for a vault with no reuse, appears when a
     password is shared, and the dialogue names both entries without ever
     showing the password.
 
-    Mirrored on purpose. The example records contain no reuse, so a test that
-    only checked the clean case would pass whether or not the feature works —
-    an empty list is also what a broken implementation returns.
+    Mirrored on purpose. A test that only checked the clean case would pass
+    whether or not the feature works — an empty list is also what a broken
+    implementation returns.
+
+    The clean baseline is now an EMPTY vault rather than the example records:
+    the examples deliberately include an Instagram entry sharing Facebook's
+    password, so the badge is correctly showing after a load.
     '''
     driver = get_driver()
     driver.get('http://localhost:8081/')
@@ -576,8 +590,10 @@ def test_reuse_badge_and_dialog():
 
     badge = driver.find_element(By.ID, 'x-reuse-indicator')
 
-    # 1. Clean baseline: example records share no password.
-    load_example_records(driver)
+    # 1. Clean baseline: an empty vault has nothing to reuse.
+    dlg = choose_menu_option(driver, 'Clear Records')
+    clear_button = dlg.find_element(By.CLASS_NAME, 'x-fld-record-clear')
+    scroll_and_click(driver, clear_button)
     time.sleep(1)
     assert not badge.is_displayed(), \
         'the badge must be hidden when no password is reused'
@@ -585,28 +601,32 @@ def test_reuse_badge_and_dialog():
     dlg = choose_menu_option(driver, 'Reused Passwords')
     assert dlg is not None, 'Reused Passwords dialogue should open'
     assert 'No stored password' in dlg.text, \
-        f'clean vault should say so plainly, got: {dlg.text[:200]}'
+        f'an empty vault should say so plainly, got: {dlg.text[:200]}'
     close_btn = dlg.find_element(By.CLASS_NAME, 'x-fld-record-close')
     scroll_and_click(driver, close_btn)
     time.sleep(0.5)
 
-    # 2. Create two records sharing a password.
-    shared = 'ZZ-shared-secret-ZZ'
-    _make_record_with_password(driver, 'E2E Reuse One', shared)
-    _make_record_with_password(driver, 'E2E Reuse Two', shared)
+    # 2. The example records contain one deliberate collision.
+    load_example_records(driver)
     time.sleep(1)
-
     assert badge.is_displayed(), 'the badge must appear once a password is shared'
     assert 'REUSED: 2' in badge.text, f'badge should count fields, got: {badge.text}'
 
-    # 3. The dialogue names both entries and never shows the secret.
     dlg = choose_menu_option(driver, 'Reused Passwords')
-    assert 'E2E Reuse One' in dlg.text, f'first entry missing: {dlg.text[:300]}'
-    assert 'E2E Reuse Two' in dlg.text, f'second entry missing: {dlg.text[:300]}'
-    assert shared not in dlg.text, 'the shared password must never be rendered'
+    assert 'Facebook' in dlg.text, f'Facebook missing: {dlg.text[:300]}'
+    assert 'Instagram' in dlg.text, f'Instagram missing: {dlg.text[:300]}'
+    assert FACEBOOK_PASSWORD not in dlg.text, \
+        'the shared password must never be rendered'
     close_btn = dlg.find_element(By.CLASS_NAME, 'x-fld-record-close')
     scroll_and_click(driver, close_btn)
     time.sleep(0.5)
+
+    # 3. A newly created record joins the group, which exercises the
+    #    insertRecord -> setNumRecords -> scheduleVaultStatsRefresh path.
+    _make_record_with_password(driver, 'E2E Reuse Extra', FACEBOOK_PASSWORD)
+    time.sleep(1)
+    assert 'REUSED: 3' in badge.text, \
+        f'a new record sharing the password should join the group, got: {badge.text}'
 
     # 4. The preference suppresses the badge but not the check.
     #
@@ -624,7 +644,7 @@ def test_reuse_badge_and_dialog():
     time.sleep(0.5)
     assert not badge.is_displayed(), 'the preference should hide the badge'
     dlg = choose_menu_option(driver, 'Reused Passwords')
-    assert 'E2E Reuse One' in dlg.text, \
+    assert 'Facebook' in dlg.text, \
         'the check must still run with the warning suppressed'
     close_btn = dlg.find_element(By.CLASS_NAME, 'x-fld-record-close')
     scroll_and_click(driver, close_btn)
@@ -954,8 +974,13 @@ def test_print_cover_record_count():
     driver = get_driver()
     _load_example_and_enable_printing(driver)
 
-    # Count the visible records before printing
-    record_count = len(driver.find_elements(By.CLASS_NAME, 'accordion-button'))
+    # Count VISIBLE records, which is what genRecordsDocument() counts. The two
+    # were the same number until the example set gained a deactivated record:
+    # Toys-R-Us is in the DOM but carries d-none under Hide Inactive Records,
+    # so the accordion holds nine while the report covers eight.
+    items = driver.find_elements(By.CLASS_NAME, 'accordion-item')
+    record_count = len([i for i in items
+                        if 'd-none' not in (i.get_attribute('class') or '')])
 
     html = _trigger_print_and_get_iframe(driver)
 

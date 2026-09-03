@@ -36,7 +36,7 @@ so the number is still free.
 | 1. Vault fingerprint | done |
 | 2. Reuse detection | done |
 | 3. Search password oracle | done (unplanned; found while building 1 and 2) |
-| 4. Screenshot automation | in progress — phases 1 and 2 done |
+| 4. Screenshot automation | in progress — see the phase list below |
 | 5. Password breach check | designed, not started |
 | 6. README pass | last, covers all of the above |
 | 7. Vault diff | deferred — blocked on durable record IDs |
@@ -171,25 +171,40 @@ a YouTube favicon in a captured bookmarks bar, in one case.
 
 ### Phases
 
-1. **Done.** Dialogues with no setup: menu, About, Reused Passwords, five
-   preference tabs.
-2. **Full-viewport states.** `pam-example-records`, `pam-iphone-screenshot-*`
+1. **Done — 8 shots.** Dialogues with no setup: menu, About, Reused
+   Passwords, five preference tabs.
+2. **Done — 8 shots.** Full-viewport states: `pam-example-records`,
+   `pam-iphone-screenshot-*`
    (light and dark), `pam-basic-sections`, `pam-status-msg`, `pam-search*`.
-   Needs viewport sizing, theme selection, and — for `basic-sections` — the
+   Needed viewport sizing, theme selection, and — for `basic-sections` — the
    prose rewrite that drops the arrows. `pam-status-msg` shows a transient
-   message, so raise `statusMsgDurationMS` during capture.
-3. **Dialogues needing preference setup.** `pam-about-custom` (set
-   `customAboutInfo`), `pam-file-load`, `pam-file-save`,
-   `pam-password-generator`, `pam-prefs-enable-printing-*`.
-4. **Record interaction states.** `pam-record-expanded*`,
+   message, so `statusMsgDurationMS` is raised during capture. The Layout
+   section of the README was rewritten to name each region in prose, and
+   gained a table of the four toolbar warning badges.
+3. **Written, not yet verified — 6 shots.** Dialogues needing preference or
+   state setup: `pam-about-custom`, `pam-file-load`, `pam-file-save`,
+   `pam-password-generator`, `pam-prefs-enable-printing-check`,
+   `pam-prefs-enable-printing-menu`.
+
+   Two need more than opening a dialogue. `customAboutInfo` is read by
+   `mkAbout()` at build time and `menuAboutDlg()` runs once at startup, so the
+   shot calls `refreshAbout()` after setting it. `enablePrinting()` toggles
+   Bootstrap's `d-none` rather than reading the preference at render time, so
+   the shot imports and calls it, then asserts `Print` is in the menu before
+   capturing.
+
+   `pam-prefs-enable-printing-example.png` is deferred to a later phase: it is
+   the printed report, which opens in a separate window.
+4. **Not started.** Record interaction states: `pam-record-expanded*`,
    `pam-password-hidden` / `-shown`, `pam-google-account`, `pam-google-record`.
    Four of these are annotated; the "First field (url) / Second field (login) /
    Third field (password)" labels become prose describing the expanded record's
    layout.
-5. **Multi-step flows.** `pam-new-record*`, `pam-clone-*`,
+5. **Not started.** Multi-step flows: `pam-new-record*`, `pam-clone-*`,
    `pam-fld-name-edit-*`, `pam-change-field-name`. Longest to write; each is a
    scripted walk through a dialogue. Four are annotated.
-6. **Alternate example data.** `pam-ice-cream-sundae-*`, `pam-recipe-prefs`
+6. **Not started.** Alternate example data: `pam-ice-cream-sundae-*`,
+   `pam-recipe-prefs`
    need `www/examples/recipes.txt` loaded rather than `example.txt`.
 
 Determinism note for later phases: `Created: 1999-01-01T00:00:00.000Z` in the
@@ -244,6 +259,22 @@ A `make screenshots` target reusing `get_driver()`, `choose_menu_option()` and
 `load_example_records()`. **Data-driven** — a list of (menu option, tab, output
 path) — so adding breach checking's screens later is a few lines rather than
 new code.
+
+### A pre-existing race, surfaced by the reload cycle
+
+`load_example_records()` in `test_chrome.py` accepts the `confirm()` alert
+after a fixed 0.5s sleep, inside a `try` that swallows
+`NoAlertPresentException`. If the alert is slow the accept is skipped, and the
+alert then blocks the *next* WebDriver command — so it surfaced as an
+`UnexpectedAlertPresentException` on a `set_window_size` two shots later, not
+on the load.
+
+A screenshot run reloads between all 22 captures, so it meets that window far
+more often than the e2e suite does. `screenshots.py` has its own
+`load_examples()` that polls for the outcome instead. **The helper in
+`test_chrome.py` still has the race**; it was left alone rather than changing
+the timing of 29 passing tests on a hunch. If an e2e run ever fails the same
+way, that is the cause.
 
 ### Known difficulties
 

@@ -1,238 +1,324 @@
 # PAM — Minimum-Disclosure Vault Queries
 
-**Status:** proposal, not yet scoped
-**Date:** 2026-09-01
+**Working document.** Items move out of here as they land; anything still
+listed is either unbuilt or has open questions against it.
+
+**Date:** 2026-09-01, updated 2026-09-03
+
+---
 
 ## Origin
 
-This came out of a real failure. An Apple Passwords warning disagreed
-between devices, and answering the question "are these two vaults the
-same?" required exporting both vaults to plaintext CSV — because a full
-dump is the only egress Apple offers. The question actually needed 64
-bits of information (`sort | shasum -a 256`), but the interface had no
-way to produce them.
+This came out of a real failure. An Apple Passwords warning disagreed between
+devices, and answering the question "are these two vaults the same?" required
+exporting both vaults to plaintext CSV — because a full dump was the only
+egress on offer. The question needed 64 bits (`sort | shasum -a 256`), but the
+interface had no way to produce them.
 
-The plaintext files then had to be shredded, which on APFS with
-copy-on-write and SSD wear-levelling is not something you can reliably
-do. FileVault and the absence of local snapshots saved it. The whole
-exposure existed because a checksum-shaped question had only a
-dump-everything-shaped answer.
+The plaintext files then had to be shredded, which on APFS with copy-on-write
+and SSD wear-levelling is not something you can reliably do. FileVault and the
+absence of local snapshots saved it. The whole exposure existed because a
+checksum-shaped question had only a dump-everything-shaped answer.
 
-**Principle:** every question a user might ask of their vault should have
-an answer that discloses the minimum needed to answer it. Full
-disclosure should be the last resort, not the only door.
-
-Note that PAM's situation differs from Apple's: there is no background
-sync circle, so a fingerprint is not for detecting replication drift.
-It is for the user who keeps PAM on a laptop and a phone, or has one
-vault file in Dropbox and another in a downloads folder, and wants to
-know whether they are the same vault without opening both and squinting.
+**Principle:** every question a user might ask of their vault should have an
+answer that discloses the minimum needed to answer it. Full disclosure should
+be the last resort, not the only door.
 
 ---
 
-## 1. Vault fingerprint
+## Status
 
-**Question answered:** "Is the vault on this device the same as the one
-on that device?"
-**Disclosed:** 64 bits.
+Everything below targets **v2.3.0**, on one branch. v2.3.0 was never released,
+so the number is still free.
 
-After unlock, reduce the in-memory entry array to a canonical string and
-hash it. Display as grouped hex in a corner of the vault screen.
+| Item | State |
+|---|---|
+| 1. Vault fingerprint | done |
+| 2. Reuse detection | done |
+| 3. Search password oracle | done (unplanned; found while building 1 and 2) |
+| 4. Screenshot automation | next |
+| 5. Password breach check | designed, not started |
+| 6. README pass | last, covers all of the above |
+| 7. Vault diff | deferred — blocked on durable record IDs |
+| 8. Export tiering | deferred |
 
-```js
-async function vaultFingerprint(entries) {
-  const canonical = entries
-    .map(e => [e.service, e.username, e.password].join("\u0000"))
-    .sort()                                   // order must not matter
-    .join("\u001E");
-  const bytes = new TextEncoder().encode(canonical);
-  const hash = await crypto.subtle.digest("SHA-256", bytes);
-  return [...new Uint8Array(hash)].slice(0, 8)
-    .map(b => b.toString(16).padStart(2, "0")).join("")
-    .match(/.{4}/g).join(" ");                // "3f2a 91c4 0e88 d517"
-}
+---
+
+## 1. Vault fingerprint — done
+
+Shipped as two fingerprints rather than one, partitioned by `active`:
+
+```
+Fingerprint (active)    3f2a 91c4 0e88 d517
+Fingerprint (inactive)  b7c1 4e02 aa39 6d85
 ```
 
-The user compares four hex groups by eye across two devices. Same
-fingerprint means same vault.
+The inactive line appears only when inactive records exist. Partitioning
+rather than nesting means a mismatch says *where* the vaults differ: matching
+active lines with differing inactive lines tells you your live credentials are
+in sync and the difference is confined to archived records.
 
-### Design decisions that need making
+The inactive line is published even when `hideInactiveRecords` is set.
+Suppressing it would let two vaults differing only in inactive records report
+as identical, and a deactivated record is one the user chose to keep rather
+than delete. A 64-bit digest reveals no titles, fields or counts, so this does
+not surface the records themselves — it only makes their absence detectable.
 
-- **What goes in the canonical form.** Include volatile fields
-  (last-viewed, access counts) and you get spurious mismatches. Exclude
-  too much and you get false agreement. Suggest: entry content only.
-  Show "last modified" as a separate line beside the fingerprint so a
-  user can distinguish "different content" from "same content, one is
-  staler."
-- **Sorting is load-bearing.** It is the fix for exactly the failure
-  that prompted this: two identical vaults serialised in different
-  orders looked completely divergent under a line-oriented diff. A test
-  must assert that shuffling the input array does not change the
-  fingerprint.
-- **Truncation length.** 64 bits shown. This is a comparison aid
-  between two vaults the same user controls, not a security boundary —
-  there is no adversary choosing vault contents to collide. If that
-  assumption ever changes, revisit.
-- **Unicode normalization.** Two vaults holding the same visible
-  password in NFC and NFD produce different fingerprints. Probably
-  correct (the bytes genuinely differ, and one will fail to
-  authenticate) but it should be a deliberate decision, and the
-  fingerprint display may want to flag it rather than silently
-  mismatch.
-- `crypto.subtle` requires a secure context. Fine for an installed PWA
-  over HTTPS; would break if PAM is ever served over plain HTTP on a
-  LAN. Worth knowing before relying on it.
+See `RELEASE_NOTES_v2.3.0.md` for the canonicalisation rules and why the
+`INACTIVE` display marker is stripped rather than rendered.
+
+## 2. Reuse detection — done
+
+Toolbar badge, `Reused Passwords` dialogue, `showPasswordReuseWarning`
+preference. Reuse is a property of a **(record, field) pair**: a record may
+hold several password fields, and two fields in one record can collide.
+
+The report honours `hideInactiveRecords` — a retired credential is not
+something to act on, and reporting it would be noise that teaches people to
+ignore the badge. The dialogue states when records have been excluded, since
+an absence is the hardest thing for a user to notice.
+
+## 3. Search password oracle — done
+
+Not planned. `searchRecords()` matched the value-search regex against
+`data-fld-raw-value`, which holds password plaintext, making the search box a
+password oracle — and because the input is compiled with `new RegExp()`, a
+binary search rather than a linear walk. Now behind `searchPasswordFieldValues`,
+default off, with a `PW SEARCH` toolbar badge when enabled.
 
 ---
 
-## 2. Reuse count with progressive disclosure
+## 4. Screenshot automation — next
 
-**Question answered:** "Am I reusing any passwords?"
-**Disclosed:** one integer, until the user asks for more.
+**Why before the breach work.** The README pass is the largest remaining cost
+and sits at the end of the branch, which is where things get rushed.
+Automating first makes it cheaper rather than more expensive, and breach
+checking adds a preferences tab, a menu entry and two dialogues that would
+otherwise all need hand-capture. Building it against the current UI also
+exercises it on real work rather than retrofitting it later.
 
-```js
-function reuseGroups(entries) {
-  const byPassword = new Map();
-  for (const e of entries) {
-    const key = e.password;                   // grouping key, never displayed
-    if (!byPassword.has(key)) byPassword.set(key, []);
-    byPassword.get(key).push({ service: e.service, username: e.username });
-  }
-  return [...byPassword.values()].filter(g => g.length > 1);
-}
+### Scope
+
+74 unique images are referenced by `README.md`. 17 are Bootstrap icons already
+in the repo and one is a photo, leaving roughly 56 real screenshots
+(`www/help/pam-*.png`).
+
+**Do not try to automate all 56.** Target the preference tabs and the standard
+dialogues — the ones that go stale whenever a setting is added, which is
+exactly the recurring cost. Roughly 15–20 images. Conceptual, annotated and
+mid-workflow images stay hand-made.
+
+Note the README is the in-app help: `make app-help` renders it into
+`www/help/index.html`. Stale screenshots are stale help, not just stale docs.
+
+### Mechanism
+
+`tests/test_chrome.py` already drives ChromeDriver. Selenium's
+`element.screenshot(path)` crops to a single element, which matches the shape
+of these images:
+
+```python
+dlg = choose_menu_option(driver, 'Preferences')
+dlg.screenshot('www/help/pam-prefs-search.png')
 ```
 
-Main screen shows "3 reused passwords." Clicking lists the groups by
-service and username. The password is the grouping key and is never
-rendered — the user learns that `github.com/joe` and `gitlab.com/joe`
-share a password without PAM ever showing it.
+A `make screenshots` target reusing `get_driver()`, `choose_menu_option()` and
+`load_example_records()`. **Data-driven** — a list of (menu option, tab, output
+path) — so adding breach checking's screens later is a few lines rather than
+new code.
 
-**Why this ranks first on value.** It is the check that would have
-answered the original Apple question immediately. It needs no corpus,
-no network, and no privacy tradeoff. It is also the one check a
-password manager can perform that a per-password checker structurally
-cannot — reuse is a property of the whole set, not of any one entry.
+### Known difficulties
 
-Consider hashing the grouping key rather than using the raw password,
-so the reuse map can be computed and held without raw secrets in a
-second data structure.
-
----
-
-## 3. Vault diff
-
-**Question answered:** "What differs between these two vaults?"
-**Disclosed:** service and username of differing entries. Never secrets.
-
-Given a second vault file and its passphrase, report:
-
-- entries only in A
-- entries only in B
-- entries in both whose passwords differ (report *that* they differ,
-  never the values)
-
-This is the operation performed by hand with two plaintext CSVs. Inside
-PAM no plaintext needs to touch storage.
-
-### Prerequisite
-
-This is the one with real edge cases and should not be scheduled with
-the others:
-
-- **Stable entry identity.** If entries have no durable ID, "same
-  entry" has to be inferred from service plus username, which breaks
-  when either is edited. Adding a durable ID is likely a schema
-  migration and is a prerequisite, not part of this feature.
-- **Cross-version crypto.** Two files may be at different crypto
-  versions given the encryptV2 work. Diff must handle a v1 file against
-  a v2 file.
-- Entries matching on service but not username, and vice versa.
+- **Volatile content.** `pam-about.png` shows Version, Commit and Branch, and
+  now the fingerprints too. Those change every commit, so that image would
+  churn on every run. Either exclude About, or stub the values before
+  capturing.
+- **Rendering is not reproducible across machines.** Font hinting, DPI and
+  Chrome version all affect the bytes, so regenerating elsewhere produces
+  different PNGs with identical content. "Only rewrite when changed" therefore
+  does not work unless everyone regenerates in the same container. In practice
+  one person regenerates, or it runs in CI with a pinned image.
+- **Binary churn.** Rewriting the set wholesale on each run bloats history.
+  Write only files whose bytes actually changed, and run deliberately rather
+  than as part of `make`.
+- **Some images are composed or annotated** and a script cannot produce them.
 
 ---
 
-## 4. Breach check
+## 5. Password breach check
 
-**Question answered:** "Has this password appeared in a known breach?"
-**Disclosed:** a 20-bit hash prefix.
+Checks stored passwords against the Have I Been Pwned corpus using the
+k-anonymity range API: a 20-bit prefix of the SHA-1 goes over the network and
+the comparison happens locally. The password itself never leaves the device.
 
-Port the discipline already worked out in `pwcheck.py`:
+### The CSP trade — decided with eyes open
 
-- k-anonymity range query; the full hash never leaves the device
-- check every distinct Unicode normalization form, not just the one
-  entered (macOS hands out NFC in some contexts and NFD in others; the
-  same visible password hashes two ways)
-- **three-state result**: found / not found / *could not check*
+`index.html` currently sets `default-src 'self'` with no `connect-src`
+directive, so `connect-src` falls back to `default-src` and **a fetch to
+api.pwnedpasswords.com is blocked by policy**. Breach checking cannot work
+without relaxing it to:
+
+```
+connect-src 'self' https://api.pwnedpasswords.com
+```
+
+This matters because the CSP is what makes PAM's local-only claim
+*structurally verifiable* rather than a promise. A user can read one meta tag
+today and know the app cannot contact anyone.
+
+**The preference does not restore that.** CSP is static markup, and PAM has no
+service worker to enforce anything at runtime, so with the feature disabled the
+app is still *permitted* to reach that host. The toggle controls whether PAM
+makes the request, not whether it could.
+
+So the guarantee changes from *"cannot phone home, verifiably"* to *"can only
+phone HIBP, and does not unless asked."* Still stronger than any competitor
+offers. Accepted deliberately — and the README claims change with it, because a
+security claim that is true by default but false when configured is worse than
+a weaker accurate one.
+
+### Decisions
+
+- **Preference:** `enablePasswordBreachCheck`, default `false`, on the
+  **Administration** tab. That tab already holds the settings that change
+  security posture and carry a warning badge (`allowHtmlFieldRendering`,
+  `filePassCacheStrategy`, `searchPasswordFieldValues`); enabling network
+  egress belongs with them. The Password tab is about how passwords are
+  *generated*.
+- **Toolbar badge** when enabled, matching `HTML ON` / `PASS: LOCAL` /
+  `PW SEARCH`.
+- **Menu entry `Breached Passwords`**, matching the `Reused Passwords` idiom.
+  **Always visible.** When the preference is off it opens a dialogue explaining
+  the trade-off with a link to Preferences, rather than disappearing. Hiding it
+  would be the stronger privacy stance, but then the only path to the feature
+  is reading the README; keeping it puts the disclosure at the moment someone
+  is deciding, keeps the menu stable for the e2e assertions, and means the
+  screenshot set does not depend on preference state.
+- **Per-field check.** A button on password fields, present only when the
+  preference is enabled, checking that one password.
+- **Honours `hideInactiveRecords`**, same reasoning as the reuse report.
+- **No cache.** The corpus is updated periodically, so a password that is
+  ACCEPT today can be REJECT tonight with no change on the user's side. A
+  cached ACCEPT is a claim about the past presented as a claim about the
+  present. Re-check every time.
+- **Reachability first.** Probe before walking the vault, so an offline user
+  gets one clear answer rather than N failures.
+- **Throttled.** One request per password; a 200-record vault is 200 requests.
+  Serialised with a delay — up to about five seconds is acceptable provided
+  progress is shown. A correlated burst from one IP is also a weaker privacy
+  property than a single lookup, and hammering HIBP is impolite. The disclosure
+  text should say that checking the vault sends one request per password.
+
+### Verdict logic — ported from `pwcheck.py`
+
+Not corpus-only. The full three-state verdict comes over:
+
+```
+ACCEPT             nothing objected; caveats may qualify it
+REJECT             in the corpus, or structurally weak
+CANNOT DETERMINE   a lookup failed, so no conclusion was reached
+```
+
+REJECT also fires on structural weakness (keyboard runs, sequences, repeats,
+embedded years) and on an entropy floor — both local, both needing no network.
+Without them, ACCEPT reduces to "not in the corpus", which is a floor rather
+than a verdict: `Summer2026` is in no breach corpus worth the name and is still
+a bad password.
+
+`CANNOT DETERMINE` is deliberately **not** a third verdict on the same axis. It
+is the program reporting that it failed to reach one. Reporting it as ACCEPT is
+the fail-open bug; reporting it as REJECT would reject good passwords whenever
+the user is offline and teach them to ignore the tool.
 
 ### The critical requirement
 
-PAM is a PWA and offline is a normal state. A user who is offline must
-never see "no problems found." Every failure path — no network, HTTP
-error, malformed response, empty body — must resolve to "unknown,"
-never to "clean."
+PAM is a PWA. **Offline is a normal state, not an error.** A user who is
+offline must never see a result that reads as clean.
 
-Under the existing TDD phases, **write the failure tests first**: assert
-that an unreachable API, a 502 HTML error page, and an empty response
-body each produce "unknown" rather than a pass. In the shell version of
-this tool that exact bug appeared three separate times, in three
-different disguises, and each time it looked like a working program.
+Write the failure tests **first**: unreachable host, HTTP error, 502 HTML error
+page, empty body, malformed line, and a padding decoy with a count of `0` —
+each asserting `CANNOT DETERMINE` or "not found" rather than a pass.
 
-Optional, lower priority: near-variant checking (a password absent from
-the corpus whose base form appears 50,000 times is not safe). Costs one
-extra range query per variant.
+This exact bug appeared three separate times in three different disguises while
+building `pwcheck`, and each time the program looked like it worked.
+
+### Also required
+
+- All Unicode normalisation forms checked, not just the one entered.
+- `Add-Padding: true` on requests.
+- Every response line validated before a non-match is believed.
 
 ---
 
-## 5. Export tiering
+## 6. README pass
 
-**The actual lesson of the incident.**
+Large, and it covers everything above. The README is the in-app help, so this
+is a user-facing defect until done.
 
-Today the industry offers one export: everything, in the clear. Offer
-three:
+- The reuse report, its preference, and the `Reused Passwords` dialogue
+- The fingerprint rows in About, and what the two lines mean
+- `searchPasswordFieldValues` and the search behaviour change, with the oracle
+  explained in the security section
+- The whole breach-check feature and the CSP trade
+- **The local-only claims.** "Fully local — no server traffic after page load"
+  and "Offline use: Full — no dependency on external service" become false once
+  breach checking is enabled. They need qualifying, not deleting.
+- **The comparison table row** on audit/breach alerts. It currently says PAM
+  loses because it "cannot alert you when third-party sites are breached" and
+  cites 1Password flagging "breached, weak, and reused" passwords. PAM now does
+  reuse and will do breach; the row needs splitting rather than editing.
+- Regenerated preference screenshots (the Search and Administration tabs are
+  already stale — they predate `searchPasswordFieldValues`).
+
+---
+
+## 7. Vault diff — deferred
+
+**Question:** "What differs between these two vaults?"
+**Discloses:** titles and field names of differing entries. Never secrets.
+
+Given a second vault file and its passphrase, report entries only in A, only in
+B, and entries in both whose passwords differ (report *that* they differ, never
+the values).
+
+### Blocked on
+
+- **Durable entry identity.** With no stable ID, "same entry" must be inferred
+  from title plus field names, which breaks as soon as either is edited. Adding
+  an ID is a schema migration and is a prerequisite, not part of this.
+- **Cross-version crypto.** Two files may be at different crypto versions.
+- Entries matching on title but not field set, and vice versa.
+
+## 8. Export tiering — deferred
+
+The actual lesson of the origin story. Today the industry offers one export:
+everything, in the clear. Offer three:
 
 | Tier | Contents | Use case |
 |---|---|---|
 | Fingerprint | 64 bits | "Are these the same vault?" |
-| Metadata | service + username, no secrets | audit, inventory, diff, "what do I have accounts with?" |
-| Full | everything | genuine migration to another manager |
+| Metadata | titles + field names, no secrets | audit, inventory, diff |
+| Full | everything | migration to another manager |
 
-Most reasons people export are satisfied by the first two tiers. Each
-one satisfied is a plaintext dump that never gets created.
+Most reasons people export are satisfied by the first two. Each one satisfied is
+a plaintext dump that never gets created.
 
-If full export stays, consider emitting FIDO CXF rather than CSV. CXF
-became a FIDO Proposed Standard in August 2025 and CXP (which wraps the
-transfer in HPKE) has shipped on iOS and Android; Apple, Google,
-Microsoft, 1Password, Bitwarden and Dashlane are all contributors.
-Supporting it would let PAM interoperate without ever producing a
-plaintext file.
-
----
-
-## Suggested order
-
-1. **Fingerprint** — small, self-contained, pure function over an
-   existing array
-2. **Reuse count** — highest value, same shape, no dependencies
-3. **Export tiering** — mostly UI over data structures items 1 and 2
-   already produce
-4. **Breach check** — port from `pwcheck.py`, failure tests first
-5. **Vault diff** — blocked on stable entry IDs; schedule separately
-
-Items 1, 2 and 3 are pure functions over the decrypted entry array. No
-mocking, no network, no new crypto — they fit the existing TDD setup
-directly.
+If full export stays, consider emitting FIDO CXF rather than CSV. CXF became a
+FIDO Proposed Standard in August 2025 and CXP (which wraps the transfer in HPKE)
+has shipped on iOS and Android; Apple, Google, Microsoft, 1Password, Bitwarden
+and Dashlane are all contributors.
 
 ---
 
 ## Open questions
 
-- Does the current schema have a durable per-entry ID? (Gates item 3.)
-- Should the fingerprint cover passwords, or only service/username?
-  Content-only means an edited password changes the fingerprint, which
-  is probably what a user wants but should be confirmed.
-- Should reuse detection normalize before comparing, so that a password
-  stored in NFC and the same password in NFD count as reuse? Argument
-  for: they are the same password to the user. Argument against: they
-  are different bytes and will behave differently at a login form.
-- Is there a case for a "vault health" summary combining items 2 and 4
-  into one screen, or does that re-introduce the dump-everything
-  pattern in a new shape?
+- Does the breach report live in its own dialogue behind the `Breached
+  Passwords` menu entry, or as a section appended to the `Reused Passwords`
+  dialogue? A separate menu entry implies a separate dialogue, but "breach
+  results follow the reuse results" could mean either. **Confirm before
+  building.**
+- What does the per-field breach button show — an inline result, or does it
+  open the same dialogue scoped to one field?
+- Should the vault-wide check offer to stop early once it finds a hit, or
+  always run to completion?
+- Does the schema have a durable per-entry ID? (Gates item 7.)

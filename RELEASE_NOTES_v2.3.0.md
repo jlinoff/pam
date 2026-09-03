@@ -252,10 +252,22 @@ exercised.
 and seeding it with a reused password to make a test convenient would teach
 the wrong thing in the one file new users read.
 
-One pre-existing e2e helper changed: `choose_menu_option()` asserts a hard
-menu-item count, raised from 8 to 9 by the new entry. The hard count is worth
-keeping — it catches an accidental menu change — so it was updated rather
-than loosened.
+The `Reused Passwords` entry sits after `Save File`, among the utilities,
+rather than second in the list. About, Preferences, New Record, Clear
+Records, Load File and Save File therefore keep their existing positions,
+which is worth protecting: those are the items people reach for without
+looking.
+
+Two pre-existing e2e assertions changed. Both `choose_menu_option()` and
+`test_pam_setup()` assert a hard menu-item count, raised from 8 to 9. They
+are independent assertions of the same fact and have to move together; the
+second was missed on the first pass because only the helper was searched.
+
+`test_pam_setup()` also asserted the menu contents one index at a time, with
+a comment explaining that index 6 was reserved for Print. That is now a
+single ordered comparison against the full expected list: a mismatch reports
+the whole menu rather than one item, and inserting an entry is one edit
+rather than five renumberings.
 
 ---
 

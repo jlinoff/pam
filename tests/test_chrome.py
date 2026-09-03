@@ -158,14 +158,21 @@ def test_pam_setup():
     # Validate memu items.
     menu_items = children[1].find_elements(By.CLASS_NAME, 'dropdown-item')
     print(len(menu_items))
-    assert len(menu_items) == 8
-    assert 'About' in menu_items[0].text
-    assert 'Preferences' in menu_items[1].text
-    assert 'New Record' in menu_items[2].text
-    assert 'Clear Records' in menu_items[3].text
-    assert 'Load File' in menu_items[4].text
-    assert 'Save File' in menu_items[5].text
-    assert 'Help' in menu_items[7].text # 6 is reserved for Print
+    # One ordered comparison rather than an assertion per index: a mismatch
+    # then reports the whole menu instead of a single item, and inserting an
+    # entry is one edit rather than five renumberings.
+    # Note choose_menu_option() asserts the length independently; both have to
+    # move together when the menu changes.
+    expected = ['About', 'Preferences', 'New Record', 'Clear Records',
+                'Load File', 'Save File', 'Reused Passwords', 'Print', 'Help']
+    # textContent, not .text: Print is hidden unless enablePrinting is set, and
+    # Selenium reports '' for the text of a non-displayed element. The previous
+    # version of this check skipped index 6 for that reason. Reading textContent
+    # asserts the whole menu including the entries that are currently hidden.
+    # str.strip() removes the leading &nbsp; each label carries, since
+    # '\xa0'.isspace() is True.
+    actual = [item.get_attribute('textContent').strip() for item in menu_items]
+    assert actual == expected, f'menu changed: {actual}'
 
     # toggle dark/light mode
     time.sleep(1)
@@ -513,32 +520,38 @@ def _make_record_with_password(driver, title, password):
     Goes through the New Record dialogue rather than injecting DOM state, so
     the insertRecord -> setNumRecords -> scheduleVaultStatsRefresh path is
     actually exercised.
+
+    Fields are added from the "New Field" dropdown, which lists the predefined
+    field names. Choosing "password" sets both the field name and its type.
     '''
     dlg = choose_menu_option(driver, 'New Record')
     title_input = dlg.find_element(By.CSS_SELECTOR, 'input[placeholder="Record Title"]')
     title_input.clear()
     title_input.send_keys(title)
 
-    # Strip the default fields, then add a single password field.
+    # Strip the default fields so only the one added below is present.
     driver.execute_script(
         "var menu = document.getElementById('menuNewDlg');"
         "var body = menu.getElementsByClassName('container')[0];"
         "while (body.children.length > 2) {"
         "  body.removeChild(body.children[body.children.length-1]); }"
     )
-    add_buttons = dlg.find_elements(By.CSS_SELECTOR, 'button[title="add a new field"]')
-    assert add_buttons, 'New Record dialogue should have an add-field button'
-    scroll_and_click(driver, add_buttons[0])
     time.sleep(0.3)
 
-    name_inputs = dlg.find_elements(By.CSS_SELECTOR, 'input.x-fld-name-input')
-    assert name_inputs, 'a new field should expose a name input'
-    name_inputs[-1].clear()
-    name_inputs[-1].send_keys('password')
-    time.sleep(0.3)
+    # Open the New Field dropdown and pick the predefined 'password' field.
+    new_field_btn = dlg.find_element(By.ID, 'x-new-field-type')
+    scroll_and_click(driver, new_field_btn)
+    time.sleep(0.5)
+    items = dlg.find_elements(By.CSS_SELECTOR, 'ul.dropdown-menu .dropdown-item')
+    password_item = next((i for i in items if i.text.strip() == 'password'), None)
+    assert password_item is not None, \
+        f'no predefined password field in the dropdown: {[i.text for i in items]}'
+    scroll_and_click(driver, password_item)
+    time.sleep(0.5)
 
-    value_inputs = dlg.find_elements(By.CSS_SELECTOR, 'input[type="password"]')
-    assert value_inputs, 'a password-typed field should render a password input'
+    value_inputs = dlg.find_elements(
+        By.CSS_SELECTOR, 'input.x-fld-value[data-fld-type="password"]')
+    assert value_inputs, 'the added password field should expose a value input'
     value_inputs[-1].clear()
     value_inputs[-1].send_keys(password)
 

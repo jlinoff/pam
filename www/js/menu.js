@@ -125,10 +125,6 @@ export function mkMenu() {
                               'About',
                               'bi-info-circle',
                               'Information about this app.'),
-                    menuEntry('menuReuseDlg',
-                              'Reused Passwords',
-                              'bi-files',
-                              'entries that share a password'),
                     menuEntry('menuPrefsDlg',
                               'Preferences',
                               'bi-gear',
@@ -195,6 +191,11 @@ export function mkMenu() {
                             icon('bi-file-arrow-down-fill'),
                             xmk('span').xInnerHTML('&nbsp;' + 'Save File'),
                         ),
+                    menuEntryDivider(),
+                    menuEntry('menuReuseDlg',
+                              'Reused Passwords',
+                              'bi-files',
+                              'entries that share a password'),
                     xmk('li').xClass('x-print').xAppend(xmk('hr').xClass('dropdown-divider')),
                     xmk('button') // Print
                         .xAttrs({'type': 'button'})

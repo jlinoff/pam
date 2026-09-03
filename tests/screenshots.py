@@ -65,6 +65,23 @@ WINDOW = (1920, 3000)
 # looking as they did.
 NARROW = (800, 1600)
 
+# Height sentinel meaning "shrink until the content just fits".
+#
+# The example vault fills less than half of an 800x1600 viewport, so those
+# captures carry a large empty band below the records. The footer is
+# `fixed-bottom` and #mid-section is `h-100 overflow-auto`, so reducing the
+# viewport height pulls the footer up under the last record rather than
+# clipping anything: the result is a real screenshot of a shorter window, not
+# a cropped image.
+#
+# Deliberately NOT applied to the iPhone captures. Those exist to show PAM at
+# phone proportions, and trimming them to content would defeat the point.
+FIT = 'fit'
+
+# Never shrink below this. A viewport too short to hold the fixed header and
+# footer produces a nonsense image rather than a compact one.
+MIN_FIT_HEIGHT = 320
+
 HERE = os.path.dirname(os.path.abspath(__file__))
 HELP = os.path.join(os.path.dirname(HERE), 'www', 'help')
 URL = 'http://localhost:8081/'
@@ -152,6 +169,52 @@ def load_examples(driver, timeout=10.0):
     raise RuntimeError(
         f'example records did not load within {timeout}s '
         f'(confirm accepted: {accepted})')
+
+
+# JavaScript used by fit_viewport_to_content(), kept as constants so the
+# quoting stays readable.
+MEASURE_JS = (
+    "const mid = document.getElementById('mid-section');"
+    "const acc = document.getElementById('records-accordion');"
+    "if (!mid || !acc) { return null; }"
+    "const cs = window.getComputedStyle(mid);"
+    "const pad = parseFloat(cs.paddingTop) + parseFloat(cs.paddingBottom);"
+    "return Math.ceil(acc.scrollHeight + pad);"
+)
+OVERFLOW_JS = (
+    "const mid = document.getElementById('mid-section');"
+    "return mid ? mid.scrollHeight - mid.clientHeight : 0;"
+)
+
+
+def fit_viewport_to_content(driver, width, start_height):
+    """Shrink the viewport height until the records just fit.
+
+    #mid-section is `h-100` with vertical padding that clears the fixed header
+    and footer, so the height it needs is the accordion's natural height plus
+    that padding. Computed directly rather than by binary search — one resize
+    instead of eight — then verified, because a computed value that turns out
+    too small would silently clip the last record.
+    """
+    set_viewport_size(driver, width, start_height)
+    needed = driver.execute_script(MEASURE_JS)
+    if not needed:
+        return start_height
+
+    height = max(MIN_FIT_HEIGHT, min(int(needed), start_height))
+    set_viewport_size(driver, width, height)
+
+    # Verify rather than trust the arithmetic. If the middle section still
+    # scrolls, the content is taller than computed and the bottom would be cut
+    # off. Grow by the shortfall and check again.
+    for _ in range(3):
+        overflow = driver.execute_script(OVERFLOW_JS)
+        if overflow <= 0:
+            return height
+        height = min(height + overflow + 8, start_height)
+        set_viewport_size(driver, width, height)
+    raise RuntimeError(
+        f'could not fit the content into {width}x{height} without scrolling')
 
 
 def set_viewport_size(driver, width, height):
@@ -499,14 +562,14 @@ SHOTS = [
     ('pam-prefs-record-fields.png', shot_prefs_fields, WINDOW),
     ('pam-prefs-admin.png', shot_prefs_admin, WINDOW),
 
-    ('pam-example-records.png', shot_records_dark, NARROW),
+    ('pam-example-records.png', shot_records_dark, (800, FIT)),
     ('pam-iphone-screenshot-dark.png', shot_records_dark, NARROW),
     ('pam-iphone-screenshot-light.png', shot_records_light, NARROW),
-    ('pam-basic-sections.png', shot_records_dark, NARROW),
-    ('pam-search-g.png', shot_search_g, NARROW),
-    ('pam-search-g-re.png', shot_search_g_re, NARROW),
-    ('pam-search.png', shot_records_dark, NARROW),
-    ('pam-status-msg.png', shot_status_msg, NARROW),
+    ('pam-basic-sections.png', shot_records_dark, (800, FIT)),
+    ('pam-search-g.png', shot_search_g, (800, FIT)),
+    ('pam-search-g-re.png', shot_search_g_re, (800, FIT)),
+    ('pam-search.png', shot_records_dark, (800, FIT)),
+    ('pam-status-msg.png', shot_status_msg, (800, FIT)),
 
     ('pam-about-custom.png', shot_about_custom, WINDOW),
     ('pam-file-save.png', shot_file_save, WINDOW),
@@ -572,7 +635,10 @@ def main():
         load_examples(driver)
 
         for filename, func, window in SHOTS:
-            set_viewport_size(driver, *window)
+            if window[1] == FIT:
+                fit_viewport_to_content(driver, window[0], NARROW[1])
+            else:
+                set_viewport_size(driver, *window)
             state = capture(driver, filename, func, check_only)
             marker = {'new': 'NEW    ', 'changed': 'CHANGED', 'same': 'same   '}[state]
             print(f'  {marker}  {filename}')

@@ -1009,19 +1009,41 @@ how to define the prefix and suffixes for memorable passwords.
 
 
 ## Layout
-_PAM_ is a simple single page web application (SPA). It consists of three
-basic parts: the menu and search section, the records section and the
-status and controls section.
+_PAM_ is a simple single page web application (SPA). It is laid out as three
+stacked regions, described here from top to bottom.
 
-The status and controls section (footer) contains the dark/light mode toggle buttons
-on the left, a status message area in the center, and on the right a
-**✨ Pwd Gen** button for the standalone password generator. If the
-file password cache strategy is set to `local`, a **⚠ PASS: LOCAL**
-warning badge also appears on the right.
+**The menu and search section** runs across the top. On the left is the search
+box, which filters records as you type. Next to it is a circled **✕** that
+clears the search, followed by the number of records currently visible. On the
+right is the **☰** menu button.
 
-It looks something like this
+**The records section** fills the middle and takes up most of the screen. Each
+record is one row showing its title, with a chevron on the right to expand it.
+Deactivated records are shown with an _*INACTIVE*_ prefix, or hidden entirely
+depending on the
+[Hide Inactive Records](#hide-inactive-records) preference.
 
-<img src="www/help/pam-basic-sections.png" width="400" alt="menu-bar">
+**The status and controls section** is the footer. The dark/light mode toggle
+is on the left, a status message area is in the centre, and on the right is the
+**✨ Pwd Gen** button for the standalone password generator.
+
+Warning badges also appear in the footer when the relevant preference is
+enabled. Each marks a setting that trades some security for convenience:
+
+| Badge | Preference | See |
+|---|---|---|
+| **⚠ PASS: LOCAL** | file password cached in `localStorage` | [filePass Cache Strategy](#filepass-cache-strategy) |
+| **⚠ HTML ON** | HTML field values rendered as live HTML | [Allow HTML Field Rendering](#allow-html-field-rendering) |
+| **⚠ PW SEARCH** | search matches against password values | [Search Password Field Values](#search-password-field-values) |
+| **⚠ REUSED: _n_** | _n_ stored passwords are used more than once | [Reused Passwords](#reused-passwords) |
+
+The **⚠ REUSED** badge is the odd one out: it reports a property of your data
+rather than a setting you chose, and clicking it opens the
+[Reused Passwords](#reused-passwords) report.
+
+It looks something like this.
+
+<img src="www/help/pam-basic-sections.png" width="400" alt="the three PAM layout regions">
 
 ### Menu and Search Section
 The top section that contains a search input

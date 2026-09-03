@@ -340,6 +340,103 @@ hidden, so the assertion is stronger than the one it replaced.
 
 ---
 
+---
+
+## Screenshot automation
+
+`tests/screenshots.py`, run via `make screenshots` (capture) or
+`make screenshots-check` (report staleness, write nothing).
+
+The README is the in-app help — `make app-help` renders it into
+`www/help/index.html` — so a stale screenshot is stale help, not just a stale
+doc. Adding a preference meant hand-capturing dialogues, and the Search and
+Administration tab images had already fallen behind.
+
+Eight captures: the menu, About, the Reused Passwords report, and all five
+preference tabs. **The Administration tab had never been documented at all**,
+despite holding four security-relevant settings.
+
+Deliberately not all 56 `pam-*.png` images. Conceptual diagrams, annotated
+figures and mid-workflow captures cannot be scripted. This covers the ones
+that go stale whenever a setting is added, which is the recurring cost.
+
+### Determinism
+
+Rendering is not reproducible across machines — font hinting, DPI and the
+Chrome version all affect the bytes — so regenerating elsewhere produces
+different PNGs with identical content. One machine should regenerate. Files
+are written only when the bytes actually change, keeping binary churn out of
+git; a run that changes nothing reports `same` for every image, which is what
+the second run did for `pam-menu.png`.
+
+About carries two sources of per-run churn: Version, Branch and Commit change
+every commit, and the file-info line embeds `now.toISOString()` so it differs
+on *every* run. Both are stubbed before capture. The stub counts its own
+substitutions and raises if it made fewer than expected, so a change to the
+dialogue's shape surfaces as an error rather than an image that churns
+forever unnoticed. The fingerprints are deliberately not stubbed — they are
+deterministic given the example records, and showing a real one is the point.
+
+### What the first runs got wrong
+
+Worth recording, because two of the three produced perfectly plausible images:
+
+- **Cropping to the wrong element.** `choose_menu_option()` returns the outer
+  `.modal`, which is `position: fixed` and fills the viewport. Captures were
+  1920x1080 with a small dialogue in the middle. Now crops to
+  `.modal-content`.
+- **Silent truncation.** Element screenshots stop at the viewport, so the
+  Administration, Miscellaneous and Record Fields tabs came out at exactly the
+  same height with their footers missing — including the `Save` button, in a
+  dialogue whose own text says "No changes are saved until you Save at the
+  bottom of the page". The window is 3000px tall now, and each capture's PNG
+  header height is compared against the element's height so truncation reports
+  itself.
+- **Matching a hidden element.** `find_element(By.CLASS_NAME, 'dropdown-menu')`
+  returns the first match, and several elements carry that class. It found a
+  hidden one and chromedriver failed with "Cannot take screenshot with 0
+  width" nine stack frames deep. The menu is now reached the way
+  `choose_menu_option()` reaches it, and every capture target is checked for
+  zero size first with a message naming the shot.
+
+## Example records
+
+`www/examples/example.txt` gained two records, taking it from seven to nine:
+
+- **Instagram**, sharing Facebook's password exactly. Without a real
+  collision the demo vault never triggers the reuse report and a new user
+  never discovers the feature exists.
+- **Toys-R-Us**, deactivated. Demonstrates Hide Inactive Records, and gives
+  the About dialogue a second fingerprint line — a case that previously had no
+  screenshot anywhere.
+
+Both carry a note explaining why they are there, so the demo vault reads as
+deliberate rather than careless.
+
+### Consequences
+
+Changing shared fixture data broke three counts and two tests:
+
+- `test_chrome.py` asserted seven example records; now nine. All nine are in
+  the DOM — the inactive one is hidden, not absent.
+- The README said "example with seven records".
+- The screenshot stub hardcoded "Loaded 7 active and 0 inactive records".
+- **`test_print_cover_record_count` was comparing unlike things.** It counted
+  `accordion-button` elements against what the printed report says, and
+  `genRecordsDocument()` counts *visible* records. Those were the same number
+  while every record was active; with a deactivated record the accordion holds
+  nine and the report covers eight. The test now filters `d-none` the same way
+  print does.
+- **`test_reuse_badge_and_dialog` used the example records as its clean
+  baseline**, which stopped being clean. The baseline is an empty vault now:
+  Clear Records, assert the badge is hidden, then load the examples and assert
+  it appears naming Facebook and Instagram. Still mirrored, and the positive
+  case comes from real data rather than records the test builds itself.
+
+The last two are the same failure in two places: a negative assertion whose
+premise quietly disappeared. Those keep passing when what they depend on stops
+being true, which is what makes them the fragile ones.
+
 ## Not in this release
 
 - Vault diff, which is blocked on records having a durable identifier;

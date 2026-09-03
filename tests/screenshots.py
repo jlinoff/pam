@@ -41,7 +41,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 # pytest only collects test_*.py, so this module is not picked up as a test.
 from test_chrome import (  # pylint: disable=wrong-import-position
     get_driver, choose_menu_option, scroll_and_click, load_example_records,
-    get_parent, get_children,
+    get_parent, get_children, set_theme,
 )
 from selenium.webdriver.common.by import By  # pylint: disable=wrong-import-position
 
@@ -54,6 +54,13 @@ from selenium.webdriver.common.by import By  # pylint: disable=wrong-import-posi
 # Only the height changes. Width drives the responsive breakpoints, so 1920
 # stays as it is to keep the layout identical to the e2e tests.
 WINDOW = (1920, 3000)
+
+# Full-page captures use a narrow window instead. The hand-made images this
+# replaces were all 800x1600, which is PAM in a phone-shaped viewport — the
+# "iPhone" captures have no device frame or iOS chrome, they are just a narrow
+# browser. Keeping the same size keeps the README's width="400" renderings
+# looking as they did.
+NARROW = (800, 1600)
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 HELP = os.path.join(os.path.dirname(HERE), 'www', 'help')
@@ -106,6 +113,66 @@ def stub_volatile(driver):
 # enough for a click but leaves no margin for a screenshot, and a capture taken
 # mid-fade is a half-transparent dialogue that differs on every run.
 SETTLE = 0.6
+
+
+def set_viewport_size(driver, width, height):
+    """Size the window so the *viewport* ends up width x height.
+
+    set_window_size() sets the outer window, which is taller and wider than
+    the viewport by however much chrome the browser is drawing — 143px of
+    height here. Measuring the difference and correcting for it is the only
+    portable way to get a known viewport size, since the offset varies by
+    platform and Chrome version.
+    """
+    driver.set_window_size(width, height)
+    time.sleep(0.3)
+    for _ in range(5):
+        inner = driver.execute_script(
+            'return [window.innerWidth, window.innerHeight];')
+        dw = width - inner[0]
+        dh = height - inner[1]
+        if dw == 0 and dh == 0:
+            return
+        outer = driver.get_window_size()
+        driver.set_window_size(outer['width'] + dw, outer['height'] + dh)
+        time.sleep(0.3)
+    raise RuntimeError(
+        f'could not size the viewport to {width}x{height}; got '
+        f'{inner[0]}x{inner[1]}. The window may be at a platform minimum or '
+        'maximum.')
+
+
+class Viewport:
+    """The whole visible page as a capture target.
+
+    Wraps the driver so it presents the same `size` and `screenshot_as_png`
+    interface a WebElement does, which keeps capture() — including its zero-size
+    and truncation guards — working unchanged for full-page shots.
+    """
+
+    def __init__(self, driver):
+        self._driver = driver
+
+    @property
+    def size(self):
+        """Inner viewport dimensions, matching WebElement.size.
+
+        Not get_window_size(): that reports the OUTER window, which includes
+        browser chrome. A screenshot captures the viewport, so comparing the
+        two made the truncation guard fire on a capture that was complete.
+        """
+        inner = self._driver.execute_script(
+            'return {width: window.innerWidth, height: window.innerHeight};')
+        return inner
+
+    @property
+    def screenshot_as_png(self):
+        """The visible page, matching WebElement.screenshot_as_png."""
+        return self._driver.get_screenshot_as_png()
+
+    def is_displayed(self):
+        """Always true; present so the zero-size guard can report on it."""
+        return self._driver is not None
 
 
 def modal_content(dlg):
@@ -209,15 +276,98 @@ def shot_reused_passwords(driver):
     return content
 
 
+# ---------------------------------------------------------------------------
+# Phase 2: full-viewport states
+# ---------------------------------------------------------------------------
+
+def shot_records_dark(driver):
+    '''All records, unexpanded, dark theme, phone-shaped viewport.'''
+    set_theme(driver, 'dark')
+    time.sleep(SETTLE)
+    return Viewport(driver)
+
+
+def shot_records_light(driver):
+    '''The same view in the light theme.'''
+    set_theme(driver, 'light')
+    time.sleep(SETTLE)
+    return Viewport(driver)
+
+
+def search_for(driver, term):
+    '''Type a term into the search box and let the filter settle.'''
+    box = driver.find_element(By.ID, 'search')
+    box.clear()
+    box.send_keys(term)
+    time.sleep(SETTLE)
+    return Viewport(driver)
+
+
+def shot_search_g(driver):
+    '''Search for "g" — a plain substring match across titles.'''
+    set_theme(driver, 'dark')
+    return search_for(driver, 'g')
+
+
+def shot_search_g_re(driver):
+    '''Search for "^g" — the same box, used as a regular expression.'''
+    set_theme(driver, 'dark')
+    return search_for(driver, '^g')
+
+
+def shot_status_msg(driver):
+    '''A record expanded, with a transient status message showing.
+
+    The message clears after statusMsgDurationMS, so that preference is
+    raised first — otherwise the capture races the timeout and intermittently
+    produces an image with no message in it.
+    '''
+    set_theme(driver, 'dark')
+    driver.execute_script('window.prefs.statusMsgDurationMS = 60000')
+
+    buttons = driver.find_elements(By.CLASS_NAME, 'accordion-button')
+    facebook = next((b for b in buttons if 'Facebook' in b.text), None)
+    if facebook is None:
+        raise RuntimeError('no Facebook record to expand')
+    scroll_and_click(driver, facebook)
+    time.sleep(SETTLE)
+
+    item = facebook.find_element(
+        By.XPATH, './ancestor::div[contains(@class, "accordion-item")]')
+
+    # The title lives on the <i> inside the button, not on the button:
+    # icon(name, tooltip) in utils.js sets it there. Click the icon and let
+    # the event bubble to the button.
+    icons = [e for e in item.find_elements(
+        By.CSS_SELECTOR, 'i[title="copy to clipboard"]') if e.is_displayed()]
+    if not icons:
+        raise RuntimeError(
+            'no visible copy icon on the expanded record — the record may not '
+            'have expanded, or the icon tooltip text has changed')
+    scroll_and_click(driver, icons[0])
+    time.sleep(SETTLE)
+    return Viewport(driver)
+
+
+# (filename, capture function, window size)
 SHOTS = [
-    ('pam-menu.png', shot_menu),
-    ('pam-about.png', shot_about),
-    ('pam-reused-passwords.png', shot_reused_passwords),
-    ('pam-prefs-search.png', shot_prefs_search),
-    ('pam-prefs-password.png', shot_prefs_passwords),
-    ('pam-prefs-miscellaneous.png', shot_prefs_misc),
-    ('pam-prefs-record-fields.png', shot_prefs_fields),
-    ('pam-prefs-admin.png', shot_prefs_admin),
+    ('pam-menu.png', shot_menu, WINDOW),
+    ('pam-about.png', shot_about, WINDOW),
+    ('pam-reused-passwords.png', shot_reused_passwords, WINDOW),
+    ('pam-prefs-search.png', shot_prefs_search, WINDOW),
+    ('pam-prefs-password.png', shot_prefs_passwords, WINDOW),
+    ('pam-prefs-miscellaneous.png', shot_prefs_misc, WINDOW),
+    ('pam-prefs-record-fields.png', shot_prefs_fields, WINDOW),
+    ('pam-prefs-admin.png', shot_prefs_admin, WINDOW),
+
+    ('pam-example-records.png', shot_records_dark, NARROW),
+    ('pam-iphone-screenshot-dark.png', shot_records_dark, NARROW),
+    ('pam-iphone-screenshot-light.png', shot_records_light, NARROW),
+    ('pam-basic-sections.png', shot_records_dark, NARROW),
+    ('pam-search-g.png', shot_search_g, NARROW),
+    ('pam-search-g-re.png', shot_search_g_re, NARROW),
+    ('pam-search.png', shot_records_dark, NARROW),
+    ('pam-status-msg.png', shot_status_msg, NARROW),
 ]
 
 
@@ -271,21 +421,23 @@ def main():
     driver = get_driver()
     changed = []
     try:
-        driver.set_window_size(*WINDOW)
         driver.get(URL)
         time.sleep(1)
         load_example_records(driver)
         time.sleep(1)
 
-        for filename, func in SHOTS:
+        for filename, func, window in SHOTS:
+            set_viewport_size(driver, *window)
             state = capture(driver, filename, func, check_only)
             marker = {'new': 'NEW    ', 'changed': 'CHANGED', 'same': 'same   '}[state]
             print(f'  {marker}  {filename}')
             if state != 'same':
                 changed.append(filename)
-            # Every capture leaves a dialogue or menu open; clear it before the
-            # next one by reloading, which is cheaper to reason about than
-            # tracking which close button each surface uses.
+            # Every capture leaves state behind — an open dialogue, a search
+            # term, a changed theme or preference. Reloading resets all of it,
+            # which is cheaper to reason about than tracking what each surface
+            # needs undone. The window is resized before the reload so the page
+            # lays out at the size the next shot expects.
             driver.get(URL)
             time.sleep(0.8)
             load_example_records(driver)

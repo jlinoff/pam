@@ -261,8 +261,19 @@ a YouTube favicon in a captured bookmarks bar, in one case.
    - `pam-record-expanded-fields.png` and `pam-record-expanded-fields2.png` —
      **deleted, not captured**: same UI state as `pam-record-expanded.png`,
      distinguished only by arrows
-   - `pam-about-custom-pref.png` — probably superseded by
-     `pam-prefs-administration.png`; needs a look before deciding
+   - `pam-about-custom-pref.png` — **regenerated, not deleted.** It pairs with
+     `pam-about-custom.png`: one shows the preference, the other the result.
+     `pam-prefs-administration.png` cannot replace it because that capture
+     shows the field empty. The old image showed a single "Miscellaneous"
+     fieldset holding Enable Printing, filePass Cache Strategy and Custom
+     About together — a layout PAM has not had since the preferences gained
+     tabs. The new shot crops to the one preference row rather than the whole
+     2100px tab.
+
+     The value is **typed** rather than set through `window.prefs`: nothing
+     populates that textarea from the stored value. `savePrefs()` reads
+     `[data-pref-id]` elements on save and never writes to them on open, so
+     setting the preference first would have produced an empty field.
 
    Note the existing `pam-password-hidden.png` is a light-theme capture while
    every automated shot is dark. The regenerated set will be consistently
@@ -463,6 +474,28 @@ what surfaced these. A single run cannot show determinism.
 `search_for()` has the same shape and is so far stable, which is noted in its
 docstring rather than pre-emptively changed — the images are demonstrably
 reproducible and altering them would cost a churn to buy nothing.
+
+### A day spent debugging a cached image
+
+`pam-google-account.png` looked light in the rendered help page. Three
+diagnoses followed, each plausible from reading the code and each wrong: that
+the shots were not setting the theme (they were already dark), that `field.js`
+was missing a `setDarkLightTheme()` call after adding a field (the call is a
+no-op for those elements — they carry no `bg-light`, no `bg-dark` and no
+`data-bs-theme`, and inherit through the cascade), and that loading the example
+file wiped `themeName` (it calls `resetPrefs()` before merging, so the default
+survives).
+
+The image on disk was dark the whole time. The help page was serving a **cached
+PNG** — `python -m http.server` sends no `Cache-Control` or `ETag`, so a plain
+reload fetches fresh HTML and reuses the old images. A shift-reload fixed it.
+
+The tell was in the picture: the stale image showed a password length of 25,
+the new one 20. Opening the file directly — `open www/help/pam-google-account.png`
+— would have ended it in seconds and was never tried.
+
+**Hard-reload the help page after regenerating**, or check the file on disk
+before diagnosing the pipeline.
 
 ### Two different checks, only one of which travels
 

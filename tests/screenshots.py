@@ -532,8 +532,14 @@ def shot_status_msg(driver):
 # Matches what the hand-made pam-about-custom.png showed, so the README prose
 # describing "a simple custom message that uses bootstrap formatting classes"
 # still matches the picture.
-CUSTOM_ABOUT = ('<div class="bg-primary text-white p-3 rounded">'
-                '<h4>Custom Stuff</h4><div>custom stuff here!</div></div>')
+# Written across several lines so it reads as something a user typed when it
+# appears in the Custom About textarea (pam-about-custom-pref.png). HTML
+# ignores the newlines, so the rendered result (pam-about-custom.png) is
+# unaffected — the two images stay a matched pair of input and output.
+CUSTOM_ABOUT = ('<fieldset class="border border-light bg-primary p-2">\n'
+                '<legend>Custom Stuff</legend>\n'
+                'custom stuff here!\n'
+                '</fieldset>')
 
 
 def shot_about_custom(driver):
@@ -921,6 +927,35 @@ def shot_google_account_prefs(driver):
     return content
 
 
+def shot_about_custom_pref(driver):
+    """The Custom About preference, filled in.
+
+    Pairs with pam-about-custom.png: this shows the preference, that shows the
+    result. Cropped to the single preference row rather than the whole
+    Administration tab, which is over 2000px tall and would bury the point.
+
+    The image it replaces showed a single "Miscellaneous" fieldset holding
+    Enable Printing, filePass Cache Strategy and Custom About together — a
+    layout PAM has not had since the preferences gained tabs.
+    """
+    content = open_prefs_tab(driver, 'prefs-tab-admin')
+    field = content.find_element(
+        By.CSS_SELECTOR, 'textarea[data-pref-id="customAboutInfo"]')
+
+    # Typed rather than set through window.prefs, because nothing populates
+    # this textarea from the stored value: the dialogue reads [data-pref-id]
+    # elements on save, never writes to them on open. Typing is also what the
+    # image is meant to show — what you enter, not what was already stored.
+    field.clear()
+    field.send_keys(CUSTOM_ABOUT)
+    if not field.get_attribute('value').strip():
+        raise RuntimeError('the Custom About field is still empty after typing')
+
+    row = field.find_element(By.XPATH, './ancestor::div[contains(@class, "row")][1]')
+    blur(driver)
+    return row
+
+
 # (filename, capture function, window size)
 SHOTS = [
     ('pam-menu.png', shot_menu, WINDOW),
@@ -954,6 +989,7 @@ SHOTS = [
     ('pam-google-record.png', shot_google_record, (800, FIT)),
     ('pam-google-account.png', shot_google_account, WINDOW),
     ('pam-google-account-prefs.png', shot_google_account_prefs, WINDOW),
+    ('pam-about-custom-pref.png', shot_about_custom_pref, WINDOW),
 ]
 
 

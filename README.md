@@ -49,7 +49,7 @@ the on-line help is generated.
       * [Reason 4: Automatic Password Generation](#reason-4-automatic-password-generation)
       * [Reason 5: File Based Storage](#reason-5-file-based-storage)
       * [Reason 6: Secure Context Encryption](#reason-6-secure-context-encryption)
-      * [Reason 7: Hiding Passwords from Casual Observers](#reason-8-hiding-passwords-from-casual-observers)
+      * [Reason 7: Hiding Passwords from Casual Observers](#reason-7-hiding-passwords-from-casual-observers)
       * [Reason 8: Access from mobile devices](#reason-8-access-from-mobile-devices)
       * [Reason 9: FOSS](#reason-9-foss)
     * [PAM vs mainstream password managers](#pam-vs-mainstream-password-managers)

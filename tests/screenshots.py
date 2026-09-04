@@ -26,9 +26,21 @@ different PNGs with identical content. So:
 
 USAGE
 -----
-    make screenshots            # capture, write only what changed
-    make screenshots CHECK=1    # report what would change, write nothing
+    make screenshots                # capture, write only what changed
+    make screenshots-check          # report what would change, write nothing
+    make screenshots SHOT=google    # only filenames containing "google"
+
+The SHOT filter is for iterating. A full pass is around 28 captures at roughly
+eight seconds each, because the page is reloaded and the example records are
+reloaded between every shot. That reset is deliberate — see main() — but it
+makes the full run slow enough that developing one capture against it is
+painful. Always run without a filter before committing.
 '''
+
+# pylint: disable=too-many-lines
+# One shot per image, each with the reasoning for why it is set up the way it
+# is. Splitting by phase would scatter the shared helpers — modal_content,
+# blur, visible_icons, expand_record — across modules that all need them.
 
 import os
 import sys
@@ -387,20 +399,6 @@ def shot_prefs_misc(driver):
     return open_prefs_tab(driver, 'prefs-tab-misc')
 
 
-def shot_prefs_fields(driver):
-    '''Preferences, Record Fields tab.'''
-    return open_prefs_tab(driver, 'prefs-tab-fields')
-
-
-def shot_prefs_admin(driver):
-    '''Preferences, Administration tab.
-
-    Not previously documented at all — there is no hand-made screenshot of
-    this tab, and it now holds three security-relevant settings.
-    '''
-    return open_prefs_tab(driver, 'prefs-tab-admin')
-
-
 def shot_about(driver):
     '''The About dialogue, including the vault fingerprints.
 
@@ -442,7 +440,14 @@ def shot_reused_passwords(driver):
 # ---------------------------------------------------------------------------
 
 def shot_records_dark(driver):
-    '''All records, unexpanded, dark theme, phone-shaped viewport.'''
+    '''All records, unexpanded, dark theme.
+
+    One capture, referenced from four places in the README: the unexpanded
+    record list, the Layout section, the search example and the Load File
+    example. They were previously three separate files with byte-identical
+    contents — check_images.py reports that as IDENTICAL FILES, which is how
+    the duplication was found.
+    '''
     set_theme(driver, 'dark')
     time.sleep(SETTLE)
     return Viewport(driver)
@@ -456,7 +461,14 @@ def shot_records_light(driver):
 
 
 def search_for(driver, term):
-    '''Type a term into the search box and let the filter settle.'''
+    '''Type a term into the search box and let the filter settle.
+
+    This leaves focus in the search box, which is the same setup that made
+    pam-password-hidden.png churn on the blinking caret. These two captures
+    have been stable across repeated double-runs, so the caret is evidently
+    not landing in the image here — but if pam-search-g*.png ever starts
+    reporting CHANGED on an unchanged vault, blur before capturing.
+    '''
     box = driver.find_element(By.ID, 'search')
     box.clear()
     box.send_keys(term)
@@ -477,42 +489,39 @@ def shot_search_g_re(driver):
 
 
 def shot_status_msg(driver):
-    '''A record expanded, with a transient status message showing.
+    """A record expanded, with a status message showing in the footer.
 
-    The message clears after statusMsgDurationMS, so that preference is
-    raised first — otherwise the capture races the timeout and intermittently
-    produces an image with no message in it.
-    '''
+    The message is raised by calling PAM's own statusBlip() rather than by
+    clicking the copy button. Clicking copy does not work here:
+    copyTextToClipboard() awaits navigator.clipboard.writeText(), and in
+    headless Chrome without document focus that promise never settles — it
+    neither resolves nor rejects, so no message appears and no error is
+    raised. The capture came out byte-identical to pam-record-expanded.png,
+    which is how the silent failure was noticed.
+
+    The text matches what a real copy of Facebook's password produces, and the
+    rendering path is PAM's own; only the trigger is synthetic.
+
+    statusMsgDurationMS is raised first so the message does not clear before
+    the capture.
+    """
     set_theme(driver, 'dark')
-    driver.execute_script('window.prefs.statusMsgDurationMS = 60000')
+    driver.execute_script('window.prefs.statusMsgDurationMS = 600000')
+    expand_record(driver, 'Facebook')
 
-    buttons = driver.find_elements(By.CLASS_NAME, 'accordion-button')
-    facebook = next((b for b in buttons if 'Facebook' in b.text), None)
-    if facebook is None:
-        raise RuntimeError('no Facebook record to expand')
-    scroll_and_click(driver, facebook)
-    time.sleep(SETTLE)
-
-    item = facebook.find_element(
-        By.XPATH, './ancestor::div[contains(@class, "accordion-item")]')
-
-    # The title lives on the <i> inside the button, not on the button:
-    # icon(name, tooltip) in utils.js sets it there. Click the icon and let
-    # the event bubble to the button.
-    icons = [e for e in item.find_elements(
-        By.CSS_SELECTOR, 'i[title="copy to clipboard"]') if e.is_displayed()]
-    if not icons:
-        raise RuntimeError(
-            'no visible copy icon on the expanded record — the record may not '
-            'have expanded, or the icon tooltip text has changed')
-    scroll_and_click(driver, icons[0])
+    shown = driver.execute_async_script(
+        'var done = arguments[arguments.length - 1];'
+        "import('/js/status.js').then(function(m) {"
+        "  m.statusBlip('copied 25 bytes to clipboard');"
+        "  var el = document.getElementById('status');"
+        '  done(el ? el.innerHTML : null);'
+        '}).catch(function(e) { done("error: " + e); });'
+    )
+    if not shown or 'copied' not in shown:
+        raise RuntimeError(f'no status message rendered: {shown!r}')
     time.sleep(SETTLE)
     return Viewport(driver)
 
-
-# ---------------------------------------------------------------------------
-# Phase 3: dialogues needing preference or state setup
-# ---------------------------------------------------------------------------
 
 # Matches what the hand-made pam-about-custom.png showed, so the README prose
 # describing "a simple custom message that uses bootstrap formatting classes"
@@ -562,6 +571,48 @@ def shot_file_load(driver):
     return modal_content(dlg)
 
 
+# Deterministic randomness for the password-generator capture.
+#
+# The generators are the one surface whose output changes on every run by
+# design, so that image would be rewritten by every `make screenshots` — a new
+# binary blob in git each time, and `screenshots-check` could never report a
+# clean set. A check target that always shows one stale file trains you to
+# ignore it.
+#
+# Injected into the BROWSER SESSION and nowhere else. www/js/password.js ships
+# unchanged and carries no test hook: a seam in the released code that made
+# generated passwords predictable would be a real weakening of the one function
+# whose whole value is that its output cannot be guessed. The override lives
+# here, in the harness, where nothing outside this script can reach it.
+#
+# A small LCG rather than a constant, so the passwords still look like
+# passwords rather than a repeated character. getCrypticPassword() uses
+# crypto.getRandomValues; getRandomWord() uses Math.random. Both are replaced.
+# The leading `return` is required: execute_script() wraps the script in a
+# function body, so a bare IIFE evaluates and its value is discarded — the
+# probe below then reads as undefined and the capture aborts.
+SEED_RNG_JS = (
+    "return (function () {"
+    "  let state = 0x2545f491 >>> 0;"
+    "  const next = function () {"
+    "    state = (Math.imul(state, 1664525) + 1013904223) >>> 0;"
+    "    return state;"
+    "  };"
+    "  Math.random = function () { return next() / 4294967296; };"
+    "  Object.defineProperty(window.crypto, 'getRandomValues', {"
+    "    configurable: true,"
+    "    value: function (array) {"
+    "      for (let i = 0; i < array.length; i++) { array[i] = next() & 0xff; }"
+    "      return array;"
+    "    }"
+    "  });"
+    "  const probe = new Uint8Array(4);"
+    "  window.crypto.getRandomValues(probe);"
+    "  return probe[0] !== 0 || probe[1] !== 0;"
+    "})();"
+)
+
+
 def shot_password_generator_standalone(driver):
     '''The standalone password generator, opened from the footer Pwd Gen button.
 
@@ -570,7 +621,14 @@ def shot_password_generator_standalone(driver):
     different dialogue reached a different way, and belongs in the
     record-interaction phase. The standalone generator is described in the
     README prose but has never had an image, so this one is new.
+
+    The randomness is made deterministic first, in the browser session only,
+    so this capture does not churn on every run. See SEED_RNG_JS.
     '''
+    if not driver.execute_script(SEED_RNG_JS):
+        raise RuntimeError(
+            'could not override the browser RNG; this capture would churn on '
+            'every run')
     button = driver.find_element(By.ID, 'x-generate-password')
     scroll_and_click(driver, button)
     time.sleep(SETTLE)
@@ -579,11 +637,18 @@ def shot_password_generator_standalone(driver):
 
 
 def shot_prefs_administration(driver):
-    '''The Administration tab.'''
+    '''Preferences, Administration tab.
+
+    Named for the tab's UI label rather than an abbreviation. This tab had no
+    screenshot at all before, despite holding four security-relevant settings,
+    and it supersedes pam-prefs-enable-printing-check.png — Enable Printing is
+    one of the settings shown here.
+    '''
     return open_prefs_tab(driver, 'prefs-tab-admin')
 
+
 def shot_prefs_record_fields(driver):
-    '''The Record Fields tab.'''
+    '''Preferences, Record Fields tab.'''
     return open_prefs_tab(driver, 'prefs-tab-fields')
 
 def shot_menu_with_print(driver):
@@ -612,6 +677,244 @@ def shot_menu_with_print(driver):
     return items
 
 
+# ---------------------------------------------------------------------------
+# Phase 4: record interaction states
+# ---------------------------------------------------------------------------
+
+def blur(driver):
+    """Drop focus, so a blinking text caret cannot land in a capture."""
+    driver.execute_script(
+        'if (document.activeElement) { document.activeElement.blur(); }')
+    time.sleep(0.5)
+
+
+def visible_icons(root, title):
+    """Visible <i> elements carrying a given tooltip.
+
+    icon(name, tooltip) in utils.js puts the title on the <i>, not on the
+    button around it, so selecting the button by title finds nothing. Clicking
+    the icon bubbles to the button.
+    """
+    return [e for e in root.find_elements(By.CSS_SELECTOR, f'i[title="{title}"]')
+            if e.is_displayed()]
+
+
+def open_new_record_with_password_field(driver):
+    """New Record dialogue holding a single, empty password field.
+
+    Strips the default fields, then adds `password` from the New Field
+    dropdown — choosing a predefined name sets both the field name and its
+    type. Returns the dialogue's .modal-content.
+    """
+    dlg = choose_menu_option(driver, 'New Record')
+    time.sleep(SETTLE)
+    driver.execute_script(
+        "var menu = document.getElementById('menuNewDlg');"
+        "var body = menu.getElementsByClassName('container')[0];"
+        "while (body.children.length > 2) {"
+        "  body.removeChild(body.children[body.children.length - 1]); }"
+    )
+    time.sleep(0.3)
+
+    new_field = dlg.find_element(By.ID, 'x-new-field-type')
+    scroll_and_click(driver, new_field)
+    time.sleep(SETTLE)
+    items = [i for i in dlg.find_elements(By.CSS_SELECTOR, 'ul.dropdown-menu .dropdown-item')
+             if i.text.strip() == 'password']
+    if not items:
+        raise RuntimeError('no predefined "password" field in the New Field dropdown')
+    scroll_and_click(driver, items[0])
+    time.sleep(SETTLE)
+
+    # Adding a field leaves focus in the new input, where the text caret
+    # blinks. Blurring here covers every shot built on this helper: the
+    # first attempt blurred only in shot_password_hidden, and
+    # pam-password-no-generator.png churned on the very next run.
+    blur(driver)
+    return modal_content(dlg)
+
+
+def shot_password_no_generator(driver):
+    """A password field before the generator is opened: empty, gear present."""
+    content = open_new_record_with_password_field(driver)
+    if not visible_icons(content, 'generate a password'):
+        raise RuntimeError('no gear icon on the new password field')
+    return content
+
+
+def shot_password_generator(driver):
+    """The record field generator, opened with the gear icon.
+
+    Not the standalone footer generator — that is
+    pam-password-generator-standalone.png. This one appears inline in a record
+    field, and is what the README's Password Generator section describes first.
+    """
+    if not driver.execute_script(SEED_RNG_JS):
+        raise RuntimeError('could not override the browser RNG for this capture')
+    content = open_new_record_with_password_field(driver)
+    gears = visible_icons(content, 'generate a password')
+    if not gears:
+        raise RuntimeError('no gear icon on the new password field')
+    scroll_and_click(driver, gears[0])
+    time.sleep(SETTLE)
+    blur(driver)
+    return content
+
+
+def shot_password_hidden(driver):
+    """A password field with a value, masked."""
+    content = open_new_record_with_password_field(driver)
+    inputs = [e for e in content.find_elements(
+        By.CSS_SELECTOR, 'input.x-fld-value[data-fld-type="password"]')
+        if e.is_displayed()]
+    if not inputs:
+        raise RuntimeError('no password input on the new field')
+    inputs[0].send_keys('Zq7-Mvtl%Kdn#WroP2xj')
+    blur(driver)
+    return content
+
+
+def shot_password_shown(driver):
+    """The same field with the eye icon clicked, revealing the value."""
+    content = shot_password_hidden(driver)
+    eyes = visible_icons(content, 'show or hide password')
+    if not eyes:
+        raise RuntimeError('no eye icon on the password field')
+    scroll_and_click(driver, eyes[0])
+    time.sleep(SETTLE)
+    blur(driver)
+    return content
+
+
+def expand_record(driver, title):
+    """Expand one record in the accordion and return its .accordion-item."""
+    buttons = driver.find_elements(By.CLASS_NAME, 'accordion-button')
+    match = next((b for b in buttons if title in b.text), None)
+    if match is None:
+        raise RuntimeError(f'no record titled {title!r} to expand')
+    scroll_and_click(driver, match)
+    time.sleep(SETTLE)
+    return match.find_element(
+        By.XPATH, './ancestor::div[contains(@class, "accordion-item")]')
+
+
+def shot_record_expanded(driver):
+    """The Facebook record expanded, password masked, shown in context.
+
+    Serves pam-record-expanded, pam-record-expanded-fields and
+    pam-record-expanded-fields2: those were the same UI state with different
+    red arrows drawn on. With the arrows replaced by prose they are one image.
+
+    Captured as a fitted viewport rather than the accordion item alone. The
+    item spans the full viewport width, so at a 1920 window it came out
+    1904x432 — rendered at the README's width="400" that is an illegible
+    strip. A narrow viewport also keeps the surrounding records and the footer
+    in frame, which the prose refers to ("once you click on or tap a record it
+    expands").
+    """
+    set_theme(driver, 'dark')
+    item = expand_record(driver, 'Facebook')
+    if not visible_icons(item, 'copy to clipboard'):
+        raise RuntimeError('the record did not expand: no clipboard icons')
+    return Viewport(driver)
+
+
+def shot_record_expanded_password(driver):
+    """The same record with the password revealed."""
+    set_theme(driver, 'dark')
+    item = expand_record(driver, 'Facebook')
+    eyes = visible_icons(item, 'show password')
+    if not eyes:
+        raise RuntimeError('no eye icon on the expanded record')
+    scroll_and_click(driver, eyes[0])
+    time.sleep(SETTLE)
+    return Viewport(driver)
+
+
+def shot_google_record(driver):
+    """The Google record expanded, shown in context.
+
+    Illustrates the Introduction's point that records are accordion entries
+    that expand when clicked. Uses the example data rather than a constructed
+    record.
+    """
+    set_theme(driver, 'dark')
+    item = expand_record(driver, 'Google')
+    if not visible_icons(item, 'copy to clipboard'):
+        raise RuntimeError('the Google record did not expand')
+    return Viewport(driver)
+
+
+def shot_google_account(driver):
+    """A New Record dialogue built up as a simple account record.
+
+    Not the Google record from the example data: the README uses this to show
+    what a record with url/login/password fields looks like while you are
+    creating it, so the dialogue is constructed field by field.
+    """
+    dlg = choose_menu_option(driver, 'New Record')
+    time.sleep(SETTLE)
+
+    title = dlg.find_element(By.CSS_SELECTOR, 'input[placeholder="Record Title"]')
+    title.clear()
+    title.send_keys('Google')
+
+    driver.execute_script(
+        "var menu = document.getElementById('menuNewDlg');"
+        "var body = menu.getElementsByClassName('container')[0];"
+        "while (body.children.length > 2) {"
+        "  body.removeChild(body.children[body.children.length - 1]); }"
+    )
+    time.sleep(0.3)
+
+    values = {
+        'url': 'https://google.com',
+        'login': 'pbrain22@gmail.com',
+        'password': 'NIJMeb8OfXEfshOG$db!',
+    }
+    for name, value in values.items():
+        new_field = dlg.find_element(By.ID, 'x-new-field-type')
+        scroll_and_click(driver, new_field)
+        time.sleep(0.4)
+        items = [i for i in dlg.find_elements(
+            By.CSS_SELECTOR, 'ul.dropdown-menu .dropdown-item')
+            if i.text.strip() == name]
+        if not items:
+            raise RuntimeError(f'no predefined {name!r} field in the dropdown')
+        scroll_and_click(driver, items[0])
+        time.sleep(0.4)
+
+        inputs = [e for e in dlg.find_elements(By.CSS_SELECTOR, 'input.x-fld-value')
+                  if e.is_displayed()]
+        if not inputs:
+            raise RuntimeError(f'no input rendered for the {name!r} field')
+        inputs[-1].send_keys(value)
+        time.sleep(0.2)
+
+    blur(driver)
+    return modal_content(dlg)
+
+
+def shot_google_account_prefs(driver):
+    """Record Fields preferences pruned to just url, login and password.
+
+    The Preferences dialogue rebuilds from current prefs on `show.bs.modal`,
+    so setting predefinedRecordFields before opening it is enough — no
+    explicit refresh is needed the way About required one.
+    """
+    driver.execute_script(
+        "window.prefs.predefinedRecordFields = "
+        "{'url': 'url', 'login': 'text', 'password': 'password'};"
+    )
+    content = open_prefs_tab(driver, 'prefs-tab-fields')
+    rows = content.find_elements(By.CSS_SELECTOR, '#x-prefs-fld-div .x-pref-fld-row')
+    if len(rows) != 3:
+        raise RuntimeError(
+            f'expected the field list pruned to 3 rows, found {len(rows)} — '
+            'predefinedRecordFields may not be read when the tab is built')
+    return content
+
+
 # (filename, capture function, window size)
 SHOTS = [
     ('pam-menu.png', shot_menu, WINDOW),
@@ -620,16 +923,12 @@ SHOTS = [
     ('pam-prefs-search.png', shot_prefs_search, WINDOW),
     ('pam-prefs-password.png', shot_prefs_passwords, WINDOW),
     ('pam-prefs-miscellaneous.png', shot_prefs_misc, WINDOW),
-    ('pam-prefs-record-fields.png', shot_prefs_fields, WINDOW),
-    ('pam-prefs-admin.png', shot_prefs_admin, WINDOW),
 
     ('pam-example-records.png', shot_records_dark, (800, FIT)),
     ('pam-iphone-screenshot-dark.png', shot_records_dark, IPHONE),
     ('pam-iphone-screenshot-light.png', shot_records_light, IPHONE),
-    ('pam-basic-sections.png', shot_records_dark, (800, FIT)),
     ('pam-search-g.png', shot_search_g, (800, FIT)),
     ('pam-search-g-re.png', shot_search_g_re, (800, FIT)),
-    ('pam-search.png', shot_records_dark, (800, FIT)),
     ('pam-status-msg.png', shot_status_msg, (800, FIT)),
 
     ('pam-about-custom.png', shot_about_custom, WINDOW),
@@ -639,6 +938,16 @@ SHOTS = [
     ('pam-prefs-administration.png', shot_prefs_administration, WINDOW),
     ('pam-prefs-record-fields.png', shot_prefs_record_fields, WINDOW),
     ('pam-prefs-enable-printing-menu.png', shot_menu_with_print, WINDOW),
+
+    ('pam-password-no-generator.png', shot_password_no_generator, WINDOW),
+    ('pam-password-generator.png', shot_password_generator, WINDOW),
+    ('pam-password-hidden.png', shot_password_hidden, WINDOW),
+    ('pam-password-shown.png', shot_password_shown, WINDOW),
+    ('pam-record-expanded.png', shot_record_expanded, (800, FIT)),
+    ('pam-record-expanded-password.png', shot_record_expanded_password, (800, FIT)),
+    ('pam-google-record.png', shot_google_record, (800, FIT)),
+    ('pam-google-account.png', shot_google_account, WINDOW),
+    ('pam-google-account-prefs.png', shot_google_account_prefs, WINDOW),
 ]
 
 
@@ -700,6 +1009,18 @@ def capture(driver, filename, func, check_only, fit=False):
 def main():
     '''Walk the shot list. Returns 0, or 1 in check mode if anything differs.'''
     check_only = os.environ.get('CHECK') == '1'
+
+    # Substring match on the filename, so SHOT=google runs the three
+    # pam-google-* captures and SHOT=prefs runs the preference tabs.
+    only = os.environ.get('SHOT', '').strip()
+    shots = [entry for entry in SHOTS if only in entry[0]] if only else SHOTS
+    if only and not shots:
+        names = ', '.join(sorted(name for name, _, _ in SHOTS))
+        print(f'SHOT={only!r} matches nothing.\nAvailable: {names}')
+        return 1
+    if only:
+        print(f'SHOT={only!r}: {len(shots)} of {len(SHOTS)} captures\n')
+
     driver = get_driver()
     changed = []
     try:
@@ -707,7 +1028,7 @@ def main():
         time.sleep(1)
         load_examples(driver)
 
-        for filename, func, window in SHOTS:
+        for filename, func, window in shots:
             fit = window[1] == FIT
             if window == IPHONE:
                 set_device_metrics(driver, *IPHONE, scale=IPHONE_SCALE)
@@ -741,10 +1062,10 @@ def main():
 
     print()
     if not changed:
-        print(f'{len(SHOTS)} screenshots, none changed')
+        print(f'{len(shots)} screenshots, none changed')
         return 0
     verb = 'would change' if check_only else 'written'
-    print(f'{len(changed)} of {len(SHOTS)} {verb}: {", ".join(changed)}')
+    print(f'{len(changed)} of {len(shots)} {verb}: {", ".join(changed)}')
     return 1 if check_only else 0
 
 

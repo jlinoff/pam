@@ -171,8 +171,13 @@ a YouTube favicon in a captured bookmarks bar, in one case.
 
 ### Phases
 
-1. **Done — 8 shots.** Dialogues with no setup: menu, About, Reused
-   Passwords, five preference tabs.
+1. **Done — 6 shots.** Dialogues with no setup: menu, About, Reused
+   Passwords, and the Search, Passwords and Miscellaneous preference tabs.
+
+   The Administration and Record Fields tabs moved to phase 3 under names
+   matching their UI labels (`pam-prefs-administration.png`,
+   `pam-prefs-record-fields.png`). `pam-prefs-admin.png` was a second name for
+   the same capture and is gone.
 2. **Done — 8 shots.** Full-viewport states: `pam-example-records`,
    `pam-iphone-screenshot-*`
    (light and dark), `pam-basic-sections`, `pam-status-msg`, `pam-search*`.
@@ -181,10 +186,13 @@ a YouTube favicon in a captured bookmarks bar, in one case.
    message, so `statusMsgDurationMS` is raised during capture. The Layout
    section of the README was rewritten to name each region in prose, and
    gained a table of the four toolbar warning badges.
-3. **Done — 6 shots.** Dialogues needing preference or state setup:
+3. **Done — 5 shots.** Dialogues needing preference or state setup:
    `pam-about-custom`, `pam-file-load`, `pam-file-save`,
-   `pam-password-generator-standalone`, `pam-prefs-enable-printing-check`,
-   `pam-prefs-enable-printing-menu`.
+   `pam-password-generator-standalone`, `pam-prefs-enable-printing-menu`.
+
+   `pam-prefs-enable-printing-check.png` was dropped: Enable Printing is one
+   of the settings on the Administration tab, so `pam-prefs-administration.png`
+   supersedes it. The old file is unreferenced and can be deleted.
 
    The phase originally listed `pam-password-generator`, which was a
    mis-scoping: that image is the *record field* generator, reached from
@@ -213,13 +221,53 @@ a YouTube favicon in a captured bookmarks bar, in one case.
    right size and not truncated. It was simply the wrong dialogue. Nothing
    mechanical distinguishes "captured a dialogue" from "captured the dialogue
    the README is talking about".
-4. **Not started.** Record interaction states: `pam-password-generator` and
-   `pam-password-no-generator` (both the record field generator),
-   `pam-record-expanded*`,
-   `pam-password-hidden` / `-shown`, `pam-google-account`, `pam-google-record`.
-   Four of these are annotated; the "First field (url) / Second field (login) /
-   Third field (password)" labels become prose describing the expanded record's
-   layout.
+4. **Written, not yet verified — 6 shots.** Record interaction states:
+   `pam-password-no-generator`, `pam-password-generator`,
+   `pam-password-hidden`, `pam-password-shown`, `pam-record-expanded`,
+   `pam-record-expanded-password`.
+
+   The four password images are one dialogue in four states: a New Record
+   dialogue holding a single password field, captured empty, with the
+   generator open, with a value masked, and with the value revealed.
+
+   `pam-record-expanded.png`, `pam-record-expanded-fields.png` and
+   `pam-record-expanded-fields2.png` are **the same UI state** — an expanded
+   Facebook record — distinguished only by which red arrows were drawn on.
+   With the arrows replaced by prose they collapse to one image referenced
+   three times. The Expanded View prose already describes the clipboard icon,
+   the eye icon and the Delete/Clone/Edit buttons, so the annotations were
+   duplicating the text rather than adding to it.
+
+   Two functions build field rows and they are easy to confuse:
+   `mkRecordField()` is the read-only view inside an expanded record
+   (clipboard, "show password"), while `mkRecordEditField()` is the editable
+   row in the New Record dialogue (gear "generate a password", "show or hide
+   password"). Selecting against the wrong one finds nothing.
+
+   The three Google images are added: `pam-google-record` (the Google record
+   expanded, from the example data), `pam-google-account` (a New Record
+   dialogue built up field by field — the README uses it to show a record
+   being created, not the loaded one), and `pam-google-account-prefs` (the
+   Record Fields tab pruned to url/login/password). The Preferences dialogue
+   rebuilds on `show.bs.modal`, so setting `predefinedRecordFields` before
+   opening it is enough — unlike About, which needed an explicit
+   `refreshAbout()`.
+
+   Still to do in this phase:
+
+   - `pam-record-expanded-edit-facebook.png` and
+     `pam-record-expanded-edit-facebook-new-field.png` — both annotated, so
+     the Expanded View prose has to absorb the labels first
+   - `pam-record-expanded-fields.png` and `pam-record-expanded-fields2.png` —
+     **deleted, not captured**: same UI state as `pam-record-expanded.png`,
+     distinguished only by arrows
+   - `pam-about-custom-pref.png` — probably superseded by
+     `pam-prefs-administration.png`; needs a look before deciding
+
+   Note the existing `pam-password-hidden.png` is a light-theme capture while
+   every automated shot is dark. The regenerated set will be consistently
+   dark.
+
 5. **Not started.** Multi-step flows: `pam-new-record*`, `pam-clone-*`,
    `pam-fld-name-edit-*`, `pam-change-field-name`. Longest to write; each is a
    scripted walk through a dialogue. Four are annotated.
@@ -326,6 +374,113 @@ the README pass.
 Note this makes those images vary in height with the example data. Adding a
 record makes them taller. That is correct behaviour, but it means they will
 report `CHANGED` whenever `example.txt` changes.
+
+### Deterministic randomness for the generator capture
+
+The password generators are the one surface whose output changes on every run
+by design, so `pam-password-generator-standalone.png` would be rewritten by
+every `make screenshots` — a new binary blob in git each time, and
+`screenshots-check` could never report a clean set. A check target that always
+shows one stale file trains you to ignore it.
+
+`SEED_RNG_JS` replaces `Math.random` and `crypto.getRandomValues` with a small
+LCG **in the browser session only**. `www/js/password.js` ships unchanged and
+carries no test hook.
+
+That distinction is the whole point. A seam in the released code that let
+generated passwords be made predictable would be a real weakening of the one
+function whose entire value is that its output cannot be guessed — reachable
+by anything that could run script in the page. The override lives in the
+harness, where nothing outside the capture run can reach it.
+
+The injected script returns a probe result and the shot raises if it comes back
+false, so a browser that refuses the override produces an error rather than a
+quietly churning image. That guard earned its keep immediately: the first
+version had no leading `return`, and `execute_script()` wraps the script in a
+function body, so a bare IIFE evaluated and its value was discarded. The probe
+read as `undefined` and the capture aborted with a clear message instead of
+silently producing an unseeded image.
+
+It was verified in jsdom beforehand and passed, because the check wrapped the
+script as `new Function('return ' + js)` — adding the very `return` the shipped
+string lacked. The verification differed from the real invocation in exactly
+the way that mattered. It now uses `new Function(js)`, matching Selenium, with
+`getRandomValues` on a prototype rather than as an own property, matching
+Chrome.
+
+### Sources of churn found by running it twice
+
+Running `make screenshots` twice and requiring every line to report `same` is
+what surfaced these. A single run cannot show determinism.
+
+- **Generated passwords.** Fixed by seeding the RNG in the browser session.
+  See above.
+- **A blinking text caret.** `send_keys` leaves focus in the input, so two
+  captures catch the caret in different phases and the image churns even
+  though the content is identical. `pam-password-hidden.png` was the only
+  affected shot: `pam-password-shown.png` clicks the eye afterwards, which
+  moves focus off the input, and `pam-password-no-generator.png` never types.
+  Fixed by blurring before capture.
+
+  The first fix blurred only in `shot_password_hidden`, treating it as one
+  shot's problem. `pam-password-no-generator.png` churned on the very next run:
+  the focus is left by the shared helper that adds the field, so **every** shot
+  built on it was affected — the two just landed on different caret frames.
+  Blurring now happens in the helper and after each interaction that moves
+  focus. Fixing the symptom where it was observed rather than at its origin
+  bought exactly one run.
+
+- **A capture that silently did nothing.** `pam-status-msg.png` came out
+  byte-identical to `pam-record-expanded.png`, which is how the failure was
+  noticed at all: the shot clicked the copy button expecting a status blip,
+  but `copyTextToClipboard()` awaits `navigator.clipboard.writeText()`, and in
+  headless Chrome without document focus that promise never settles. It
+  neither resolves nor rejects, so no message appeared, no error was raised,
+  and the guards all passed — the element existed, was the right size and was
+  not truncated. It was simply the wrong content.
+
+  The shot now calls PAM's own `statusBlip()` directly with the text a real
+  copy would produce. The rendering path is the application's; only the
+  trigger is synthetic. It asserts the message actually rendered before
+  capturing, so a silent no-op becomes an error.
+
+  Two identical images are worth investigating rather than merging: here they
+  matched because one of them was broken, not because the states were the
+  same.
+
+`search_for()` has the same shape and is so far stable, which is noted in its
+docstring rather than pre-emptively changed — the images are demonstrably
+reproducible and altering them would cost a churn to buy nothing.
+
+### Two different checks, only one of which travels
+
+`make screenshots-check` byte-compares the captures. That is a **change
+detector for one machine**, not a correctness check: font hinting, DPI and the
+Chrome version all affect the bytes, so anywhere else it reports all 27 images
+as stale. Gating a build on it would produce a check that fires spuriously,
+and a check that fires spuriously gets bypassed. It stays a local convenience.
+
+`make check-images` (`tests/check_images.py`) compares **filenames** instead —
+what the README references, what `SHOTS` captures, what is on the `HAND_MADE`
+list, and what exists on disk. No browser, no server, no rendering, so its
+result does not depend on the machine and it is safe to gate on.
+
+It catches the failures we hit by hand while building the harness:
+
+- referenced but no longer captured (`pam-prefs-enable-printing-check.png`)
+- captured but never referenced (`pam-reused-passwords.png`, a real
+  documentation gap)
+- two filenames holding one picture
+- a referenced file missing from disk
+
+Its first run confirmed something previously only asserted:
+`pam-basic-sections.png`, `pam-example-records.png` and `pam-search.png` are
+**byte-identical**. Three names, one picture, three README references that
+should point at one file.
+
+**Not yet wired into `lint`.** It currently reports 38 problems, nearly all of
+them the phases 4–6 backlog, so making it a prerequisite would break
+`make test` until the backlog clears. Add it to `lint` once phase 6 lands.
 
 ### A pre-existing race, surfaced by the reload cycle
 

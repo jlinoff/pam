@@ -95,7 +95,7 @@ lint:  ## lint the source code
 	@if rg '\s$$' www/js/*js ; then printf '\033[31;1mERROR: trailing whitespace found\033[0m\n'; exit 1 ; fi
 	jshint --config jshint.json www
 	diff <(ls -1 www/icons/black/) <(ls -1 www/icons/blue)
-	pipenv run pylint tests/test_chrome.py tests/screenshots.py
+	pipenv run pylint tests/test_chrome.py tests/screenshots.py tests/check_images.py
 	@printf '\033[35;1m$@: PASSED\033[0m\n'
 
 # Make sure that the icons in www/icons/black and icons/blue/blue are the same.
@@ -201,24 +201,52 @@ e2e-test: init lint ## Run Selenium E2E tests in tests/test_chrome.py
 	pipenv run python3 -m pytest -v tests/test_chrome.py
 	$(KILL_SERVER)
 
+.PHONY: check-images
+check-images: ## Verify every README screenshot is captured or hand-made. No browser needed.
+	$(call hdr,"$@")
+	pipenv run python3 tests/check_images.py
+
+# Capture the README screenshots.
+#
+#   make screenshots                 all of them (~28 shots, a few minutes)
+#   make screenshots SHOT=google     only filenames containing "google"
+#   make screenshots SHOT=prefs      only the preference tabs
+#   make screenshots SHOT=pam-menu   one specific image
+#
+# SHOT is a plain substring match on the filename and is for iterating: the
+# full pass reloads the page and the example records between every capture,
+# which is what makes it slow. Run WITHOUT a filter before committing, or you
+# will commit a set where only some images reflect the current UI.
+#
+# Determinism is checked by running it twice: the second run should report
+# every image as "same". A single run cannot tell a correct capture from one
+# that differs every time. Past churn sources were generated passwords, a
+# blinking text caret, and a leftover viewport size.
+#
+# Only meaningful on ONE machine. Font hinting, DPI and the Chrome version all
+# affect the bytes, so regenerating elsewhere rewrites every file with no
+# content change. Use `make check-images` for a check that works anywhere.
 .PHONY: screenshots
-screenshots: init ## Capture the README screenshots that go stale when the UI changes.
+screenshots: init ## Capture README screenshots. SHOT=<substr> limits the set.
 	$(call hdr,"$@")
 	@echo "NOTE: rendering is not reproducible across machines. Regenerate on"
 	@echo "      one machine only, or the images churn with no content change."
 	-$(KILL_SERVER)
 	( cd www && pipenv run python -m http.server $(PORT) > /dev/null 2>&1 ) &
 	sleep 2
-	pipenv run python3 tests/screenshots.py
+	SHOT="$(SHOT)" pipenv run python3 tests/screenshots.py
 	$(KILL_SERVER)
 
+# NOTE: only meaningful on the machine that regenerates the images. Font
+# hinting, DPI and the Chrome version all affect the bytes, so anywhere else
+# every image reads as stale. Use check-images for a machine-independent check.
 .PHONY: screenshots-check
-screenshots-check: init ## Report which README screenshots are stale. Writes nothing.
+screenshots-check: init ## Report stale screenshots. Reference machine only; writes nothing.
 	$(call hdr,"$@")
 	-$(KILL_SERVER)
 	( cd www && pipenv run python -m http.server $(PORT) > /dev/null 2>&1 ) &
 	sleep 2
-	CHECK=1 pipenv run python3 tests/screenshots.py
+	CHECK=1 SHOT="$(SHOT)" pipenv run python3 tests/screenshots.py
 	$(KILL_SERVER)
 
 # This is an example to build off of for debugging

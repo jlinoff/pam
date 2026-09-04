@@ -832,7 +832,7 @@ type to the drop down list from the user interface.
 
 These are the default field definitions.
 
-<img src="www/help/pam-default-record-fields.png" width="400" alt="default"/>
+<img src="www/help/pam-prefs-record-fields.png" width="400" alt="the Record Fields preferences tab"/>
 
 The table below presents a brief overview of the default record
 fields and their associated built in types and when to use them. You
@@ -1045,7 +1045,7 @@ rather than a setting you chose, and clicking it opens the
 
 It looks something like this.
 
-<img src="www/help/pam-basic-sections.png" width="400" alt="the three PAM layout regions">
+<img src="www/help/pam-example-records.png" width="400" alt="the three PAM layout regions">
 
 ### Menu and Search Section
 The top section that contains a search input
@@ -1066,7 +1066,7 @@ passwords and obsolete accounts are still being used.
 
 Here is the made up list of account records from the [Load Files](#load-files) example:
 
-<img src="www/help/pam-search.png" width="400" alt="pam-search">
+<img src="www/help/pam-example-records.png" width="400" alt="the example records, unfiltered">
 
 Here is the same list after filtering for those whose titles contain the
 letter `"g"`. Note that searches are case insensitive but you can change
@@ -1949,7 +1949,7 @@ input. This is useful in mobile browsers where resize is not
 available.
 
 ### Administration Preferences
-<img src="www/help/pam-prefs-administration.png" width="400" alt="pam-prefs-miscellaneous">
+<img src="www/help/pam-prefs-administration.png" width="400" alt="pam-prefs-administration">
 
 These are the preferences that are generally for site adiministration.
 
@@ -2108,28 +2108,23 @@ inspected.
 
 
 ### Record Fields Preferences
-<img src="www/help/pam-prefs-record-fields.png" width="400" alt="pam-prefs-miscellaneous">
+These are the default record fields offered when you create or edit a
+record. They can be changed, and they are stored with each record file
+individually.
 
-These are the default record fields that are used when creating or
-editing record fields. They can be can be changed.
+See the [Fields](#fields) section for more about record fields.
 
-See the [Fields](#fields) section for more information about record
-fields.
+The <img src="www/icons/blue/plus-circle.svg" height="24" width="24" alt="add"/>
+**Add New Field** control at the top of the tab creates a new record field.
 
-At the top of the section there is
-<img src="www/icons/blue/plus-circle.svg" height="32" width="32" alt="add"/>
-icon that is used to create a new record field.
+Each row is one field: its name on the left, its type in a pulldown to the
+right, and a
+<img src="www/icons/blue/trash3-fill.svg" height="24" width="24" alt="trash"/>
+delete button at the end of the row. Field names must be unique, and you can
+rename them. The types are built in and cannot be extended from the user
+interface.
 
-Each default record field has a name, a type (from a pulldown menu) and
-a delete button (<img src="www/icons/blue/trash3-fill.svg" height="32" width="32" alt="trash"/>)
-that you click to delete the record field.
-
-The record field names must be unique but you can modify them.
-They are stored with the each record file individually.
-
-This is what the default records filed preference dialogue looks like.
-
-<img src="www/help/pam-default-record-fields.png" width="400" alt="default"/>
+<img src="www/help/pam-prefs-record-fields.png" width="400" alt="the Record Fields preferences tab">
 
 ### Saving Preferences
 You _must_ scroll to the bottom of the dialogue and

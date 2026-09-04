@@ -956,6 +956,64 @@ def shot_about_custom_pref(driver):
     return row
 
 
+def open_edit_dialogue(driver, title):
+    """Expand a record and open its Edit dialogue.
+
+    The Edit button carries title="edit this record" on the button itself,
+    unlike the field icons where the tooltip is on the inner <i>. The dialogue
+    is rebuilt each time it opens, so #editRecordDlg is only present after the
+    click.
+    """
+    item = expand_record(driver, title)
+    buttons = [b for b in item.find_elements(
+        By.CSS_SELECTOR, 'button[title="edit this record"]') if b.is_displayed()]
+    if not buttons:
+        raise RuntimeError(f'no Edit button on the {title!r} record')
+    scroll_and_click(driver, buttons[0])
+    time.sleep(SETTLE)
+    return driver.find_element(By.ID, 'editRecordDlg')
+
+
+def shot_edit_facebook(driver):
+    """The Edit dialogue for the Facebook record."""
+    set_theme(driver, 'dark')
+    dlg = open_edit_dialogue(driver, 'Facebook')
+    content = dlg.find_element(By.CLASS_NAME, 'modal-content')
+
+    # Check the title INPUT, not the dialogue text. The record title is an
+    # input value and textContent does not include input values, so looking
+    # for 'Facebook' in content.text fails on a perfectly correct dialogue —
+    # the same distinction that makes .text return '' for a hidden element.
+    titles = [e.get_attribute('value')
+              for e in content.find_elements(By.CSS_SELECTOR, 'input')
+              if e.is_displayed()]
+    if 'Facebook' not in titles:
+        raise RuntimeError(
+            f'the Edit dialogue is not editing the Facebook record; '
+            f'input values were {titles!r}')
+    blur(driver)
+    return content
+
+
+def shot_edit_facebook_new_field(driver):
+    """The Edit dialogue with the New Field dropdown open.
+
+    Shows where fields are added from. The README used to call this the "New
+    Record" dropdown, which was wrong — the control is labelled New Field.
+    """
+    set_theme(driver, 'dark')
+    dlg = open_edit_dialogue(driver, 'Facebook')
+    new_field = dlg.find_element(By.ID, 'x-new-field-type')
+    scroll_and_click(driver, new_field)
+    time.sleep(SETTLE)
+
+    items = [i for i in dlg.find_elements(
+        By.CSS_SELECTOR, 'ul.dropdown-menu .dropdown-item') if i.is_displayed()]
+    if not items:
+        raise RuntimeError('the New Field dropdown did not open')
+    return dlg.find_element(By.CLASS_NAME, 'modal-content')
+
+
 # (filename, capture function, window size)
 SHOTS = [
     ('pam-menu.png', shot_menu, WINDOW),
@@ -990,6 +1048,9 @@ SHOTS = [
     ('pam-google-account.png', shot_google_account, WINDOW),
     ('pam-google-account-prefs.png', shot_google_account_prefs, WINDOW),
     ('pam-about-custom-pref.png', shot_about_custom_pref, WINDOW),
+    ('pam-record-expanded-edit-facebook.png', shot_edit_facebook, WINDOW),
+    ('pam-record-expanded-edit-facebook-new-field.png',
+     shot_edit_facebook_new_field, WINDOW),
 ]
 
 

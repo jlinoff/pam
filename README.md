@@ -49,7 +49,7 @@ the on-line help is generated.
       * [Reason 4: Automatic Password Generation](#reason-4-automatic-password-generation)
       * [Reason 5: File Based Storage](#reason-5-file-based-storage)
       * [Reason 6: Secure Context Encryption](#reason-6-secure-context-encryption)
-      * [Reason 7: Hiding Passwords from Casual Observers](#reason-7-hiding-passwords-from-casual-observers)
+      * [Reason 7: Hiding Passwords from Casual Observers](#reason-8-hiding-passwords-from-casual-observers)
       * [Reason 8: Access from mobile devices](#reason-8-access-from-mobile-devices)
       * [Reason 9: FOSS](#reason-9-foss)
     * [PAM vs mainstream password managers](#pam-vs-mainstream-password-managers)
@@ -679,57 +679,61 @@ you have a PAM record to attach it to. Click a generated password to
 copy it to the clipboard, then paste it wherever you need it.
 
 ### Expanded View of a Record
-Once you click on or tap a record it expands as shown below where
-the "Facebook" record was tapped.
+Click or tap a record to expand it. Below, the "Facebook" record has been
+tapped: the other records stay collapsed above and below it, and its fields
+appear indented beneath the title.
 
-<img src="www/help/pam-record-expanded.png" width="400" alt="record-expanded">
+<img src="www/help/pam-record-expanded.png" width="400" alt="the Facebook record expanded">
 
-You can see that there are three fields in the record: "url", "login" and "password",
-next to each field there is a icon that looks like a clipboard
-<img src="www/icons/blue/clipboard.svg" height="32" width="32" alt="clipboard"/>.
+The Facebook record has three fields — `website`, `login` and `password` —
+each shown as a label with its value below it, in the order they were defined.
 
-<img src="www/help/pam-record-expanded-fields.png" width="400" alt="record-expanded">
+**The clipboard icon**
+<img src="www/icons/blue/clipboard.svg" height="24" width="24" alt="clipboard"/>
+sits at the right-hand end of every field, just below the value. Click or tap
+it to copy that field to the clipboard so you can paste it into a login page.
+A confirmation appears briefly in the
+[status area](#layout) at the bottom of the screen.
 
-If you click or tap the clipboard icon,
-the field contents will be copied to the clipboard so that you can paste them into a login
-dialogue.
-
-In addition to the clipboard icon there is another icon that looks like
-an eye
-<img src="www/icons/blue/eye.svg" height="32" width="32" alt="eye"/>
-that shows up for password field. If you click or tap it, the
-password will be shown in plaintext and the icon will change to
+**The eye icon**
+<img src="www/icons/blue/eye.svg" height="24" width="24" alt="eye"/>
+appears only on password fields, immediately to the left of that field's
+clipboard icon. Passwords are masked by default so they are not visible to
+casual observers. Click or tap the eye to reveal the value; the icon becomes
 an eye with a slash through it
-<img src="www/icons/blue/eye-slash.svg" height="32" width="32" alt="eye-slash"/>.
-By default all passwords are hidden so that they are not visible to
-casual observers. Click or tap it again to re-hide the password.
-Passwords are correctly copied to the clipboard at all times even
-when the password is hidden.
+<img src="www/icons/blue/eye-slash.svg" height="24" width="24" alt="eye-slash"/>
+and clicking again re-hides it. Copying always copies the real password,
+whether it is shown or hidden.
 
-In addition there are three buttons at the bottom
-"<img src="www/icons/blue/trash.svg" height='32' width='32' alt='trash'/>&nbsp;Delete" to delete the record,
-"<img src="www/icons/blue/files.svg" height='32' width='32' alt='files' />&nbsp;Clone" to clone the record and
-"<img src="www/icons/blue/pencil-square.svg" height='32' width='32' alt='pencil-square'/>&nbsp;Edit" to edit the record fields.
+**Three buttons sit below the last field**, in this order:
 
-As shown below.
+| Button | Effect |
+|---|---|
+| <img src="www/icons/blue/trash.svg" height="24" width="24" alt="trash"/>&nbsp;Delete | delete the record, after a confirmation |
+| <img src="www/icons/blue/files.svg" height="24" width="24" alt="files"/>&nbsp;Clone | copy the record to a new title |
+| <img src="www/icons/blue/pencil-square.svg" height="24" width="24" alt="pencil-square"/>&nbsp;Edit | change the record's fields |
 
-<img src="www/help/pam-record-expanded-fields2.png" width="400" alt="record-expanded">
+To their right is the **Active** checkbox, and below it the date the record was
+created. Clearing Active deactivates the record — see
+[Deactivate Record](#deactivate-record).
 
 The fields _in_ records are completely customizable when you select the `"Edit"` option.
 
-Fields are added _to_ the record by selecting a new field from the
-`"New Record"` drop down menu as shown below for the `"Facebook"`
-record but these fields can _also_ be changed.
-See the [Custom Fields](#custom-fields)
-and [Field Types](#field-types) sections for details.
+Fields are added _to_ the record from the **New Field** drop down menu at the
+top of the Edit dialogue, below the record title. Choosing a predefined name
+sets both the field's name and its type. See the
+[Custom Fields](#custom-fields) and [Field Types](#field-types) sections for
+details.
 
-<img src="www/help/pam-record-expanded-edit-facebook-new-field.png" width="400" alt="record-expanded">
+<img src="www/help/pam-record-expanded-edit-facebook-new-field.png" width="400" alt="the New Field drop down menu open in the Edit dialogue">
 
-Fields are modified _in_ the record by editing them directly and they
-are deleted _from_ the record by clicking on the
-<img src="www/icons/blue/trash.svg" height='32' width='32' /> icon.
+Existing fields are edited in place: change a name or a value by typing in it,
+reorder fields by dragging the handle on the left of each one, and remove a
+field with the
+<img src="www/icons/blue/trash.svg" height="24" width="24" alt="trash"/>
+**Delete Field** button inside it.
 
-<img src="www/help/pam-record-expanded-edit-facebook.png" width="400" alt="record-expanded">
+<img src="www/help/pam-record-expanded-edit-facebook.png" width="400" alt="the Edit dialogue for the Facebook record">
 
 ## Topics
 
@@ -943,7 +947,7 @@ passwords for most people.
 ### Hidden Password Representation
 Here is an example that shows a password in its standard hidden form.
 
-<img src="www/help/pam-record-expanded-fields.png" width="400" alt="record-expanded">
+<img src="www/help/pam-record-expanded.png" width="400" alt="the Facebook record expanded">
 
 To make the password visible, click or tap on the
 <img src="www/icons/blue/eye.svg" height="32" width="32" alt="eye"/> icon.
@@ -1147,24 +1151,16 @@ deleting, cloning or editing the record contents.
 
 This way of presenting the records is called an accordion display.
 Below you can see how it expands after the "Facebook" entry has been
-selected.
+selected, showing its three fields: `website`, `login` and `password`.
 
-<img src="www/help/pam-record-expanded.png" width="400" alt="record-expanded">
+<img src="www/help/pam-record-expanded.png" width="400" alt="the Facebook record expanded">
 
-The expanded "Facebook" record has three fields: "url",
-"login" and "password".
+You can copy any field value to the clipboard so it can be pasted into a login
+form, and the copy works for passwords whether they are visible or not. Click
+or tap the title of an open record to close it again.
 
-<img src="www/help/pam-record-expanded-fields.png" width="400" alt="record-expanded">
-
-You can copy the field values to the clipboard so that they can be
-pasted into login forms.
-
-> Note that the copy works for passwords whether the
-> password is visible or not.
-
-<img src="www/help/pam-record-expanded-fields2.png" width="400" alt="record-expanded">
-
-You can also click or tap on the title of the opened record to close it.
+See [Expanded View of a Record](#expanded-view-of-a-record) for what each icon
+and button does.
 
 Each of the record management options is discussed in more detail in the
 [Functions](#functions) section.

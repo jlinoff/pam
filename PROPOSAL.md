@@ -221,7 +221,8 @@ a YouTube favicon in a captured bookmarks bar, in one case.
    right size and not truncated. It was simply the wrong dialogue. Nothing
    mechanical distinguishes "captured a dialogue" from "captured the dialogue
    the README is talking about".
-4. **Written, not yet verified — 6 shots.** Record interaction states:
+4. **Complete, pending a verification run — 12 shots.** Record interaction
+   states:
    `pam-password-no-generator`, `pam-password-generator`,
    `pam-password-hidden`, `pam-password-shown`, `pam-record-expanded`,
    `pam-record-expanded-password`.
@@ -253,14 +254,27 @@ a YouTube favicon in a captured bookmarks bar, in one case.
    opening it is enough — unlike About, which needed an explicit
    `refreshAbout()`.
 
-   Still to do in this phase:
+The Expanded View section was rewritten so the prose names each control and
+   its position — the clipboard icon at the right of every field, the eye icon
+   only on password fields, the three buttons below the last field in a small
+   table — instead of pointing at them with arrows. That freed four images:
 
+   - `pam-record-expanded-fields.png` and `pam-record-expanded-fields2.png`
+     **deleted**: the same UI state as `pam-record-expanded.png`,
+     distinguished only by which arrows were drawn on. Their five references
+     now point at the one capture.
    - `pam-record-expanded-edit-facebook.png` and
-     `pam-record-expanded-edit-facebook-new-field.png` — both annotated, so
-     the Expanded View prose has to absorb the labels first
-   - `pam-record-expanded-fields.png` and `pam-record-expanded-fields2.png` —
-     **deleted, not captured**: same UI state as `pam-record-expanded.png`,
-     distinguished only by arrows
+     `pam-record-expanded-edit-facebook-new-field.png` **captured** from the
+     Edit dialogue.
+
+   The Records Section showed the same image three times in a row once the
+   arrow variants collapsed, so that was condensed to one image and a link to
+   Expanded View.
+
+   Two prose errors surfaced while rewriting: the Facebook record's fields were
+   described as "url", "login" and "password" (the example data says
+   `website`), and the field-adding control was called the "New Record" drop
+   down menu when it is labelled **New Field**.
    - `pam-about-custom-pref.png` — **regenerated, not deleted.** It pairs with
      `pam-about-custom.png`: one shows the preference, the other the result.
      `pam-prefs-administration.png` cannot replace it because that capture

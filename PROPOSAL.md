@@ -221,8 +221,7 @@ a YouTube favicon in a captured bookmarks bar, in one case.
    right size and not truncated. It was simply the wrong dialogue. Nothing
    mechanical distinguishes "captured a dialogue" from "captured the dialogue
    the README is talking about".
-4. **Complete, pending a verification run — 12 shots.** Record interaction
-   states:
+4. **Written, not yet verified — 6 shots.** Record interaction states:
    `pam-password-no-generator`, `pam-password-generator`,
    `pam-password-hidden`, `pam-password-shown`, `pam-record-expanded`,
    `pam-record-expanded-password`.
@@ -245,49 +244,9 @@ a YouTube favicon in a captured bookmarks bar, in one case.
    row in the New Record dialogue (gear "generate a password", "show or hide
    password"). Selecting against the wrong one finds nothing.
 
-   The three Google images are added: `pam-google-record` (the Google record
-   expanded, from the example data), `pam-google-account` (a New Record
-   dialogue built up field by field — the README uses it to show a record
-   being created, not the loaded one), and `pam-google-account-prefs` (the
-   Record Fields tab pruned to url/login/password). The Preferences dialogue
-   rebuilds on `show.bs.modal`, so setting `predefinedRecordFields` before
-   opening it is enough — unlike About, which needed an explicit
-   `refreshAbout()`.
-
-The Expanded View section was rewritten so the prose names each control and
-   its position — the clipboard icon at the right of every field, the eye icon
-   only on password fields, the three buttons below the last field in a small
-   table — instead of pointing at them with arrows. That freed four images:
-
-   - `pam-record-expanded-fields.png` and `pam-record-expanded-fields2.png`
-     **deleted**: the same UI state as `pam-record-expanded.png`,
-     distinguished only by which arrows were drawn on. Their five references
-     now point at the one capture.
-   - `pam-record-expanded-edit-facebook.png` and
-     `pam-record-expanded-edit-facebook-new-field.png` **captured** from the
-     Edit dialogue.
-
-   The Records Section showed the same image three times in a row once the
-   arrow variants collapsed, so that was condensed to one image and a link to
-   Expanded View.
-
-   Two prose errors surfaced while rewriting: the Facebook record's fields were
-   described as "url", "login" and "password" (the example data says
-   `website`), and the field-adding control was called the "New Record" drop
-   down menu when it is labelled **New Field**.
-   - `pam-about-custom-pref.png` — **regenerated, not deleted.** It pairs with
-     `pam-about-custom.png`: one shows the preference, the other the result.
-     `pam-prefs-administration.png` cannot replace it because that capture
-     shows the field empty. The old image showed a single "Miscellaneous"
-     fieldset holding Enable Printing, filePass Cache Strategy and Custom
-     About together — a layout PAM has not had since the preferences gained
-     tabs. The new shot crops to the one preference row rather than the whole
-     2100px tab.
-
-     The value is **typed** rather than set through `window.prefs`: nothing
-     populates that textarea from the stored value. `savePrefs()` reads
-     `[data-pref-id]` elements on save and never writes to them on open, so
-     setting the preference first would have produced an empty field.
+   Still to do in this phase: `pam-record-expanded-edit-facebook*` (the Edit
+   dialogue, two states), `pam-google-*` (three images), and the prose
+   rewrites for the four annotated files.
 
    Note the existing `pam-password-hidden.png` is a light-theme capture while
    every automated shot is dark. The regenerated set will be consistently
@@ -473,43 +432,9 @@ what surfaced these. A single run cannot show determinism.
   matched because one of them was broken, not because the states were the
   same.
 
-- **Theme leaking between captures.** Only two shots set the theme; the other
-  twenty-six inherited whatever the previous one left, so what a capture looked
-  like depended on shot order rather than on the shot. It surfaced when
-  `SHOT=google` ran three captures in isolation and two came out light.
-  `main()` now sets dark before every capture, and the single light shot asks
-  for it explicitly.
-
-  Worth noting the mechanism is still not fully explained: `setDarkLightTheme()`
-  only writes `window.prefs.themeName` in memory, the default is dark, and
-  nothing persists it — so a reload should reset it. Making the theme explicit
-  removes the order-dependence either way, which is the property that matters.
-
 `search_for()` has the same shape and is so far stable, which is noted in its
 docstring rather than pre-emptively changed — the images are demonstrably
 reproducible and altering them would cost a churn to buy nothing.
-
-### A day spent debugging a cached image
-
-`pam-google-account.png` looked light in the rendered help page. Three
-diagnoses followed, each plausible from reading the code and each wrong: that
-the shots were not setting the theme (they were already dark), that `field.js`
-was missing a `setDarkLightTheme()` call after adding a field (the call is a
-no-op for those elements — they carry no `bg-light`, no `bg-dark` and no
-`data-bs-theme`, and inherit through the cascade), and that loading the example
-file wiped `themeName` (it calls `resetPrefs()` before merging, so the default
-survives).
-
-The image on disk was dark the whole time. The help page was serving a **cached
-PNG** — `python -m http.server` sends no `Cache-Control` or `ETag`, so a plain
-reload fetches fresh HTML and reuses the old images. A shift-reload fixed it.
-
-The tell was in the picture: the stale image showed a password length of 25,
-the new one 20. Opening the file directly — `open www/help/pam-google-account.png`
-— would have ended it in seconds and was never tried.
-
-**Hard-reload the help page after regenerating**, or check the file on disk
-before diagnosing the pipeline.
 
 ### Two different checks, only one of which travels
 

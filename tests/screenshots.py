@@ -1014,6 +1014,213 @@ def shot_edit_facebook_new_field(driver):
     return dlg.find_element(By.CLASS_NAME, 'modal-content')
 
 
+# ---------------------------------------------------------------------------
+# Phase 5, group A: the New Record walkthrough
+# ---------------------------------------------------------------------------
+#
+# The README walks through creating one record — an ice cream sundae with
+# `ingredients` and `instructions` textarea fields — and photographs it at each
+# step. The content below matches what the hand-made images showed, so the
+# prose around them still reads correctly.
+#
+# The same record is the subject of the phase 6 pam-ice-cream-sundae-* images,
+# so this fixture is shared between the two phases.
+
+RECIPE_TITLE = 'Ice Cream Sundae'
+
+RECIPE_INGREDIENTS = (
+    '1. 3 scoops vanilla ice cream\n'
+    '2. 1 banana (sliced up)\n'
+    '3. chocolate sauce\n'
+    '4. (optional) nuts\n'
+    '5. (optional) Maraschino cherry\n'
+    '6. whipped cream'
+)
+
+RECIPE_INSTRUCTIONS = (
+    '1. put ice cream in bowl\n'
+    '2. add slices of banana\n'
+    '3. add nuts\n'
+    '4. pour chocolate on top\n'
+    '5. add whip cream\n'
+    '6. put the cherry on top.'
+)
+
+# `ingredients` and `instructions` are not PAM defaults. The walkthrough tells
+# the reader to add them as textarea fields in Preferences first, and
+# pam-recipe-prefs.png shows that state, so the shots set the same thing.
+RECIPE_FIELDS = {
+    'ingredients': 'textarea',
+    'instructions': 'textarea',
+    'login': 'text',
+    'note': 'textarea',
+    'password': 'password',
+    'url': 'url',
+}
+
+
+def use_recipe_fields(driver):
+    """Add `ingredients` and `instructions` to the predefined field list."""
+    driver.execute_script(
+        'window.prefs.predefinedRecordFields = arguments[0];', RECIPE_FIELDS)
+
+
+def open_new_record(driver):
+    """Open New Record with no fields in it.
+
+    The dialogue is pre-populated from defaultRecordFields, which the
+    walkthrough does not use — it adds every field by hand — so the rows are
+    stripped first.
+    """
+    dlg = choose_menu_option(driver, 'New Record')
+    time.sleep(SETTLE)
+    driver.execute_script(
+        "var menu = document.getElementById('menuNewDlg');"
+        "var body = menu.getElementsByClassName('container')[0];"
+        "while (body.children.length > 2) {"
+        "  body.removeChild(body.children[body.children.length - 1]); }"
+    )
+    time.sleep(0.3)
+    return dlg
+
+
+def set_record_title(driver, dlg, title):
+    """Type the record title."""
+    box = dlg.find_element(By.CSS_SELECTOR, 'input[placeholder="Record Title"]')
+    box.clear()
+    box.send_keys(title)
+    blur(driver)
+
+
+def open_new_field_menu(driver, dlg):
+    """Open the New Field pulldown. Returns its visible items."""
+    button = dlg.find_element(By.ID, 'x-new-field-type')
+    scroll_and_click(driver, button)
+    time.sleep(SETTLE)
+    return [i for i in dlg.find_elements(
+        By.CSS_SELECTOR, 'ul.dropdown-menu .dropdown-item') if i.is_displayed()]
+
+
+def add_named_field(driver, dlg, name, value=None):
+    """Pick one predefined field from the New Field pulldown, then fill it."""
+    items = [i for i in open_new_field_menu(driver, dlg)
+             if i.text.strip() == name]
+    if not items:
+        raise RuntimeError(f'no predefined {name!r} field in the New Field menu')
+    scroll_and_click(driver, items[0])
+    time.sleep(SETTLE)
+
+    if value is not None:
+        boxes = [e for e in dlg.find_elements(By.CSS_SELECTOR, 'textarea.x-fld-value')
+                 if e.is_displayed()]
+        if not boxes:
+            raise RuntimeError(f'no textarea rendered for the {name!r} field')
+        boxes[-1].send_keys(value)
+        blur(driver)
+
+
+def save_new_record(driver, dlg):
+    """Click Save and wait for the record to appear in the list."""
+    buttons = [b for b in dlg.find_elements(By.TAG_NAME, 'button')
+               if b.is_displayed() and b.text.strip() == 'Save']
+    if not buttons:
+        raise RuntimeError('no Save button on the New Record dialogue')
+    scroll_and_click(driver, buttons[0])
+    time.sleep(SETTLE)
+
+    titles = [b.get_attribute('textContent').strip()
+              for b in driver.find_elements(By.CLASS_NAME, 'accordion-button')]
+    if not any(RECIPE_TITLE in t for t in titles):
+        raise RuntimeError(
+            f'{RECIPE_TITLE!r} is not in the record list after saving: {titles}')
+
+
+def shot_recipe_prefs(driver):
+    """Record Fields preferences with the recipe fields added.
+
+    Belongs to phase 6 by the original grouping, but the New Record walkthrough
+    depends on it: the reader is told to define `ingredients` and
+    `instructions` before creating the record.
+    """
+    use_recipe_fields(driver)
+    content = open_prefs_tab(driver, 'prefs-tab-fields')
+    names = [e.get_attribute('value') for e in content.find_elements(
+        By.CSS_SELECTOR, '#x-prefs-fld-div input')]
+    for want in ('ingredients', 'instructions'):
+        if want not in names:
+            raise RuntimeError(f'{want!r} missing from the field list: {names}')
+    return content
+
+
+def shot_new_record_empty(driver):
+    """The New Record dialogue as it first appears."""
+    use_recipe_fields(driver)
+    return modal_content(open_new_record(driver))
+
+
+def shot_new_record_title(driver):
+    """The same dialogue with the record title typed in."""
+    use_recipe_fields(driver)
+    dlg = open_new_record(driver)
+    set_record_title(driver, dlg, RECIPE_TITLE)
+    return modal_content(dlg)
+
+
+def shot_new_record_field_select(driver):
+    """The New Field pulldown open, showing the recipe fields."""
+    use_recipe_fields(driver)
+    dlg = open_new_record(driver)
+    set_record_title(driver, dlg, RECIPE_TITLE)
+    labels = [i.text.strip() for i in open_new_field_menu(driver, dlg)]
+    if 'ingredients' not in labels:
+        raise RuntimeError(f'"ingredients" not offered in the menu: {labels}')
+    return modal_content(dlg)
+
+
+def shot_new_record_field_1(driver):
+    """One field added and filled in."""
+    use_recipe_fields(driver)
+    dlg = open_new_record(driver)
+    set_record_title(driver, dlg, RECIPE_TITLE)
+    add_named_field(driver, dlg, 'ingredients', RECIPE_INGREDIENTS)
+    return modal_content(dlg)
+
+
+def shot_new_record_field_2(driver):
+    """Both fields added and filled in."""
+    use_recipe_fields(driver)
+    dlg = open_new_record(driver)
+    set_record_title(driver, dlg, RECIPE_TITLE)
+    add_named_field(driver, dlg, 'ingredients', RECIPE_INGREDIENTS)
+    add_named_field(driver, dlg, 'instructions', RECIPE_INSTRUCTIONS)
+    return modal_content(dlg)
+
+
+def shot_new_record_done(driver):
+    """The record list after saving, with the new record in it."""
+    set_theme(driver, 'dark')
+    use_recipe_fields(driver)
+    dlg = open_new_record(driver)
+    set_record_title(driver, dlg, RECIPE_TITLE)
+    add_named_field(driver, dlg, 'ingredients', RECIPE_INGREDIENTS)
+    add_named_field(driver, dlg, 'instructions', RECIPE_INSTRUCTIONS)
+    save_new_record(driver, dlg)
+    return Viewport(driver)
+
+
+def shot_new_record_done_expand(driver):
+    """The saved record expanded, showing the fields just defined."""
+    set_theme(driver, 'dark')
+    use_recipe_fields(driver)
+    dlg = open_new_record(driver)
+    set_record_title(driver, dlg, RECIPE_TITLE)
+    add_named_field(driver, dlg, 'ingredients', RECIPE_INGREDIENTS)
+    add_named_field(driver, dlg, 'instructions', RECIPE_INSTRUCTIONS)
+    save_new_record(driver, dlg)
+    expand_record(driver, RECIPE_TITLE)
+    return Viewport(driver)
+
+
 # (filename, capture function, window size)
 SHOTS = [
     ('pam-menu.png', shot_menu, WINDOW),
@@ -1051,6 +1258,15 @@ SHOTS = [
     ('pam-record-expanded-edit-facebook.png', shot_edit_facebook, WINDOW),
     ('pam-record-expanded-edit-facebook-new-field.png',
      shot_edit_facebook_new_field, WINDOW),
+
+    ('pam-recipe-prefs.png', shot_recipe_prefs, WINDOW),
+    ('pam-new-record.png', shot_new_record_empty, WINDOW),
+    ('pam-new-record-title.png', shot_new_record_title, WINDOW),
+    ('pam-new-record-field-1-select.png', shot_new_record_field_select, WINDOW),
+    ('pam-new-record-field-1.png', shot_new_record_field_1, WINDOW),
+    ('pam-new-record-field-2.png', shot_new_record_field_2, WINDOW),
+    ('pam-new-record-done.png', shot_new_record_done, (800, FIT)),
+    ('pam-new-record-done-expand.png', shot_new_record_done_expand, (800, FIT)),
 ]
 
 

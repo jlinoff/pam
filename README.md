@@ -49,7 +49,7 @@ the on-line help is generated.
       * [Reason 4: Automatic Password Generation](#reason-4-automatic-password-generation)
       * [Reason 5: File Based Storage](#reason-5-file-based-storage)
       * [Reason 6: Secure Context Encryption](#reason-6-secure-context-encryption)
-      * [Reason 7: Hiding Passwords from Casual Observers](#reason-8-hiding-passwords-from-casual-observers)
+      * [Reason 7: Hiding Passwords from Casual Observers](#reason-7-hiding-passwords-from-casual-observers)
       * [Reason 8: Access from mobile devices](#reason-8-access-from-mobile-devices)
       * [Reason 9: FOSS](#reason-9-foss)
     * [PAM vs mainstream password managers](#pam-vs-mainstream-password-managers)
@@ -113,7 +113,7 @@ the on-line help is generated.
       * [Enable Editable Field Name](#enable-editable-field-name)
       * [filePass Cache Strategy](#filepass-cache-strategy)
       * [Custom About](#custom-about)
-    * [Record Fields](#record-fields)
+    * [Record Fields](#record-fields-preferences)
     * [Saving Preferences](#saving-preferences)
   * [Security Considerations](#security-considerations)
     * [MITM](#mitm)
@@ -788,7 +788,7 @@ field but the _value_ would vary.
 The default record fields are the fields that are available in the
 `"New Field"` pull down menu when a record is created or edited. They
 are defined in the
-[Preferences](#Preferences)
+[Preferences](#preferences)
 section and they are stored in each records _file_ along with the
 records so each records file can have different default fields.
 
@@ -798,7 +798,7 @@ _"books read"_ records probably would not. Instead it might want
 _"text"_ fields named "author" and "publisher" along with, possibly, a
 field of type _"number"_ named "copyright".
 
-See the [Record Fields](#record-fields) section for details about how
+See the [Record Fields](#record-fields-preferences) section for details about how
 to add or modify the default record fields in the preferences dialogue.
 
 There is a second more obscure way to define field names. You can
@@ -1068,7 +1068,7 @@ and regular expressions to make it easier to find records.
 This can be very helpful for finding out where old
 passwords and obsolete accounts are still being used.
 
-Here is the made up list of account records from the [Load Files](#load-files) example:
+Here is the made up list of account records from the [Load Files](#load-file) example:
 
 <img src="www/help/pam-example-records.png" width="400" alt="the example records, unfiltered">
 
@@ -1163,7 +1163,7 @@ See [Expanded View of a Record](#expanded-view-of-a-record) for what each icon
 and button does.
 
 Each of the record management options is discussed in more detail in the
-[Functions](#functions) section.
+[Functions](#menu-functions) section.
 
 
 ### Status and Controls Section
@@ -1192,8 +1192,8 @@ In a nutshell they are:
 1. [Deactivate Record](#deactivate-record)
 1. [Clone Record](#clone-record)
 1. [Clear Records](#clear-records)
-1. [Save Records](#save-records)
-1. [Load Records](#load-records)
+1. [Save Records](#save-file)
+1. [Load Records](#load-file)
 1. [Help](#get-help).
 
 Each function will be discussed in a separate subsection below.
@@ -1233,7 +1233,7 @@ the collection.
 
 Before reading this section, please make sure that you are familiar
 with the ideas covered in the [Topics](#topics), [Fields](#fields) and
-[Password Fields](#password-fieldds) sections.
+[Password Fields](#password-fields) sections.
 
 Creating a new record is a very common activity in _PAM_ so I tried to
 make it as easy as possible.
@@ -1585,7 +1585,7 @@ Inactive records are considered deactivated.
 
 Deactivated records are the same as deleted records because they do not show up in the
 records list but they can always be recovered by going to
-[Preferences](#Preferences)
+[Preferences](#preferences)
 and unchecking the
 [Hide Inactive Records](#hide-inactive-records)
 entry.
@@ -1687,11 +1687,43 @@ paste records from the clipboard.
 This is typically used when records are copies to the clipboard
 from a save operation or manually after editing.
 
+### Reused Passwords
+A password shared between entries is only as safe as the least safe of them:
+if any one of those sites is breached, every entry in the group is exposed.
+PAM finds these locally — no network request is made and nothing leaves the
+device.
+
+When any stored password is used more than once, a **⚠ REUSED: _n_** badge
+appears in the [status and controls section](#layout), where _n_ counts the
+_fields_ involved rather than the groups. Choosing **Reused Passwords** from
+the menu, or clicking the badge, opens the report.
+
+<img src="www/help/pam-reused-passwords.png" width="400" alt="the Reused Passwords report">
+
+Entries are listed by record title and field name, grouped by the password
+they share. **The passwords themselves are never shown** — they are used only
+to group the entries.
+
+Reuse is a property of a _field_, not a record. One record may hold several
+password fields, and two fields in the same record can share a value, so a
+group can name the same record twice.
+
+Inactive records are excluded when
+[Hide Inactive Records](#hide-inactive-records) is set: a deactivated record
+is a retired credential, and reporting a collision with one would be noise.
+The dialogue says so when it applies.
+
+The badge can be turned off with the
+[Show Password Reuse Warning](#show-password-reuse-warning) preference. That
+suppresses the badge only — the check still runs and the report is still
+available from the menu, so there is no state in which PAM knows about reuse
+and cannot tell you.
+
 ### Get Help
 To get this help message, choose the `"Help"` option from the menu.
 
 If you find a bug or want to request a change or submit an improvement,
-go to the [Metadata section](#pam---personal-account-manager) at the top of
+go to the [Metadata section](#pam) at the top of
 this help and click or tap on the project link.
 
 
@@ -1924,7 +1956,7 @@ This is what it looks likes when it is unchecked (false).
 
 When this is not enabled, the user can only choose record fields from
 the "Record Fields" section of the preferences. See the
-[Record Fields](#record-fields) section for more details.
+[Record Fields](#record-fields-preferences) section for more details.
 
 ##### Enabled
 This is what it looks likes when it is checked (true).

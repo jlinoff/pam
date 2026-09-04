@@ -448,6 +448,18 @@ what surfaced these. A single run cannot show determinism.
   matched because one of them was broken, not because the states were the
   same.
 
+- **Theme leaking between captures.** Only two shots set the theme; the other
+  twenty-six inherited whatever the previous one left, so what a capture looked
+  like depended on shot order rather than on the shot. It surfaced when
+  `SHOT=google` ran three captures in isolation and two came out light.
+  `main()` now sets dark before every capture, and the single light shot asks
+  for it explicitly.
+
+  Worth noting the mechanism is still not fully explained: `setDarkLightTheme()`
+  only writes `window.prefs.themeName` in memory, the default is dark, and
+  nothing persists it — so a reload should reset it. Making the theme explicit
+  removes the order-dependence either way, which is the property that matters.
+
 `search_for()` has the same shape and is so far stable, which is noted in its
 docstring rather than pre-emptively changed — the images are demonstrably
 reproducible and altering them would cost a churn to buy nothing.

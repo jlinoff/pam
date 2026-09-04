@@ -454,7 +454,13 @@ def shot_records_dark(driver):
 
 
 def shot_records_light(driver):
-    '''The same view in the light theme.'''
+    '''The same view in the light theme.
+
+    The only capture that is not dark. main() sets dark before every shot, so
+    this is the one place the default is overridden — and because the theme is
+    now reset each time, this shot can no longer leak light into whatever runs
+    after it.
+    '''
     set_theme(driver, 'light')
     time.sleep(SETTLE)
     return Viewport(driver)
@@ -1028,6 +1034,13 @@ def main():
         time.sleep(1)
         load_examples(driver)
 
+        # Every capture starts dark. Only two shots used to set the theme, so
+        # the other twenty-six inherited whatever the previous one left — which
+        # made the result depend on shot order rather than on the shot. Any
+        # capture that wants light asks for it explicitly; see
+        # shot_records_light.
+        set_theme(driver, 'dark')
+
         for filename, func, window in shots:
             fit = window[1] == FIT
             if window == IPHONE:
@@ -1057,6 +1070,7 @@ def main():
             driver.get(URL)
             time.sleep(0.8)
             load_examples(driver)
+            set_theme(driver, 'dark')
     finally:
         driver.quit()
 

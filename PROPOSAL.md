@@ -343,9 +343,24 @@ The Expanded View section was rewritten so the prose names each control and
    in isolation for a selector check; the Clone button
    (`title="duplicate this record"`) was verified against a rendered record.
 
-   **C. Editable field names (5).** `pam-fld-name-edit-off`, `-on`,
-   `-checked`, `-unchecked`, `pam-change-field-name`. Needs
-   `editableFieldName` toggled.
+   **C. Editable field names — done, 4 shots.** `pam-fld-name-edit-unchecked`,
+   `-checked` (the preference in each state) and `-off`, `-on` (the record
+   field row it produces).
+
+   The Name input is always in the DOM: `field.js` renders it with
+   `display:none` unless `editableFieldName` is set. So the shots assert
+   **visibility**, not presence — presence passes in both states and proves
+   nothing.
+
+   `pam-fld-name-edit-on.png` was annotated with an arrow pointing at the Name
+   box. The prose now says where it is (above the Value box) and what it holds,
+   so the arrow is unnecessary. The two preference crops are shown at 700px
+   rather than 400 — a preference row is wide and short, and halving it makes
+   the label unreadable, the same problem `pam-about-custom-pref.png` had.
+
+   `pam-change-field-name.png` is the most heavily annotated image in the set
+   (1958 red pixels) and sits in the Fields section rather than here; it is
+   still outstanding.
 
    Five of the nineteen are annotated and need prose first:
    `pam-change-field-name` (1958 red px), `pam-create-new-record` (953),
@@ -488,6 +503,43 @@ string lacked. The verification differed from the real invocation in exactly
 the way that mattered. It now uses `new Function(js)`, matching Selenium, with
 `getRandomValues` on a prototype rather than as an own property, matching
 Chrome.
+
+### PAM's preference toggles are buttons, not checkboxes
+
+`mkPrefsCheckBox()` builds a `<button>` wrapping an `<i>` whose class carries
+the state: `bi-check2-square` when on, `bi-square` when off. There is no
+`<input type="checkbox">` anywhere.
+
+Selenium's `is_selected()` returns False for a button regardless of anything,
+so an assertion written against it can never pass — and worse, it reports
+nothing about whether the click that preceded it worked. The click was fine
+both times; the check was incapable of noticing.
+
+`pref_toggle_state()` reads the icon class instead. Verified against a rendered
+Preferences dialogue: the control is a BUTTON, it wraps an `<i>`, and the class
+flips with the preference.
+
+Two lessons, both general: a control that looks like a checkbox may not be one,
+and an assertion that cannot fail is worse than no assertion because it looks
+like coverage.
+
+### `.text` versus `textContent`, three times over
+
+Selenium's `.text` returns the *rendered* text, so it is empty for anything not
+displayed. `get_attribute('textContent')` reads the DOM regardless. That
+distinction has now caused three separate failures:
+
+1. The e2e menu assertion, where the hidden `Print` entry read as `''`.
+2. The Edit dialogue check, looking for a record title that lives in an input
+   value — `textContent` does not include input values either, so that one
+   needed `get_attribute('value')`.
+3. `shot_editable_field_row`, matching a `Name` label that is `display:none`
+   in exactly the state being captured. The check failed on a correct page.
+
+The rule: use `.text` when you want what the user sees, `textContent` when the
+element may be hidden, and `get_attribute('value')` for form inputs. Getting it
+wrong fails in the direction that looks like a broken page rather than a broken
+test.
 
 ### Sources of churn found by running it twice
 

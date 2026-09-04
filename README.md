@@ -1949,27 +1949,29 @@ as described in the
 section.
 
 ##### Not Enabled
-This is what it looks likes when it is unchecked (false).
+Unchecked, which is the default:
 
-<img src="www/help/pam-fld-name-edit-unchecked.png" width="400" alt="false"/>
+<img src="www/help/pam-fld-name-edit-unchecked.png" width="700" alt="the preference unchecked"/>
 
-<img src="www/help/pam-fld-name-edit-off.png" width="400" alt="false"/>
+Each field in a record then shows only its **Value** box, with the field name
+fixed as a label above it.
 
-When this is not enabled, the user can only choose record fields from
-the "Record Fields" section of the preferences. See the
-[Record Fields](#record-fields-preferences) section for more details.
+<img src="www/help/pam-fld-name-edit-off.png" width="400" alt="a field row with editable names off"/>
+
+Record fields can then only be chosen from the list defined in preferences —
+see [Record Fields](#record-fields-preferences).
 
 ##### Enabled
-This is what it looks likes when it is checked (true).
+Checked:
 
-<img src="www/help/pam-fld-name-edit-checked.png" width="400" alt="false"/>
+<img src="www/help/pam-fld-name-edit-checked.png" width="700" alt="the preference checked"/>
 
-<img src="www/help/pam-fld-name-edit-on.png" width="400" alt="true"/>
+Each field now shows a **Name** box above its **Value** box. The Name box holds
+the field's label — in the example below, `name` — and can be replaced with
+anything, such as "full name", "first name" or "last name". The Value box below
+it still holds the data itself.
 
-The user can replace the default field name (in this case "name") with
-whatever they want, perhaps something like "full name" or "first name"
-or "last name". The "value" field is where the name is actually
-entered.
+<img src="www/help/pam-fld-name-edit-on.png" width="400" alt="a field row with a Name box above the Value box"/>
 
 #### Textarea Minimum Height
 

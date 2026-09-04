@@ -1337,6 +1337,112 @@ def shot_clone_expanded(driver):
     return Viewport(driver)
 
 
+# ---------------------------------------------------------------------------
+# Phase 5, group C: editable field names
+# ---------------------------------------------------------------------------
+#
+# Four images in two pairs: the preference in each state, and the record field
+# row it produces. The Name input is always present in the row — field.js
+# renders it with display:none unless editableFieldName is set — so the
+# difference between the two field captures is whether that block is shown.
+
+
+def pref_row(content, pref_id):
+    """Crop target for one preference: the .row holding its control."""
+    control = content.find_element(
+        By.CSS_SELECTOR, f'[data-pref-id="{pref_id}"]')
+    return control.find_element(
+        By.XPATH, './ancestor::div[contains(@class, "row")][1]')
+
+
+def pref_toggle_state(control):
+    """Whether a preference toggle is on.
+
+    PAM's preference toggles are not <input type="checkbox"> elements: they are
+    buttons wrapping an <i> whose class carries the state — `bi-check2-square`
+    when on, `bi-square` when off. Selenium's is_selected() returns False for a
+    button regardless, so a check written against it can never pass and tells
+    you nothing about the click that preceded it.
+    """
+    marker = control.find_element(By.TAG_NAME, 'i')
+    return 'bi-check2-square' in (marker.get_attribute('class') or '')
+
+
+def shot_editable_field_pref(driver, enabled):
+    """The Enable Editable Field Name preference in one state.
+
+    The checkbox is CLICKED rather than set through window.prefs. Checkbox
+    states are read when the dialogue is built, and menuPrefsDlg() runs once at
+    startup — only #x-prefs-fld-div is rebuilt on show.bs.modal, which is why
+    setting predefinedRecordFields works but setting this does not. Clicking is
+    also what a user does, so the capture shows a real interaction.
+    """
+    content = open_prefs_tab(driver, 'prefs-tab-misc')
+    box = content.find_element(
+        By.CSS_SELECTOR, '[data-pref-id="editableFieldName"]')
+    if pref_toggle_state(box) != enabled:
+        scroll_and_click(driver, box)
+        time.sleep(0.4)
+    if pref_toggle_state(box) != enabled:
+        raise RuntimeError(
+            f'the toggle still reads {pref_toggle_state(box)} after clicking '
+            f'it; wanted {enabled}')
+    blur(driver)
+    return pref_row(content, 'editableFieldName')
+
+
+def shot_fld_name_unchecked(driver):
+    """The preference unchecked, which is the default."""
+    return shot_editable_field_pref(driver, False)
+
+
+def shot_fld_name_checked(driver):
+    """The preference checked."""
+    return shot_editable_field_pref(driver, True)
+
+
+def shot_editable_field_row(driver, enabled):
+    """A record field row with the preference in one state.
+
+    The Name block is in the DOM either way; only its display changes. The
+    assertion checks visibility rather than presence, because presence would
+    pass in both states and prove nothing.
+    """
+    driver.execute_script(
+        'window.prefs.editableFieldName = arguments[0];', enabled)
+    dlg = open_new_record(driver)
+    set_record_title(driver, dlg, 'Contact')
+    add_named_field(driver, dlg, 'name')
+
+    content = modal_content(dlg)
+
+    # textContent, not .text: .text is empty for a non-displayed element, and
+    # the Name block is display:none in exactly the state this shot needs to
+    # capture. Matching on .text finds nothing when the preference is off and
+    # the check fails on a correct page.
+    labels = [e for e in content.find_elements(By.TAG_NAME, 'label')
+              if (e.get_attribute('textContent') or '').strip() == 'Name']
+    if not labels:
+        raise RuntimeError('no Name label in the field row at all')
+    if labels[0].is_displayed() != enabled:
+        raise RuntimeError(
+            f'the Name input is '
+            f'{"visible" if labels[0].is_displayed() else "hidden"} but '
+            f'editableFieldName is {enabled}')
+    blur(driver)
+    return content
+
+
+def shot_fld_name_off(driver):
+    """A field row with editable names off: value only."""
+    return shot_editable_field_row(driver, False)
+
+
+def shot_fld_name_on(driver):
+    """A field row with editable names on: a Name input above the value."""
+    return shot_editable_field_row(driver, True)
+
+
 # (filename, capture function, window size)
 SHOTS = [
     ('pam-menu.png', shot_menu, WINDOW),
@@ -1387,6 +1493,11 @@ SHOTS = [
     ('pam-clone-record-popup.png', shot_clone_popup, WINDOW),
     ('pam-clone-records-1.png', shot_clone_saved, (800, FIT)),
     ('pam-clone-records-2.png', shot_clone_expanded, (800, FIT)),
+
+    ('pam-fld-name-edit-unchecked.png', shot_fld_name_unchecked, WINDOW),
+    ('pam-fld-name-edit-off.png', shot_fld_name_off, WINDOW),
+    ('pam-fld-name-edit-checked.png', shot_fld_name_checked, WINDOW),
+    ('pam-fld-name-edit-on.png', shot_fld_name_on, WINDOW),
 ]
 
 

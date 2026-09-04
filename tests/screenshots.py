@@ -578,10 +578,13 @@ def shot_password_generator_standalone(driver):
     return dlg.find_element(By.CLASS_NAME, 'modal-content')
 
 
-def shot_prefs_printing_check(driver):
-    '''The Enable Printing preference, on the Administration tab.'''
+def shot_prefs_administration(driver):
+    '''The Administration tab.'''
     return open_prefs_tab(driver, 'prefs-tab-admin')
 
+def shot_prefs_record_fields(driver):
+    '''The Record Fields tab.'''
+    return open_prefs_tab(driver, 'prefs-tab-fields')
 
 def shot_menu_with_print(driver):
     '''The menu with Print showing, which needs enablePrinting set first.
@@ -633,7 +636,8 @@ SHOTS = [
     ('pam-file-save.png', shot_file_save, WINDOW),
     ('pam-file-load.png', shot_file_load, WINDOW),
     ('pam-password-generator-standalone.png', shot_password_generator_standalone, WINDOW),
-    ('pam-prefs-enable-printing-check.png', shot_prefs_printing_check, WINDOW),
+    ('pam-prefs-administration.png', shot_prefs_administration, WINDOW),
+    ('pam-prefs-record-fields.png', shot_prefs_record_fields, WINDOW),
     ('pam-prefs-enable-printing-menu.png', shot_menu_with_print, WINDOW),
 ]
 

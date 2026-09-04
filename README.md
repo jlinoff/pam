@@ -1873,33 +1873,6 @@ strategy you want to used for conflicts.
 You might set this preference to false if you want to to merge sets of records
 from different files.
 
-#### Enable Printing
-Click this to add the Print option to the menu.
-
-This is what the enable printing preference looks like in the preferences dialogue.
-
-<img src="www/help/pam-prefs-enable-printing-check.png" width="400" alt="pam-prefs-enable-printing-check">
-
-Once it is enabled, the "Print" option will appear at the bottom of
-the menu as shown below.
-
-<img src="www/help/pam-prefs-enable-printing-menu.png" width="400" alt="pam-prefs-enable-printing-menu">
-
-When you click on "Print", PAM will open a print-ready document showing
-all visible records with passwords in plain text, formatted as a compact
-two-column card layout suitable for estate planning. This is what it
-looks like for the example records.
-
-<img src="www/help/pam-prefs-enable-printing-example.png" width="400" alt="pam-prefs-enable-printing-example">
-
-This capability is useful if you want a paper copy of your records but
-it is a security risk. If you choose to enable this option, make sure
-that the paper copy is stored securely.
-
-Disable this option (the default) if you intend to share PAM records
-with multiple users from a read-only URL.
-
-
 #### Load Duplicate Record Strategy
 This preference is not visible unless the "Clear Records On Load" preference is false.
 
@@ -1969,6 +1942,134 @@ whatever they want, perhaps something like "full name" or "first name"
 or "last name". The "value" field is where the name is actually
 entered.
 
+#### Textarea Minimum Height
+
+Define the minimum height of the textareas for notes and HTML
+input. This is useful in mobile browsers where resize is not
+available.
+
+### Administration Preferences
+<img src="www/help/pam-prefs-administration.png" width="400" alt="pam-prefs-miscellaneous">
+
+These are the preferences that are generally for site adiministration.
+
+#### Lock Preferences Password
+Click this to lock the Preferences dialogue so that only authorized users can change them.
+
+Setting this password will lock the preferences so that users who do
+not know this password cannot change them. This allows an
+administrator to disable printing and saving. Leave blank to keep the
+existing password unchanged. This password is stored in the PAM file
+so it is not as secure as the master password. Setting the password
+here is useful when multiple users are reading the same PAM file data
+and you don't want them to change the records or the preferences.
+
+#### Default Record Fields
+
+These are the fields defined automatically when creating a new
+record. The fields are entered entered as a comma separated list of
+field names. A common example would be: `url,login,password`. This is
+very useful.
+
+#### Enable Printing
+Click this to add the Print option to the menu.
+
+Enable or disable the menu Print operation. Being able to print
+records could be a security risk because all of the printed
+information is decrypted. This is typically disabled when multiple
+users share the same PAM file data.
+
+This is what the enable printing preference (`Enable Printing`) looks like in the `Administration` preferences dialogue.
+
+<img src="www/help/pam-prefs-enable-printing-menu.png" width="400" alt="pam-prefs-enable-printing-menu">
+
+When you click on "Print", PAM will open a print-ready document showing
+all visible records with passwords in plain text, formatted as a compact
+two-column card layout suitable for estate planning. This is what it
+looks like for the example records.
+
+<img src="www/help/pam-prefs-enable-printing-example.png" width="400" alt="pam-prefs-enable-printing-example">
+
+This capability is useful if you want a paper copy of your records but
+it is a security risk. If you choose to enable this option, make sure
+that the paper copy is stored securely.
+
+Disable this option (the default) if you intend to share PAM records
+with multiple users from a read-only URL.
+
+#### Enable Save File
+
+Enable or disable the menu "Save File" operation. Being able to save a
+private copy of the records could be a security risk. When the user
+disables this preference it does not remove the Save File entry from
+the menu immediately after the preferences are saved. If it did, you
+would never be able to save it persistently in the file. Instead it
+allows the file save operation to succeed but the next time the file
+is loaded the Save File will not appear in the menu. When an
+administrator logs in by successfully entering the Lock Preferences
+Password, the Save File menu option is always displayed, even when
+Enable Save File is false. This is typically disabled when multiple
+users share the same PAM file data.
+
+#### Hide Inactive Records
+
+Making records inactive is very much like deleting them. The only
+difference is that even though they are no longer visible a historical
+record of them is kept if this preference is enabled.
+
+#### Custom About
+
+This allows you to add custom information to the "About"
+page. Typically you might add something like administrator contact
+information. An example would be This implementation supported by
+admin@example.com.
+
+Its use is described in the [About](#about) section.
+
+#### Allow HTML Field Rendering
+
+WARNING (SEC-001): Only enable for trusted files you authored
+yourself. When enabled, html field values render as live HTML, which
+is an XSS risk if you load files from untrusted sources. A ⚠ HTML ON
+warning badge will appear in the toolbar while this is active.
+
+#### Show Password Reuse Warning
+
+Show a ⚠ REUSED badge in the toolbar when a stored password is used by
+more than one entry. Click the badge for the list. Enabled by default.
+
+Turning this off hides the badge only. The check still runs and the
+count is still reported in the About dialogue, so there is no state in
+which PAM knows a password is reused and has no way to tell you.  A
+password shared between entries is only as safe as the least safe of
+them: if any one site is breached, every entry sharing that password
+is exposed. No breach corpus can detect this — it is a property of
+your vault, not of the password.
+
+#### Search Password Field Values
+
+WARNING: this only applies when Search Record Field Values is also
+enabled. It allows the search box to match against the plaintext of
+password fields.
+
+The risk is not that a password is displayed — it never is. It is that
+the filter results reveal it. The record count beside the search box
+answers a yes/no question about your password on every keystroke, and
+nothing is written to the screen, the clipboard, or a log.
+
+Search accepts regular expressions, which makes this far worse than
+guessing one character at a time. An attacker with brief access to an
+unlocked vault can use ^s to test the first character, ^[a-m] to halve
+the remaining possibilities with a single query, ^..x to probe a
+specific position, and .{12} to learn the length outright. That is a
+binary search, not a linear walk: a password that would take thousands
+of guesses character by character falls in a few dozen queries.  To
+find which record uses a password you already know, use the Duplicates
+dialog instead — it groups records by shared password without ever
+putting a secret in an input field.
+
+A ⚠ PW SEARCH warning badge will appear in the toolbar while this is active.
+
 #### filePass Cache Strategy
 
 This defines the browser cache strategy for the file password.
@@ -1997,14 +2098,18 @@ Your chosen strategy is stored per-device in `localStorage` under the key
 `pamCacheStrategy` and is restored automatically each time PAM starts,
 independently of the PAM file.
 
-#### Custom About
-Customized HTML that is added to the about page. It can be used
-in cases where the field records have been customized to provide
-an explanation or link to internal documentation.
+#### Enable Raw JSON Editing
 
-Its use is described in the [About](#about) section.
+Enable editing of the raw internal JSON data. This is not recommended
+unless you really know what you are doing because it can permanently
+destroy the data in an unrecoverable way. It also disables the
+password protected preferences which allows anything to be modified or
+inspected.
 
-### Record Fields
+
+### Record Fields Preferences
+<img src="www/help/pam-prefs-record-fields.png" width="400" alt="pam-prefs-miscellaneous">
+
 These are the default record fields that are used when creating or
 editing record fields. They can be can be changed.
 

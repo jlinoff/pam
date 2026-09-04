@@ -1222,7 +1222,7 @@ Custom messages are defined in the "Custom About" field in the
 as shown below. You can used plain HTML or bootstrap 5 classes (as
 shown in this example).
 
-<img src="www/help/pam-about-custom-pref.png" width="400" alt="about-custom-pref">
+<img src="www/help/pam-about-custom-pref.png" width="700" alt="the Custom About preference field">
 
 The motivation for allowing custom messages is that someone might want
 to share a _PAM_ file or describe how the records are related. The

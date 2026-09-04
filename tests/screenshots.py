@@ -951,6 +951,21 @@ def shot_about_custom_pref(driver):
     if not field.get_attribute('value').strip():
         raise RuntimeError('the Custom About field is still empty after typing')
 
+    # Grow the box to its content and scroll it to the top. textareaMinHeight
+    # defaults to 5em, so four lines overflow: the first capture scrolled to
+    # the bottom and cut off the opening <fieldset> line, which is the part a
+    # reader most needs to see.
+    grown = driver.execute_script(
+        'var t = arguments[0];'
+        't.style.height = "auto";'
+        't.style.height = (t.scrollHeight + 4) + "px";'
+        't.scrollTop = 0;'
+        'return t.clientHeight >= t.scrollHeight;', field)
+    if not grown:
+        raise RuntimeError(
+            'the Custom About box still scrolls; the capture would cut off '
+            'part of the value')
+
     row = field.find_element(By.XPATH, './ancestor::div[contains(@class, "row")][1]')
     blur(driver)
     return row

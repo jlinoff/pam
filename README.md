@@ -189,7 +189,7 @@ in the [Load File](#load-file) section later on.
 
 And _something_ like this in light mode.
 
-<img src="www/help/pam-iphone-screenshot-light.png" alt="iphone-screenshot-dark-mode" width="400">
+<img src="www/help/pam-iphone-screenshot-light.png" alt="iphone-screenshot-dark-mode" width="400" style="border: 1px solid black;">
 
 At the bottom left of the screen there is a button that allows you to toggle between
 light and dark mode. It looks like a sun (switch to light) in dark mode:

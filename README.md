@@ -1317,16 +1317,17 @@ You can click or tap on the record to expand it and see the fields you just defi
 The second method, creating a record by cloning an existing record, is
 useful when you want to use the same fields as the existing record. It
 is a great way to guarantee uniformity. Although if the number of
-fields is small using the first method is also fine. Here is what
-the clone option looks like.
+fields is small using the first method is also fine.
 
-<img src="www/help/pam-clone-google.png" width="400" alt="clone-rec">
+Cloning a record is simple. Expand the record you want to copy and click or
+tap the
+<img src="www/icons/blue/files.svg" height="24" width="24" alt="files"/>
+**Clone** button — it sits below the last field, between **Delete** and
+**Edit**, as described in
+[Expanded View of a Record](#expanded-view-of-a-record).
 
-Cloning a record is simple. Just expand a record and click or tap on the clone button
-and an edit dialogue pops up.
-
-Using the record that was created in the previous section here is what happens when
-you click or tap the `"Clone"` button.
+Using the record that was created in the previous section, here is what happens
+when you click or tap `"Clone"`.
 
 <img src="www/help/pam-clone-record-popup.png" width="400" alt="clone-record-popup">
 

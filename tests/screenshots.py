@@ -1221,6 +1221,107 @@ def shot_new_record_done_expand(driver):
     return Viewport(driver)
 
 
+# ---------------------------------------------------------------------------
+# Phase 5, group B: cloning
+# ---------------------------------------------------------------------------
+#
+# The README clones the Ice Cream Sundae record created in the previous
+# section, so each of these shots builds that record first. Slower than
+# cloning one of the example records, but the prose says "using the record
+# that was created in the previous section" and a picture of a different
+# record would quietly contradict it.
+
+CLONE_TITLE = RECIPE_TITLE + ' Clone'
+
+
+def build_recipe_record(driver):
+    """Create and save the Ice Cream Sundae record."""
+    use_recipe_fields(driver)
+    dlg = open_new_record(driver)
+    set_record_title(driver, dlg, RECIPE_TITLE)
+    add_named_field(driver, dlg, 'ingredients', RECIPE_INGREDIENTS)
+    add_named_field(driver, dlg, 'instructions', RECIPE_INSTRUCTIONS)
+    save_new_record(driver, dlg)
+
+
+def open_clone_dialogue(driver, title):
+    """Expand a record and press its Clone button.
+
+    The button carries title="duplicate this record"; the dialogue it builds
+    is #menuCloneDlg and is recreated on every click, so it only exists after
+    the press.
+    """
+    item = expand_record(driver, title)
+    buttons = [b for b in item.find_elements(
+        By.CSS_SELECTOR, 'button[title="duplicate this record"]')
+        if b.is_displayed()]
+    if not buttons:
+        raise RuntimeError(f'no Clone button on the {title!r} record')
+    scroll_and_click(driver, buttons[0])
+    time.sleep(SETTLE)
+    return driver.find_element(By.ID, 'menuCloneDlg')
+
+
+def shot_clone_popup(driver):
+    """The dialogue that appears when Clone is pressed.
+
+    PAM pre-fills a unique title by appending " Clone", because record titles
+    must be unique. The assertion checks that rather than the dialogue text:
+    the title lives in an input value, which textContent does not include.
+    """
+    set_theme(driver, 'dark')
+    build_recipe_record(driver)
+    dlg = open_clone_dialogue(driver, RECIPE_TITLE)
+    content = dlg.find_element(By.CLASS_NAME, 'modal-content')
+
+    values = [e.get_attribute('value') for e in
+              content.find_elements(By.CSS_SELECTOR, 'input') if e.is_displayed()]
+    if CLONE_TITLE not in values:
+        raise RuntimeError(
+            f'the clone dialogue does not offer {CLONE_TITLE!r}; '
+            f'input values were {values!r}')
+    blur(driver)
+    return content
+
+
+def save_clone(driver, dlg):
+    """Save the clone dialogue and confirm the new record appears."""
+    buttons = [b for b in dlg.find_elements(By.TAG_NAME, 'button')
+               if b.is_displayed() and b.text.strip() == 'Save']
+    if not buttons:
+        raise RuntimeError('no Save button on the clone dialogue')
+    scroll_and_click(driver, buttons[0])
+    time.sleep(SETTLE)
+
+    titles = [b.get_attribute('textContent').strip()
+              for b in driver.find_elements(By.CLASS_NAME, 'accordion-button')]
+    if not any(CLONE_TITLE in t for t in titles):
+        raise RuntimeError(f'{CLONE_TITLE!r} is not in the list: {titles}')
+
+
+def shot_clone_saved(driver):
+    """After saving: the original still open, the clone below it.
+
+    PAM deliberately leaves the original expanded so Clone can be pressed
+    again to make more records, and the README calls that out.
+    """
+    set_theme(driver, 'dark')
+    build_recipe_record(driver)
+    dlg = open_clone_dialogue(driver, RECIPE_TITLE)
+    save_clone(driver, dlg)
+    return Viewport(driver)
+
+
+def shot_clone_expanded(driver):
+    """The cloned record expanded, showing it carries the same fields."""
+    set_theme(driver, 'dark')
+    build_recipe_record(driver)
+    dlg = open_clone_dialogue(driver, RECIPE_TITLE)
+    save_clone(driver, dlg)
+    expand_record(driver, CLONE_TITLE)
+    return Viewport(driver)
+
+
 # (filename, capture function, window size)
 SHOTS = [
     ('pam-menu.png', shot_menu, WINDOW),
@@ -1267,6 +1368,10 @@ SHOTS = [
     ('pam-new-record-field-2.png', shot_new_record_field_2, WINDOW),
     ('pam-new-record-done.png', shot_new_record_done, (800, FIT)),
     ('pam-new-record-done-expand.png', shot_new_record_done_expand, (800, FIT)),
+
+    ('pam-clone-record-popup.png', shot_clone_popup, WINDOW),
+    ('pam-clone-records-1.png', shot_clone_saved, (800, FIT)),
+    ('pam-clone-records-2.png', shot_clone_expanded, (800, FIT)),
 ]
 
 

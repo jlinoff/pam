@@ -324,8 +324,24 @@ The Expanded View section was rewritten so the prose names each control and
      likely a HAND_MADE entry
    - `pam-create-new-record.png` — annotated, needs prose first
 
-   **B. Cloning (4).** `pam-clone-record-popup`, `pam-clone-records-1`,
-   `pam-clone-records-2`, `pam-clone-google`.
+   **B. Cloning — done, 3 shots.** `pam-clone-record-popup`,
+   `pam-clone-records-1`, `pam-clone-records-2`.
+
+   `pam-clone-google.png` was **deleted, not captured**: it was the Google
+   record expanded with a red arrow pointing at the Clone button, and
+   `pam-google-record.png` is that same state without the arrow. The prose now
+   says where the button is — below the last field, between Delete and Edit —
+   and links to Expanded View.
+
+   These shots build the Ice Cream Sundae record before cloning it, because
+   the prose says "using the record that was created in the previous section".
+   Cloning one of the example records would be faster and would quietly
+   contradict the text.
+
+   The clone title rule is `mkRecordEditDlg(title + ' Clone')` in
+   `record.js:306`. `menuCloneDlg()` is module-private so it cannot be built
+   in isolation for a selector check; the Clone button
+   (`title="duplicate this record"`) was verified against a rendered record.
 
    **C. Editable field names (5).** `pam-fld-name-edit-off`, `-on`,
    `-checked`, `-unchecked`, `pam-change-field-name`. Needs

@@ -564,6 +564,13 @@ what the README references, what `SHOTS` captures, what is on the `HAND_MADE`
 list, and what exists on disk. No browser, no server, no rendering, so its
 result does not depend on the machine and it is safe to gate on.
 
+It also checks that every in-page `](#anchor)` link matches a heading. Broken
+anchors are invisible in a Markdown preview and in the rendered help page — the
+link silently does nothing when clicked. The first run found **nine**, two of
+them links to a Reused Passwords section that had been written about but never
+added. Writing that section fixed both the broken links and the last
+captured-but-unreferenced image.
+
 It catches the failures we hit by hand while building the harness:
 
 - referenced but no longer captured (`pam-prefs-enable-printing-check.png`)

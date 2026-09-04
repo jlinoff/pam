@@ -201,8 +201,17 @@ e2e-test: init lint ## Run Selenium E2E tests in tests/test_chrome.py
 	pipenv run python3 -m pytest -v tests/test_chrome.py
 	$(KILL_SERVER)
 
+# Verifies the README against the harness: every screenshot is either captured
+# by tests/screenshots.py or on its HAND_MADE list, no image is orphaned or
+# duplicated, and every in-page link points at a real heading.
+#
+# Pure text comparison — no browser, no server, no rendering — so unlike
+# `make screenshots-check` it gives the same answer on any machine and is safe
+# to gate a build on. Not yet a prerequisite of lint: it still reports the
+# phase 5 and 6 backlog, and a check that fails for known reasons is one you
+# learn to ignore. Wire it into lint once that reaches zero.
 .PHONY: check-images
-check-images: ## Verify every README screenshot is captured or hand-made. No browser needed.
+check-images: ## Verify README screenshots and internal links. No browser needed.
 	$(call hdr,"$@")
 	pipenv run python3 tests/check_images.py
 

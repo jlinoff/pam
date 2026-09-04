@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 '''
-Check that every screenshot the README references is accounted for.
+Check the README's screenshots and internal links.
 
 This is a FILENAME check, not a rendering check. It compares three sets:
 
@@ -19,6 +19,12 @@ version all affect the bytes, so anywhere else every image reads as stale.
 A gate that fires spuriously gets bypassed. This check has no such problem
 and is safe to run in CI or as a release prerequisite.
 
+It also verifies that every in-page link — the `](#anchor)` form — matches a
+heading. Broken anchors are invisible in a Markdown preview and in the
+rendered help page: the link just silently does nothing when clicked. Nine
+were found the first time this ran, two of them introduced by a section that
+had been written but not yet added.
+
 WHAT IT CATCHES
 ---------------
 Every one of these has actually happened while building the harness:
@@ -32,6 +38,7 @@ Every one of these has actually happened while building the harness:
 Exit status is 0 when everything lines up, 1 otherwise.
 '''
 
+import difflib
 import hashlib
 import os
 import re
@@ -93,6 +100,68 @@ def duplicate_images(help_dir, names):
     return [group for group in by_digest.values() if len(group) > 1]
 
 
+def heading_anchors(text):
+    """The set of anchors GitHub generates for a document's headings.
+
+    Slug rules: lowercase, drop HTML tags and Markdown emphasis, drop
+    punctuation other than hyphens, collapse whitespace to single hyphens.
+    Repeated headings get a numeric suffix, so a second "Notes" is `notes-1`.
+    """
+    counts, anchors = {}, set()
+    for line in text.splitlines():
+        if not re.match(r'^#{1,6}\s', line):
+            continue
+        title = re.sub(r'^#{1,6}\s+', '', line)
+        slug = re.sub(r'<[^>]+>', '', title.strip().lower())
+        slug = re.sub(r'[`*_]', '', slug)
+        slug = re.sub(r'[^\w\s-]', '', slug)
+        slug = re.sub(r'\s+', '-', slug).strip('-')
+        seen = counts.get(slug, 0)
+        counts[slug] = seen + 1
+        anchors.add(slug if seen == 0 else f'{slug}-{seen}')
+    return anchors
+
+
+def broken_links(text):
+    """In-page links whose anchor matches no heading.
+
+    Returns a list of (anchor, use count, closest real anchor), so the report
+    suggests a fix rather than only naming the problem.
+    """
+    anchors = heading_anchors(text)
+    links = re.findall(r'\]\(#([^)]+)\)', text)
+    out = []
+    for anchor in sorted(set(links)):
+        if anchor in anchors:
+            continue
+        near = difflib.get_close_matches(anchor.lower(), sorted(anchors), n=1, cutoff=0.4)
+        out.append((anchor, links.count(anchor), near[0] if near else None))
+    return out
+
+
+def report_broken_links(readme_path):
+    """Print any broken in-page links. Returns how many were found."""
+    with open(readme_path, encoding='utf-8') as handle:
+        text = handle.read()
+    links = broken_links(text)
+    if not links:
+        return 0
+    print('\nBROKEN INTERNAL LINKS')
+    print('  These point at no heading. A broken anchor is invisible in a '
+          'preview —\n  the link simply does nothing when clicked.')
+    for anchor, count, near in links:
+        suggestion = f'  -> did you mean #{near}?' if near else ''
+        uses = '' if count == 1 else f' (used {count}x)'
+        print(f'    #{anchor}{uses}{suggestion}')
+    return len(links)
+
+
+def count_links(readme_path):
+    """How many distinct in-page links the document has."""
+    with open(readme_path, encoding='utf-8') as handle:
+        return len(set(re.findall(r'\]\(#([^)]+)\)', handle.read())))
+
+
 def report(label, items, explanation):
     '''Print one problem group. Returns the number of items.'''
     if not items:
@@ -152,12 +221,15 @@ def main():
             'These files have the same bytes: one picture under several names. '
             'Pick one and update the README references.')
 
+    problems += report_broken_links(readme)
+
     if problems:
         print(f'\n{problems} problem(s)')
         return 1
 
     print(f'{len(referenced)} referenced, {len(captured)} captured, '
           f'{len(HAND_MADE)} hand-made: all accounted for')
+    print(f'{count_links(readme)} internal links: all resolve')
     return 0
 
 

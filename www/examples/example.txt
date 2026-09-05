@@ -167,6 +167,31 @@
             ]
         },
         {
+            "title": "Instagram",
+            "fields": [
+                {
+                    "name": "website",
+                    "type": "url",
+                    "value": "https://instagram.com"
+                },
+                {
+                    "name": "login",
+                    "type": "text",
+                    "value": "pbrain22@gmail.com"
+                },
+                {
+                    "name": "password",
+                    "type": "password",
+                    "value": "dOa#DirgJge67okTKtEzp.LSl"
+                },
+                {
+                    "name": "note",
+                    "type": "textarea",
+                    "value": "Same password as Facebook. PAM flags this in the Reused Passwords report."
+                }
+            ]
+        },
+        {
             "title": "Netflix",
             "fields": [
                 {
@@ -203,6 +228,32 @@
                     "name": "password",
                     "type": "password",
                     "value": "FpnzQcuq0nk/PxlMdYJ_itnK"
+                }
+            ]
+        },
+        {
+            "title": "Toys-R-Us",
+            "active": false,
+            "fields": [
+                {
+                    "name": "website",
+                    "type": "url",
+                    "value": "https://toysrus.com"
+                },
+                {
+                    "name": "login",
+                    "type": "text",
+                    "value": "pbrain22@gmail.com"
+                },
+                {
+                    "name": "password",
+                    "type": "password",
+                    "value": "wUq7!vTm2$eLxR9dNc4A"
+                },
+                {
+                    "name": "note",
+                    "type": "textarea",
+                    "value": "Store closed. Deactivated rather than deleted so the record is still recoverable."
                 }
             ]
         }

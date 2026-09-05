@@ -8,7 +8,8 @@ import { enableSaveFile } from './save.js'
 import { setDarkLightTheme } from './utils.js'
 import { searchRecords } from './search.js'
 import { enableRawJSONEdit } from './raw.js'
-import { updateHtmlRenderingIndicator, updateFilePassCacheIndicator } from './main.js'
+import { updateHtmlRenderingIndicator, updateFilePassCacheIndicator, updatePasswordSearchIndicator } from './main.js'
+import { updateReuseIndicator, scheduleVaultStatsRefresh } from './vault-ui.js'
 import { clearFilePass } from './password.js'
 
 // These are the input types that the tool knows how to handle.
@@ -304,6 +305,38 @@ export function menuPrefsDlg() {
                                'When enabled, <code>html</code> field values render as live HTML, ' +
                                'which is an XSS risk if you load files from untrusted sources. ' +
                                'A <b>⚠ HTML ON</b> warning badge will appear in the toolbar while this is active.'),
+                prefShowPasswordReuseWarning(labelClasses, inputClasses),
+                prefPromptDesc('Show a <b>\u26A0 REUSED</b> badge in the toolbar when a stored ' +
+                               'password is used by more than one entry. Click the badge for the ' +
+                               'list. Enabled by default.<br>' +
+                               'Turning this off hides the badge only. The check still runs and ' +
+                               'the count is still reported in the <code>About</code> dialogue, so ' +
+                               'there is no state in which PAM knows a password is reused and has ' +
+                               'no way to tell you.<br>' +
+                               'A password shared between entries is only as safe as the least safe ' +
+                               'of them: if any one site is breached, every entry sharing that ' +
+                               'password is exposed. No breach corpus can detect this \u2014 it is a ' +
+                               'property of your vault, not of the password.'),
+                prefSearchPasswordFieldValues(labelClasses, inputClasses),
+                prefPromptDesc('WARNING: this only applies when <code>Search Record Field Values</code> ' +
+                               'is also enabled. It allows the search box to match against the ' +
+                               'plaintext of <code>password</code> fields.<br>' +
+                               'The risk is not that a password is displayed \u2014 it never is. It is that ' +
+                               'the filter results reveal it. The record count beside the search box ' +
+                               'answers a yes/no question about your password on every keystroke, and ' +
+                               'nothing is written to the screen, the clipboard, or a log.<br>' +
+                               '<b>Search accepts regular expressions</b>, which makes this far worse than ' +
+                               'guessing one character at a time. An attacker with brief access to an ' +
+                               'unlocked vault can use <code>^s</code> to test the first character, ' +
+                               '<code>^[a-m]</code> to halve the remaining possibilities with a single ' +
+                               'query, <code>^..x</code> to probe a specific position, and ' +
+                               '<code>.{12}</code> to learn the length outright. That is a binary search, ' +
+                               'not a linear walk: a password that would take thousands of guesses ' +
+                               'character by character falls in a few dozen queries.<br>' +
+                               'To find which record uses a password you already know, use the ' +
+                               '<code>Duplicates</code> dialog instead \u2014 it groups records by shared ' +
+                               'password without ever putting a secret in an input field.<br>' +
+                               'A <b>\u26A0 PW SEARCH</b> warning badge will appear in the toolbar while this is active.'),
                 prefFilePassCacheStrategy(labelClasses, inputClasses),
                 prefPromptDesc('Define the browser cache strategy for the file (master) password. ' +
                                'The most secure option is <code>none</code> because it does not save ' +
@@ -513,6 +546,9 @@ function savePrefs(el) {
     setDarkLightTheme(window.prefs.themeName)
     updateHtmlRenderingIndicator()  // SEC-001: update toolbar badge
     updateFilePassCacheIndicator()  // SEC-002: update toolbar badge
+    updatePasswordSearchIndicator()  // update toolbar badge
+    scheduleVaultStatsRefresh()      // hideInactiveRecords changes the reuse scope
+    updateReuseIndicator()           // reuse badge follows showPasswordReuseWarning
     searchRecords()  // refresh
     return checkDefaultRecordFields(true)
 }
@@ -567,6 +603,24 @@ export function prefAllowHtmlFieldRendering(labelClasses, inputClasses) {
                            'WARNING (SEC-001): Only enable for trusted files distributed on a read-only volume. ' +
                            'Enabling this allows HTML fields to render as live HTML, which is an XSS risk if ' +
                            'loading files from untrusted sources.')
+}
+
+export function prefShowPasswordReuseWarning(labelClasses, inputClasses) {
+    return mkPrefsCheckBox(labelClasses,
+                           inputClasses,
+                           'showPasswordReuseWarning',
+                           'Show Password Reuse Warning',
+                           'show a toolbar badge when a stored password is used more than once')
+}
+
+export function prefSearchPasswordFieldValues(labelClasses, inputClasses) {
+    return mkPrefsCheckBox(labelClasses,
+                           inputClasses,
+                           'searchPasswordFieldValues',
+                           'Search Password Field Values',
+                           'WARNING: allows the search box to match against password values. ' +
+                           'Search accepts regular expressions, so this makes passwords ' +
+                           'efficiently recoverable by anyone with access to an unlocked vault.')
 }
 
 function prefEnableRawJSONEdit(labelClasses, inputClasses) {

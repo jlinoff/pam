@@ -66,6 +66,11 @@ init: .init bs app-version app-help  ## very basic setup for python3 and jshint
 	pipenv run python3 -m pip install webdriver_manager
 	pipenv run python3 -m pip install selenium types-selenium
 	pipenv run python3 -m pip install setuptools
+	# Pillow: tests/screenshots.py compares captures pixel-wise to tell a real
+	# change from subpixel text-rendering noise. Without it the comparison falls
+	# back to exact byte matching, which is stricter but leaves one capture
+	# churning on every run.
+	pipenv run python3 -m pip install Pillow
 	npm install -g jshint
 	@touch $@
 
@@ -95,7 +100,12 @@ lint:  ## lint the source code
 	@if rg '\s$$' www/js/*js ; then printf '\033[31;1mERROR: trailing whitespace found\033[0m\n'; exit 1 ; fi
 	jshint --config jshint.json www
 	diff <(ls -1 www/icons/black/) <(ls -1 www/icons/blue)
-	pipenv run pylint tests/test_chrome.py
+	pipenv run pylint tests/test_chrome.py tests/screenshots.py tests/check_images.py tests/diag_churn.py
+	# Documentation is part of the build. A broken anchor or a stale image
+	# reference is invisible in a Markdown preview and in the rendered help
+	# page — the link simply does nothing — so nothing else would ever notice.
+	# Pure text comparison: no browser, no server, about a second.
+	pipenv run python3 tests/check_images.py
 	@printf '\033[35;1m$@: PASSED\033[0m\n'
 
 # Make sure that the icons in www/icons/black and icons/blue/blue are the same.
@@ -199,6 +209,68 @@ e2e-test: init lint ## Run Selenium E2E tests in tests/test_chrome.py
 	sleep 2
 	lsof -i :$(PORT)
 	pipenv run python3 -m pytest -v tests/test_chrome.py
+	$(KILL_SERVER)
+
+# Verifies the README against the harness: every screenshot is either captured
+# by tests/screenshots.py or on its HAND_MADE list, no image is orphaned or
+# duplicated, and every in-page link points at a real heading.
+#
+# Pure text comparison — no browser, no server, no rendering — so unlike
+# `make screenshots-check` it gives the same answer on any machine and is safe
+# to gate a build on. It IS a prerequisite of lint, which makes it a
+# prerequisite of unit-test and e2e-test too: documentation is part of the
+# build, not a thing checked afterwards.
+#
+# This target runs it alone, which is useful while editing the README.
+.PHONY: check-images
+check-images: ## Verify README screenshots and internal links. No browser needed.
+	$(call hdr,"$@")
+	pipenv run python3 tests/check_images.py
+
+# Capture the README screenshots.
+#
+#   make screenshots                 all of them (~28 shots, a few minutes)
+#   make screenshots SHOT=google     only filenames containing "google"
+#   make screenshots SHOT=prefs      only the preference tabs
+#   make screenshots SHOT=pam-menu   one specific image
+#
+# SHOT is a plain substring match on the filename and is for iterating: the
+# full pass reloads the page and the example records between every capture,
+# which is what makes it slow. Run WITHOUT a filter before committing, or you
+# will commit a set where only some images reflect the current UI.
+#
+# Determinism is checked by running it twice: the second run should report
+# every image as "same". A single run cannot tell a correct capture from one
+# that differs every time. Past churn sources were generated passwords, a
+# blinking text caret, and a leftover viewport size.
+#
+# Only meaningful on ONE machine. Font hinting, DPI and the Chrome version all
+# affect the bytes, so regenerating elsewhere rewrites every file with no
+# content change. Use `make check-images` for a check that works anywhere.
+.PHONY: screenshots
+screenshots: init ## Capture README screenshots. SHOT=<substr> limits the set.
+	$(call hdr,"$@")
+	@echo "NOTE: rendering is not reproducible across machines. Regenerate on"
+	@echo "      one machine only, or the images churn with no content change."
+	-$(KILL_SERVER)
+	( cd www && pipenv run python -m http.server $(PORT) > /dev/null 2>&1 ) &
+	sleep 2
+	# -u keeps output unbuffered. Without it, piping to tee or a file makes
+	# Python block-buffer stdout and the per-shot lines do not appear until
+	# the run ends, which looks exactly like a hang.
+	SHOT="$(SHOT)" pipenv run python3 -u tests/screenshots.py
+	$(KILL_SERVER)
+
+# NOTE: only meaningful on the machine that regenerates the images. Font
+# hinting, DPI and the Chrome version all affect the bytes, so anywhere else
+# every image reads as stale. Use check-images for a machine-independent check.
+.PHONY: screenshots-check
+screenshots-check: init ## Report stale screenshots. Reference machine only; writes nothing.
+	$(call hdr,"$@")
+	-$(KILL_SERVER)
+	( cd www && pipenv run python -m http.server $(PORT) > /dev/null 2>&1 ) &
+	sleep 2
+	CHECK=1 SHOT="$(SHOT)" pipenv run python3 -u tests/screenshots.py
 	$(KILL_SERVER)
 
 # This is an example to build off of for debugging
@@ -324,6 +396,13 @@ web-min: app-help app-version  ## (EXPERIMENTAL) create a minimized web release 
 	@find web-min -type f -name '*~' -delete
 	@cd web-min && tar Jcf ../pam-www-min.tar pam
 	@ls -l pam-www-min.tar
+
+.PHONY: zip
+zip:  project.zip  ## Make the project.zip file from git repo contents.
+
+GIT_SRC_FILES := $(shell git ls-files)
+project.zip: $(GIT_SRC_FILES)
+	zip "$@" $(GIT_SRC_FILES)
 
 # could replace
 #   awk -F'##' '{printf("%-16s %s\n",$1,$2)}'

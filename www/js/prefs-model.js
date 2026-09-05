@@ -51,6 +51,7 @@ export function getDefaultPrefs() {
         searchRecordTitles: true,
         searchRecordFieldNames: false,
         searchRecordFieldValues: false,
+        searchPasswordFieldValues: false,
         hideInactiveRecords: true,
         passwordRangeLengthDefault: 20,
         passwordRangeMinLength: 12,
@@ -95,6 +96,7 @@ export function getDefaultPrefs() {
         requireRecordFields: false,
         lockPreferencesPassword: '',
         allowHtmlFieldRendering: false,
+        showPasswordReuseWarning: true,
         defaultRecordFields: 'website,login,password,note',
         enableRawJSONEdit: false,
     }

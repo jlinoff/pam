@@ -2,7 +2,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
   <meta charset="utf-8" />
-  <meta name="generator" content="pandoc" />
+  <meta name="generator" content="pandoc 3.11" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
   <title>PAM - Security</title>
   <style>
@@ -10,8 +10,12 @@
     ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
     */
     span.smallcaps{font-variant: small-caps;}
-    div.columns{display: flex; gap: min(4vw, 1.5em);}
-    div.column{flex: auto; overflow-x: auto;}
+    div.columns{display: flex; gap: 1.5em;}
+    div.column{flex: auto;}
+    @media screen {
+    div.columns{gap: min(4vw, 1.5em);}
+    div.column{overflow-x: auto;}
+    }
     div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
     /* The extra [class] is a hack that increases specificity enough to
        override a similar rule in reveal.js */
@@ -22,7 +26,6 @@
       margin: 0 0.8em 0.2em -1.6em;
       vertical-align: middle;
     }
-    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
   </style>
   <link rel="stylesheet" href="index.css" />
 </head>
@@ -108,6 +111,15 @@ browser restarts, and power cycles, independently of the PAM file. It
 can be changed at any time in Preferences and takes effect immediately.
 When the strategy is changed, the password is cleared from the previous
 storage location before the new strategy is applied.</p>
+<p><strong>PWA note:</strong></p>
+<p>When PAM is installed as a Progressive Web App (home screen shortcut)
+on iOS Safari, each launch may start a fresh browser session, wiping
+<code>sessionStorage</code>. If your PAM file has
+<code>filePassCache</code> set to <code>local</code> in its preferences,
+PAM now correctly detects this after decrypting the file and re-stores
+the password in <code>localStorage</code>, persisting the strategy as
+<code>pamCacheStrategy</code> so subsequent launches use the same
+bucket. (BUG-002)</p>
 <p><strong>History:</strong> - v2.0.3 — default changed from
 <code>local</code> to <code>session</code> as a security improvement
 (SEC-002). - v2.0.5 — default reverted to <code>local</code> due to PWA
@@ -118,15 +130,9 @@ reload behaviour causing excessive re-entry friction;
 choice survives reloads without being tied to the PAM file default. -
 v1.3.1 — BUG-002 fixed: password was stored in the wrong storage bucket
 when the loaded file’s <code>filePassCache</code> pref differed from the
-startup default; manifested as lost password on iOS Safari PWA
-relaunch.</p>
-<p><strong>PWA note:</strong> When PAM is installed as a Progressive Web
-App on iOS Safari, each launch may start a fresh session, wiping
-<code>sessionStorage</code>. If your PAM file specifies
-<code>filePassCache: local</code>, PAM now re-stores the password in
-<code>localStorage</code> after loading the file and persists that
-strategy as <code>pamCacheStrategy</code> so subsequent launches find it
-there. (BUG-002)</p>
+startup default. Manifested as lost password on iOS PWA relaunch when
+the file specified <code>local</code> but the device had no prior
+<code>pamCacheStrategy</code> set.</p>
 <p><strong>Recommendation:</strong> Use <code>session</code> (the
 default) for most environments. Use <code>local</code> only on a trusted
 personal device where re-entry friction is a genuine concern.</p>

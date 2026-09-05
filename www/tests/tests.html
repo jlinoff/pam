@@ -617,6 +617,101 @@ test('field name match works', () => {
   assert(!visible.includes('Amazon'))
 })
 
+suite('search.js — password value search')
+test('password values are NOT matched by default', () => {
+  // The oracle this guards against: with password matching on, typing a
+  // character and watching which records survive recovers the password one
+  // character at a time, without it ever appearing on screen.
+  window.prefs.searchRecordFieldValues = true
+  window.prefs.searchPasswordFieldValues = false
+  searchRecords('secret1')
+  const visible = visibleTitles()
+  assert(!visible.includes('Amazon'), 'Amazon password is secret1 and must not match')
+  window.prefs.searchRecordFieldValues = false
+  searchRecords('.')
+})
+test('password values ARE matched when explicitly enabled', () => {
+  window.prefs.searchRecordFieldValues = true
+  window.prefs.searchPasswordFieldValues = true
+  searchRecords('secret1')
+  const visible = visibleTitles()
+  assert(visible.includes('Amazon'), 'opting in must restore the old behaviour')
+  assert(!visible.includes('Google'), 'Google password is secret2')
+  window.prefs.searchPasswordFieldValues = false
+  window.prefs.searchRecordFieldValues = false
+  searchRecords('.')
+})
+test('non-password values still match with the pref off', () => {
+  window.prefs.searchRecordFieldValues = true
+  window.prefs.searchPasswordFieldValues = false
+  searchRecords('jsmith')
+  const visible = visibleTitles()
+  assert(visible.includes('Amazon'), 'excluding passwords must not break value search')
+  window.prefs.searchRecordFieldValues = false
+  searchRecords('.')
+})
+test('a partial password prefix does not leak through the filter', () => {
+  // Character-by-character narrowing is the actual attack, so test prefixes
+  // rather than only the whole value.
+  //
+  // These prefixes are chosen to be unique to the password 'secret1'. Shorter
+  // ones are useless as evidence: 's' occurs in the username 'jsmith' and 'se'
+  // in the field name 'username', so Amazon matches those legitimately and a
+  // test using them would report a leak that is not there.
+  window.prefs.searchRecordFieldValues = true
+  window.prefs.searchPasswordFieldValues = false
+  for (const prefix of ['sec', 'secr', 'secre', 'secret', 'secret1']) {
+    searchRecords(prefix)
+    assert(!visibleTitles().includes('Amazon'),
+           'prefix ' + prefix + ' selected on password content')
+  }
+  window.prefs.searchRecordFieldValues = false
+  searchRecords('.')
+})
+test('regex probes cannot select on password content', () => {
+  // Search compiles its input as a regular expression, so the oracle this
+  // guards against is a binary search, not a linear walk. These are the
+  // probes an attacker would actually use: anchors, character classes,
+  // positional wildcards and length assertions. None may select Amazon,
+  // whose password is 'secret1'.
+  window.prefs.searchRecordFieldValues = true
+  window.prefs.searchPasswordFieldValues = false
+  const probes = ['^sec', 'secret.$', '^[n-z]ecret1', 'sec.et1', 's.{5}1', '^.{7}$']
+  for (const probe of probes) {
+    searchRecords(probe)
+    assert(!visibleTitles().includes('Amazon'),
+           'probe ' + probe + ' selected on password content')
+  }
+  window.prefs.searchRecordFieldValues = false
+  searchRecords('.')
+})
+test('regex probes DO select on password content when opted in', () => {
+  // The mirror image: confirms the probes above are real attacks rather than
+  // patterns that happen to match nothing. Without this, the test above could
+  // pass because the probes are broken.
+  window.prefs.searchRecordFieldValues = true
+  window.prefs.searchPasswordFieldValues = true
+  for (const probe of ['^sec', 'secret.$', '^[n-z]ecret1', 'sec.et1', 's.{5}1']) {
+    searchRecords(probe)
+    assert(visibleTitles().includes('Amazon'),
+           'probe ' + probe + ' should match secret1 when opted in')
+  }
+  window.prefs.searchPasswordFieldValues = false
+  window.prefs.searchRecordFieldValues = false
+  searchRecords('.')
+})
+test('password field type is respected regardless of field name', () => {
+  // GitHub stores its secret in a field named "token", not "password".
+  // Exclusion keys off the type, not the name.
+  window.prefs.searchRecordFieldValues = true
+  window.prefs.searchPasswordFieldValues = false
+  searchRecords('ghp_abc123')
+  const visible = visibleTitles()
+  assert(!visible.includes('GitHub'), 'a password-typed field named token is still a secret')
+  window.prefs.searchRecordFieldValues = false
+  searchRecords('.')
+})
+
 suite('search.js — inactive records')
 test('inactive records are shown by default', () => {
   window.prefs.hideInactiveRecords = false
@@ -1512,14 +1607,35 @@ test('hideInactiveRecords=false: inactive records are visible', () => {
 
 suite('search.js — searchRecordFieldValues')
 test('searchRecordFieldValues=true: matches on field value', () => {
+  // Uses GitHub's username, a text field. This test previously searched for
+  // ghp_abc123, the value of GitHub's *token* field — which is password-typed
+  // and is now excluded from value search by default, so that value no longer
+  // demonstrates anything about value search in general. See the companion
+  // test below and the 'search.js — password value search' suite.
   window.prefs.searchRecordTitles = false
   window.prefs.searchRecordFieldNames = false
   window.prefs.searchRecordFieldValues = true
-  searchRecords('ghp_abc123')  // ghp_abc123 is the value of GitHub's token field
+  searchRecords('jlinoff')  // jlinoff is the value of GitHub's username field
   const visible = Array.from(document.querySelectorAll('.accordion-item'))
     .filter(el => !el.classList.contains('d-none'))
     .map(el => el.querySelector('.accordion-button').innerHTML)
-  assert(visible.includes('GitHub'), 'field value search should find GitHub by its token value ghp_abc123')
+  assert(visible.includes('GitHub'), 'field value search should find GitHub by its username jlinoff')
+  window.prefs.searchRecordTitles = true
+  window.prefs.searchRecordFieldNames = true
+  window.prefs.searchRecordFieldValues = true
+})
+test('searchRecordFieldValues=true: does NOT match on a password-typed value', () => {
+  // The behaviour change: a password-typed field is excluded even when its
+  // name is not 'password'. GitHub stores its secret in a field named 'token'.
+  window.prefs.searchRecordTitles = false
+  window.prefs.searchRecordFieldNames = false
+  window.prefs.searchRecordFieldValues = true
+  window.prefs.searchPasswordFieldValues = false
+  searchRecords('ghp_abc123')  // the value of GitHub's password-typed token field
+  const visible = Array.from(document.querySelectorAll('.accordion-item'))
+    .filter(el => !el.classList.contains('d-none'))
+    .map(el => el.querySelector('.accordion-button').innerHTML)
+  assert(!visible.includes('GitHub'), 'a password-typed value must not be searchable by default')
   window.prefs.searchRecordTitles = true
   window.prefs.searchRecordFieldNames = true
   window.prefs.searchRecordFieldValues = true
@@ -1651,6 +1767,15 @@ test('getMemorablePassword respects prefix and suffix', () => {
 // All defaults verified against getDefaultPrefs() to avoid window.prefs
 // stub contamination.
 // ---------------------------------------------------------------------------
+suite('prefs — searchPasswordFieldValues')
+test('defaults to false', () => {
+  assertEqual(getDefaultPrefs().searchPasswordFieldValues, false,
+              'matching password values must be opt-in')
+})
+test('is a known preference key', () => {
+  assert('searchPasswordFieldValues' in getDefaultPrefs())
+})
+
 suite('prefs — Miscellaneous defaults')
 test('statusMsgDurationMS default is 1500', () => {
   assertEqual(getDefaultPrefs().statusMsgDurationMS, 1500,
@@ -2616,9 +2741,620 @@ async function runSaveRegressionTests() {
 // Keep `.then(() => { window.__TESTS_COMPLETE__ = true })` as the final link
 // in the chain: it signals the Selenium runner that all async work — the last
 // finalize() included — has completed, so it never reads a sync-only snapshot.
+
+// ---------------------------------------------------------------------------
+// vault.js — minimum-disclosure queries (fingerprint, reuse)
+// ---------------------------------------------------------------------------
+import {
+  canonicalizeRecords, vaultFingerprint, secretFields, reuseGroups, reuseCount,
+  partitionByActive, stripInactiveMarker
+} from '/js/vault.js'
+
+// Records in the shape convertInternalDataToJSON() produces. Plain literals —
+// these functions never touch the DOM, so no accordion fixture is needed.
+function mkrec(title, fields, active, created) {
+  return {
+    title: title,
+    active: active === undefined ? true : active,
+    created: created || '2026-01-01T00:00:00.000Z',
+    fields: fields,
+  }
+}
+function fld(name, type, value) {
+  return {name: name, type: type, value: value}
+}
+
+const VAULT_A = [
+  mkrec('github', [fld('username', 'text', 'joe'), fld('password', 'password', 'aaa')]),
+  mkrec('gitlab', [fld('username', 'text', 'joe'), fld('password', 'password', 'bbb')]),
+  mkrec('bank',   [fld('username', 'text', 'jl'),  fld('password', 'password', 'ccc')]),
+]
+
+suite('vault.js — canonicalizeRecords')
+test('is stable under record reordering', () => {
+  const shuffled = [VAULT_A[2], VAULT_A[0], VAULT_A[1]]
+  assertEqual(canonicalizeRecords(shuffled), canonicalizeRecords(VAULT_A),
+              'record order must not change the canonical form')
+})
+test('is stable under field reordering within a record', () => {
+  const a = [mkrec('x', [fld('u', 'text', '1'), fld('p', 'password', '2')])]
+  const b = [mkrec('x', [fld('p', 'password', '2'), fld('u', 'text', '1')])]
+  assertEqual(canonicalizeRecords(a), canonicalizeRecords(b),
+              'field order is presentation, not content')
+})
+test('ignores created, which is stamped with the current time on save', () => {
+  const a = [mkrec('x', [fld('p', 'password', '1')], true, '2020-01-01T00:00:00.000Z')]
+  const b = [mkrec('x', [fld('p', 'password', '1')], true, '2026-06-06T00:00:00.000Z')]
+  assertEqual(canonicalizeRecords(a), canonicalizeRecords(b),
+              'a differing created must not read as a differing vault')
+})
+test('distinguishes a changed value', () => {
+  const b = [mkrec('x', [fld('p', 'password', '2')])]
+  assertNotEqual(canonicalizeRecords([mkrec('x', [fld('p', 'password', '1')])]),
+                 canonicalizeRecords(b))
+})
+test('distinguishes a changed title', () => {
+  assertNotEqual(canonicalizeRecords([mkrec('x', [fld('p', 'password', '1')])]),
+                 canonicalizeRecords([mkrec('y', [fld('p', 'password', '1')])]))
+})
+test('distinguishes a changed active flag', () => {
+  assertNotEqual(canonicalizeRecords([mkrec('x', [fld('p', 'password', '1')], true)]),
+                 canonicalizeRecords([mkrec('x', [fld('p', 'password', '1')], false)]))
+})
+test('distinguishes a changed field name', () => {
+  assertNotEqual(canonicalizeRecords([mkrec('x', [fld('p', 'password', '1')])]),
+                 canonicalizeRecords([mkrec('x', [fld('q', 'password', '1')])]))
+})
+test('distinguishes a changed field type', () => {
+  assertNotEqual(canonicalizeRecords([mkrec('x', [fld('p', 'password', '1')])]),
+                 canonicalizeRecords([mkrec('x', [fld('p', 'text', '1')])]))
+})
+test('no separator character lets one vault masquerade as another', () => {
+  // Delimiter-agnostic on purpose. An earlier version of this test hardcoded
+  // the separator the implementation happened to use, so it passed even when
+  // the separator was changed to something forgeable — it was checking that
+  // one specific character was absent, not that boundaries cannot be faked.
+  // For each candidate separator, these two vaults differ but would collide
+  // if the canonical form were a naive join on that character.
+  const candidates = [':', '|', ',', '\t', '\n', '\u001f', '\u001e', '-', ' ', '/']
+  for (const sep of candidates) {
+    const a = [mkrec('x', [fld('p', 'password', 'u' + sep + 'v')])]
+    const b = [mkrec('x', [fld('p', 'password' + sep + 'u', 'v')])]
+    assertNotEqual(canonicalizeRecords(a), canonicalizeRecords(b),
+                   'collision when separator is ' + JSON.stringify(sep))
+  }
+})
+test('an empty vault canonicalizes without throwing', () => {
+  assertEqual(canonicalizeRecords([]), '[]')
+})
+test('an empty vault differs from a populated one', () => {
+  assertNotEqual(canonicalizeRecords([]), canonicalizeRecords(VAULT_A))
+})
+test('a record with no fields canonicalizes without throwing', () => {
+  assert(canonicalizeRecords([mkrec('x', [])]).length > 0)
+})
+
+suite('vault.js — stripInactiveMarker')
+test('removes the marker record.js prepends to a deactivated title', () => {
+  // convertInternalDataToJSON copies the accordion button's innerHTML
+  // verbatim, so the marker really is part of the title string.
+  assertEqual(stripInactiveMarker('<small>*INACTIVE*</small>&nbsp;FedEx Web Print'),
+              'FedEx Web Print')
+})
+test('handles a literal non-breaking space as well as the entity', () => {
+  assertEqual(stripInactiveMarker('<small>*INACTIVE*</small>\u00a0LaunchPad'),
+              'LaunchPad')
+})
+test('handles the marker with no separator', () => {
+  assertEqual(stripInactiveMarker('<small>*INACTIVE*</small>NoSpace'), 'NoSpace')
+})
+test('leaves an ordinary title untouched', () => {
+  assertEqual(stripInactiveMarker('Consumer Reports'), 'Consumer Reports')
+})
+test('is anchored: it does not strip the text from mid-title', () => {
+  const title = 'A title mentioning <small>*INACTIVE*</small> in the middle'
+  assertEqual(stripInactiveMarker(title), title)
+})
+test('the marker does not reach the reuse report', () => {
+  const recs = [
+    mkrec('<small>*INACTIVE*</small>&nbsp;old', [fld('p','password','SAME')], false),
+    mkrec('live', [fld('p','password','SAME')], true),
+  ]
+  const groups = reuseGroups(recs)
+  assertEqual(groups.length, 1)
+  const titles = groups[0].map(m => m.title).sort()
+  assertEqual(titles.join('|'), 'live|old', 'titles must arrive clean')
+})
+test('reuse group members carry the active flag', () => {
+  // So the dialogue can draw its own label rather than rendering the
+  // user-controlled title as markup.
+  const recs = [
+    mkrec('<small>*INACTIVE*</small>&nbsp;old', [fld('p','password','SAME')], false),
+    mkrec('live', [fld('p','password','SAME')], true),
+  ]
+  const members = reuseGroups(recs)[0]
+  const inactive = members.filter(m => m.active === false)
+  assertEqual(inactive.length, 1)
+  assertEqual(inactive[0].title, 'old')
+})
+test('the fingerprint ignores the display marker', () => {
+  // active already records the state; the title need not encode it twice.
+  const marked = canonicalizeRecords(
+    [mkrec('<small>*INACTIVE*</small>&nbsp;x', [fld('p','password','1')], false)])
+  const plain = canonicalizeRecords([mkrec('x', [fld('p','password','1')], false)])
+  assertEqual(marked, plain)
+})
+
+suite('vault.js — partitionByActive')
+test('splits active from inactive', () => {
+  const recs = [mkrec('a', [fld('p','password','1')], true),
+                mkrec('b', [fld('p','password','2')], false),
+                mkrec('c', [fld('p','password','3')], true)]
+  const [active, inactive] = partitionByActive(recs)
+  assertEqual(active.length, 2)
+  assertEqual(inactive.length, 1)
+  assertEqual(inactive[0].title, 'b')
+})
+test('handles an all-active vault', () => {
+  const [active, inactive] = partitionByActive(VAULT_A)
+  assertEqual(active.length, 3)
+  assertEqual(inactive.length, 0)
+})
+test('handles an empty vault', () => {
+  const [active, inactive] = partitionByActive([])
+  assertEqual(active.length, 0)
+  assertEqual(inactive.length, 0)
+})
+
+suite('vault.js — secretFields')
+test('collects only password-typed fields', () => {
+  const recs = [mkrec('x', [fld('u', 'text', 'joe'), fld('p', 'password', 'secret'),
+                            fld('n', 'textarea', 'notes')])]
+  const got = secretFields(recs)
+  assertEqual(got.length, 1, 'only the password field is a secret')
+  assertEqual(got[0].value, 'secret')
+  assertEqual(got[0].title, 'x')
+  assertEqual(got[0].name, 'p')
+})
+test('skips empty password values', () => {
+  assertEqual(secretFields([mkrec('x', [fld('p', 'password', '')])]).length, 0)
+})
+test('collects several password fields from one record', () => {
+  const recs = [mkrec('x', [fld('p1', 'password', 'a'), fld('p2', 'password', 'b')])]
+  assertEqual(secretFields(recs).length, 2, 'a record may hold more than one secret')
+})
+
+suite('vault.js — reuseGroups')
+test('reports nothing when every password is unique', () => {
+  assertEqual(reuseGroups(VAULT_A).length, 0)
+})
+test('groups two entries that share a password', () => {
+  const recs = [
+    mkrec('github', [fld('password', 'password', 'same')]),
+    mkrec('gitlab', [fld('password', 'password', 'same')]),
+    mkrec('bank',   [fld('password', 'password', 'other')]),
+  ]
+  const groups = reuseGroups(recs)
+  assertEqual(groups.length, 1, 'one shared password')
+  assertEqual(groups[0].length, 2, 'shared by two entries')
+  assertEqual(groups[0][0].title, 'github')
+  assertEqual(groups[0][1].title, 'gitlab')
+})
+test('never returns the password itself', () => {
+  const recs = [
+    mkrec('a', [fld('password', 'password', 'hunter2')]),
+    mkrec('b', [fld('password', 'password', 'hunter2')]),
+  ]
+  const serialised = JSON.stringify(reuseGroups(recs))
+  assert(serialised.indexOf('hunter2') === -1,
+         'the secret is the grouping key and must never be disclosed')
+})
+test('detects reuse between two fields of the same record', () => {
+  const recs = [mkrec('x', [fld('p1', 'password', 'same'), fld('p2', 'password', 'same')])]
+  const groups = reuseGroups(recs)
+  assertEqual(groups.length, 1, 'reuse is a property of fields, not records')
+  assertEqual(groups[0].length, 2)
+})
+test('ignores identical values in non-password fields', () => {
+  const recs = [
+    mkrec('a', [fld('username', 'text', 'joe')]),
+    mkrec('b', [fld('username', 'text', 'joe')]),
+  ]
+  assertEqual(reuseGroups(recs).length, 0, 'a shared username is not password reuse')
+})
+test('is stable under record reordering', () => {
+  const recs = [
+    mkrec('a', [fld('password', 'password', 'same')]),
+    mkrec('b', [fld('password', 'password', 'same')]),
+  ]
+  const forward = JSON.stringify(reuseGroups(recs))
+  const reverse = JSON.stringify(reuseGroups([recs[1], recs[0]]))
+  assertEqual(forward, reverse, 'display order must not depend on input order')
+})
+
+suite('vault.js — reuseCount')
+test('is zero for a vault with no reuse', () => {
+  assertEqual(reuseCount(VAULT_A), 0)
+})
+test('counts fields rather than groups', () => {
+  const recs = [
+    mkrec('a', [fld('password', 'password', 'same')]),
+    mkrec('b', [fld('password', 'password', 'same')]),
+    mkrec('c', [fld('password', 'password', 'same')]),
+  ]
+  assertEqual(reuseGroups(recs).length, 1, 'one group')
+  assertEqual(reuseCount(recs), 3, 'but three passwords to change')
+})
+
+
+// ---------------------------------------------------------------------------
+// vault.js — vaultFingerprint (async: crypto.subtle)
+// ---------------------------------------------------------------------------
+async function runVaultFingerprintTests() {
+  suite('vault.js — vaultFingerprint')
+
+  await runAsyncTest('is stable under record reordering', async () => {
+    // The whole point of the feature. Two identical vaults serialised in
+    // different orders must agree; an order-sensitive comparison reports a
+    // difference that is not there.
+    const shuffled = [VAULT_A[2], VAULT_A[0], VAULT_A[1]]
+    assertEqual(await vaultFingerprint(shuffled), await vaultFingerprint(VAULT_A))
+  })
+
+  await runAsyncTest('is stable under field reordering', async () => {
+    const a = [mkrec('x', [fld('u', 'text', '1'), fld('p', 'password', '2')])]
+    const b = [mkrec('x', [fld('p', 'password', '2'), fld('u', 'text', '1')])]
+    assertEqual(await vaultFingerprint(a), await vaultFingerprint(b))
+  })
+
+  await runAsyncTest('ignores created', async () => {
+    const a = [mkrec('x', [fld('p', 'password', '1')], true, '2020-01-01T00:00:00.000Z')]
+    const b = [mkrec('x', [fld('p', 'password', '1')], true, '2026-06-06T00:00:00.000Z')]
+    assertEqual(await vaultFingerprint(a), await vaultFingerprint(b))
+  })
+
+  await runAsyncTest('changes when a password changes', async () => {
+    const a = [mkrec('x', [fld('p', 'password', '1')])]
+    const b = [mkrec('x', [fld('p', 'password', '2')])]
+    assertNotEqual(await vaultFingerprint(a), await vaultFingerprint(b))
+  })
+
+  await runAsyncTest('changes when a record is added', async () => {
+    const extra = VAULT_A.concat([mkrec('extra', [fld('p', 'password', 'z')])])
+    assertNotEqual(await vaultFingerprint(VAULT_A), await vaultFingerprint(extra))
+  })
+
+  await runAsyncTest('changes when a record is removed', async () => {
+    assertNotEqual(await vaultFingerprint(VAULT_A),
+                   await vaultFingerprint(VAULT_A.slice(0, 2)))
+  })
+
+  await runAsyncTest('is deterministic across calls', async () => {
+    assertEqual(await vaultFingerprint(VAULT_A), await vaultFingerprint(VAULT_A))
+  })
+
+  await runAsyncTest('formats as four groups of four hex characters', async () => {
+    const fp = await vaultFingerprint(VAULT_A)
+    assert(/^[0-9a-f]{4}( [0-9a-f]{4}){3}$/.test(fp), 'unexpected format: ' + fp)
+  })
+
+  await runAsyncTest('handles an empty vault', async () => {
+    const fp = await vaultFingerprint([])
+    assert(/^[0-9a-f]{4}( [0-9a-f]{4}){3}$/.test(fp), 'unexpected format: ' + fp)
+  })
+
+  await runAsyncTest('an empty vault differs from a populated one', async () => {
+    assertNotEqual(await vaultFingerprint([]), await vaultFingerprint(VAULT_A))
+  })
+
+  // The reason the About dialogue publishes two fingerprints rather than one.
+  //
+  // Device A holds three active and two inactive records; device B holds the
+  // same three active records and none of the inactive ones. A single
+  // active-only fingerprint would report the two vaults as identical, and the
+  // user would never learn that two records they deliberately kept — they
+  // deactivated rather than deleted them — are missing from B.
+  await runAsyncTest('a missing inactive record is detectable', async () => {
+    const deviceA = [
+      mkrec('a', [fld('p','password','1')], true),
+      mkrec('b', [fld('p','password','2')], true),
+      mkrec('old', [fld('p','password','x')], false),
+    ]
+    const deviceB = [
+      mkrec('a', [fld('p','password','1')], true),
+      mkrec('b', [fld('p','password','2')], true),
+    ]
+    const [aActive, aInactive] = partitionByActive(deviceA)
+    const [bActive, bInactive] = partitionByActive(deviceB)
+
+    assertEqual(await vaultFingerprint(aActive), await vaultFingerprint(bActive),
+                'the live credentials really are in sync, and must say so')
+    assertNotEqual(await vaultFingerprint(aInactive), await vaultFingerprint(bInactive),
+                   'the archived difference must not be silently equal')
+  })
+
+  await runAsyncTest('active and inactive fingerprints are independent', async () => {
+    // Changing an inactive record must not disturb the active fingerprint.
+    const base = [mkrec('a', [fld('p','password','1')], true),
+                  mkrec('old', [fld('p','password','x')], false)]
+    const edited = [mkrec('a', [fld('p','password','1')], true),
+                    mkrec('old', [fld('p','password','CHANGED')], false)]
+    const [baseA, baseI] = partitionByActive(base)
+    const [editA, editI] = partitionByActive(edited)
+    assertEqual(await vaultFingerprint(baseA), await vaultFingerprint(editA))
+    assertNotEqual(await vaultFingerprint(baseI), await vaultFingerprint(editI))
+  })
+}
+
+
+// ---------------------------------------------------------------------------
+// vault-ui.js — reuse badge, dialogue, and stats refresh
+// ---------------------------------------------------------------------------
+import {
+  getCurrentRecords, refreshVaultStats, updateReuseIndicator, menuReuseDlg,
+  getCachedReuseCount, getCachedReuseGroups
+} from '/js/vault-ui.js'
+
+// A second accordion, swapped in for these tests only. convertInternalDataToJSON
+// reads #records-accordion, so the id has to move rather than the element.
+function mkVaultUiItem(title, active, fields) {
+  const item = xmk('div').xClass('accordion-item')
+  const btn = xmk('button').xClass('accordion-button')
+  btn.innerHTML = title
+  btn.setAttribute('x-active', active ? 'true' : 'false')
+  btn.setAttribute('x-created', '2026-01-01T00:00:00.000Z')
+  item.appendChild(btn)
+  const body = xmk('div').xClass('accordion-body')
+  fields.forEach(([name, type, value]) => {
+    const row = xmk('div').xClass('row')
+    const n = xmk('div').xClass('x-fld-name'); n.innerHTML = name
+    const v = xmk('div').xClass('x-fld-value')
+    v.setAttribute('data-fld-type', type)
+    v.setAttribute('data-fld-raw-value', value)
+    v.innerHTML = value
+    row.appendChild(n); row.appendChild(v); body.appendChild(row)
+  })
+  item.appendChild(body)
+  return item
+}
+
+function withVaultUiFixture(items, fn) {
+  const real = document.getElementById('records-accordion')
+  if (real) { real.removeAttribute('id') }
+  const fixture = xmk('div').xId('records-accordion')
+  items.forEach(i => fixture.appendChild(i))
+  document.body.appendChild(fixture)
+  const badge = xmk('span').xId('x-reuse-indicator')
+  badge.style.display = 'none'
+  document.body.appendChild(badge)
+  try {
+    fn(badge)
+  } finally {
+    fixture.remove()
+    badge.remove()
+    if (real) { real.setAttribute('id', 'records-accordion') }
+  }
+}
+
+const REUSED_ITEMS = () => [
+  mkVaultUiItem('github', true, [['username','text','joe'],['password','password','SAME']]),
+  mkVaultUiItem('gitlab', true, [['username','text','joe'],['password','password','SAME']]),
+  mkVaultUiItem('bank',   true, [['username','text','jl'], ['password','password','OTHER']]),
+]
+
+suite('vault-ui.js — getCurrentRecords')
+test('reads records out of the accordion', () => {
+  withVaultUiFixture(REUSED_ITEMS(), () => {
+    const records = getCurrentRecords()
+    assertEqual(records.length, 3)
+    assertEqual(records[0].title, 'github')
+  })
+})
+
+suite('vault-ui.js — reuse badge')
+test('is shown when a password is reused', () => {
+  withVaultUiFixture(REUSED_ITEMS(), (badge) => {
+    window.prefs.showPasswordReuseWarning = true
+    refreshVaultStats()
+    assertEqual(badge.style.display, 'inline')
+    assertEqual(getCachedReuseCount(), 2, 'counts fields, not groups')
+    assertEqual(getCachedReuseGroups().length, 1)
+  })
+})
+test('is hidden when nothing is reused', () => {
+  const unique = [
+    mkVaultUiItem('a', true, [['password','password','one']]),
+    mkVaultUiItem('b', true, [['password','password','two']]),
+  ]
+  withVaultUiFixture(unique, (badge) => {
+    window.prefs.showPasswordReuseWarning = true
+    refreshVaultStats()
+    assertEqual(badge.style.display, 'none', 'a clean vault must cost no screen space')
+    assertEqual(getCachedReuseCount(), 0)
+  })
+})
+test('is hidden when the preference is off', () => {
+  withVaultUiFixture(REUSED_ITEMS(), (badge) => {
+    window.prefs.showPasswordReuseWarning = false
+    refreshVaultStats()
+    assertEqual(badge.style.display, 'none')
+    window.prefs.showPasswordReuseWarning = true
+  })
+})
+test('the count is still computed when the preference is off', () => {
+  // The preference suppresses the badge, not the check. There must be no
+  // state in which PAM knows a password is reused and cannot tell you.
+  withVaultUiFixture(REUSED_ITEMS(), () => {
+    window.prefs.showPasswordReuseWarning = false
+    refreshVaultStats()
+    assertEqual(getCachedReuseCount(), 2, 'the check must still run')
+    window.prefs.showPasswordReuseWarning = true
+  })
+})
+test('reports the count in its text', () => {
+  withVaultUiFixture(REUSED_ITEMS(), (badge) => {
+    window.prefs.showPasswordReuseWarning = true
+    refreshVaultStats()
+    assert(badge.innerHTML.indexOf('REUSED: 2') > -1, badge.innerHTML)
+  })
+})
+
+suite('vault-ui.js — reuse dialogue')
+test('names the colliding entries', () => {
+  withVaultUiFixture(REUSED_ITEMS(), () => {
+    refreshVaultStats()
+    const dlg = menuReuseDlg()
+    assert(dlg.textContent.indexOf('github') > -1, 'github should be listed')
+    assert(dlg.textContent.indexOf('gitlab') > -1, 'gitlab should be listed')
+  })
+})
+test('marks an inactive entry with a badge, not raw markup', () => {
+  const items = [
+    mkVaultUiItem('live', true, [['password','password','SHARED']]),
+    mkVaultUiItem('<small>*INACTIVE*</small>&nbsp;old', false,
+                  [['password','password','SHARED']]),
+  ]
+  withVaultUiFixture(items, () => {
+    window.prefs.hideInactiveRecords = false
+    refreshVaultStats()
+    const dlg = menuReuseDlg()
+    assert(dlg.textContent.indexOf('<small>') === -1,
+           'the raw marker must not appear as text: ' + dlg.textContent)
+    assert(dlg.textContent.indexOf('INACTIVE') > -1,
+           'the distinction must still be visible')
+    assert(dlg.querySelectorAll('.badge').length === 1,
+           'exactly one entry should carry the badge')
+    window.prefs.hideInactiveRecords = true
+  })
+})
+test('never renders the shared password', () => {
+  // The whole point: you learn that two entries collide without being shown
+  // the secret they collide on.
+  withVaultUiFixture(REUSED_ITEMS(), () => {
+    refreshVaultStats()
+    const dlg = menuReuseDlg()
+    assert(dlg.textContent.indexOf('SAME') === -1, 'the shared password leaked into the dialogue')
+  })
+})
+test('says so plainly when there is no reuse', () => {
+  const unique = [mkVaultUiItem('a', true, [['password','password','one']])]
+  withVaultUiFixture(unique, () => {
+    refreshVaultStats()
+    const dlg = menuReuseDlg()
+    assert(dlg.textContent.indexOf('not used more than once') > -1 ||
+           dlg.textContent.indexOf('No stored password') > -1, dlg.textContent)
+  })
+})
+
+suite('vault-ui.js — deactivating recomputes the report')
+test('a deactivated record leaves the reuse report', () => {
+  // Regression. The activate/deactivate toggle set x-active and called
+  // searchRecords() to refresh the display, but never recomputed the vault
+  // stats — every other refresh site fires on a change of record COUNT, which
+  // deactivating is not. The cached groups therefore kept the record and the
+  // report still listed it.
+  const items = [
+    mkVaultUiItem('live',    true, [['password','password','SHARED']]),
+    mkVaultUiItem('retiring', true, [['password','password','SHARED']]),
+  ]
+  withVaultUiFixture(items, () => {
+    window.prefs.hideInactiveRecords = true
+    refreshVaultStats()
+    assertEqual(getCachedReuseCount(), 2, 'both are active to begin with')
+
+    // deactivate the second one the way the toggle does
+    const buttons = document.querySelectorAll('#records-accordion .accordion-button')
+    buttons[1].setAttribute('x-active', 'false')
+    refreshVaultStats()
+
+    assertEqual(getCachedReuseCount(), 0,
+                'with one of the pair retired there is no reuse left to report')
+    const dlg = menuReuseDlg()
+    assert(dlg.textContent.indexOf('retiring') === -1,
+           'the deactivated record must not appear in the report')
+  })
+})
+test('reactivating puts it back', () => {
+  const items = [
+    mkVaultUiItem('live',    true,  [['password','password','SHARED']]),
+    mkVaultUiItem('returning', false, [['password','password','SHARED']]),
+  ]
+  withVaultUiFixture(items, () => {
+    window.prefs.hideInactiveRecords = true
+    refreshVaultStats()
+    assertEqual(getCachedReuseCount(), 0, 'one of the pair starts retired')
+
+    const buttons = document.querySelectorAll('#records-accordion .accordion-button')
+    buttons[1].setAttribute('x-active', 'true')
+    refreshVaultStats()
+    assertEqual(getCachedReuseCount(), 2, 'reactivating restores the collision')
+  })
+})
+
+suite('vault-ui.js — hideInactiveRecords scope')
+test('inactive records are excluded from the report when the pref is set', () => {
+  // The user's framing: an inactive record is a retired credential. A
+  // collision with one is not something to act on, and reporting it is noise.
+  const items = [
+    mkVaultUiItem('live',    true,  [['password','password','SHARED']]),
+    mkVaultUiItem('retired', false, [['password','password','SHARED']]),
+  ]
+  withVaultUiFixture(items, (badge) => {
+    window.prefs.showPasswordReuseWarning = true
+    window.prefs.hideInactiveRecords = true
+    refreshVaultStats()
+    assertEqual(getCachedReuseCount(), 0, 'a retired collision must not be reported')
+    assertEqual(badge.style.display, 'none')
+  })
+})
+test('inactive records are included when the pref is clear', () => {
+  const items = [
+    mkVaultUiItem('live',    true,  [['password','password','SHARED']]),
+    mkVaultUiItem('retired', false, [['password','password','SHARED']]),
+  ]
+  withVaultUiFixture(items, (badge) => {
+    window.prefs.showPasswordReuseWarning = true
+    window.prefs.hideInactiveRecords = false
+    refreshVaultStats()
+    assertEqual(getCachedReuseCount(), 2, 'showing inactive records must show their collisions')
+    assertEqual(badge.style.display, 'inline')
+    window.prefs.hideInactiveRecords = true
+  })
+})
+test('reuse between two active records is reported either way', () => {
+  const items = [
+    mkVaultUiItem('one', true, [['password','password','SHARED']]),
+    mkVaultUiItem('two', true, [['password','password','SHARED']]),
+    mkVaultUiItem('old', false, [['password','password','UNRELATED']]),
+  ]
+  withVaultUiFixture(items, () => {
+    window.prefs.hideInactiveRecords = true
+    refreshVaultStats()
+    assertEqual(getCachedReuseCount(), 2, 'filtering must not drop an active collision')
+  })
+})
+test('the dialogue says when inactive records were excluded', () => {
+  const items = [mkVaultUiItem('a', true, [['password','password','one']])]
+  withVaultUiFixture(items, () => {
+    window.prefs.hideInactiveRecords = true
+    refreshVaultStats()
+    const dlg = menuReuseDlg()
+    assert(dlg.textContent.indexOf('Inactive records are excluded') > -1,
+           'a filtered report must say so; an absence is the hardest thing to notice')
+  })
+})
+
+suite('prefs — showPasswordReuseWarning')
+test('defaults to true', () => {
+  assertEqual(getDefaultPrefs().showPasswordReuseWarning, true,
+              'the nag is on by default; suppressing it is a deliberate act')
+})
+
+
 finalize() // update summary with sync results so far
 runCryptTests()
   .then(runSaveRegressionTests)
+  .then(runVaultFingerprintTests)
   .catch((err) => {
     // A throw in an async runner itself (not an individual test — those are
     // caught) would otherwise leave the flag false and strand the Selenium

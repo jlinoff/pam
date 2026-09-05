@@ -4,6 +4,7 @@
  */
 import { xmk, xget, xgetn, enableFunctionChaining } from './lib.js'
 import { statusBlip } from './status.js'
+import { scheduleVaultStatsRefresh } from './vault-ui.js'
 import { words } from './en_words.js'
 import { icon, setDarkLightTheme } from './utils.js'
 import { initPrefs, addDefaultRecordFields } from './prefs.js'
@@ -35,6 +36,17 @@ export function updateHtmlRenderingIndicator() {
     }
 }
 
+// Update the password-search indicator in the toolbar.
+// Call this whenever window.prefs.searchPasswordFieldValues changes.
+export function updatePasswordSearchIndicator() {
+    let indicator = document.getElementById('x-password-search-indicator')
+    if (indicator) {
+        let on = window.prefs.searchRecordFieldValues &&
+                 window.prefs.searchPasswordFieldValues
+        indicator.style.display = on ? 'inline' : 'none'
+    }
+}
+
 export function updateFilePassCacheIndicator() {
     let indicator = document.getElementById('x-filepass-cache-indicator')
     if (indicator) {
@@ -57,6 +69,8 @@ export function main() {
     addDefaultRecordFields()
     updateHtmlRenderingIndicator()   // SEC-001: show badge if enabled at startup
     updateFilePassCacheIndicator()   // SEC-002: show badge if local at startup
+    updatePasswordSearchIndicator()  // show badge if password search enabled at startup
+    scheduleVaultStatsRefresh()      // reuse badge and About fingerprint
     const secure = window.isSecureContext? '(secure)' : ''
     statusBlip(`initializing PAM... ${secure} ${window.screen.width}x${window.screen.height}`)
 }
@@ -150,6 +164,22 @@ function topLayout() {
                         .xStyle({'display': 'none'})
                         .xAttrs({'title': 'HTML field rendering is ENABLED — only use with trusted files (SEC-001)'})
                         .xInnerHTML('&#x26A0; HTML ON'),
+                    xmk('span')
+                        .xId('x-reuse-indicator')
+                        .xClass('badge', 'bg-warning', 'text-dark', 'ms-2')
+                        .xStyle({'display': 'none', 'cursor': 'pointer'})
+                        .xAttrs({
+                            'title': 'Some stored passwords are used more than once. Click for details.',
+                            'data-bs-target': '#menuReuseDlg',
+                            'data-bs-toggle': 'modal',
+                        })
+                        .xInnerHTML('&#x26A0; REUSED: 0'),
+                    xmk('span')
+                        .xId('x-password-search-indicator')
+                        .xClass('badge', 'bg-warning', 'text-dark', 'ms-2')
+                        .xStyle({'display': 'none'})
+                        .xAttrs({'title': 'Search matches against password values \u2014 the search box can be used to recover them one character at a time'})
+                        .xInnerHTML('&#x26A0; PW SEARCH'),
                     xmk('span')
                         .xId('x-filepass-cache-indicator')
                         .xClass('badge', 'bg-warning', 'text-dark', 'ms-2')

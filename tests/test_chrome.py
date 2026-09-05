@@ -3,6 +3,7 @@ PAM pytest module.
 '''  # pylint: disable=too-many-lines
 import json
 import os
+import re
 import time
 
 from selenium import webdriver
@@ -102,7 +103,9 @@ def choose_menu_option(driver, option):
     children = get_children(dropdown)
     assert len(children) == 2
     menu_items = children[1].find_elements(By.CLASS_NAME, 'dropdown-item')
-    assert len(menu_items) == 8
+    # A hard count rather than a lookup, deliberately: it catches an
+    # accidental menu change. Raised from 8 to 9 by the Reused Passwords entry.
+    assert len(menu_items) == 9, f'unexpected menu size: {[m.text for m in menu_items]}'
     #breakpoint()
     for menu_item in menu_items:
         if option in menu_item.text:
@@ -155,14 +158,21 @@ def test_pam_setup():
     # Validate memu items.
     menu_items = children[1].find_elements(By.CLASS_NAME, 'dropdown-item')
     print(len(menu_items))
-    assert len(menu_items) == 8
-    assert 'About' in menu_items[0].text
-    assert 'Preferences' in menu_items[1].text
-    assert 'New Record' in menu_items[2].text
-    assert 'Clear Records' in menu_items[3].text
-    assert 'Load File' in menu_items[4].text
-    assert 'Save File' in menu_items[5].text
-    assert 'Help' in menu_items[7].text # 6 is reserved for Print
+    # One ordered comparison rather than an assertion per index: a mismatch
+    # then reports the whole menu instead of a single item, and inserting an
+    # entry is one edit rather than five renumberings.
+    # Note choose_menu_option() asserts the length independently; both have to
+    # move together when the menu changes.
+    expected = ['About', 'Preferences', 'New Record', 'Clear Records',
+                'Load File', 'Save File', 'Reused Passwords', 'Print', 'Help']
+    # textContent, not .text: Print is hidden unless enablePrinting is set, and
+    # Selenium reports '' for the text of a non-displayed element. The previous
+    # version of this check skipped index 6 for that reason. Reading textContent
+    # asserts the whole menu including the entries that are currently hidden.
+    # str.strip() removes the leading &nbsp; each label carries, since
+    # '\xa0'.isspace() is True.
+    actual = [item.get_attribute('textContent').strip() for item in menu_items]
+    assert actual == expected, f'menu changed: {actual}'
 
     # toggle dark/light mode
     time.sleep(1)
@@ -426,7 +436,10 @@ def test_example_records():
     driver.switch_to.alert.accept()
     time.sleep(0.5)
     records = driver.find_elements(By.CLASS_NAME, 'accordion-button')
-    assert len(records) == 7
+    # Nine example records: eight active plus a deactivated Toys-R-Us. All
+    # nine are inserted into the DOM; the inactive one is hidden rather than
+    # absent, so this count includes it.
+    assert len(records) == 9, f'unexpected example count: {[r.text for r in records]}'
     assert 'Amazon' in records[0].text
 
     # All done
@@ -501,6 +514,218 @@ def test_record_create_and_delete():
     assert not any('E2E Test Record' in t for t in titles), \
         'Record should have been deleted'
 
+    driver.quit()
+
+
+# Facebook's password in www/examples/example.txt. Instagram shares it
+# deliberately, so the example vault demonstrates the reuse report. If the
+# example data changes this value the reuse assertions below fail loudly
+# rather than silently checking nothing.
+FACEBOOK_PASSWORD = 'dOa#DirgJge67okTKtEzp.LSl'
+
+
+def _make_record_with_password(driver, title, password):
+    '''Helper: create a record with a single password field via the UI.
+
+    Goes through the New Record dialogue rather than injecting DOM state, so
+    the insertRecord -> setNumRecords -> scheduleVaultStatsRefresh path is
+    actually exercised.
+
+    Fields are added from the "New Field" dropdown, which lists the predefined
+    field names. Choosing "password" sets both the field name and its type.
+    '''
+    dlg = choose_menu_option(driver, 'New Record')
+    title_input = dlg.find_element(By.CSS_SELECTOR, 'input[placeholder="Record Title"]')
+    title_input.clear()
+    title_input.send_keys(title)
+
+    # Strip the default fields so only the one added below is present.
+    driver.execute_script(
+        "var menu = document.getElementById('menuNewDlg');"
+        "var body = menu.getElementsByClassName('container')[0];"
+        "while (body.children.length > 2) {"
+        "  body.removeChild(body.children[body.children.length-1]); }"
+    )
+    time.sleep(0.3)
+
+    # Open the New Field dropdown and pick the predefined 'password' field.
+    new_field_btn = dlg.find_element(By.ID, 'x-new-field-type')
+    scroll_and_click(driver, new_field_btn)
+    time.sleep(0.5)
+    items = dlg.find_elements(By.CSS_SELECTOR, 'ul.dropdown-menu .dropdown-item')
+    password_item = next((i for i in items if i.text.strip() == 'password'), None)
+    assert password_item is not None, \
+        f'no predefined password field in the dropdown: {[i.text for i in items]}'
+    scroll_and_click(driver, password_item)
+    time.sleep(0.5)
+
+    value_inputs = dlg.find_elements(
+        By.CSS_SELECTOR, 'input.x-fld-value[data-fld-type="password"]')
+    assert value_inputs, 'the added password field should expose a value input'
+    value_inputs[-1].clear()
+    value_inputs[-1].send_keys(password)
+
+    save_button = dlg.find_element(By.CLASS_NAME, 'x-fld-record-save')
+    scroll_and_click(driver, save_button)
+    time.sleep(1)
+
+
+def test_reuse_badge_and_dialog():
+    '''
+    E2E: the reuse badge is hidden for a vault with no reuse, appears when a
+    password is shared, and the dialogue names both entries without ever
+    showing the password.
+
+    Mirrored on purpose. A test that only checked the clean case would pass
+    whether or not the feature works — an empty list is also what a broken
+    implementation returns.
+
+    The clean baseline is now an EMPTY vault rather than the example records:
+    the examples deliberately include an Instagram entry sharing Facebook's
+    password, so the badge is correctly showing after a load.
+    '''
+    driver = get_driver()
+    driver.get('http://localhost:8081/')
+    time.sleep(1)
+
+    badge = driver.find_element(By.ID, 'x-reuse-indicator')
+
+    # 1. Clean baseline: an empty vault has nothing to reuse.
+    dlg = choose_menu_option(driver, 'Clear Records')
+    clear_button = dlg.find_element(By.CLASS_NAME, 'x-fld-record-clear')
+    scroll_and_click(driver, clear_button)
+    time.sleep(1)
+    assert not badge.is_displayed(), \
+        'the badge must be hidden when no password is reused'
+
+    dlg = choose_menu_option(driver, 'Reused Passwords')
+    assert dlg is not None, 'Reused Passwords dialogue should open'
+    assert 'No stored password' in dlg.text, \
+        f'an empty vault should say so plainly, got: {dlg.text[:200]}'
+    close_btn = dlg.find_element(By.CLASS_NAME, 'x-fld-record-close')
+    scroll_and_click(driver, close_btn)
+    time.sleep(0.5)
+
+    # 2. The example records contain one deliberate collision.
+    load_example_records(driver)
+    time.sleep(1)
+    assert badge.is_displayed(), 'the badge must appear once a password is shared'
+    assert 'REUSED: 2' in badge.text, f'badge should count fields, got: {badge.text}'
+
+    dlg = choose_menu_option(driver, 'Reused Passwords')
+    assert 'Facebook' in dlg.text, f'Facebook missing: {dlg.text[:300]}'
+    assert 'Instagram' in dlg.text, f'Instagram missing: {dlg.text[:300]}'
+    assert FACEBOOK_PASSWORD not in dlg.text, \
+        'the shared password must never be rendered'
+    close_btn = dlg.find_element(By.CLASS_NAME, 'x-fld-record-close')
+    scroll_and_click(driver, close_btn)
+    time.sleep(0.5)
+
+    # 3. A newly created record joins the group, which exercises the
+    #    insertRecord -> setNumRecords -> scheduleVaultStatsRefresh path.
+    _make_record_with_password(driver, 'E2E Reuse Extra', FACEBOOK_PASSWORD)
+    time.sleep(1)
+    assert 'REUSED: 3' in badge.text, \
+        f'a new record sharing the password should join the group, got: {badge.text}'
+
+    # 4. The preference suppresses the badge but not the check.
+    #
+    # execute_async_script, not execute_script: the dynamic import returns a
+    # promise, and execute_script would return before the module resolved.
+    # The assertion below would then pass without the code under test having
+    # run at all.
+    driver.execute_script('window.prefs.showPasswordReuseWarning = false')
+    driver.execute_async_script(
+        'var done = arguments[arguments.length - 1];'
+        "import('/js/vault-ui.js').then(function(m) {"
+        '  m.updateReuseIndicator(); done(true);'
+        '}).catch(function(e) { done(String(e)); });'
+    )
+    time.sleep(0.5)
+    assert not badge.is_displayed(), 'the preference should hide the badge'
+    dlg = choose_menu_option(driver, 'Reused Passwords')
+    assert 'Facebook' in dlg.text, \
+        'the check must still run with the warning suppressed'
+    close_btn = dlg.find_element(By.CLASS_NAME, 'x-fld-record-close')
+    scroll_and_click(driver, close_btn)
+
+    driver.quit()
+
+
+def test_deactivating_updates_reuse_report():
+    '''
+    E2E: deactivating a record removes it from the reuse report.
+
+    Regression. The activate/deactivate toggle set x-active and called
+    searchRecords() to refresh the display, but never recomputed the vault
+    stats. Every other refresh site fires on a change of record COUNT, which
+    deactivating is not, so the cached groups kept the record and the report
+    still listed it after it had been retired.
+
+    This has to be an e2e test. The unit fixture builds accordion items
+    directly and has no toggle handler on them, so a unit test would exercise
+    the computation — which was never broken — rather than the wiring, which
+    was.
+    '''
+    driver = get_driver()
+    driver.get('http://localhost:8081/')
+    time.sleep(1)
+
+    badge = driver.find_element(By.ID, 'x-reuse-indicator')
+    load_example_records(driver)
+    time.sleep(1)
+    assert badge.is_displayed(), 'the example records contain a deliberate collision'
+    assert 'REUSED: 2' in badge.text, f'expected two fields, got: {badge.text}'
+
+    # Retire one half of the pair. Instagram shares Facebook's password.
+    buttons = driver.find_elements(By.CLASS_NAME, 'accordion-button')
+    instagram = next((b for b in buttons if 'Instagram' in b.text), None)
+    assert instagram is not None, 'no Instagram record to deactivate'
+    scroll_and_click(driver, instagram)
+    time.sleep(1)
+
+    item = instagram.find_element(
+        By.XPATH, './ancestor::div[contains(@class, "accordion-item")]')
+    boxes = [e for e in item.find_elements(By.CSS_SELECTOR, 'input[type="checkbox"]')
+             if e.is_displayed()]
+    assert boxes, 'no activation checkbox on the expanded record'
+    scroll_and_click(driver, boxes[0])
+    time.sleep(1.5)
+
+    assert not badge.is_displayed(), \
+        'with one of the pair retired there is no reuse left to report'
+
+    dlg = choose_menu_option(driver, 'Reused Passwords')
+    assert 'Instagram' not in dlg.text, \
+        f'the deactivated record must not appear in the report: {dlg.text[:200]}'
+    close_btn = dlg.find_element(By.CLASS_NAME, 'x-fld-record-close')
+    scroll_and_click(driver, close_btn)
+
+    driver.quit()
+
+
+def test_about_dialog_shows_fingerprint():
+    '''
+    E2E: the About dialogue reports a vault fingerprint.
+    '''
+    driver = get_driver()
+    driver.get('http://localhost:8081/')
+    time.sleep(1)
+    load_example_records(driver)
+    time.sleep(1.5)
+
+    dlg = choose_menu_option(driver, 'About')
+    assert dlg is not None, 'About dialogue should open'
+    assert 'Fingerprint' in dlg.text, \
+        f'About should show a vault fingerprint, got: {dlg.text[:300]}'
+
+    fingerprint = driver.execute_script(
+        "return document.getElementById('x-about-fingerprint').textContent")
+    assert re.search(r'[0-9a-f]{4} [0-9a-f]{4} [0-9a-f]{4} [0-9a-f]{4}', fingerprint), \
+        f'unexpected fingerprint format: {fingerprint}'
+
+    close_btn = dlg.find_element(By.CLASS_NAME, 'x-fld-record-close')
+    scroll_and_click(driver, close_btn)
     driver.quit()
 
 
@@ -801,8 +1026,13 @@ def test_print_cover_record_count():
     driver = get_driver()
     _load_example_and_enable_printing(driver)
 
-    # Count the visible records before printing
-    record_count = len(driver.find_elements(By.CLASS_NAME, 'accordion-button'))
+    # Count VISIBLE records, which is what genRecordsDocument() counts. The two
+    # were the same number until the example set gained a deactivated record:
+    # Toys-R-Us is in the DOM but carries d-none under Hide Inactive Records,
+    # so the accordion holds nine while the report covers eight.
+    items = driver.find_elements(By.CLASS_NAME, 'accordion-item')
+    record_count = len([i for i in items
+                        if 'd-none' not in (i.get_attribute('class') or '')])
 
     html = _trigger_print_and_get_iframe(driver)
 
@@ -861,7 +1091,6 @@ def test_print_empty_fields_skipped():
     assert '>login<' not in html.lower() or 'testuser' in html, \
         'Non-empty field should appear in print output'
     # The empty note field should not generate a row
-    import re  # pylint: disable=import-outside-toplevel
     note_rows = re.findall(r'class="fn"[^>]*>note<', html, re.IGNORECASE)
     assert len(note_rows) == 0, \
         'Empty note field should be skipped in print output'

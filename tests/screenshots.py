@@ -1870,6 +1870,10 @@ SHOTS = [
 NOISE_MAX_ROWS = 3
 NOISE_MAX_PIXELS = 64
 
+# Set once if Pillow turns out to be missing, so the note is printed a single
+# time rather than for every capture.
+_PILLOW_WARNED = False
+
 
 def difference_is_noise(before, after):
     """Whether two PNGs differ only by subpixel rendering noise.
@@ -1881,6 +1885,14 @@ def difference_is_noise(before, after):
     try:
         from PIL import Image, ImageChops  # pylint: disable=import-outside-toplevel
     except ImportError:
+        # Installed by `make init`. Falling back to exact matching is the
+        # stricter behaviour, so a missing Pillow cannot loosen the check — but
+        # it does mean one capture will churn on every run, so say so once.
+        global _PILLOW_WARNED  # pylint: disable=global-statement
+        if not _PILLOW_WARNED:
+            _PILLOW_WARNED = True
+            print('  note: Pillow is not installed, so differences cannot be '
+                  'measured; comparison is exact')
         return False, 0
 
     try:

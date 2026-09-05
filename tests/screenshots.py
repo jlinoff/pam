@@ -744,9 +744,28 @@ def wait_for_modal(driver, timeout=5.0):
 
 
 def blur(driver):
-    """Drop focus, so a blinking text caret cannot land in a capture."""
+    """Drop focus and reset field scrolling, so neither lands in a capture.
+
+    Two separate sources of churn:
+
+    - A focused input blinks a text caret, so two captures a few hundred
+      milliseconds apart differ even though the content is identical.
+    - A field whose content overflows keeps a scroll position. Six lines of
+      ingredients in a 5em textarea, or a twenty-character password in a
+      narrow input, sit wherever typing left them — and that depends on
+      timing, which is why pam-new-record-field-1.png churned on some runs and
+      not others.
+
+    Resetting both is cheap and makes the capture show the start of the value,
+    which is the part worth reading anyway.
+    """
     driver.execute_script(
-        'if (document.activeElement) { document.activeElement.blur(); }')
+        'if (document.activeElement) { document.activeElement.blur(); }'
+        "var fields = document.querySelectorAll('input, textarea');"
+        'for (var i = 0; i < fields.length; i++) {'
+        '  fields[i].scrollTop = 0;'
+        '  fields[i].scrollLeft = 0;'
+        '}')
     time.sleep(0.5)
 
 
@@ -1628,6 +1647,16 @@ INSTALL_PRINT_HOOK_JS = (
     "};"
 )
 
+# The report prints `Printed: <date>` in both the cover block and the footer,
+# at minute resolution, so the capture differs on every run by construction.
+# Frozen before the preview is rendered — the report is still PAM's own output,
+# with one field pinned the way the About capture pins its commit id.
+FREEZE_PRINTED_DATE_JS = (
+    "window._pamPrintIframeHTML = window._pamPrintIframeHTML.replace("
+    "  /Printed: [^<&]*/g, 'Printed: January 1, 2026 at 12:00 AM');"
+    "return (window._pamPrintIframeHTML.match(/Printed: January 1, 2026/g) || []).length;"
+)
+
 SHOW_REPORT_JS = (
     "var html = window._pamPrintIframeHTML;"
     "if (!html) { return null; }"
@@ -1695,6 +1724,12 @@ def shot_print_example(driver):
         time.sleep(0.3)
     else:
         raise RuntimeError('the print hook never fired; no report was generated')
+
+    frozen = driver.execute_script(FREEZE_PRINTED_DATE_JS)
+    if frozen < 2:
+        raise RuntimeError(
+            f'expected two printed-date stamps to freeze, replaced {frozen}; '
+            'the report would churn on every run')
 
     if not driver.execute_script(SHOW_REPORT_JS):
         raise RuntimeError('no captured report HTML to display')

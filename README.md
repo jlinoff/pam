@@ -52,6 +52,7 @@ the on-line help is generated.
       * [Reason 7: Hiding Passwords from Casual Observers](#reason-7-hiding-passwords-from-casual-observers)
       * [Reason 8: Access from mobile devices](#reason-8-access-from-mobile-devices)
       * [Reason 9: FOSS](#reason-9-foss)
+      * [Reason 10: Duplicate Password Checking](#reason-10-duplicate-password-checking)
     * [PAM vs mainstream password managers](#pam-vs-mainstream-password-managers)
   * [Records](#records)
     * [Unexpanded View of all Records](#unexpanded-view-of-all-records)
@@ -606,6 +607,22 @@ free and open source software (FOSS) so you can try it without any
 obligation or cost. You can also help find and fix bugs or improve
 the UI.
 
+#### Reason 10: Duplicate Password Checking
+
+A password shared between two accounts is only as safe as the least safe of
+them. If any one of those sites is breached, every account sharing that
+password is exposed — and you may not find out which ones they were.
+
+_PAM_ finds reuse across your whole vault and shows it in the
+[Reused Passwords](#reused-passwords) report, listing the entries that share a
+password without ever displaying the password itself. A
+**⚠ REUSED** badge appears in the footer whenever any stored password is used
+more than once, so you do not have to go looking.
+
+The check runs **entirely on your device**. No request is made, nothing is
+uploaded, and no third party learns anything about your vault. That is not a
+policy promise — PAM has no network access to make one with.
+
 ### PAM vs mainstream password managers
 
 _Analysis: April 2026. Compared against Bitwarden and 1Password as representative mainstream alternatives._
@@ -623,7 +640,8 @@ _Analysis: April 2026. Compared against Bitwarden and 1Password as representativ
 | Local-only operation | Fully local — no server traffic after page load | Cloud-dependent; requires trust in vendor | PAM wins for offline/air-gapped scenarios |
 | Encryption | AES-256-CBC; v2 format (shipped April 2026) fixes PBKDF2 iteration count and salt entropy bug. Existing v1 files need manual re-save to upgrade. | AES-256, strong PBKDF2 / Argon2 KDFs | Tie — v2 closes the gap; v1 files remain weak until re-saved |
 | Zero-knowledge architecture | Inherently — no server ever sees data | Bitwarden: yes. 1Password: yes | Tie |
-| Audit / breach alerts | None — if a third-party site you use is breached and your credentials leaked, PAM has no way to notify you. PAM's own encrypted data remains secure. | Bitwarden checks passwords against HaveIBeenPwned; 1Password's Watchtower flags breached, weak, and reused passwords automatically | PAM loses on monitoring — not because PAM's data is at risk, but because it cannot alert you when third-party sites you have accounts on are breached |
+| Reused password detection | Yes — the [Reused Passwords](#reused-passwords) report and a footer badge, computed locally with no network request | Yes — 1Password Watchtower, Bitwarden reports; both require the vault to be synced to the vendor | Tie on capability, PAM wins on disclosure — the same answer without anything leaving the device |
+| Breach alerts | None — if a third-party site you use is breached and your credentials leaked, PAM has no way to notify you. PAM's own encrypted data remains secure. | Bitwarden checks passwords against HaveIBeenPwned; 1Password's Watchtower flags breached passwords automatically | PAM loses on monitoring — not because PAM's data is at risk, but because it cannot alert you when third-party sites you have accounts on are breached |
 | **Flexible / non-password data** | | | |
 | Free-form text records | Excellent — first-class textarea fields | Secure notes exist but limited formatting | PAM wins for general text storage |
 | Custom field types | Full HTML input types: text, textarea, url, phone, email, number, html | Fixed item templates; some custom fields | PAM wins — more flexible data model |

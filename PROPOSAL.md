@@ -635,10 +635,24 @@ what surfaced these. A single run cannot show determinism.
   consistently with the example records beside it. It returns a count and the
   shots raise on zero, so a markup change cannot silently restore the churn.
 
-  Two captures — `pam-password-no-generator` and `pam-new-record-field-1` —
-  churn *intermittently* and are not yet explained. Both are New Record
-  dialogue states that already blur before capturing, so the caret is not the
-  cause. Still open.
+- **Scroll position in overflowing fields.** A field whose content does not fit
+  keeps a scroll offset, and where typing leaves it depends on timing. Six
+  lines of ingredients in a 5em textarea and a twenty-character password in a
+  narrow input both overflow, which is why `pam-new-record-field-1` churned on
+  some runs and not others while `pam-password-shown` churned on all of them.
+  `blur()` now resets `scrollTop` and `scrollLeft` on every input and textarea
+  as well as dropping focus — and showing the start of a value is better
+  documentation anyway.
+
+- **The printed report's timestamp.** `print.js` writes
+  `Printed: <date at minute resolution>` into both the cover block and the
+  footer, so `pam-prefs-enable-printing-example` differed by construction. The
+  shot freezes both before rendering the preview and raises if it does not
+  replace exactly two, the same shape as the About stub.
+
+  Worth noting how these were found: two full runs, diffed. Neither run alone
+  distinguished "correct" from "different every time", and the intermittent one
+  would have looked stable in either run taken by itself.
 
 `search_for()` has the same shape and is so far stable, which is noted in its
 docstring rather than pre-emptively changed — the images are demonstrably
@@ -891,10 +905,20 @@ is a user-facing defect until done.
 - **The local-only claims.** "Fully local — no server traffic after page load"
   and "Offline use: Full — no dependency on external service" become false once
   breach checking is enabled. They need qualifying, not deleting.
+- **Reason 11: Breached Passwords Detection** — a "reasons to use PAM" section
+  parallel to Reason 10. **Write it when the feature lands, not before.** The
+  README would otherwise claim a capability PAM does not have, which is the
+  same failure as leaving the local-only claim in place after breach checking
+  arrives, just in the other direction.
+
 - **The comparison table row** on audit/breach alerts. It currently says PAM
   loses because it "cannot alert you when third-party sites are breached" and
   cites 1Password flagging "breached, weak, and reused" passwords. PAM now does
   reuse and will do breach; the row needs splitting rather than editing.
+  **Done for reuse:** the row is now two — "Reused password detection" (a tie
+  on capability, a PAM win on disclosure, since the same answer is computed
+  without anything leaving the device) and "Breach alerts" (still a PAM loss).
+  The breach row changes when the feature ships.
 - Regenerated preference screenshots (the Search and Administration tabs are
   already stale — they predate `searchPasswordFieldValues`).
 

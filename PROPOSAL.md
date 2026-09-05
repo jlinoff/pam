@@ -644,14 +644,34 @@ what surfaced these. A single run cannot show determinism.
 
   Three attempts to fix it at the source failed — a caret, field scroll
   position, a dropdown still fading — because it is not the harness's to fix.
-  `diag_churn.py` captures one shot repeatedly and reports where the pixels
-  differ; that located it in one run after two wrong guesses had cost several.
+  `tests/diag_churn.py` captures one shot repeatedly and reports *where* the
+  pixels differ — a bounding box and a row profile. It located this in one pass
+  after three wrong guesses had each cost a full double run, and it is kept as
+  a permanent tool rather than deleted: captures will churn again, and
+  reasoning about what might have changed has a poor record here compared with
+  looking at the pixels.
 
-  The comparison now tolerates a difference no more than **3 rows tall** and
-  **64 pixels**. Height is the discriminator, not count: sixteen pixels sounds
-  negligible but a text caret is twenty-eight, so a count threshold alone would
-  sit perilously close to masking one. Nothing meaningful in this UI is three
-  pixels tall except a border line.
+  It also produced the insight that fixed the tolerance. The second region it
+  reported was 36 rows tall where the first was 2, which killed the
+  height-based threshold before it shipped and pointed at density instead.
+
+  The discriminator is **density within the differing region** — how much of its
+  own bounding box the difference fills. Antialiasing scatters a few pixels
+  along glyph edges and fills its box sparsely; a real change fills it:
+
+  | difference | pixels | box | density | verdict |
+  |---|---|---|---|---|
+  | legend border gap | 32 | 105x2 | 15% | noise |
+  | New Field button | 70 | 107x36 | 2% | noise |
+  | a text caret | 28 | 2x14 | 100% | real |
+  | a line of text | 9600 | 600x16 | 100% | real |
+  | a changed digit | 100 | 8x14 | 89% | real |
+
+  Neither simpler measure works. **Count** cannot separate them — the caret is
+  *smaller* than the button noise. **Height** cannot either: the first fix used
+  a three-row limit, and then the same noise turned up 36 rows tall in a
+  different part of the same dialogue. A cap on absolute pixels sits alongside
+  the density test so a large sparse change cannot slip through.
 
   A tolerated difference is always **reported** — printed as `same~` with its
   pixel count, and summarised at the end of the run — so it cannot quietly grow

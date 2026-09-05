@@ -7,16 +7,28 @@ bounding box and a row profile. That says whether the variation is in the
 title area, the field body, the buttons or the scrollbar — which is the thing
 worth knowing before changing anything.
 
-Written because pam-new-record-field-1.png churned intermittently across
-several runs and two separate guesses at the cause (a blinking caret, then
-field scroll position) both turned out to be wrong. Guessing a third time is
-worse than measuring once.
-
     pipenv run python3 tests/diag_churn.py pam-new-record-field-1.png
     pipenv run python3 tests/diag_churn.py pam-new-record-field-1.png 5
 
-Needs the server on 8081, the same as make screenshots. Delete this file once
-the answer is known.
+Needs the server on 8081, the same as make screenshots, and Pillow.
+
+WHY IT EXISTS
+-------------
+pam-new-record-field-1.png churned intermittently, and three separate guesses
+at the cause — a blinking caret, field scroll position, a dropdown still
+fading — were all wrong. Each cost a full double run to disprove. This located
+it in one pass by reporting *where* the pixels differed rather than reasoning
+about what might vary.
+
+The answer was subpixel text layout: Chrome measures a label a fraction of a
+pixel differently between runs, which moves the edges of the gap that label
+leaves in a border. Nothing the harness can control, so screenshots.py
+tolerates it instead — and the shape of the difference this tool reported is
+what showed that DENSITY, not pixel count or height, is the measure that
+separates rendering noise from a real change.
+
+Reach for this whenever a capture starts churning. Reasoning about what might
+have changed has a poor record here; looking at the pixels does not.
 '''
 
 import os

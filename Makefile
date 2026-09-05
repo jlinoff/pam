@@ -100,7 +100,7 @@ lint:  ## lint the source code
 	@if rg '\s$$' www/js/*js ; then printf '\033[31;1mERROR: trailing whitespace found\033[0m\n'; exit 1 ; fi
 	jshint --config jshint.json www
 	diff <(ls -1 www/icons/black/) <(ls -1 www/icons/blue)
-	pipenv run pylint tests/test_chrome.py tests/screenshots.py tests/check_images.py
+	pipenv run pylint tests/test_chrome.py tests/screenshots.py tests/check_images.py tests/diag_churn.py
 	# Documentation is part of the build. A broken anchor or a stale image
 	# reference is invisible in a Markdown preview and in the rendered help
 	# page — the link simply does nothing — so nothing else would ever notice.

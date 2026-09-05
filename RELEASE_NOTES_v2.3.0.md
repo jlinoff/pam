@@ -397,6 +397,19 @@ image:
 - the printed report's `Printed:` line, at minute resolution
 - a viewport size left behind by the previous capture
 
+### `tests/diag_churn.py`
+
+Captures one shot repeatedly and reports where the pixels differ. Written after
+three separate guesses at an intermittently churning image were all wrong, each
+costing a full double run to disprove; it located the cause in one pass.
+
+The cause turned out to be subpixel text layout — Chrome measures a label a
+fraction of a pixel differently between runs, moving the edges of the gap that
+label leaves in a border. Nothing the harness can control, so the comparison
+tolerates differences that fill their own bounding box sparsely (under 25%),
+which is how antialiasing differs from a real change. A tolerated difference is
+reported as `same~` with its pixel count and the file is left untouched.
+
 ### Guards
 
 Each capture checks the thing that would otherwise fail silently: zero-size

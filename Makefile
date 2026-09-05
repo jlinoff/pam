@@ -243,7 +243,10 @@ screenshots: init ## Capture README screenshots. SHOT=<substr> limits the set.
 	-$(KILL_SERVER)
 	( cd www && pipenv run python -m http.server $(PORT) > /dev/null 2>&1 ) &
 	sleep 2
-	SHOT="$(SHOT)" pipenv run python3 tests/screenshots.py
+	# -u keeps output unbuffered. Without it, piping to tee or a file makes
+	# Python block-buffer stdout and the per-shot lines do not appear until
+	# the run ends, which looks exactly like a hang.
+	SHOT="$(SHOT)" pipenv run python3 -u tests/screenshots.py
 	$(KILL_SERVER)
 
 # NOTE: only meaningful on the machine that regenerates the images. Font
@@ -255,7 +258,7 @@ screenshots-check: init ## Report stale screenshots. Reference machine only; wri
 	-$(KILL_SERVER)
 	( cd www && pipenv run python -m http.server $(PORT) > /dev/null 2>&1 ) &
 	sleep 2
-	CHECK=1 SHOT="$(SHOT)" pipenv run python3 tests/screenshots.py
+	CHECK=1 SHOT="$(SHOT)" pipenv run python3 -u tests/screenshots.py
 	$(KILL_SERVER)
 
 # This is an example to build off of for debugging

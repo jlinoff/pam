@@ -807,15 +807,18 @@ setting the
 [Enable Editable Field Name](#enable-editable-field-name)
 preference.
 
-This capability is _not_ enabled by default to avoid confusion between
-the "name" input and the "value" input as shown below. Normally only
-the "value" input is shown.
+This capability is _not_ enabled by default, to avoid confusion between the
+**Name** input and the **Value** input. With it off, only the Value input is
+shown and the field name appears as a fixed label above it. With it on, each
+field gains a Name box above its Value box, and the field name is edited there:
 
-Typically there is no reason to change record field names on a per
-record basis. It is better to add the new record fields to the default
-list in the preferences.
+<img src="www/help/pam-fld-name-edit-on.png" width="400" alt="a field row with a Name box above the Value box">
 
-<img src="www/help/pam-change-field-name.png" width="400" alt="change-field-name">
+Typically there is no reason to change record field names on a per record
+basis, and doing so is not recommended — it is better to add the field names
+you want to the default list in
+[Record Fields](#record-fields-preferences) preferences, where they apply
+consistently across every record.
 
 ### Field Types
 
@@ -1253,7 +1256,7 @@ Record" menu option in the application, is probably the best way to
 create the first new record for a topic family. This is also known as
 the "menu" approach and is shown below.
 
-<img src="www/help/pam-create-new-record.png" width="400" alt="new-rec">
+<img src="www/help/pam-menu.png" width="300" alt="the menu, with New Record third from the top">
 
 To show how it works, we will create a recipe record using
 "ingredients" and "instruction" fields. But first we need to define
@@ -1262,12 +1265,9 @@ dialogue. So the available records look like this.
 
 <img src="www/help/pam-recipe-prefs.png" width="400" alt="default"/>
 
-To create a new record using the menu approach click or tap on the
-`"New Record"` option from the menu.
-
-<img src="www/help/pam-new-record-menu.png" width="400" alt="new-record">
-
-That will popup a dialogue that looks like this.
+To create a new record using the menu approach, choose **New Record** from the
+[menu](#menu-functions) — third from the top, below Preferences. That pops up a
+dialogue that looks like this.
 
 <img src="www/help/pam-new-record.png" width="400" alt="new-record">
 

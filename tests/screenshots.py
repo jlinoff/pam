@@ -57,7 +57,7 @@ from test_chrome import (  # pylint: disable=wrong-import-position
 )
 from selenium.webdriver.common.by import By  # pylint: disable=wrong-import-position
 from selenium.common.exceptions import (  # pylint: disable=wrong-import-position
-    NoAlertPresentException, UnexpectedAlertPresentException,
+    NoAlertPresentException, UnexpectedAlertPresentException, WebDriverException,
 )
 
 # get_driver() uses 1920x1080, and chromedriver's element screenshot stops at
@@ -289,6 +289,11 @@ def set_viewport_size(driver, width, height):
     portable way to get a known viewport size, since the offset varies by
     platform and Chrome version.
     """
+    def sized():
+        inner = driver.execute_script(
+            'return [window.innerWidth, window.innerHeight];')
+        return inner == [width, height]
+
     try:
         driver.set_window_size(width, height)
     except UnexpectedAlertPresentException:
@@ -298,7 +303,8 @@ def set_viewport_size(driver, width, height):
         raise RuntimeError(
             'an unhandled browser alert was open when resizing the window; '
             'a previous capture left one behind') from None
-    time.sleep(0.3)
+    if wait_until(sized, timeout=1.0):
+        return
     for _ in range(5):
         inner = driver.execute_script(
             'return [window.innerWidth, window.innerHeight];')
@@ -406,7 +412,7 @@ def shot_about(driver):
     be open before stubbing, since #about does not exist until then.
     '''
     dlg = choose_menu_option(driver, 'About')
-    time.sleep(SETTLE)
+    wait_for_modal(driver)
     substitutions = stub_volatile(driver)
     if substitutions < len(STUB_PREFIXES) + 1:
         raise RuntimeError(
@@ -425,7 +431,7 @@ def shot_reused_passwords(driver):
     rather than having its output staged.
     '''
     dlg = choose_menu_option(driver, 'Reused Passwords')
-    time.sleep(SETTLE)
+    wait_for_modal(driver)
     content = modal_content(dlg)
     if 'Facebook' not in content.text or 'Instagram' not in content.text:
         raise RuntimeError(
@@ -469,16 +475,19 @@ def shot_records_light(driver):
 def search_for(driver, term):
     '''Type a term into the search box and let the filter settle.
 
-    This leaves focus in the search box, which is the same setup that made
-    pam-password-hidden.png churn on the blinking caret. These two captures
-    have been stable across repeated double-runs, so the caret is evidently
-    not landing in the image here — but if pam-search-g*.png ever starts
-    reporting CHANGED on an unchanged vault, blur before capturing.
+    Blurs afterwards. Focus in the search box means a blinking caret, the same
+    thing that made pam-password-hidden.png churn. These captures were stable
+    for a long while and the risk was left documented rather than fixed — then
+    replacing the fixed sleeps with polling changed the timing and
+    pam-search-g.png started churning, exactly as predicted. A latent race is
+    still a race; the only thing keeping it quiet was a sleep that happened to
+    land between blinks.
     '''
     box = driver.find_element(By.ID, 'search')
     box.clear()
     box.send_keys(term)
     time.sleep(SETTLE)
+    blur(driver)
     return Viewport(driver)
 
 
@@ -559,7 +568,7 @@ def shot_about_custom(driver):
     )
     time.sleep(0.4)
     dlg = choose_menu_option(driver, 'About')
-    time.sleep(SETTLE)
+    wait_for_modal(driver)
     stub_volatile(driver)
     content = modal_content(dlg)
     if 'Custom Stuff' not in content.text:
@@ -572,14 +581,14 @@ def shot_about_custom(driver):
 def shot_file_save(driver):
     '''The Save File dialogue.'''
     dlg = choose_menu_option(driver, 'Save File')
-    time.sleep(SETTLE)
+    wait_for_modal(driver)
     return modal_content(dlg)
 
 
 def shot_file_load(driver):
     '''The Load File dialogue.'''
     dlg = choose_menu_option(driver, 'Load File')
-    time.sleep(SETTLE)
+    wait_for_modal(driver)
     return modal_content(dlg)
 
 
@@ -693,6 +702,47 @@ def shot_menu_with_print(driver):
 # Phase 4: record interaction states
 # ---------------------------------------------------------------------------
 
+def wait_until(predicate, timeout=5.0, interval=0.05):
+    """Poll until a predicate holds. Returns True, or False on timeout.
+
+    Most fixed sleeps in this file were worst-case padding for a Bootstrap fade
+    that finishes in 300ms. Polling turns a flat 0.6s into a typical 0.1s while
+    still waiting the full budget on a slow machine, so it is both quicker and
+    safer than lowering the constant.
+    """
+    deadline = time.time() + timeout
+    while time.time() < deadline:
+        try:
+            if predicate():
+                return True
+        except WebDriverException:
+            pass
+        time.sleep(interval)
+    return False
+
+
+def wait_for_page(driver, timeout=5.0):
+    """Wait for the document to finish loading."""
+    return wait_until(
+        lambda: driver.execute_script('return document.readyState') == 'complete',
+        timeout)
+
+
+def wait_for_modal(driver, timeout=5.0):
+    """Wait for a Bootstrap modal to finish fading in.
+
+    A modal is interactable once it carries the `show` class and its opacity
+    has reached 1. Capturing mid-fade produces a half-transparent dialogue,
+    which is what the fixed SETTLE waits were guarding against.
+    """
+    return wait_until(
+        lambda: driver.execute_script(
+            "var m = document.querySelector('.modal.show');"
+            "if (!m) { return false; }"
+            "return window.getComputedStyle(m).opacity === '1';"),
+        timeout)
+
+
 def blur(driver):
     """Drop focus, so a blinking text caret cannot land in a capture."""
     driver.execute_script(
@@ -719,7 +769,7 @@ def open_new_record_with_password_field(driver):
     type. Returns the dialogue's .modal-content.
     """
     dlg = choose_menu_option(driver, 'New Record')
-    time.sleep(SETTLE)
+    wait_for_modal(driver)
     driver.execute_script(
         "var menu = document.getElementById('menuNewDlg');"
         "var body = menu.getElementsByClassName('container')[0];"
@@ -865,7 +915,7 @@ def shot_google_account(driver):
     creating it, so the dialogue is constructed field by field.
     """
     dlg = choose_menu_option(driver, 'New Record')
-    time.sleep(SETTLE)
+    wait_for_modal(driver)
 
     title = dlg.find_element(By.CSS_SELECTOR, 'input[placeholder="Record Title"]')
     title.clear()
@@ -1029,6 +1079,34 @@ def shot_edit_facebook_new_field(driver):
     return dlg.find_element(By.CLASS_NAME, 'modal-content')
 
 
+# The placeholder date load.js stamps on records that have no `created` field.
+# Newly saved records get new Date().toISOString() instead, so any capture
+# showing one expanded differs on every run — the collapsed list hides the
+# date, which is why pam-new-record-done was stable while
+# pam-new-record-done-expand was not.
+PLACEHOLDER_CREATED = '1999-01-01T00:00:00.000Z'
+
+
+def stub_created_dates(driver):
+    """Freeze every visible creation date so captures do not churn.
+
+    Rewrites the rendered text only. Using the same placeholder load.js uses
+    keeps a newly created record consistent with the example records beside it.
+
+    Returns the number of dates rewritten so a shot can tell whether it found
+    anything; a silent zero would mean the markup moved and the image would go
+    back to churning unnoticed.
+    """
+    return driver.execute_script(
+        "var n = 0;"
+        "var spans = document.querySelectorAll('[title=\"creation date\"]');"
+        "for (var i = 0; i < spans.length; i++) {"
+        "  spans[i].innerHTML = '&nbsp;Created: <small>' + arguments[0] + '</small>';"
+        "  n++;"
+        "}"
+        "return n;", PLACEHOLDER_CREATED)
+
+
 # ---------------------------------------------------------------------------
 # Phase 5, group A: the New Record walkthrough
 # ---------------------------------------------------------------------------
@@ -1088,7 +1166,7 @@ def open_new_record(driver):
     stripped first.
     """
     dlg = choose_menu_option(driver, 'New Record')
-    time.sleep(SETTLE)
+    wait_for_modal(driver)
     driver.execute_script(
         "var menu = document.getElementById('menuNewDlg');"
         "var body = menu.getElementsByClassName('container')[0];"
@@ -1233,6 +1311,10 @@ def shot_new_record_done_expand(driver):
     add_named_field(driver, dlg, 'instructions', RECIPE_INSTRUCTIONS)
     save_new_record(driver, dlg)
     expand_record(driver, RECIPE_TITLE)
+    if not stub_created_dates(driver):
+        raise RuntimeError(
+            'no creation dates found to freeze; this capture would '
+            'churn on every run')
     return Viewport(driver)
 
 
@@ -1324,6 +1406,10 @@ def shot_clone_saved(driver):
     build_recipe_record(driver)
     dlg = open_clone_dialogue(driver, RECIPE_TITLE)
     save_clone(driver, dlg)
+    if not stub_created_dates(driver):
+        raise RuntimeError(
+            'no creation dates found to freeze; this capture would '
+            'churn on every run')
     return Viewport(driver)
 
 
@@ -1334,6 +1420,10 @@ def shot_clone_expanded(driver):
     dlg = open_clone_dialogue(driver, RECIPE_TITLE)
     save_clone(driver, dlg)
     expand_record(driver, CLONE_TITLE)
+    if not stub_created_dates(driver):
+        raise RuntimeError(
+            'no creation dates found to freeze; this capture would '
+            'churn on every run')
     return Viewport(driver)
 
 
@@ -1443,6 +1533,180 @@ def shot_fld_name_on(driver):
     return shot_editable_field_row(driver, True)
 
 
+# ---------------------------------------------------------------------------
+# Phase 6: the recipe example
+# ---------------------------------------------------------------------------
+#
+# www/examples/recipes.txt holds one Ice Cream Sundae record with an `html`
+# field carrying an image, plus the ingredients and instructions textareas.
+# These shots load that file rather than building the record by hand: the
+# README reaches them through the "Load Example Recipes" button, and the html
+# field is not something the New Record walkthrough produces.
+
+
+def load_recipes(driver, timeout=10.0):
+    """Load the example recipes file, waiting for the outcome.
+
+    Same shape as load_examples(): the confirm() alert is slow enough that a
+    fixed sleep misses it, and an unhandled alert blocks the next command
+    rather than failing here.
+    """
+    dlg = choose_menu_option(driver, 'Load File')
+    buttons = dlg.find_elements(By.TAG_NAME, 'button')
+    recipes = next((b for b in buttons if 'Load Example Recipes' in b.text), None)
+    if recipes is None:
+        raise RuntimeError('no "Load Example Recipes" button in the Load File dialogue')
+    recipes.click()
+
+    deadline = time.time() + timeout
+    accepted = False
+    while time.time() < deadline:
+        try:
+            driver.switch_to.alert.accept()
+            accepted = True
+            time.sleep(0.4)
+        except NoAlertPresentException:
+            titles = [b.get_attribute('textContent').strip()
+                      for b in driver.find_elements(By.CLASS_NAME, 'accordion-button')]
+            if accepted and any(RECIPE_TITLE in t for t in titles):
+                time.sleep(0.4)
+                return
+            time.sleep(0.2)
+    raise RuntimeError(
+        f'the recipe example did not load within {timeout}s '
+        f'(confirm accepted: {accepted})')
+
+
+def shot_sundae_open(driver):
+    """The recipe record expanded, image and all.
+
+    The record's `html` field holds the picture. recipes.txt sets
+    allowHtmlFieldRendering itself and loading a file applies its prefs, so
+    setting it here would be both redundant and ineffective — the file's value
+    wins either way. The assertion below is what actually guards the outcome.
+    """
+    set_theme(driver, 'dark')
+    load_recipes(driver)
+    item = expand_record(driver, RECIPE_TITLE)
+    images = [e for e in item.find_elements(By.TAG_NAME, 'img') if e.is_displayed()]
+    if not images:
+        raise RuntimeError(
+            'no image in the expanded recipe record; the html field is being '
+            'shown as markup rather than rendered')
+    return Viewport(driver)
+
+
+def shot_sundae_new(driver):
+    """The recipe record in the edit dialogue, as it looks while being made."""
+    set_theme(driver, 'dark')
+    load_recipes(driver)
+    dlg = open_edit_dialogue(driver, RECIPE_TITLE)
+    content = dlg.find_element(By.CLASS_NAME, 'modal-content')
+    values = [e.get_attribute('value') for e in
+              content.find_elements(By.CSS_SELECTOR, 'input') if e.is_displayed()]
+    if RECIPE_TITLE not in values:
+        raise RuntimeError(
+            f'the edit dialogue is not showing {RECIPE_TITLE!r}: {values!r}')
+    blur(driver)
+    return content
+
+
+# The printed report renders into an iframe that printRecords() positions
+# off-screen and removes as soon as its hook returns, so it cannot be
+# photographed in place. _pamPrintHook is the seam the e2e tests already use to
+# read that HTML; this shot takes the same HTML and renders it into a visible
+# iframe of its own, then captures that.
+#
+# The report is the application's own output either way — genRecordsDocument()
+# produced it. Only the frame around it is the harness's.
+
+INSTALL_PRINT_HOOK_JS = (
+    "window._pamPrintIframeHTML = null;"
+    "window._pamPrintHook = function (iframe) {"
+    "  window._pamPrintIframeHTML ="
+    "    iframe.contentDocument.documentElement.outerHTML;"
+    "};"
+)
+
+SHOW_REPORT_JS = (
+    "var html = window._pamPrintIframeHTML;"
+    "if (!html) { return null; }"
+    "var f = document.createElement('iframe');"
+    "f.id = 'x-shot-print-preview';"
+    "f.style.cssText = 'position:absolute;top:0;left:0;width:794px;"
+    "height:400px;border:1px solid #888;background:#fff;z-index:99999;';"
+    "document.body.appendChild(f);"
+    "var d = f.contentDocument || f.contentWindow.document;"
+    "d.open(); d.write(html); d.close();"
+    "return true;"
+)
+
+SIZE_REPORT_JS = (
+    "var f = document.getElementById('x-shot-print-preview');"
+    "if (!f) { return 0; }"
+    "var d = f.contentDocument || f.contentWindow.document;"
+    "var h = Math.max(d.body.scrollHeight, d.documentElement.scrollHeight);"
+    "f.style.height = h + 'px';"
+    "return h;"
+)
+
+
+def shot_print_example(driver):
+    """The printed records report.
+
+    enablePrinting() must run before the Print entry is reachable: the
+    preference alone does not reveal it, because the entry is hidden with
+    Bootstrap's d-none rather than by reading the preference at render time.
+    """
+    set_theme(driver, 'dark')
+    driver.execute_script('window.prefs.enablePrinting = true;')
+    driver.execute_async_script(
+        'var done = arguments[arguments.length - 1];'
+        "import('/js/print.js').then(function(m) {"
+        '  m.enablePrinting(); done(true);'
+        '}).catch(function(e) { done(String(e)); });'
+    )
+    driver.execute_script(INSTALL_PRINT_HOOK_JS)
+
+    # Not choose_menu_option(): that asserts a modal opens, and Print does not
+    # open one — it calls printRecords() directly, the same shape as Help,
+    # which that helper explicitly excludes.
+    #
+    # Matched by the x-print class rather than by text, because headless Chrome
+    # renders this entry icon-only with empty .text. The e2e suite reaches it
+    # the same way.
+    menu = driver.find_element(By.ID, 'menu')
+    scroll_and_click(driver, menu)
+    time.sleep(SETTLE)
+    items = get_children(get_parent(menu))[1].find_elements(
+        By.CLASS_NAME, 'dropdown-item')
+    target = next((i for i in items
+                   if 'x-print' in (i.get_attribute('class') or '')), None)
+    if target is None:
+        raise RuntimeError(
+            'no x-print entry in the menu; enablePrinting() did not reveal it')
+    scroll_and_click(driver, target)
+    time.sleep(SETTLE)
+
+    deadline = time.time() + 10
+    while time.time() < deadline:
+        if driver.execute_script('return window._pamPrintIframeHTML !== null;'):
+            break
+        time.sleep(0.3)
+    else:
+        raise RuntimeError('the print hook never fired; no report was generated')
+
+    if not driver.execute_script(SHOW_REPORT_JS):
+        raise RuntimeError('no captured report HTML to display')
+    time.sleep(SETTLE)
+
+    height = driver.execute_script(SIZE_REPORT_JS)
+    if not height:
+        raise RuntimeError('the report preview has no height')
+    time.sleep(0.5)
+    return driver.find_element(By.ID, 'x-shot-print-preview')
+
+
 # (filename, capture function, window size)
 SHOTS = [
     ('pam-menu.png', shot_menu, WINDOW),
@@ -1498,6 +1762,11 @@ SHOTS = [
     ('pam-fld-name-edit-off.png', shot_fld_name_off, WINDOW),
     ('pam-fld-name-edit-checked.png', shot_fld_name_checked, WINDOW),
     ('pam-fld-name-edit-on.png', shot_fld_name_on, WINDOW),
+
+    ('pam-ice-cream-sundae-open.png', shot_sundae_open, (800, FIT)),
+    ('pam-ice-cream-sundae-new.png', shot_sundae_new, WINDOW),
+
+    ('pam-prefs-enable-printing-example.png', shot_print_example, WINDOW),
 ]
 
 
@@ -1556,6 +1825,43 @@ def capture(driver, filename, func, check_only, fit=False):
     return state, png_size(png)
 
 
+def progress_line(state, size, position, elapsed, filename):
+    """One result line, with how far through the run it is.
+
+    A full pass is several minutes with no other sign of life, and knowing
+    whether it is a quarter or three-quarters through decides whether to wait
+    or go and do something else. The elapsed column shows which shots are
+    actually expensive — the walkthroughs rebuild a record from scratch every
+    time — so optimisation can follow measurement rather than guesswork.
+    """
+    index, total = position
+    marker = {'new': 'NEW ', 'changed': 'CHG ', 'same': 'same'}[state]
+    dimensions = f'{size[0]}x{size[1]}'
+    percent = f'{index * 100 // total}%'
+    return f'  {marker}  {dimensions:>9}  {percent:>4}  {elapsed:5.1f}s  {filename}'
+
+
+def reset_between_shots(driver):
+    """Return the browser to a known state before the next capture.
+
+    Every capture leaves something behind — an open dialogue, a search term, a
+    changed theme or preference. Reloading clears all of it, which is cheaper
+    to reason about than tracking what each surface needs undone, and it is
+    what made the theme and viewport leaks findable.
+
+    Reloading does NOT reset the window, though, and a fitted shot leaves it
+    short: after pam-search-g-re the viewport is 320px tall, and in that window
+    the fixed footer overlaps the dropdown menu, so the next Load File click is
+    intercepted by the Pwd Gen button.
+    """
+    clear_device_metrics(driver)
+    set_viewport_size(driver, *WINDOW)
+    driver.get(URL)
+    wait_for_page(driver)
+    load_examples(driver)
+    set_theme(driver, 'dark')
+
+
 def main():
     '''Walk the shot list. Returns 0, or 1 in check mode if anything differs.'''
     check_only = os.environ.get('CHECK') == '1'
@@ -1585,7 +1891,7 @@ def main():
         # shot_records_light.
         set_theme(driver, 'dark')
 
-        for filename, func, window in shots:
+        for index, (filename, func, window) in enumerate(shots, start=1):
             fit = window[1] == FIT
             if window == IPHONE:
                 set_device_metrics(driver, *IPHONE, scale=IPHONE_SCALE)
@@ -1594,27 +1900,13 @@ def main():
                 # For a fitting shot this is only the starting size; the shot
                 # runs at full height and capture() shrinks afterwards.
                 set_viewport_size(driver, window[0], NARROW[1] if fit else window[1])
-            state, (shot_w, shot_h) = capture(driver, filename, func, check_only, fit)
-            marker = {'new': 'NEW    ', 'changed': 'CHANGED', 'same': 'same   '}[state]
-            print(f'  {marker}  {filename:38} {shot_w}x{shot_h}')
+            started = time.time()
+            state, size = capture(driver, filename, func, check_only, fit)
+            print(progress_line(state, size, (index, len(shots)),
+                                time.time() - started, filename))
             if state != 'same':
                 changed.append(filename)
-            # Every capture leaves state behind — an open dialogue, a search
-            # term, a changed theme or preference. Reloading resets all of it,
-            # which is cheaper to reason about than tracking what each surface
-            # needs undone.
-            #
-            # Reloading does NOT reset the window, though, and a fitted shot
-            # leaves it short: after pam-search-g-re the viewport is 320px
-            # tall, and in that window the fixed footer overlaps the dropdown
-            # menu, so the next Load File click is intercepted by the Pwd Gen
-            # button. Restore a roomy viewport before the reset.
-            clear_device_metrics(driver)
-            set_viewport_size(driver, *WINDOW)
-            driver.get(URL)
-            time.sleep(0.8)
-            load_examples(driver)
-            set_theme(driver, 'dark')
+            reset_between_shots(driver)
     finally:
         driver.quit()
 

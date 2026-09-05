@@ -36,7 +36,7 @@ so the number is still free.
 | 1. Vault fingerprint | done |
 | 2. Reuse detection | done |
 | 3. Search password oracle | done (unplanned; found while building 1 and 2) |
-| 4. Screenshot automation | in progress — see the phase list below |
+| 4. Screenshot automation | done — 49 captured, 2 hand-made |
 | 5. Password breach check | designed, not started |
 | 6. README pass | last, covers all of the above |
 | 7. Vault diff | deferred — blocked on durable record IDs |
@@ -316,13 +316,33 @@ The Expanded View section was rewritten so the prose names each control and
    made the theme and viewport leaks findable. `SHOT=new-record` keeps
    iteration cheap.
 
-   Still outstanding in group A:
+   `pam-new-record-menu.png` and `pam-create-new-record.png` were **deleted,
+   not captured**. Both were the same picture — the menu with a red arrow
+   pointing at New Record — and `pam-menu.png` is that menu without the
+   annotation and with `Reused Passwords` in it, which the stale copies
+   predated. The prose already said "click the New Record menu option" in both
+   places, so the arrows added nothing; it now also says where in the menu it
+   sits.
 
-   - `pam-new-record-menu.png` — annotated, needs prose first
-   - `pam-new-record-drag.png` — a field mid-drag. Selenium drag-and-drop
-     against HTML5 sortables is unreliable and capturing mid-gesture more so;
-     likely a HAND_MADE entry
-   - `pam-create-new-record.png` — annotated, needs prose first
+   `pam-change-field-name.png`, the most heavily annotated image in the set at
+   1958 red pixels, went the same way: it was a New Record dialogue with the
+   Name box visible, which is exactly `pam-fld-name-edit-on.png`. Its two
+   captions — "change the field name here" and "this is not recommended" —
+   were both already in the surrounding prose.
+
+   `pam-new-record-drag.png` is **HAND_MADE**. A record field captured
+   mid-drag: Selenium's drag-and-drop against HTML5 sortables is unreliable,
+   and photographing a gesture part-way through is worse — the useful moment
+   lasts a few hundred milliseconds and depends on where the pointer is.
+   Genuinely not scriptable, which is what that list is for.
+
+   `pam-prefs-enable-printing-example.png` **is** captured. The report does not
+   open in a separate window as assumed: `printRecords()` renders it into an
+   iframe positioned off-screen and removes it as soon as its hook returns.
+   `_pamPrintHook` is the seam the e2e tests already use to read that HTML; the
+   shot takes the same HTML and renders it into a visible iframe of its own.
+   The report is the application's own output either way — only the frame
+   around it belongs to the harness.
 
    **B. Cloning — done, 3 shots.** `pam-clone-record-popup`,
    `pam-clone-records-1`, `pam-clone-records-2`.
@@ -367,8 +387,20 @@ The Expanded View section was rewritten so the prose names each control and
    `pam-fld-name-edit-on` (335), `pam-new-record-menu` (216),
    `pam-clone-google` (79).
 
-6. **Not started.** Alternate example data: `pam-ice-cream-sundae-*`,
-   `pam-recipe-prefs`
+6. **Done — 2 shots.** `pam-ice-cream-sundae-open` and `-new`.
+   (`pam-recipe-prefs` moved to group 5A, which depends on it.)
+
+   These load `www/examples/recipes.txt` through the "Load Example Recipes"
+   button rather than building the record by hand. That file holds one Ice
+   Cream Sundae record whose `html` field carries an image — something the New
+   Record walkthrough does not produce, and the README reaches it through that
+   button.
+
+   `allowHtmlFieldRendering` is deliberately **not** set by the shot: the file
+   sets it, and loading a file applies its prefs, so setting it beforehand
+   would be both redundant and ineffective. The shot asserts an `<img>` is
+   actually rendered instead — which guards the outcome rather than the
+   mechanism.
    need `www/examples/recipes.txt` loaded rather than `example.txt`.
 
 Determinism note for later phases: `Created: 1999-01-01T00:00:00.000Z` in the
@@ -593,6 +625,21 @@ what surfaced these. A single run cannot show determinism.
   nothing persists it — so a reload should reset it. Making the theme explicit
   removes the order-dependence either way, which is the property that matters.
 
+- **Creation timestamps.** A newly saved record is stamped
+  `Created: <new Date().toISOString()>`, so any capture showing one **expanded**
+  differs on every run. `pam-new-record-done-expand`, `pam-clone-records-1` and
+  `pam-clone-records-2` churned every time; `pam-new-record-done` did not,
+  because the collapsed list hides the date — which is the clue that identified
+  it. `stub_created_dates()` rewrites the rendered text to the same 1999
+  placeholder `load.js` uses for records with no date, so a new record reads
+  consistently with the example records beside it. It returns a count and the
+  shots raise on zero, so a markup change cannot silently restore the churn.
+
+  Two captures — `pam-password-no-generator` and `pam-new-record-field-1` —
+  churn *intermittently* and are not yet explained. Both are New Record
+  dialogue states that already blur before capturing, so the caret is not the
+  cause. Still open.
+
 `search_for()` has the same shape and is so far stable, which is noted in its
 docstring rather than pre-emptively changed — the images are demonstrably
 reproducible and altering them would cost a churn to buy nothing.
@@ -618,6 +665,30 @@ the new one 20. Opening the file directly — `open www/help/pam-google-account.
 
 **Hard-reload the help page after regenerating**, or check the file on disk
 before diagnosing the pipeline.
+
+### Speed
+
+A full pass runs about 20 seconds per capture, so 49 shots is roughly 17
+minutes and a determinism double-run is 34. Most of that is fixed waiting: 56
+`time.sleep()` calls, 31 of them a flat `SETTLE` of 0.6s guarding a Bootstrap
+fade that finishes in 300ms.
+
+First pass at it replaces the worst offenders with condition polling —
+`wait_for_page()`, `wait_for_modal()`, and a viewport-size poll — which turns a
+flat 0.6s into a typical 0.1s while still waiting the full budget on a slow
+machine. Quicker *and* safer than lowering the constant.
+
+The progress line now carries elapsed seconds per shot, so the next round of
+optimisation can follow measurement. The walkthrough shots rebuild the Ice
+Cream Sundae record from scratch every time and are the obvious suspects, but
+that is a guess until the numbers say so.
+
+Not attempted: making `reset_between_shots()` conditional. It reloads the page
+and re-imports the examples before every capture, which is the single largest
+cost — and also what keeps each shot independent of the ones before it. That
+isolation is what made the theme leak, the viewport leak and the stale search
+term findable. Tracking dirtiness to skip it would trade a known property for
+an estimated saving.
 
 ### Two different checks, only one of which travels
 
@@ -652,9 +723,18 @@ Its first run confirmed something previously only asserted:
 **byte-identical**. Three names, one picture, three README references that
 should point at one file.
 
-**Not yet wired into `lint`.** It currently reports 38 problems, nearly all of
-them the phases 4–6 backlog, so making it a prerequisite would break
-`make test` until the backlog clears. Add it to `lint` once phase 6 lands.
+`HAND_MADE` carries a reason per image, and the report prints both. Without
+that, the summary said "2 hand-made" and you had to open the source to learn
+which two and why — and an unexplained exemption is how a scriptable image
+quietly becomes a permanent manual chore.
+
+The tool does not decide what must be hand-made; that is a judgement. It only
+reports what has been claimed, and flags an entry that a shot has since started
+capturing.
+
+**Now reports zero**, so it is ready to become a `lint` prerequisite. That was
+the condition set when it was written: a gate that fails for known reasons is
+one you learn to ignore.
 
 ### A pre-existing race, surfaced by the reload cycle
 

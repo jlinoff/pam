@@ -652,6 +652,58 @@ def test_reuse_badge_and_dialog():
     driver.quit()
 
 
+def test_deactivating_updates_reuse_report():
+    '''
+    E2E: deactivating a record removes it from the reuse report.
+
+    Regression. The activate/deactivate toggle set x-active and called
+    searchRecords() to refresh the display, but never recomputed the vault
+    stats. Every other refresh site fires on a change of record COUNT, which
+    deactivating is not, so the cached groups kept the record and the report
+    still listed it after it had been retired.
+
+    This has to be an e2e test. The unit fixture builds accordion items
+    directly and has no toggle handler on them, so a unit test would exercise
+    the computation — which was never broken — rather than the wiring, which
+    was.
+    '''
+    driver = get_driver()
+    driver.get('http://localhost:8081/')
+    time.sleep(1)
+
+    badge = driver.find_element(By.ID, 'x-reuse-indicator')
+    load_example_records(driver)
+    time.sleep(1)
+    assert badge.is_displayed(), 'the example records contain a deliberate collision'
+    assert 'REUSED: 2' in badge.text, f'expected two fields, got: {badge.text}'
+
+    # Retire one half of the pair. Instagram shares Facebook's password.
+    buttons = driver.find_elements(By.CLASS_NAME, 'accordion-button')
+    instagram = next((b for b in buttons if 'Instagram' in b.text), None)
+    assert instagram is not None, 'no Instagram record to deactivate'
+    scroll_and_click(driver, instagram)
+    time.sleep(1)
+
+    item = instagram.find_element(
+        By.XPATH, './ancestor::div[contains(@class, "accordion-item")]')
+    boxes = [e for e in item.find_elements(By.CSS_SELECTOR, 'input[type="checkbox"]')
+             if e.is_displayed()]
+    assert boxes, 'no activation checkbox on the expanded record'
+    scroll_and_click(driver, boxes[0])
+    time.sleep(1.5)
+
+    assert not badge.is_displayed(), \
+        'with one of the pair retired there is no reuse left to report'
+
+    dlg = choose_menu_option(driver, 'Reused Passwords')
+    assert 'Instagram' not in dlg.text, \
+        f'the deactivated record must not appear in the report: {dlg.text[:200]}'
+    close_btn = dlg.find_element(By.CLASS_NAME, 'x-fld-record-close')
+    scroll_and_click(driver, close_btn)
+
+    driver.quit()
+
+
 def test_about_dialog_shows_fingerprint():
     '''
     E2E: the About dialogue reports a vault fingerprint.

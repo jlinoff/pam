@@ -156,6 +156,7 @@ export function mkRecord(title, active, created, ...recordFields) {
                 titleElem.innerHTML = title.replace(INACTIVE, '')
                 button.setAttribute('x-active', 'true')
                 searchRecords() // refresh
+                scheduleVaultStatsRefresh() // active/inactive changes both
             } else {
                 let item = event.target.xGetParentWithClass('accordion-item')
                 let button = item.xGet('.accordion-button')
@@ -165,6 +166,13 @@ export function mkRecord(title, active, created, ...recordFields) {
                 titleElem.innerHTML = INACTIVE + title
                 button.setAttribute('x-active', 'false')
                 searchRecords() // refresh
+                // Deactivating changes the reuse report (a retired credential
+                // is excluded when hideInactiveRecords is set) and moves the
+                // record between the active and inactive fingerprints. The
+                // other refresh sites fire on a change of record COUNT, which
+                // this is not, so without this the cached values go stale and
+                // the report shows a record that should no longer be in it.
+                scheduleVaultStatsRefresh()
             }
         })
 

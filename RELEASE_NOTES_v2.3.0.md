@@ -513,6 +513,26 @@ the code:
   `website`. The field-adding control was called the "New Record" menu; it is
   labelled **New Field**.
 
+## Fixed: deactivating a record left it in the reuse report
+
+The activate/deactivate toggle set the record's `x-active` attribute and called
+`searchRecords()` to refresh the display, but never recomputed the vault
+statistics. Every other refresh site fires on a change of record **count** —
+load, clear, insert — and deactivating is not one.
+
+So the cached reuse groups kept the record: retiring one half of a colliding
+pair left the badge showing and the report still naming it. The two
+fingerprints were stale for the same reason, which is worse in a quiet way,
+since deactivating moves a record from one hash to the other and neither
+updated.
+
+The regression test is an **e2e** test rather than a unit test, deliberately.
+The unit fixture builds accordion items directly and has no toggle handler on
+them, so a unit test would have exercised the computation — which was never
+broken — while the wiring that was broken went untested. The first version of
+this fix shipped with exactly that gap: seventeen unit tests passed with the
+fix removed.
+
 ## Not in this release
 
 - **Breach checking.** Designed and scoped in `PROPOSAL.md`, deliberately held

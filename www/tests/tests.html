@@ -3246,6 +3246,51 @@ test('says so plainly when there is no reuse', () => {
   })
 })
 
+suite('vault-ui.js — deactivating recomputes the report')
+test('a deactivated record leaves the reuse report', () => {
+  // Regression. The activate/deactivate toggle set x-active and called
+  // searchRecords() to refresh the display, but never recomputed the vault
+  // stats — every other refresh site fires on a change of record COUNT, which
+  // deactivating is not. The cached groups therefore kept the record and the
+  // report still listed it.
+  const items = [
+    mkVaultUiItem('live',    true, [['password','password','SHARED']]),
+    mkVaultUiItem('retiring', true, [['password','password','SHARED']]),
+  ]
+  withVaultUiFixture(items, () => {
+    window.prefs.hideInactiveRecords = true
+    refreshVaultStats()
+    assertEqual(getCachedReuseCount(), 2, 'both are active to begin with')
+
+    // deactivate the second one the way the toggle does
+    const buttons = document.querySelectorAll('#records-accordion .accordion-button')
+    buttons[1].setAttribute('x-active', 'false')
+    refreshVaultStats()
+
+    assertEqual(getCachedReuseCount(), 0,
+                'with one of the pair retired there is no reuse left to report')
+    const dlg = menuReuseDlg()
+    assert(dlg.textContent.indexOf('retiring') === -1,
+           'the deactivated record must not appear in the report')
+  })
+})
+test('reactivating puts it back', () => {
+  const items = [
+    mkVaultUiItem('live',    true,  [['password','password','SHARED']]),
+    mkVaultUiItem('returning', false, [['password','password','SHARED']]),
+  ]
+  withVaultUiFixture(items, () => {
+    window.prefs.hideInactiveRecords = true
+    refreshVaultStats()
+    assertEqual(getCachedReuseCount(), 0, 'one of the pair starts retired')
+
+    const buttons = document.querySelectorAll('#records-accordion .accordion-button')
+    buttons[1].setAttribute('x-active', 'true')
+    refreshVaultStats()
+    assertEqual(getCachedReuseCount(), 2, 'reactivating restores the collision')
+  })
+})
+
 suite('vault-ui.js — hideInactiveRecords scope')
 test('inactive records are excluded from the report when the pref is set', () => {
   // The user's framing: an inactive record is a retired credential. A

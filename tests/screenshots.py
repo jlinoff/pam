@@ -42,6 +42,7 @@ painful. Always run without a filter before committing.
 # is. Splitting by phase would scatter the shared helpers — modal_content,
 # blur, visible_icons, expand_record — across modules that all need them.
 
+import io
 import os
 import sys
 import time
@@ -119,6 +120,9 @@ IPHONE = (393, 852)
 # makes a 2x capture possible — the retina density that plain resizing could
 # not give.
 IPHONE_SCALE = 2
+
+# Captures whose difference was tolerated this run, filename -> pixel count.
+NOISE_REPORT = {}
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 HELP = os.path.join(os.path.dirname(HERE), 'www', 'help')
@@ -728,6 +732,29 @@ def wait_for_page(driver, timeout=5.0):
         timeout)
 
 
+def wait_for_dropdown_closed(driver, timeout=3.0):
+    """Wait until no Bootstrap dropdown is open or mid-transition.
+
+    Selecting from the New Field pulldown closes it with a fade. A capture
+    taken before that finishes catches a couple of rows of the menu's trailing
+    edge — a 105x2 band of pixels, invisible to the eye but enough to make the
+    image differ from run to run. That is what made
+    pam-new-record-field-1.png churn intermittently after both the caret and
+    the scroll-position fixes had been ruled out.
+    """
+    return wait_until(
+        lambda: driver.execute_script(
+            "var open = document.querySelectorAll('.dropdown-menu.show');"
+            "if (open.length) { return false; }"
+            "var fading = document.querySelectorAll('.dropdown-menu');"
+            "for (var i = 0; i < fading.length; i++) {"
+            "  var o = window.getComputedStyle(fading[i]).opacity;"
+            "  if (o !== '' && o !== '1' && o !== '0') { return false; }"
+            "}"
+            "return true;"),
+        timeout)
+
+
 def wait_for_modal(driver, timeout=5.0):
     """Wait for a Bootstrap modal to finish fading in.
 
@@ -963,6 +990,7 @@ def shot_google_account(driver):
         if not items:
             raise RuntimeError(f'no predefined {name!r} field in the dropdown')
         scroll_and_click(driver, items[0])
+        wait_for_dropdown_closed(driver)
         time.sleep(0.4)
 
         inputs = [e for e in dlg.find_elements(By.CSS_SELECTOR, 'input.x-fld-value')
@@ -1220,6 +1248,7 @@ def add_named_field(driver, dlg, name, value=None):
     if not items:
         raise RuntimeError(f'no predefined {name!r} field in the New Field menu')
     scroll_and_click(driver, items[0])
+    wait_for_dropdown_closed(driver)
     time.sleep(SETTLE)
 
     if value is not None:
@@ -1647,14 +1676,28 @@ INSTALL_PRINT_HOOK_JS = (
     "};"
 )
 
-# The report prints `Printed: <date>` in both the cover block and the footer,
-# at minute resolution, so the capture differs on every run by construction.
-# Frozen before the preview is rendered — the report is still PAM's own output,
-# with one field pinned the way the About capture pins its commit id.
+# The report stamps the current time at minute resolution, so the capture
+# differs on every run by construction. Frozen before the preview is rendered —
+# the report is still PAM's own output, with one field pinned the way the About
+# capture pins its commit id.
+#
+# The date appears TWICE and only one occurrence is labelled: print.js:234
+# writes `Printed: <date>` in the cover block, print.js:244 writes a bare
+# `<date>` in the footer. Anchoring the match on "Printed:" therefore froze one
+# and left the other churning — which the count assertion below caught.
+#
+# So the date is extracted from the labelled occurrence and every instance of
+# that exact string is replaced, which finds the unlabelled one without needing
+# to know where it is.
 FREEZE_PRINTED_DATE_JS = (
-    "window._pamPrintIframeHTML = window._pamPrintIframeHTML.replace("
-    "  /Printed: [^<&]*/g, 'Printed: January 1, 2026 at 12:00 AM');"
-    "return (window._pamPrintIframeHTML.match(/Printed: January 1, 2026/g) || []).length;"
+    "var html = window._pamPrintIframeHTML;"
+    "var m = html.match(/Printed: ([^<&]+)/);"
+    "if (!m) { return 0; }"
+    "var actual = m[1].trim();"
+    "var count = html.split(actual).length - 1;"
+    "window._pamPrintIframeHTML ="
+    "  html.split(actual).join('January 1, 2026 at 12:00 AM');"
+    "return count;"
 )
 
 SHOW_REPORT_JS = (
@@ -1728,7 +1771,7 @@ def shot_print_example(driver):
     frozen = driver.execute_script(FREEZE_PRINTED_DATE_JS)
     if frozen < 2:
         raise RuntimeError(
-            f'expected two printed-date stamps to freeze, replaced {frozen}; '
+            f'expected at least two timestamps to freeze, replaced {frozen}; '
             'the report would churn on every run')
 
     if not driver.execute_script(SHOW_REPORT_JS):
@@ -1805,6 +1848,64 @@ SHOTS = [
 ]
 
 
+# Chrome lays out text a fraction of a pixel differently between runs, and in
+# one capture that is visible: the field box in the New Record dialogue draws a
+# border line with a gap where its legend sits, and the gap's two edges shift by
+# a pixel depending on how the legend text happened to measure. The result is a
+# 105x2 band of at most sixteen differing pixels — 0.004% of the image, and
+# invisible — that made pam-new-record-field-1.png churn on roughly half of all
+# runs.
+#
+# Three attempts to fix it at the source failed, because it is not the
+# harness's to fix: not a caret, not field scroll position, not a dropdown
+# still fading. So the comparison tolerates it instead, on two conditions.
+#
+# The discriminator is HEIGHT, not pixel count. Sixteen pixels sounds tiny but a
+# text caret is twenty-eight, so a count threshold alone would be perilously
+# close to masking one. Nothing meaningful in this UI is three pixels tall
+# except a border line — a caret is fourteen rows, a line of text sixteen.
+#
+# And it is always REPORTED. A tolerated difference prints as `same~` with the
+# pixel count, so it can never quietly grow into something real.
+NOISE_MAX_ROWS = 3
+NOISE_MAX_PIXELS = 64
+
+
+def difference_is_noise(before, after):
+    """Whether two PNGs differ only by subpixel rendering noise.
+
+    Returns (is_noise, differing_pixel_count). Falls back to treating any
+    difference as real when Pillow is unavailable, so the check degrades to the
+    stricter behaviour rather than the looser one.
+    """
+    try:
+        from PIL import Image, ImageChops  # pylint: disable=import-outside-toplevel
+    except ImportError:
+        return False, 0
+
+    try:
+        one = Image.open(io.BytesIO(before)).convert('RGB')
+        two = Image.open(io.BytesIO(after)).convert('RGB')
+    except OSError:
+        return False, 0
+    if one.size != two.size:
+        return False, 0
+
+    diff = ImageChops.difference(one, two)
+    box = diff.getbbox()
+    if box is None:
+        return True, 0
+
+    left, top, right, bottom = box
+    if bottom - top > NOISE_MAX_ROWS:
+        return False, 0
+
+    pixels = diff.load()
+    count = sum(1 for y in range(top, bottom) for x in range(left, right)
+                if pixels[x, y] != (0, 0, 0))
+    return count <= NOISE_MAX_PIXELS, count
+
+
 def png_size(data):
     '''Width and height from a PNG's IHDR chunk, without pulling in Pillow.'''
     return (int.from_bytes(data[16:20], 'big'), int.from_bytes(data[20:24], 'big'))
@@ -1852,9 +1953,20 @@ def capture(driver, filename, func, check_only, fit=False):
         state = 'new'
     else:
         with open(path, 'rb') as handle:
-            state = 'same' if handle.read() == png else 'changed'
+            existing = handle.read()
+        if existing == png:
+            state = 'same'
+        else:
+            is_noise, count = difference_is_noise(existing, png)
+            state = 'noise' if is_noise else 'changed'
+            if is_noise:
+                # Keep the file on disk untouched: rewriting it for invisible
+                # differences is the git churn this whole comparison exists to
+                # avoid.
+                png = existing
+                NOISE_REPORT[filename] = count
 
-    if state != 'same' and not check_only:
+    if state not in ('same', 'noise') and not check_only:
         with open(path, 'wb') as handle:
             handle.write(png)
     return state, png_size(png)
@@ -1870,10 +1982,25 @@ def progress_line(state, size, position, elapsed, filename):
     time — so optimisation can follow measurement rather than guesswork.
     """
     index, total = position
-    marker = {'new': 'NEW ', 'changed': 'CHG ', 'same': 'same'}[state]
+    marker = {'new': 'NEW ', 'changed': 'CHG ', 'same': 'same',
+              'noise': 'same~'}[state]
     dimensions = f'{size[0]}x{size[1]}'
     percent = f'{index * 100 // total}%'
     return f'  {marker}  {dimensions:>9}  {percent:>4}  {elapsed:5.1f}s  {filename}'
+
+
+def selected_shots():
+    """The shots to run, honouring SHOT. Returns None if the filter matches none."""
+    only = os.environ.get('SHOT', '').strip()
+    if not only:
+        return SHOTS
+    shots = [entry for entry in SHOTS if only in entry[0]]
+    if not shots:
+        names = ', '.join(sorted(name for name, _, _ in SHOTS))
+        print(f'SHOT={only!r} matches nothing.\nAvailable: {names}')
+        return None
+    print(f'SHOT={only!r}: {len(shots)} of {len(SHOTS)} captures\n')
+    return shots
 
 
 def reset_between_shots(driver):
@@ -1903,14 +2030,9 @@ def main():
 
     # Substring match on the filename, so SHOT=google runs the three
     # pam-google-* captures and SHOT=prefs runs the preference tabs.
-    only = os.environ.get('SHOT', '').strip()
-    shots = [entry for entry in SHOTS if only in entry[0]] if only else SHOTS
-    if only and not shots:
-        names = ', '.join(sorted(name for name, _, _ in SHOTS))
-        print(f'SHOT={only!r} matches nothing.\nAvailable: {names}')
+    shots = selected_shots()
+    if shots is None:
         return 1
-    if only:
-        print(f'SHOT={only!r}: {len(shots)} of {len(SHOTS)} captures\n')
 
     driver = get_driver()
     changed = []
@@ -1939,13 +2061,18 @@ def main():
             state, size = capture(driver, filename, func, check_only, fit)
             print(progress_line(state, size, (index, len(shots)),
                                 time.time() - started, filename))
-            if state != 'same':
+            if state not in ('same', 'noise'):
                 changed.append(filename)
             reset_between_shots(driver)
     finally:
         driver.quit()
 
     print()
+    if NOISE_REPORT:
+        print('Tolerated as subpixel rendering noise (file left unchanged):')
+        for name, count in sorted(NOISE_REPORT.items()):
+            print(f'  {name}: {count} pixels')
+        print()
     if not changed:
         print(f'{len(shots)} screenshots, none changed')
         return 0

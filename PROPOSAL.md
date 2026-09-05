@@ -635,6 +635,30 @@ what surfaced these. A single run cannot show determinism.
   consistently with the example records beside it. It returns a count and the
   shots raise on zero, so a markup change cannot silently restore the churn.
 
+- **Subpixel text layout — tolerated, not fixed.** Chrome measures the field
+  box's legend a fraction of a pixel differently between runs, which shifts the
+  two edges of the gap the legend leaves in the box's border. The result is a
+  105x2 band of at most sixteen differing pixels, 0.004% of the image and
+  invisible, that made `pam-new-record-field-1.png` churn on about half of all
+  runs.
+
+  Three attempts to fix it at the source failed — a caret, field scroll
+  position, a dropdown still fading — because it is not the harness's to fix.
+  `diag_churn.py` captures one shot repeatedly and reports where the pixels
+  differ; that located it in one run after two wrong guesses had cost several.
+
+  The comparison now tolerates a difference no more than **3 rows tall** and
+  **64 pixels**. Height is the discriminator, not count: sixteen pixels sounds
+  negligible but a text caret is twenty-eight, so a count threshold alone would
+  sit perilously close to masking one. Nothing meaningful in this UI is three
+  pixels tall except a border line.
+
+  A tolerated difference is always **reported** — printed as `same~` with its
+  pixel count, and summarised at the end of the run — so it cannot quietly grow
+  into something real. The file on disk is left untouched, which is the point:
+  rewriting it for invisible differences is exactly the git churn the byte
+  comparison exists to prevent.
+
 - **Scroll position in overflowing fields.** A field whose content does not fit
   keeps a scroll offset, and where typing leaves it depends on timing. Six
   lines of ingredients in a 5em textarea and a twenty-character password in a
@@ -647,8 +671,15 @@ what surfaced these. A single run cannot show determinism.
 - **The printed report's timestamp.** `print.js` writes
   `Printed: <date at minute resolution>` into both the cover block and the
   footer, so `pam-prefs-enable-printing-example` differed by construction. The
-  shot freezes both before rendering the preview and raises if it does not
-  replace exactly two, the same shape as the About stub.
+  shot freezes them before rendering the preview and raises if it replaces
+  fewer than two, the same shape as the About stub.
+
+  The first attempt anchored on the label and froze only one: `print.js:234`
+  writes `Printed: <date>` in the cover block, `print.js:244` writes a **bare**
+  `<date>` in the footer. The count assertion caught it — without it, the image
+  would have kept churning while looking fixed. The date is now extracted from
+  the labelled occurrence and every instance of that exact string is replaced,
+  which finds the unlabelled one without needing to know where it is.
 
   Worth noting how these were found: two full runs, diffed. Neither run alone
   distinguished "correct" from "different every time", and the intermittent one
@@ -746,9 +777,15 @@ The tool does not decide what must be hand-made; that is a judgement. It only
 reports what has been claimed, and flags an entry that a shot has since started
 capturing.
 
-**Now reports zero**, so it is ready to become a `lint` prerequisite. That was
-the condition set when it was written: a gate that fails for known reasons is
-one you learn to ignore.
+**Wired into `lint`**, which makes it a prerequisite of `unit-test` and
+`e2e-test` as well. The condition set when it was written — that a gate failing
+for known reasons is one you learn to ignore — was met once the backlog cleared
+and it reported zero.
+
+Documentation is part of the build rather than something checked afterwards. A
+broken anchor or a stale image reference is invisible in a Markdown preview and
+in the rendered help page, so nothing else would ever notice; `make test` now
+does.
 
 ### A pre-existing race, surfaced by the reload cycle
 

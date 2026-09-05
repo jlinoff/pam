@@ -66,6 +66,11 @@ init: .init bs app-version app-help  ## very basic setup for python3 and jshint
 	pipenv run python3 -m pip install webdriver_manager
 	pipenv run python3 -m pip install selenium types-selenium
 	pipenv run python3 -m pip install setuptools
+	# Pillow: tests/screenshots.py compares captures pixel-wise to tell a real
+	# change from subpixel text-rendering noise. Without it the comparison falls
+	# back to exact byte matching, which is stricter but leaves one capture
+	# churning on every run.
+	pipenv run python3 -m pip install Pillow
 	npm install -g jshint
 	@touch $@
 
@@ -96,6 +101,11 @@ lint:  ## lint the source code
 	jshint --config jshint.json www
 	diff <(ls -1 www/icons/black/) <(ls -1 www/icons/blue)
 	pipenv run pylint tests/test_chrome.py tests/screenshots.py tests/check_images.py
+	# Documentation is part of the build. A broken anchor or a stale image
+	# reference is invisible in a Markdown preview and in the rendered help
+	# page — the link simply does nothing — so nothing else would ever notice.
+	# Pure text comparison: no browser, no server, about a second.
+	pipenv run python3 tests/check_images.py
 	@printf '\033[35;1m$@: PASSED\033[0m\n'
 
 # Make sure that the icons in www/icons/black and icons/blue/blue are the same.
@@ -207,9 +217,11 @@ e2e-test: init lint ## Run Selenium E2E tests in tests/test_chrome.py
 #
 # Pure text comparison — no browser, no server, no rendering — so unlike
 # `make screenshots-check` it gives the same answer on any machine and is safe
-# to gate a build on. Not yet a prerequisite of lint: it still reports the
-# phase 5 and 6 backlog, and a check that fails for known reasons is one you
-# learn to ignore. Wire it into lint once that reaches zero.
+# to gate a build on. It IS a prerequisite of lint, which makes it a
+# prerequisite of unit-test and e2e-test too: documentation is part of the
+# build, not a thing checked afterwards.
+#
+# This target runs it alone, which is useful while editing the README.
 .PHONY: check-images
 check-images: ## Verify README screenshots and internal links. No browser needed.
 	$(call hdr,"$@")

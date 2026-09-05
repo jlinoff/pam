@@ -2,12 +2,29 @@
 
 ## Summary
 
-Adds `www/js/vault.js`, a module of minimum-disclosure queries over the vault:
-a short fingerprint for comparing two vaults, and password reuse detection.
-Both answer their question with the least information that suffices, and
-neither needs a network, a corpus, or any privacy tradeoff.
+Three things, in descending order of how visible they are to a user.
 
-This release contains the logic and its tests. UI wiring is not yet included.
+**Password reuse detection.** A `Reused Passwords` report and a toolbar badge
+showing when any stored password is used more than once. The report lists the
+entries that share a password and never shows the password itself. Computed
+entirely on the device — no request is made and nothing is uploaded.
+
+**A vault fingerprint.** Two short hashes in the About dialogue, one over
+active records and one over inactive, for answering "are these two vaults the
+same?" without exporting either. This came out of a real failure: an Apple
+Passwords warning disagreed between devices, and settling it required dumping
+both vaults to plaintext CSV because a full export was the only egress on
+offer. The question needed 64 bits.
+
+**A security fix.** The search box matched against password plaintext, and
+because it compiles the input as a regular expression, that made it a binary
+search over stored secrets rather than a linear walk. Now behind a preference,
+default off, with a toolbar warning when enabled.
+
+Underneath those, the documentation is now generated: 49 of PAM's 51 help
+screenshots are captured by `make screenshots`, and `make check-images`
+verifies that the README and the harness agree. Several images had been stale
+since 2023.
 
 ---
 
@@ -344,60 +361,84 @@ hidden, so the assertion is stronger than the one it replaced.
 
 ## Screenshot automation
 
-`tests/screenshots.py`, run via `make screenshots` (capture) or
-`make screenshots-check` (report staleness, write nothing).
+`tests/screenshots.py`, run via `make screenshots`. `SHOT=<substring>` limits
+the set while iterating; a full pass is 49 captures in about five minutes.
 
 The README is the in-app help — `make app-help` renders it into
 `www/help/index.html` — so a stale screenshot is stale help, not just a stale
-doc. Adding a preference meant hand-capturing dialogues, and the Search and
-Administration tab images had already fallen behind.
+doc. And they were stale: `pam-about-custom.png` showed **Version 1.1.2,
+Bootstrap 5.3.0-alpha1 and a commit from March 2023**. Others showed seven
+example records and a record count that no longer matched.
 
-Eight captures: the menu, About, the Reused Passwords report, and all five
-preference tabs. **The Administration tab had never been documented at all**,
+**49 of 51 images are now generated.** Two are maintained by hand and say why
+in the tooling: the hand-drawn file-flow diagram, which illustrates
+architecture rather than UI state, and a record field mid-drag, which Selenium
+cannot reliably produce.
+
+The Administration preferences tab had **never been documented at all**,
 despite holding four security-relevant settings.
-
-Deliberately not all 56 `pam-*.png` images. Conceptual diagrams, annotated
-figures and mid-workflow captures cannot be scripted. This covers the ones
-that go stale whenever a setting is added, which is the recurring cost.
 
 ### Determinism
 
 Rendering is not reproducible across machines — font hinting, DPI and the
-Chrome version all affect the bytes — so regenerating elsewhere produces
-different PNGs with identical content. One machine should regenerate. Files
-are written only when the bytes actually change, keeping binary churn out of
-git; a run that changes nothing reports `same` for every image, which is what
-the second run did for `pam-menu.png`.
+Chrome version all affect the bytes — so one machine regenerates and files are
+written only when the bytes actually change. Two consecutive runs should report
+every image as `same`; a single run cannot distinguish a correct capture from
+one that differs every time.
 
-About carries two sources of per-run churn: Version, Branch and Commit change
-every commit, and the file-info line embeds `now.toISOString()` so it differs
-on *every* run. Both are stubbed before capture. The stub counts its own
-substitutions and raises if it made fewer than expected, so a change to the
-dialogue's shape surfaces as an error rather than an image that churns
-forever unnoticed. The fingerprints are deliberately not stubbed — they are
-deterministic given the example records, and showing a real one is the point.
+Six sources of churn were found that way, each producing a plausible-looking
+image:
 
-### What the first runs got wrong
+- generated passwords, fixed by seeding the RNG **in the browser session only**
+  — `www/js/password.js` ships unchanged and carries no test hook
+- a blinking text caret in a focused input
+- scroll position in a field whose content overflows
+- creation timestamps on newly saved records
+- the printed report's `Printed:` line, at minute resolution
+- a viewport size left behind by the previous capture
 
-Worth recording, because two of the three produced perfectly plausible images:
+### Guards
 
-- **Cropping to the wrong element.** `choose_menu_option()` returns the outer
-  `.modal`, which is `position: fixed` and fills the viewport. Captures were
-  1920x1080 with a small dialogue in the middle. Now crops to
-  `.modal-content`.
-- **Silent truncation.** Element screenshots stop at the viewport, so the
-  Administration, Miscellaneous and Record Fields tabs came out at exactly the
-  same height with their footers missing — including the `Save` button, in a
-  dialogue whose own text says "No changes are saved until you Save at the
-  bottom of the page". The window is 3000px tall now, and each capture's PNG
-  header height is compared against the element's height so truncation reports
-  itself.
-- **Matching a hidden element.** `find_element(By.CLASS_NAME, 'dropdown-menu')`
-  returns the first match, and several elements carry that class. It found a
-  hidden one and chromedriver failed with "Cannot take screenshot with 0
-  width" nine stack frames deep. The menu is now reached the way
-  `choose_menu_option()` reaches it, and every capture target is checked for
-  zero size first with a message naming the shot.
+Each capture checks the thing that would otherwise fail silently: zero-size
+elements, truncation (by comparing the PNG's own header height against the
+element), whether a stubbed value was actually replaced, and whether the state
+a shot claims to show is present. `pam-status-msg.png` was captured with **no
+status message** for several runs — every guard passed, the element was real
+and correctly cropped, and it was only caught because it came out
+byte-identical to another image.
+
+### Prose instead of arrows
+
+Ten images carried red arrows and captions. Those cannot be scripted, so the
+help text was rewritten to name each control and where it sits — which is
+better documentation regardless: prose is searchable, translatable, and
+survives a re-capture.
+
+Every one of the ten turned out to be a picture the README already had, with an
+annotation doing the work a sentence should have done. `pam-create-new-record`
+and `pam-new-record-menu` were the same image; both are now `pam-menu.png`.
+`pam-change-field-name`, the most heavily annotated in the set, was
+`pam-fld-name-edit-on.png`. Twelve files were deleted as duplicates.
+
+## New: `tests/check_images.py`
+
+`make check-images` verifies that the README and the harness agree. It compares
+filenames only — no browser, no server, no rendering — so unlike
+`make screenshots-check` it gives the same answer on any machine.
+
+That distinction matters. Byte-comparing screenshots is a change detector for
+the one machine that regenerates them; anywhere else every image reads as
+stale, and a check that fires spuriously is one you learn to ignore.
+
+It reports images referenced but not captured, captured but never referenced (a
+documentation gap), files that are neither, several names holding identical
+bytes, and in-page links pointing at no heading. The first run found nine
+broken anchors and three copies of one picture.
+
+**It runs as part of `make lint`**, and therefore as part of `make test`.
+Documentation is a first-order part of the build rather than something checked
+afterwards: a dead anchor or a stale image reference is invisible in a Markdown
+preview and in the rendered help page, so nothing else would ever catch it.
 
 ## Example records
 
@@ -437,10 +478,38 @@ The last two are the same failure in two places: a negative assertion whose
 premise quietly disappeared. Those keep passing when what they depend on stops
 being true, which is what makes them the fragile ones.
 
+## Documentation
+
+Beyond the regenerated images, the help text changed where it had drifted from
+the code:
+
+- **A `Reused Passwords` section**, and **Reason 10: Duplicate Password
+  Checking** in the reasons-to-use-PAM list.
+- **The Layout section** rewritten so the prose names each region and the
+  controls in it, replacing an annotated figure — and gaining a table of the
+  four toolbar warning badges, which had never been documented together.
+- **The Expanded View section** rewritten the same way, naming the clipboard
+  icon, the eye icon and the three record buttons.
+- **The comparison table** claimed PAM lost to Bitwarden and 1Password on
+  "breached, weak, and reused" passwords. Reuse had quietly stopped being true.
+  It is now two rows: reuse detection as a tie on capability and a PAM win on
+  disclosure, breach alerts as a straight loss.
+- **Nine broken internal links** fixed, including one section that was
+  referenced but had never been written.
+- Field names in the Facebook examples said `url`; the example data says
+  `website`. The field-adding control was called the "New Record" menu; it is
+  labelled **New Field**.
+
 ## Not in this release
 
-- Vault diff, which is blocked on records having a durable identifier;
-  today "same entry" can only be inferred from title plus field names, which
-  breaks as soon as either is edited
-- Breach checking
-- Export tiering
+- **Breach checking.** Designed and scoped in `PROPOSAL.md`, deliberately held
+  for v2.4.0. It requires relaxing the Content-Security-Policy to permit
+  `api.pwnedpasswords.com`, which changes PAM's local-only guarantee from
+  "cannot phone home, verifiably" to "can only phone HIBP, and does not unless
+  asked". That is a change a user should see as a release headline rather than
+  as a footnote under a reuse feature.
+- **Vault diff**, blocked on records having a durable identifier; today "same
+  entry" can only be inferred from title plus field names, which breaks as soon
+  as either is edited.
+- **Export tiering** — fingerprint, metadata and full — which is the actual
+  lesson of the origin story above.

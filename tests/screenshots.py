@@ -1860,15 +1860,24 @@ SHOTS = [
 # harness's to fix: not a caret, not field scroll position, not a dropdown
 # still fading. So the comparison tolerates it instead, on two conditions.
 #
-# The discriminator is HEIGHT, not pixel count. Sixteen pixels sounds tiny but a
-# text caret is twenty-eight, so a count threshold alone would be perilously
-# close to masking one. Nothing meaningful in this UI is three pixels tall
-# except a border line — a caret is fourteen rows, a line of text sixteen.
+# The discriminator is DENSITY within the differing region, not pixel count and
+# not height. Antialiasing scatters a few pixels along the edges of glyphs, so
+# it fills its own bounding box sparsely. A real change fills it:
+#
+#     legend border gap   105x2     32 px    15%   noise
+#     New Field button    107x36    70 px     2%   noise
+#     a text caret          2x14    28 px   100%   real
+#     a line of text      600x16  9600 px   100%   real
+#     a changed digit       8x14   100 px    89%   real
+#
+# Count alone would not separate these — the caret is smaller than the button
+# noise. Height alone would not either: the noise has appeared at 2 rows and at
+# 36. The cap on absolute pixels stops a large sparse change slipping through.
 #
 # And it is always REPORTED. A tolerated difference prints as `same~` with the
 # pixel count, so it can never quietly grow into something real.
-NOISE_MAX_ROWS = 3
-NOISE_MAX_PIXELS = 64
+NOISE_MAX_DENSITY = 0.25
+NOISE_MAX_PIXELS = 200
 
 # Set once if Pillow turns out to be missing, so the note is printed a single
 # time rather than for every capture.
@@ -1909,13 +1918,13 @@ def difference_is_noise(before, after):
         return True, 0
 
     left, top, right, bottom = box
-    if bottom - top > NOISE_MAX_ROWS:
-        return False, 0
-
+    area = (right - left) * (bottom - top)
     pixels = diff.load()
     count = sum(1 for y in range(top, bottom) for x in range(left, right)
                 if pixels[x, y] != (0, 0, 0))
-    return count <= NOISE_MAX_PIXELS, count
+    if count > NOISE_MAX_PIXELS:
+        return False, count
+    return count / area < NOISE_MAX_DENSITY, count
 
 
 def png_size(data):
@@ -1994,7 +2003,9 @@ def progress_line(state, size, position, elapsed, filename):
     time — so optimisation can follow measurement rather than guesswork.
     """
     index, total = position
-    marker = {'new': 'NEW ', 'changed': 'CHG ', 'same': 'same',
+    # All five characters wide: `same~` is one longer than the rest, and
+    # without padding it shifted every column after it on that line.
+    marker = {'new': 'NEW  ', 'changed': 'CHG  ', 'same': 'same ',
               'noise': 'same~'}[state]
     dimensions = f'{size[0]}x{size[1]}'
     percent = f'{index * 100 // total}%'

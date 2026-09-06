@@ -413,6 +413,7 @@ import {
   getFilePass,
   clearFilePass,
   mkMainPasswordGeneratorDlg,
+  showMainPasswordGeneratorDlg,
   ALPHABET,
   ALPHA_LOWER,
   ALPHA_UPPER,
@@ -3539,6 +3540,101 @@ async function runBreachTests10() {
   })
 }
 
+
+async function runBreachTests11() {
+  suite('password.js — the breach check in the standalone generator')
+
+  const savedPref = window.prefs.enablePasswordBreachCheck
+  const savedFetch = window.fetch
+
+  function withGenerator(fn) {
+    // showMainPasswordGeneratorDlg() populates the body and needs a Bootstrap
+    // Modal instance; the dialogue is empty until it runs.
+    const dlg = mkMainPasswordGeneratorDlg()
+    document.body.appendChild(dlg)
+    try {
+      showMainPasswordGeneratorDlg()
+      return fn(dlg)
+    } finally {
+      dlg.remove()
+    }
+  }
+
+  test('one check button per generated password', () => {
+    // Worth having for the MEMORABLE passwords specifically: they carry about
+    // 40 bits, and entropyBits() cannot see that because it has no notion of
+    // dictionary words. The corpus is the only check that can object to them.
+    window.prefs.enablePasswordBreachCheck = true
+    withGenerator((dlg) => {
+      const buttons = dlg.querySelectorAll('.x-gen-breach-check')
+      assertEqual(buttons.length, 6, 'one cryptic plus five memorable')
+      for (const button of buttons) {
+        assert(!button.classList.contains('d-none'),
+               'all visible while the feature is on')
+      }
+    })
+  })
+
+  test('hidden when the preference is off, and toggled without a rebuild', () => {
+    window.prefs.enablePasswordBreachCheck = true
+    withGenerator((dlg) => {
+      window.prefs.enablePasswordBreachCheck = false
+      enableBreachCheckButtons()
+      for (const button of dlg.querySelectorAll('.x-gen-breach-check')) {
+        assert(button.classList.contains('d-none'),
+               'the toggle must reach the generator buttons too, not just the '
+               + 'per-field ones')
+      }
+      window.prefs.enablePasswordBreachCheck = true
+      enableBreachCheckButtons()
+      for (const button of dlg.querySelectorAll('.x-gen-breach-check')) {
+        assert(!button.classList.contains('d-none'), 'and back again')
+      }
+    })
+  })
+
+  await runAsyncTest('offline says could not check, never clean', async () => {
+    window.prefs.enablePasswordBreachCheck = true
+    window.fetch = async () => { throw new TypeError('offline') }
+    const dlg = mkMainPasswordGeneratorDlg()
+    document.body.appendChild(dlg)
+    try {
+      showMainPasswordGeneratorDlg()
+      const button = dlg.querySelector('.x-gen-breach-check')
+      button.click()
+      await new Promise((r) => { setTimeout(r, 250) })
+      const out = button.parentElement.querySelector('.x-gen-breach-result')
+      assert(out, 'a failure must still say something')
+      assert(out.textContent.indexOf('could not check') > -1, out.textContent)
+      assert(out.textContent.indexOf('not in the breach corpus') === -1,
+             'a failed lookup must never read as clean')
+    } finally {
+      dlg.remove()
+    }
+  })
+
+  await runAsyncTest('a clean generated password says so', async () => {
+    window.prefs.enablePasswordBreachCheck = true
+    window.fetch = async () => ({ok: true, status: 200,
+      text: async () => 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA:1'})
+    const dlg = mkMainPasswordGeneratorDlg()
+    document.body.appendChild(dlg)
+    try {
+      showMainPasswordGeneratorDlg()
+      const button = dlg.querySelector('.x-gen-breach-check')
+      button.click()
+      await new Promise((r) => { setTimeout(r, 250) })
+      const out = button.parentElement.querySelector('.x-gen-breach-result')
+      assert(out.textContent.indexOf('not in the breach corpus') > -1,
+             out.textContent)
+    } finally {
+      dlg.remove()
+      window.prefs.enablePasswordBreachCheck = savedPref
+      window.fetch = savedFetch
+    }
+  })
+}
+
 async function runBreachTests() {
   await runBreachTests1()
   await runBreachTests2()
@@ -3550,6 +3646,7 @@ async function runBreachTests() {
   await runBreachTests8()
   await runBreachTests9()
   await runBreachTests10()
+  await runBreachTests11()
 }
 
 // Keep `.then(() => { window.__TESTS_COMPLETE__ = true })` as the final link

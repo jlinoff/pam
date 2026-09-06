@@ -412,6 +412,21 @@ capable of objecting.
 
 On demand, one request per press. Pressing **Regenerate** sends nothing.
 
+### Gap found on review: the generator button had no tests
+
+Verified in a scratch jsdom harness when it was written, never carried across
+to `tests.html`. Six checks that existed and ran nowhere the build could see
+them — the same failure as the two suites that reported without gating, and
+exactly the thing this document keeps complaining about.
+
+Found by asking "is the implementation complete?" and grepping for
+`x-gen-breach-check` in the test file rather than answering from memory. It
+returned 0.
+
+Now covered: one button per generated password, the toggle reaching the
+generator as well as the per-field buttons, offline reading as could-not-check,
+and a clean password saying so.
+
 ### A known cost of hiding the buttons
 
 The breach buttons are hidden when the preference is off rather than shown and

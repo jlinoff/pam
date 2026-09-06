@@ -3,6 +3,7 @@ import { xmk } from './lib.js'
 import { statusBlip } from './status.js'
 import { words } from './en_words.js'
 import { icon, clog, setDarkLightTheme, copyTextToClipboard, mkPopupModalDlg, mkPopupModalDlgButton } from './utils.js'
+import { checkPassword, REJECT, UNDETERMINED } from './breach.js'
 
 export const ALPHA_LOWER = "abcdefghijklmnopqrstuvwxyz"
 export const ALPHA_UPPER = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
@@ -381,9 +382,68 @@ function refreshMainPasswordGeneratorDlg(dlg, len) {
             })
     }
 
+    // Breach check for one generated password.
+    //
+    // Worth having here for the MEMORABLE passwords specifically. A cryptic
+    // 20-character password carries about 131 bits, so a corpus hit is
+    // essentially impossible. Three words from a 9,858-word list carries about
+    // 40 — and the local entropy estimate cannot see that, because it
+    // multiplies length by alphabet size and has no notion of dictionary
+    // words: it scores `std/creature/history` at 118 bits rather than 40.
+    //
+    // So for word-based passwords the corpus is the only check that can
+    // object at all. On demand, one request per press: pressing Regenerate
+    // sends nothing.
+    function mkCheckButton(pwd) {
+        const hidden = window.prefs.enablePasswordBreachCheck ? [] : ['d-none']
+        return xmk('button')
+            .xClass('btn', 'btn-lg', 'p-0', 'ms-1', 'x-gen-breach-check', ...hidden)
+            .xAttrs({'type': 'button',
+                     'title': 'check this password against known breaches'})
+            .xAppend(icon('bi-shield-check', 'check for breaches'))
+            .xAddEventListener('click', async (event) => {
+                const button = event.currentTarget
+                const wrapper = button.parentElement
+                let out = wrapper.querySelector('.x-gen-breach-result')
+                if (!out) {
+                    out = xmk('div').xClass('x-gen-breach-result', 'small', 'ms-2')
+                    wrapper.appendChild(out)
+                }
+                out.textContent = 'checking\u2026'
+                button.disabled = true
+                try {
+                    const v = await checkPassword(pwd, window.fetch.bind(window))
+                    if (v.verdict === REJECT) {
+                        out.className = 'x-gen-breach-result small ms-2 text-danger'
+                        const label = v.inCorpus ? '\u26A0 BREACHED' : '\u26A0 WEAK'
+                        out.textContent = `${label}: ${v.reasons.join('; ')}`
+                    } else if (v.verdict === UNDETERMINED) {
+                        out.className = 'x-gen-breach-result small ms-2 text-warning'
+                        out.textContent = `could not check \u2014 ${v.reasons.join('; ')}. ` +
+                            'Nothing was learned about this password.'
+                    } else {
+                        out.className = 'x-gen-breach-result small ms-2 text-success'
+                        out.textContent = 'not in the breach corpus'
+                    }
+                } catch (error) {
+                    out.className = 'x-gen-breach-result small ms-2 text-warning'
+                    out.textContent = `could not check \u2014 ${error}`
+                } finally {
+                    button.disabled = false
+                }
+            })
+    }
+
+    // A password and its check button travel together, so the result lands
+    // beside the password it describes.
+    function mkPasswordRow(pwd) {
+        return xmk('span').xClass('d-inline-block').xAppend(
+            mkCopyButton(pwd), mkCheckButton(pwd))
+    }
+
     const mpBtns = []
     for (let i = 0; i < num; i++) {
-        mpBtns.push(mkCopyButton(getMemorablePassword(len)))
+        mpBtns.push(mkPasswordRow(getMemorablePassword(len)))
     }
 
     // Length slider — regenerates passwords live as the user drags
@@ -414,7 +474,7 @@ function refreshMainPasswordGeneratorDlg(dlg, len) {
                 lenLabel,
             ),
             xmk('p').xClass('fs-5', 'mb-1').xInnerHTML('Cryptic Password'),
-            mkCopyButton(cp0),
+            mkPasswordRow(cp0),
             xmk('p').xClass('fs-5', 'mb-1', 'mt-3').xInnerHTML('Memorable Passwords'),
             ...mpBtns,
         )

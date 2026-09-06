@@ -161,7 +161,10 @@ export function mkRecordFieldBreachCheckButton(rawValue) {
 // after a file load. Bootstrap's d-none rather than inline display, for the
 // same reason enablePrinting() uses it.
 export function enableBreachCheckButtons() {
-    const buttons = document.body.xGetN('.x-fld-breach-check')
+    // Both the per-field buttons and the ones in the standalone password
+    // generator, which is a separate dialogue built independently.
+    const buttons = document.body.xGetN(
+        '.x-fld-breach-check, .x-gen-breach-check')
     buttons.forEach( (el) => {
         if ( window.prefs.enablePasswordBreachCheck ) {
             el.classList.remove('d-none')

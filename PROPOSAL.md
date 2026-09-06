@@ -45,7 +45,8 @@ numeric order. A low number means the item was raised early, nothing more.
 | 9. Vault file integrity | open — v2 is AES-CBC with no MAC; needs a v3 format |
 | 10. Test suites ran without gating | **fixed** — finalize() ran per-runner, so two suites reported but did not count |
 | 11. Actionable reports | 11b done (breached/weak labelling); 11a and click-through outstanding |
-| 12. Per-field breach button | done — shield button on password fields when the preference is on |
+| 12. Per-field breach button | done — on password fields, edit rows, and the standalone generator |
+| 13. Entropy estimate ignores dictionary words | open — scores a 40-bit memorable password at 118 bits |
 
 ---
 
@@ -361,6 +362,55 @@ the probe succeeds, then the network dies. Its first version used `'a'` and
 structural grounds and the test passed without exercising what it named. It now
 uses two structurally clean passwords, checked as such, so the corpus is the
 only variable.
+
+## 13. The entropy estimate is blind to dictionary words
+
+Found while deciding whether the standalone generator needed a breach button.
+
+`entropyBits()` multiplies length by the size of the character classes present.
+For `std/creature/history` — three words from PAM's 9,858-word list — that
+gives **118 bits**. The real figure is **40**: 3 × log2(9858). The estimate is
+off by roughly 3x, and in the unsafe direction.
+
+None of the structural checks catch it either. A word-based password has no
+keyboard run, no character sequence, no repeat, no year, and comfortably clears
+the 60-bit floor on the inflated number. So PAM's own memorable passwords pass
+every local check while carrying a third of the entropy the check believes.
+
+Earlier this looked like a success: `ridge/doll/parameter` was tested as part
+of the false-positive suite and reported no objections, which read as the
+checks being appropriately lenient. It was the estimator being blind.
+
+**Consequences, both acted on:**
+
+- The corpus check is the only thing that can object to a weak memorable
+  password, which is the argument for the generator button below.
+- **`MIN_ENTROPY_BITS` stays hardcoded for now.** Making it a preference was
+  considered and deferred: against a 3x estimator error, tuning the threshold
+  between 60 and 80 is false precision — adjusting a dial on a gauge that is
+  wrong by more than the adjustment for exactly the passwords where it matters.
+  A configurable security floor is also one users lower when it complains,
+  which turns a warning into a way to silence the warning. Revisit once the
+  estimator understands dictionary words.
+
+**The fix, when it comes:** detect word-boundary structure and score
+`k × log2(wordlist)` instead of `length × log2(alphabet)`. `en_words.js` is
+already in the bundle. Not done here because it changes verdicts for existing
+passwords and belongs in its own change.
+
+### Added: a breach check in the standalone password generator
+
+A shield button beside each generated password — one cryptic, five memorable —
+shown only when the preference is on, and toggled by the same
+`enableBreachCheckButtons()` as the per-field ones.
+
+It earns its place for the **memorable** passwords specifically. The cryptic
+one carries about 131 bits, so a corpus hit is essentially impossible and the
+button will always say "clean". The memorable ones carry about 40, and per item
+13 the local checks cannot see that at all — so the corpus is the only check
+capable of objecting.
+
+On demand, one request per press. Pressing **Regenerate** sends nothing.
 
 ### Fixed: the per-field button needed a reload to appear
 

@@ -150,6 +150,22 @@ def broken_links(text):
     return out
 
 
+def missing_image_files(readme_path):
+    """Every www/ image the README references that is not on disk.
+
+    check-images tracks the pam-*.png captures, which are the ones that go
+    stale. But the README also embeds icons from www/icons/, and a reference to
+    one that does not exist is a broken image in the rendered help page that
+    nothing else would catch — it is not a screenshot, so the capture check
+    ignores it. Nearly shipped exactly that with shield-check.svg.
+    """
+    with open(readme_path, encoding='utf-8') as handle:
+        text = handle.read()
+    refs = set(re.findall(r'src="(www/[^"]+)"', text))
+    return sorted(ref for ref in refs
+                  if not os.path.exists(os.path.join(ROOT, ref)))
+
+
 def print_hand_made():
     """List the hand-made images and why each one is not scripted."""
     if not HAND_MADE:
@@ -247,6 +263,15 @@ def main():
 
     problems += report_broken_links(readme)
 
+    missing = missing_image_files(readme)
+    if missing:
+        print('\nREFERENCED IMAGE FILES THAT DO NOT EXIST')
+        print('  The README embeds these but they are not on disk. They render '
+              'as broken\n  images in the help page.')
+        for ref in missing:
+            print(f'    {ref}')
+        problems += len(missing)
+
     if problems:
         print(f'\n{problems} problem(s)')
         print_hand_made()
@@ -255,6 +280,9 @@ def main():
     print(f'{len(referenced)} referenced, {len(captured)} captured, '
           f'{len(HAND_MADE)} hand-made: all accounted for')
     print(f'{count_links(readme)} internal links: all resolve')
+    with open(readme, encoding='utf-8') as handle:
+        refs = len(set(re.findall(r'src="(www/[^"]+)"', handle.read())))
+    print(f'{refs} image references: all present')
     print_hand_made()
     return 0
 

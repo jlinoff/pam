@@ -548,6 +548,42 @@ check each claim is true of what exists rather than of what was designed:**
 The same re-read applies to the **Content-Security-Policy** section and the two
 qualified comparison-table rows.
 
+### Status: README pass DONE
+
+**Corrections to what was already written.** The preference section was drafted
+when the CSP changed, before the feature existed, and it over-claimed:
+
+- *"the server learns that someone asked about one of roughly 850,000 possible
+  passwords"* was **wrong**. Five hex characters divide the corpus into about a
+  million buckets, so a prefix is shared by roughly **eight hundred** corpus
+  entries — 847M/1,048,576. The 850,000 figure had no basis.
+- *"one request per password"* is now *one request per **distinct** password*,
+  since the report deduplicates by value.
+- *"typically several hundred"* hashes returned checks out at about 808 on
+  average; sharpened to "around eight hundred".
+
+**What was missing entirely.** The section described only the corpus lookup and
+said nothing about the local structural checks, which is half of what the
+feature does — a reader would have thought ACCEPT meant "not published". Now
+documented, along with the could-not-check outcome, that nothing is sent until
+Check is pressed, and the per-field button.
+
+**Added:** a `Breached Passwords` report section with a table of the three
+labels, **Reason 11**, and two replacement comparison rows. The old breach row
+claimed PAM simply loses; it is now split into breach checking (close, and PAM
+sends less) and unsolicited alerts (PAM loses, and the row says so).
+
+**A gap in the tooling, found by nearly falling into it.** `check-images`
+tracked only the 51 `pam-*.png` captures, but the README embeds 69 images —
+the rest are icons from `www/icons/`. A reference to an icon that does not
+exist renders as a broken image and nothing would have caught it. It now checks
+every `www/` image reference. Verified by removing `shield-check.svg` and
+watching it fail.
+
+`shield-check.svg` was added to `www/icons/black/` and derived into
+`www/icons/blue/` the way `update-blue-icons` does, keeping the black/blue
+listing invariant that `lint` asserts.
+
 ### Screenshots — what this feature invalidates
 
 `make screenshots` must be re-run, and two new captures added to

@@ -53,6 +53,7 @@ the on-line help is generated.
       * [Reason 8: Access from mobile devices](#reason-8-access-from-mobile-devices)
       * [Reason 9: FOSS](#reason-9-foss)
       * [Reason 10: Duplicate Password Checking](#reason-10-duplicate-password-checking)
+      * [Reason 11: Breached Password Detection](#reason-11-breached-password-detection)
     * [PAM vs mainstream password managers](#pam-vs-mainstream-password-managers)
   * [Records](#records)
     * [Unexpanded View of all Records](#unexpanded-view-of-all-records)
@@ -625,6 +626,29 @@ uploaded, and no third party learns anything about your vault. Reuse detection
 needs no network at all, so this holds whether or not
 [Password Breach Check](#enable-password-breach-check) is enabled.
 
+#### Reason 11: Breached Password Detection
+
+A password that has appeared in a public breach is not yours any more, whatever
+its length or complexity. Attackers try published passwords first because it is
+cheap and it works.
+
+_PAM_ can check yours against the
+[Have I Been Pwned](https://haveibeenpwned.com/) corpus without revealing them:
+it sends a twenty-bit hash prefix and compares the returned list locally, so no
+password, no full hash, and nothing about which record it belongs to ever
+leaves the device. See
+[Breached Passwords](#breached-passwords) for the report and
+[Enable Password Breach Check](#enable-password-breach-check) for what is sent.
+
+This is the one feature that makes _PAM_ contact anything, so it is **off by
+default**, it announces itself with a toolbar badge while active, and the one
+host it may reach is named in the
+[Content-Security-Policy](#content-security-policy) where you can check it.
+
+It also applies local checks that need no network — keyboard runs, sequences,
+repeats, embedded years, an entropy floor — because being absent from a breach
+corpus is a low bar. A password can be unpublished and still bad.
+
 ### PAM vs mainstream password managers
 
 _Analysis: April 2026. Compared against Bitwarden and 1Password as representative mainstream alternatives._
@@ -643,7 +667,8 @@ _Analysis: April 2026. Compared against Bitwarden and 1Password as representativ
 | Encryption | AES-256-CBC; v2 format (shipped April 2026) fixes PBKDF2 iteration count and salt entropy bug. Existing v1 files need manual re-save to upgrade. | AES-256, strong PBKDF2 / Argon2 KDFs | Tie — v2 closes the gap; v1 files remain weak until re-saved |
 | Zero-knowledge architecture | Inherently — no server ever sees data | Bitwarden: yes. 1Password: yes | Tie |
 | Reused password detection | Yes — the [Reused Passwords](#reused-passwords) report and a footer badge, computed locally with no network request | Yes — 1Password Watchtower, Bitwarden reports; both require the vault to be synced to the vendor | Tie on capability, PAM wins on disclosure — the same answer without anything leaving the device |
-| Breach alerts | None — if a third-party site you use is breached and your credentials leaked, PAM has no way to notify you. PAM's own encrypted data remains secure. | Bitwarden checks passwords against HaveIBeenPwned; 1Password's Watchtower flags breached passwords automatically | PAM loses on monitoring — not because PAM's data is at risk, but because it cannot alert you when third-party sites you have accounts on are breached |
+| Breach checking | Yes, on demand — [Breached Passwords](#breached-passwords) checks against the same Have I Been Pwned corpus, using a 20-bit hash prefix so nothing identifying is sent. Off by default | Bitwarden checks against HaveIBeenPwned; 1Password's Watchtower does it automatically, for a vault synced to the vendor | Close. The competitors check continuously and in the background; PAM checks when you ask. PAM sends less and tells you when it could not check rather than implying all is well |
+| Unsolicited breach alerts | None — PAM cannot notify you of a breach you did not ask about, because it does not run in the background or hold your address | Push and email alerts when a breach affects a stored credential | PAM loses. Checking on demand means you have to remember to check |
 | **Flexible / non-password data** | | | |
 | Free-form text records | Excellent — first-class textarea fields | Secure notes exist but limited formatting | PAM wins for general text storage |
 | Custom field types | Full HTML input types: text, textarea, url, phone, email, number, html | Fixed item templates; some custom fields | PAM wins — more flexible data model |
@@ -1740,6 +1765,37 @@ suppresses the badge only — the check still runs and the report is still
 available from the menu, so there is no state in which PAM knows about reuse
 and cannot tell you.
 
+### Breached Passwords
+
+Checks your stored passwords against the
+[Have I Been Pwned](https://haveibeenpwned.com/) corpus, and against local
+structural checks that need no network. Turn it on in
+[Preferences → Administration → Enable Password Breach Check](#enable-password-breach-check);
+it is off by default.
+
+The menu entry is always present. With the preference off it opens a page
+explaining what the feature would send and what it would not, so the disclosure
+appears when you are deciding rather than only in this document. **Nothing is
+sent while the preference is off, and nothing is sent by opening the report.**
+
+With it on, the report says how many requests a check would need — one per
+distinct password, so a password shared by three records costs one — and waits.
+Press **Check** to start. Requests are sent one at a time with a short pause
+between them; a few hundred passwords takes about a minute. **Cancel** stops
+after the current request, and closing the dialogue stops it too.
+
+Each result is labelled:
+
+| Label | Meaning |
+|---|---|
+| **⚠ BREACHED** | found in the corpus; it is published, change it |
+| **⚠ WEAK** | not in the corpus, but the local checks objected |
+| **could not check** | the lookup failed; **nothing was learned** about it |
+
+The last is not a verdict. It is _PAM_ reporting that it failed to reach one,
+and it is never merged with the clean result — if you were offline, the report
+says so rather than implying your passwords are fine.
+
 ### Get Help
 To get this help message, choose the `"Help"` option from the menu.
 
@@ -2105,16 +2161,50 @@ only setting in PAM that causes it to contact anything.
 
 When enabled, PAM sends the first five characters of a password's SHA-1 hash —
 twenty bits — to `api.pwnedpasswords.com`, which returns every hash in the
-corpus beginning with that prefix, typically several hundred. The comparison
-happens in your browser. The password, its full hash, the record it belongs to,
-and the rest of your vault are never transmitted. This is the range API's
-k-anonymity model: the server learns that someone asked about one of roughly
-850,000 possible passwords, and nothing else.
+corpus beginning with that prefix, typically around eight hundred. The
+comparison happens in your browser. The password, its full hash, the record it
+belongs to, and the rest of your vault are never transmitted.
 
-That is a real privacy property, but it is not nothing. A request is made, an
-IP address is visible to the other end, and checking a whole vault sends one
-request per password. Weigh that against not knowing whether a password you are
-still using has already been published.
+This is the range API's k-anonymity model. Five hex characters divide the corpus
+into about a million buckets, so the server learns only that you asked about
+one of the several hundred corpus entries sharing that prefix — or about some
+password that is not in the corpus at all, which it cannot distinguish from the
+first case.
+
+That is a real privacy property, but it is not nothing. A request is made, and
+an IP address is visible to the other end. Checking a whole vault sends one
+request per **distinct** password: a password used by three records costs one
+request, not three.
+
+**Nothing is sent until you ask.** Opening the report does not contact anyone;
+the requests begin when you press **Check** and stop when you press **Cancel**
+or close the dialogue.
+
+### What it checks besides the corpus
+
+Being absent from a breach corpus is a low bar. `Summer2026` appears in no
+corpus worth the name and is still a bad password, so PAM also applies checks
+that need no network at all:
+
+- keyboard runs (`qwer`, `asdf`)
+- character sequences (`abcd`, `4321`)
+- a character repeated four or more times
+- an embedded year between 1900 and 2099
+- a rough entropy floor of 60 bits, and a minimum length of 12
+
+These run whether or not the corpus is reachable, and the report distinguishes
+them: an entry is labelled **BREACHED** if it was found in the corpus and
+**WEAK** if only the local checks objected. The reasons are listed either way.
+The distinction matters because the urgency differs — a password in the corpus
+is published, and whoever holds the dump has it.
+
+### When the check cannot be made
+
+_PAM_ is a progressive web app; being offline is a normal state, not an error.
+A lookup that fails is reported as **could not check**, never as a clean
+result, and the report says plainly that nothing was learned about those
+passwords. If the corpus is unreachable when a run starts, _PAM_ says so once
+rather than making several hundred requests that will all fail.
 
 **What enabling it does not change.** The
 [Content-Security-Policy](#content-security-policy) permits that host whether
@@ -2132,6 +2222,13 @@ conditionally.
 A **⚠ BREACH CHECK** badge appears in the toolbar while this is enabled, in the
 same style as the other warning badges, so an outbound-capable configuration is
 never invisible.
+
+Enabling it also adds a
+<img src="www/icons/blue/shield-check.svg" height="24" width="24" alt="shield"/>
+button beside the
+<img src="www/icons/blue/eye.svg" height="24" width="24" alt="eye"/>
+on every password field, for checking one password without running the whole
+vault. That button is hidden while the preference is off.
 
 #### Search Password Field Values
 

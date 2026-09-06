@@ -356,6 +356,29 @@ structural grounds and the test passed without exercising what it named. It now
 uses two structurally clean passwords, checked as such, so the corpus is the
 only variable.
 
+### Breached and structurally weak are told apart
+
+From a real run: 220 passwords in 36.9s, 85 rejected. The report said "85
+password(s) should be changed" and listed each with its reasons in one grey
+line, so a published password and a short one looked identical at a glance.
+
+`verdictFor()` now returns `inCorpus` and `structural` as separate flags rather
+than leaving the caller to infer them from the reason text — a renderer that
+pattern-matched prose would break the first time the wording changed. The
+report labels each entry **BREACHED** or **WEAK**, in different colours, and
+counts them separately in the summary: *"85 password(s) should be changed — 12
+found in the breach corpus, 73 structurally weak"*. The existing reasoning is
+kept underneath, not replaced.
+
+The distinction is worth making because the urgency differs. A password in the
+corpus is published — whoever holds the dump has it, and it should change
+today. A structurally weak one is a bad bet that has not necessarily been lost
+yet.
+
+**Timing, measured:** 36.9s for 220 requests is 168ms each, of which 120ms is
+the deliberate delay. The corpus itself answers in about 48ms, so the throttle
+is most of the wall time and is the knob to turn if it ever needs to be faster.
+
 ### Fixed: an empty vault had no report body
 
 Found by the regression test for the close-and-restart fix, which failed for a
@@ -478,15 +501,17 @@ settle:
   password *values* would put a secret in the search box — the exact oracle
   fixed in v2.3.0.
 
-### 11b. Breach report: filter by verdict, click a record to open it
+### 11b. Breach report: click a record to open it
 
-Filter the results by breached / could-not-check / clean, and click any entry
-to select that record in the main window and close the report.
+Click any entry to select that record in the main window and close the report.
 
-- The three-state distinction becomes a UI affordance rather than only prose.
-  The **could-not-check** filter is the one that matters: it is the set the
-  user should return to when they are back online, and today it is only a
-  paragraph they may scroll past.
+**The verdict filter is dropped.** A real run over 220 passwords returned 85
+rejections, and the problem was not that they needed filtering — it was that
+breached and structurally weak entries rendered identically, so the reader had
+to parse the reason text to tell them apart. Labelling each entry solved that
+directly, and once labelled the list is scannable without a filter. Done, not
+deferred: see the section below.
+
 - Same escaping, and the same decision as 11a: the search box shows the term.
 - A record clicked from the report may be one of several sharing a password.
   Decide whether clicking selects the one entry or the whole group; the entry

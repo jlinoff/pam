@@ -285,16 +285,39 @@ export function renderBreachResults(progress, results, outcome, total) {
     }
 
     if (breached.length > 0) {
+        // Two different problems with different urgency, so the summary counts
+        // them separately. A password in the corpus is published: whoever has
+        // the dump has it, and it should change today. A structurally weak one
+        // is a bad bet that has not necessarily been lost yet.
+        const inCorpus = breached.filter((r) => r.inCorpus)
+        const weakOnly = breached.filter((r) => !r.inCorpus)
+        const parts = []
+        if (inCorpus.length > 0) {
+            parts.push(`${inCorpus.length} found in the breach corpus`)
+        }
+        if (weakOnly.length > 0) {
+            parts.push(`${weakOnly.length} structurally weak`)
+        }
         results.appendChild(xmk('p').xClass('fw-bold').xInnerHTML(
-            `${breached.length} password(s) should be changed:`))
+            `${breached.length} password(s) should be changed \u2014 ` +
+            parts.join(', ') + ':'))
+
         const list = xmk('ul')
         for (const item of breached) {
+            // The label comes from the inCorpus flag, not from reading the
+            // reason text. A report of 85 problems is unusable if every entry
+            // renders the same and the reader has to parse prose to tell a
+            // breach from a short password.
+            const label = item.inCorpus ? 'BREACHED' : 'WEAK'
+            const tone = item.inCorpus ? 'bg-danger' : 'bg-warning text-dark'
             for (const entry of item.entries) {
                 list.appendChild(xmk('li').xAppend(
+                    xmk('span').xClass('badge', ...tone.split(' '), 'me-2')
+                        .xTextContent(label),
                     xmk('span').xClass('fw-bold').xTextContent(entry.title),
                     xmk('span').xClass('text-secondary')
                         .xTextContent(' \u2014 ' + entry.name),
-                    xmk('div').xClass('text-secondary').xTextContent(
+                    xmk('div').xClass('text-secondary', 'ms-1').xTextContent(
                         item.reasons.join('; '))))
             }
         }

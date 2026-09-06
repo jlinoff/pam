@@ -3299,6 +3299,59 @@ async function runBreachTests7() {
   })
 }
 
+
+async function runBreachTests8() {
+  suite('breach-ui.js — breached and weak are told apart')
+
+  const inCorpus = verdictFor('Zq7-Mvtl%Kdn#WroP2xj',
+                              {status: FOUND, count: 42, reason: ''})
+  const weakOnly = verdictFor('Summer2026',
+                              {status: NOT_FOUND, count: 0, reason: ''})
+
+  test('the verdict reports the two findings separately', () => {
+    // Not left for the UI to infer from reason text: a renderer that had to
+    // pattern-match prose would break the first time the wording changed.
+    assertEqual(inCorpus.inCorpus, true)
+    assertEqual(inCorpus.structural, false)
+    assertEqual(weakOnly.inCorpus, false)
+    assertEqual(weakOnly.structural, true)
+  })
+  test('a password can be both', () => {
+    const both = verdictFor('Summer2026', {status: FOUND, count: 7, reason: ''})
+    assertEqual(both.inCorpus, true)
+    assertEqual(both.structural, true)
+  })
+  test('each entry is labelled, and the reasons are kept', () => {
+    // A report of 85 problems is unusable if every entry renders the same and
+    // the reader has to parse prose to tell a breach from a short password.
+    const progress = xmk('div')
+    const results = xmk('div')
+    document.body.appendChild(progress)
+    document.body.appendChild(results)
+    try {
+      renderBreachResults(progress, results, {
+        probeFailed: false, cancelled: false,
+        results: [
+          Object.assign({entries: [{title: 'Facebook', name: 'password'}]}, inCorpus),
+          Object.assign({entries: [{title: 'Notes', name: 'password'}]}, weakOnly),
+        ]}, 2)
+      const html = results.innerHTML
+      assert(html.indexOf('>BREACHED<') > -1, 'a corpus hit should be labelled')
+      assert(html.indexOf('>WEAK<') > -1, 'a weak password should be labelled')
+      assert(html.indexOf('bg-danger') > -1 && html.indexOf('bg-warning') > -1,
+             'the two should be visually distinct, not only textually')
+      assert(results.textContent.indexOf('1 found in the breach corpus') > -1 &&
+             results.textContent.indexOf('1 structurally weak') > -1,
+             'the summary should count them separately')
+      assert(results.textContent.indexOf('appears in the breach corpus 42 times') > -1,
+             'the existing reasoning must be kept, not replaced by the label')
+    } finally {
+      progress.remove()
+      results.remove()
+    }
+  })
+}
+
 async function runBreachTests() {
   await runBreachTests1()
   await runBreachTests2()
@@ -3307,6 +3360,7 @@ async function runBreachTests() {
   await runBreachTests5()
   await runBreachTests6()
   await runBreachTests7()
+  await runBreachTests8()
 }
 
 // Keep `.then(() => { window.__TESTS_COMPLETE__ = true })` as the final link
@@ -3920,7 +3974,7 @@ import { menuPrefsDlg } from '/js/prefs.js'
 // ---------------------------------------------------------------------------
 // breach-ui.js — the dialogue, in both states
 // ---------------------------------------------------------------------------
-import { menuBreachDlg, passwordsToCheck, startBreachCheck, BREACH_DLG_ID } from '/js/breach-ui.js'
+import { menuBreachDlg, passwordsToCheck, startBreachCheck, renderBreachResults, BREACH_DLG_ID } from '/js/breach-ui.js'
 
 suite('breach-ui.js — the disabled state')
 test('the dialogue exists whether or not the preference is on', () => {

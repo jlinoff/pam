@@ -383,7 +383,19 @@ export function verdictFor(password, lookup) {
     reasons.push(...structural)
 
     if (lookup.status === FOUND || structural.length > 0) {
-        return {verdict: REJECT, reasons, count: lookup.count, checkedCorpus}
+        // inCorpus is reported separately rather than left for the caller to
+        // infer from the reason text. "Published in a breach" and "weak by
+        // construction" call for different urgency, and a UI that had to
+        // pattern-match prose to tell them apart would break the first time
+        // the wording changed.
+        return {
+            verdict: REJECT,
+            reasons,
+            count: lookup.count,
+            checkedCorpus,
+            inCorpus: lookup.status === FOUND,
+            structural: structural.length > 0,
+        }
     }
     if (!checkedCorpus) {
         // Nothing objected, but the corpus was not consulted, so the absence
@@ -393,9 +405,12 @@ export function verdictFor(password, lookup) {
             reasons: [lookup.reason || 'the breach corpus could not be reached'],
             count: 0,
             checkedCorpus: false,
+            inCorpus: false,
+            structural: false,
         }
     }
-    return {verdict: ACCEPT, reasons: [], count: 0, checkedCorpus: true}
+    return {verdict: ACCEPT, reasons: [], count: 0, checkedCorpus: true,
+            inCorpus: false, structural: false}
 }
 
 /**

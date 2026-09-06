@@ -3,7 +3,7 @@ import { xmk, xget, xgetn, enableFunctionChaining } from './lib.js'
 import { statusBlip } from './status.js'
 import { icon, clog, mkPopupModalDlg, mkPopupModalDlgButton, setDarkLightTheme } from './utils.js'
 import { clearRecords, deleteRecord, findRecord, insertRecord, mkRecord } from './record.js'
-import { mkRecordField } from './field.js'
+import { mkRecordField, enableBreachCheckButtons } from './field.js'
 import { menuPrefsDlg, resetPrefs, addDefaultRecordFields } from './prefs.js'
 import { decrypt } from './crypt.js'
 import { mkLoadSavePassword, setFilePass } from './password.js'
@@ -391,6 +391,7 @@ export function loadCallback(text) {
     updateFilePassCacheIndicator()   // SEC-002: reflect loaded prefs in toolbar
     updatePasswordSearchIndicator()  // reflect loaded prefs in toolbar
     updateBreachCheckIndicator()     // a loaded file carries this preference too
+    enableBreachCheckButtons()       // and the per-field buttons on existing rows
     scheduleVaultStatsRefresh()      // recompute reuse and fingerprint for the new vault
     setAboutFileInfo(`Loaded ${numActive} active and ${numInactive} inactive records on ${now.toISOString()}.<br>` +
                      `Records were last updated on ${thenDate.toISOString()} (${fet}).`)

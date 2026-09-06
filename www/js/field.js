@@ -24,14 +24,17 @@ export function mkRecordField(name, type, value) {
         // show/hide button for password fields
         fieldValue = '*'.repeat(value.length)  // emulate the **** for password fields
         fldButtons.push( mkRecordFieldPasswordShowHideButton(rawValue, fieldValue) )
-        // Only when breach checking is enabled. Hidden otherwise rather than
-        // shown-and-disabled: with the preference off, every password field in
-        // the vault would carry a button whose only function is to say "go
-        // turn on a preference". The menu entry is always present and does
-        // that job once, which is where someone discovers the feature.
-        if (window.prefs.enablePasswordBreachCheck) {
-            fldButtons.push( mkRecordFieldBreachCheckButton(rawValue) )
-        }
+        // Always built, shown only when the preference is set.
+        //
+        // The first version created the button conditionally, which read
+        // correctly and behaved wrongly: rows are built when records are
+        // rendered, so enabling the preference afterwards left every existing
+        // field without a button until the page was reloaded. The same
+        // build-time-versus-runtime trap as the preference checkboxes.
+        //
+        // enableBreachCheckButtons() toggles them, exactly as enablePrinting()
+        // does for the Print menu entry.
+        fldButtons.push( mkRecordFieldBreachCheckButton(rawValue) )
         break
     case 'textarea':
         fieldValue = `<pre>${rawValue}</pre>` // needed to keep line breaks in HTML
@@ -140,8 +143,9 @@ function mkRecordFieldPasswordShowHideButton(showValueIn, hideValueIn) {
 // answer arrives where the question was asked.
 export function mkRecordFieldBreachCheckButton(rawValue) {
     const value = rawValue
+    const hidden = window.prefs.enablePasswordBreachCheck ? [] : ['d-none']
     return xmk('button')
-        .xClass('btn', 'btn-lg', 'p-0', 'ms-2', 'x-fld-breach-check')
+        .xClass('btn', 'btn-lg', 'p-0', 'ms-2', 'x-fld-breach-check', ...hidden)
         .xAttrs({'title': 'check this password against known breaches'})
         .xAppend(icon('bi-shield-check', 'check for breaches'))
         .xAddEventListener('click', (event) => {
@@ -149,6 +153,22 @@ export function mkRecordFieldBreachCheckButton(rawValue) {
             const row = event.target.xGetParentWithClass('row')
             checkOneFieldPassword(value, button, row)
         })
+}
+
+// Show or hide every per-field breach button to match the preference.
+//
+// Called wherever the preference can change: after a preferences save and
+// after a file load. Bootstrap's d-none rather than inline display, for the
+// same reason enablePrinting() uses it.
+export function enableBreachCheckButtons() {
+    const buttons = document.body.xGetN('.x-fld-breach-check')
+    buttons.forEach( (el) => {
+        if ( window.prefs.enablePasswordBreachCheck ) {
+            el.classList.remove('d-none')
+        } else {
+            el.classList.add('d-none')
+        }
+    })
 }
 
 // Run a single-password check and report it beside the field.
@@ -260,6 +280,7 @@ export function mkRecordEditField(name, type, container, value) {
     let passwordLength = null
     let passwordShowHide = null
     let passwordGenerate = null
+    let passwordBreachCheck = null
     let inputs = [] // There can be multiple input elements (see password)
     if ( type === 'textarea' || type === 'html' ) {
         let e = xmk('textarea')
@@ -295,6 +316,20 @@ export function mkRecordEditField(name, type, container, value) {
     inputs[0]
         .xClass('x-fld-value', 'form-control', 'font-monospace')
         .xAttr('data-fld-type', type)
+        .xAddEventListener('input', (event) => {
+            // A breach result describes the value it was computed from, so
+            // once that value changes the result is about a password the user
+            // no longer has. Cleared on the first keystroke rather than left
+            // to mislead — the same stale-display trap as the orphaned
+            // progress element in the vault-wide report.
+            const row = event.target.xGetParentWithClass('row')
+            if (row) {
+                const stale = row.xGet('.x-fld-breach-result')
+                if (stale) {
+                    stale.remove()
+                }
+            }
+        })
         .xAddEventListener('focus', (event) => {
             // Allow text to be selected in a draggable parent.
             // Disable dragging.
@@ -351,6 +386,29 @@ export function mkRecordEditField(name, type, container, value) {
             .xAppend(icon('bi-gear', 'generate a password'))
             .xAddEventListener('click', (event) => {
                 mkGeneratePasswordDlg(event)
+            })
+
+        // Breach check for the value being edited.
+        //
+        // This is the last moment before a password is adopted, whether typed,
+        // pasted or taken from the generator, so it is the most useful place
+        // to object. Most of that value is local: a generated password sails
+        // through every check, while a hand-typed Summer2026 fails on
+        // structure without any network at all.
+        //
+        // The value is read from the input at click time rather than captured
+        // when the row was built, because in an edit row it is still changing.
+        passwordBreachCheck = xmk('button')
+            .xAttrs({'type': 'button',
+                     'title': 'check this password against known breaches'})
+            .xClass('btn', 'btn-lg', 'px-0', 'ms-3', 'x-fld-breach-check',
+                    ...(window.prefs.enablePasswordBreachCheck ? [] : ['d-none']))
+            .xAppend(icon('bi-shield-check', 'check for breaches'))
+            .xAddEventListener('click', (event) => {
+                const button = event.target.xGetParentWithClass('btn')
+                const row = event.target.xGetParentWithClass('row')
+                const input = row.xGet('.x-fld-value')
+                checkOneFieldPassword(input.value, button, row)
             })
     }
 
@@ -430,6 +488,7 @@ export function mkRecordEditField(name, type, container, value) {
                 passwordLength,
                 passwordShowHide,
                 passwordGenerate,
+                passwordBreachCheck,
             ),
     )
 

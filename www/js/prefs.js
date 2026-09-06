@@ -1,7 +1,7 @@
 // preferences stuff
 import { xmk, xget, xgetn, enableFunctionChaining } from './lib.js'
 import { icon, mkPopupModalDlgButton, mkPopupModalDlg, sortDictByKey } from './utils.js'
-import { mkRecordEditField }  from './field.js'
+import { mkRecordEditField, enableBreachCheckButtons }  from './field.js'
 import { refreshAbout } from './about.js'
 import { enablePrinting } from './print.js'
 import { enableSaveFile } from './save.js'
@@ -568,6 +568,7 @@ function savePrefs(el) {
     updateFilePassCacheIndicator()  // SEC-002: update toolbar badge
     updatePasswordSearchIndicator()  // update toolbar badge
     updateBreachCheckIndicator()     // enablePasswordBreachCheck toggles the badge
+    enableBreachCheckButtons()       // and the per-field buttons on existing rows
     scheduleVaultStatsRefresh()      // hideInactiveRecords changes the reuse scope
     updateReuseIndicator()           // reuse badge follows showPasswordReuseWarning
     searchRecords()  // refresh

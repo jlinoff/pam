@@ -1177,7 +1177,7 @@ test('empty password with JSON ciphertext: callback fires exactly once', () => {
 // The function is now exported so we can test it directly.
 // ---------------------------------------------------------------------------
 import { prefMemorablePasswordMaxWords } from '/js/prefs.js'
-import { mkRecordField } from '/js/field.js'
+import { mkRecordField, mkRecordEditField, enableBreachCheckButtons } from '/js/field.js'
 import { findRecord, findRecordAfter, deleteRecord, insertRecord, clearRecords, mkRecord } from '/js/record.js'
 import { convertInternalDataToJSON } from '/js/save.js'
 import { isValidLoadUrl, formatTimeElapsed } from '/js/load.js'
@@ -3362,20 +3362,27 @@ async function runBreachTests9() {
   const btnOf = (row) => row.querySelector('.x-fld-breach-check')
 
   test('hidden when the preference is off', () => {
-    // Not shown-and-disabled: with the preference off, every password field in
-    // the vault would carry a button whose only function is to say "go turn on
-    // a preference". The menu entry does that job once.
+    // Present in the DOM but hidden, not absent. The button has to exist so
+    // enableBreachCheckButtons() can reveal it without rebuilding the row —
+    // an earlier version created it conditionally and the button then needed a
+    // page reload to appear. Not visible, though: with the preference off it
+    // would otherwise be a control on every password field whose only function
+    // is to say "go turn on a preference", and the menu entry does that once.
     window.prefs.enablePasswordBreachCheck = false
     const row = mkRecordField('password', 'password', STRONG)
-    assert(!btnOf(row), 'no breach button while the feature is off')
+    const button = btnOf(row)
+    assert(button, 'the button should be built regardless')
+    assert(button.classList.contains('d-none'),
+           'but hidden while the feature is off')
     assert(row.querySelector('.bi-eye'), 'the show/hide button is unaffected')
   })
   test('shown for password fields when enabled, and only those', () => {
     window.prefs.enablePasswordBreachCheck = true
-    assert(btnOf(mkRecordField('password', 'password', STRONG)),
-           'a password field should offer it')
+    const button = btnOf(mkRecordField('password', 'password', STRONG))
+    assert(button, 'a password field should offer it')
+    assert(!button.classList.contains('d-none'), 'and it should be visible')
     assert(!btnOf(mkRecordField('login', 'text', 'joe@example.com')),
-           'a text field should not')
+           'a text field should not have one at all')
   })
 
   await runAsyncTest('a clean password reports that it is clean', async () => {
@@ -3439,6 +3446,99 @@ async function runBreachTests9() {
   })
 }
 
+
+async function runBreachTests10() {
+  suite('field.js — the button follows the preference at runtime')
+
+  test('built always, shown only when enabled', () => {
+    // The first version created the button conditionally, which read correctly
+    // and behaved wrongly: rows are built when records are rendered, so
+    // enabling the preference afterwards left every existing field without a
+    // button until the page was reloaded.
+    const saved = window.prefs.enablePasswordBreachCheck
+    try {
+      window.prefs.enablePasswordBreachCheck = false
+      const row = mkRecordField('password', 'password', 'Zq7-Mvtl%Kdn#WroP2xj')
+      document.body.appendChild(row)
+      try {
+        const button = row.querySelector('.x-fld-breach-check')
+        assert(button, 'the button should exist even while the feature is off')
+        assert(button.classList.contains('d-none'), 'but hidden')
+
+        window.prefs.enablePasswordBreachCheck = true
+        enableBreachCheckButtons()
+        assert(!button.classList.contains('d-none'),
+               'enabling the preference must reveal it without a reload')
+
+        window.prefs.enablePasswordBreachCheck = false
+        enableBreachCheckButtons()
+        assert(button.classList.contains('d-none'), 'and disabling hides it again')
+      } finally {
+        row.remove()
+      }
+    } finally {
+      window.prefs.enablePasswordBreachCheck = saved
+    }
+  })
+
+  suite('field.js — checking a password while editing it')
+
+  test('the editable row offers the check too', () => {
+    // The last moment before a password is adopted, and the most useful place
+    // to object. Most of that value is local: a generated password passes
+    // every check, a hand-typed Summer2026 fails on structure with no network.
+    const saved = window.prefs.enablePasswordBreachCheck
+    window.prefs.enablePasswordBreachCheck = true
+    try {
+      const container = xmk('div')
+      document.body.appendChild(container)
+      try {
+        const row = mkRecordEditField('password', 'password', container, 'Summer2026')
+        container.appendChild(row)
+        assert(row.querySelector('.x-fld-breach-check'),
+               'a password edit row should offer the check')
+        const text = mkRecordEditField('login', 'text', container, 'joe@example.com')
+        assert(!text.querySelector('.x-fld-breach-check'),
+               'a text edit row should not')
+      } finally {
+        container.remove()
+      }
+    } finally {
+      window.prefs.enablePasswordBreachCheck = saved
+    }
+  })
+
+  await runAsyncTest('editing clears a result that no longer applies', async () => {
+    // A result describes the value it was computed from. Left in place while
+    // the value changes, it would describe a password the user no longer has
+    // — the same stale-display trap as the orphaned progress element.
+    const savedPref = window.prefs.enablePasswordBreachCheck
+    const savedFetch = window.fetch
+    window.prefs.enablePasswordBreachCheck = true
+    window.fetch = async () => { throw new TypeError('offline') }
+    const container = xmk('div')
+    document.body.appendChild(container)
+    try {
+      const row = mkRecordEditField('password', 'password', container, 'Summer2026')
+      container.appendChild(row)
+      row.querySelector('.x-fld-breach-check').click()
+      await new Promise((r) => { setTimeout(r, 250) })
+      assert(row.querySelector('.x-fld-breach-result'),
+             'a weak password should be objected to even with no network')
+
+      const input = row.querySelector('.x-fld-value')
+      input.value = 'Zq7-Mvtl%Kdn#WroP2xj'
+      input.dispatchEvent(new Event('input', {bubbles: true}))
+      assert(!row.querySelector('.x-fld-breach-result'),
+             'the stale result must go as soon as the value changes')
+    } finally {
+      container.remove()
+      window.prefs.enablePasswordBreachCheck = savedPref
+      window.fetch = savedFetch
+    }
+  })
+}
+
 async function runBreachTests() {
   await runBreachTests1()
   await runBreachTests2()
@@ -3449,6 +3549,7 @@ async function runBreachTests() {
   await runBreachTests7()
   await runBreachTests8()
   await runBreachTests9()
+  await runBreachTests10()
 }
 
 // Keep `.then(() => { window.__TESTS_COMPLETE__ = true })` as the final link

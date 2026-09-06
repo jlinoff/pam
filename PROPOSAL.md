@@ -362,6 +362,43 @@ structural grounds and the test passed without exercising what it named. It now
 uses two structurally clean passwords, checked as such, so the corpus is the
 only variable.
 
+### Fixed: the per-field button needed a reload to appear
+
+Reported as "I do not see a breach icon in the password dialog yet".
+
+`mkRecordField()` read the preference when the row was **built**, and rows are
+built when records are rendered. Enabling the preference afterwards therefore
+left every existing field without a button until the page was reloaded — the
+same build-time-versus-runtime trap as the preference checkboxes, which are
+also read once at construction.
+
+PAM already had the right pattern: `enablePrinting()` toggles Bootstrap's
+`d-none` on `.x-print` elements. `enableBreachCheckButtons()` now does the same
+for `.x-fld-breach-check`, called after a preferences save and after a file
+load, and the button is always built rather than conditionally.
+
+### Added: the check is available while editing a password
+
+Asked whether the generator dialogue should offer it too. **The generator
+itself: no.** A 20-character password from PAM's alphabet carries around 120
+bits; the chance it appears in an 850-million corpus is about 1 in 10^28, so
+the button would always return "clean" and spend a request to say nothing.
+
+**The editable row: yes, and it was missing.** That is where a password is
+adopted — typed, pasted, or taken from the generator — and it is the last
+moment before commitment. Most of the value there is local rather than from the
+corpus: a generated password passes every check, while a hand-typed
+`Summer2026` fails on structure with no network at all.
+
+Two details that matter more than the button:
+
+- The value is read from the input **at click time**, not captured when the row
+  was built. In an edit row it is still changing.
+- The result is cleared on the first keystroke. A result describes the value it
+  was computed from, and left in place it would describe a password the user no
+  longer has — the same stale-display trap as the orphaned progress element in
+  the vault-wide report.
+
 ### Status: per-field button DONE
 
 A shield button beside the eye on password fields, present **only** when

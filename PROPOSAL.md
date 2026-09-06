@@ -412,6 +412,33 @@ capable of objecting.
 
 On demand, one request per press. Pressing **Regenerate** sends nothing.
 
+### The scratch harness and the test page differ in ways that matter
+
+Twice in one change, the jsdom harness passed and the real page failed.
+
+The generator tests called `showMainPasswordGeneratorDlg()`, which uses
+`bootstrap.Modal.getOrCreateInstance()`. `tests.html` does not load Bootstrap's
+JavaScript at all, so the global is undefined there and the call throws before
+the body is built. The scratch harness had set `global.bootstrap` at the top,
+so it never saw the problem — the stub was in the harness, and only the calls
+were carried across.
+
+The fix stubs it in the test itself and restores it afterwards, so the test
+exercises the real function rather than a reimplementation of what it does.
+
+**And the harness cannot verify the fix.** `password.js` references the bare
+global `bootstrap`, not `window.bootstrap`. In a browser those are the same
+name, so assigning `window.bootstrap` makes it resolve; in Node,
+`global !== dom.window` and it does not. The scratch harness can confirm the
+surrounding logic — the stub is necessary, six buttons appear, the toggle
+reaches them, the global is cleaned up — but the browser is the only place the
+mechanism itself can be checked.
+
+Worth stating as a rule: **a scratch harness proves a module works in the
+harness.** Every discrepancy this session — accumulated `window.prefs` state,
+an empty accordion, a missing Bootstrap global — has been the harness being
+kinder than the page.
+
 ### Gap found on review: the generator button had no tests
 
 Verified in a scratch jsdom harness when it was written, never carried across

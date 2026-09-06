@@ -3547,16 +3547,51 @@ async function runBreachTests11() {
   const savedPref = window.prefs.enablePasswordBreachCheck
   const savedFetch = window.fetch
 
+  // showMainPasswordGeneratorDlg() populates the body, and it also calls
+  // bootstrap.Modal.getOrCreateInstance(). This page does not load Bootstrap's
+  // JavaScript at all, so that global is undefined here and the call throws
+  // before the body is built.
+  //
+  // Stubbed for the duration rather than working around it: the population is
+  // the part under test, and a stub keeps the test exercising the real
+  // function instead of a reimplementation of what it does.
   function withGenerator(fn) {
-    // showMainPasswordGeneratorDlg() populates the body and needs a Bootstrap
-    // Modal instance; the dialogue is empty until it runs.
     const dlg = mkMainPasswordGeneratorDlg()
     document.body.appendChild(dlg)
+    const hadBootstrap = 'bootstrap' in window
+    const savedBootstrap = window.bootstrap
+    window.bootstrap = {Modal: {getOrCreateInstance: () => ({show: () => {}})}}
     try {
       showMainPasswordGeneratorDlg()
       return fn(dlg)
     } finally {
       dlg.remove()
+      if (hadBootstrap) {
+        window.bootstrap = savedBootstrap
+      } else {
+        delete window.bootstrap
+      }
+    }
+  }
+
+  // Builds a populated generator and returns its first check button, leaving
+  // the dialogue attached so an async click can be awaited against it. The
+  // caller removes it.
+  function withGeneratorButton() {
+    const dlg = mkMainPasswordGeneratorDlg()
+    document.body.appendChild(dlg)
+    const hadBootstrap = 'bootstrap' in window
+    const savedBootstrap = window.bootstrap
+    window.bootstrap = {Modal: {getOrCreateInstance: () => ({show: () => {}})}}
+    try {
+      showMainPasswordGeneratorDlg()
+      return dlg.querySelector('.x-gen-breach-check')
+    } finally {
+      if (hadBootstrap) {
+        window.bootstrap = savedBootstrap
+      } else {
+        delete window.bootstrap
+      }
     }
   }
 
@@ -3596,39 +3631,30 @@ async function runBreachTests11() {
   await runAsyncTest('offline says could not check, never clean', async () => {
     window.prefs.enablePasswordBreachCheck = true
     window.fetch = async () => { throw new TypeError('offline') }
-    const dlg = mkMainPasswordGeneratorDlg()
-    document.body.appendChild(dlg)
-    try {
-      showMainPasswordGeneratorDlg()
-      const button = dlg.querySelector('.x-gen-breach-check')
-      button.click()
-      await new Promise((r) => { setTimeout(r, 250) })
-      const out = button.parentElement.querySelector('.x-gen-breach-result')
-      assert(out, 'a failure must still say something')
-      assert(out.textContent.indexOf('could not check') > -1, out.textContent)
-      assert(out.textContent.indexOf('not in the breach corpus') === -1,
-             'a failed lookup must never read as clean')
-    } finally {
-      dlg.remove()
-    }
+    const button = withGeneratorButton()
+    button.click()
+    await new Promise((r) => { setTimeout(r, 250) })
+    const out = button.parentElement.querySelector('.x-gen-breach-result')
+    assert(out, 'a failure must still say something')
+    assert(out.textContent.indexOf('could not check') > -1, out.textContent)
+    assert(out.textContent.indexOf('not in the breach corpus') === -1,
+           'a failed lookup must never read as clean')
+    button.closest('.modal').remove()
   })
 
   await runAsyncTest('a clean generated password says so', async () => {
     window.prefs.enablePasswordBreachCheck = true
     window.fetch = async () => ({ok: true, status: 200,
       text: async () => 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA:1'})
-    const dlg = mkMainPasswordGeneratorDlg()
-    document.body.appendChild(dlg)
     try {
-      showMainPasswordGeneratorDlg()
-      const button = dlg.querySelector('.x-gen-breach-check')
+      const button = withGeneratorButton()
       button.click()
       await new Promise((r) => { setTimeout(r, 250) })
       const out = button.parentElement.querySelector('.x-gen-breach-result')
       assert(out.textContent.indexOf('not in the breach corpus') > -1,
              out.textContent)
+      button.closest('.modal').remove()
     } finally {
-      dlg.remove()
       window.prefs.enablePasswordBreachCheck = savedPref
       window.fetch = savedFetch
     }

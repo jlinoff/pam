@@ -604,12 +604,21 @@ thing to remember.
 - `pam-menu.png` — gains `Breached Passwords`, which also changes its height.
 - `pam-prefs-enable-printing-menu.png` — the same menu with Print showing.
 
-**New captures to add:**
+**New captures — added to `tests/screenshots.py`, awaiting a run:**
 
-- `pam-breached-passwords.png` — the report with results.
-- `pam-breached-passwords-disabled.png` — the dialogue shown when the
-  preference is off, explaining the trade-off. Worth capturing precisely
-  because it is the state most users will see.
+- `pam-breached-passwords-disabled.png` — the report with the preference off.
+  The more important of the two: it is the state almost every reader will meet,
+  and where the trade-off is explained at the moment someone is deciding.
+- `pam-breached-passwords.png` — the report with the preference on, captured
+  **before Check is pressed**. Neither shot makes a network request; the
+  disabled one cannot, and the enabled one is photographed at the point where
+  the request count is stated and nothing has gone out. A screenshot has no
+  business sending several hundred requests, and this is also the honest
+  picture of what opening the report does.
+
+No capture for the per-field shield button. Every shot runs with the preference
+off, so photographing it would mean setting the preference purely for the
+picture; the README describes it in prose instead.
 
 **Also affected, outside the images:**
 

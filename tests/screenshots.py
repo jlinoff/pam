@@ -1785,11 +1785,73 @@ def shot_print_example(driver):
     return driver.find_element(By.ID, 'x-shot-print-preview')
 
 
+# ---------------------------------------------------------------------------
+# Breach checking
+# ---------------------------------------------------------------------------
+#
+# Two captures, and the DISABLED one is the more important. The preference is
+# off by default, so that is the state almost every reader will meet, and it is
+# where the trade-off is explained at the moment someone is deciding.
+#
+# Neither capture makes a network request. The disabled state cannot, and the
+# enabled one is photographed before Check is pressed — which is also the
+# honest picture of what opening the report does.
+
+
+def open_breach_dialogue(driver):
+    """Open Breached Passwords and return its modal content."""
+    dlg = choose_menu_option(driver, 'Breached Passwords')
+    if dlg is None:
+        raise RuntimeError('the Breached Passwords menu entry opened nothing')
+    wait_for_modal(driver)
+    return modal_content(dlg)
+
+
+def shot_breach_disabled(driver):
+    """The report with breach checking off — the default state."""
+    set_theme(driver, 'dark')
+    driver.execute_script('window.prefs.enablePasswordBreachCheck = false;')
+    content = open_breach_dialogue(driver)
+
+    text = content.get_attribute('textContent')
+    if 'Nothing has been sent' not in text:
+        raise RuntimeError(
+            'the disabled report should lead with the fact that no request was '
+            f'made. Got: {text[:200]!r}')
+    if 'Enable Password Breach Check' not in text:
+        raise RuntimeError('it should name where to turn the feature on')
+    blur(driver)
+    return content
+
+
+def shot_breach_ready(driver):
+    """The report with breach checking on, before anything is sent.
+
+    Captured deliberately at the point where the request count is stated and
+    nothing has gone out. Pressing Check would make one request per distinct
+    password in the example vault, which a screenshot has no business doing.
+    """
+    set_theme(driver, 'dark')
+    driver.execute_script('window.prefs.enablePasswordBreachCheck = true;')
+    content = open_breach_dialogue(driver)
+
+    text = content.get_attribute('textContent')
+    if 'Nothing has been sent yet' not in text:
+        raise RuntimeError(
+            f'the ready state should say nothing has gone out yet: {text[:200]!r}')
+    if 'requests' not in text and 'request' not in text:
+        raise RuntimeError('it should state how many requests a check would send')
+    blur(driver)
+    return content
+
+
 # (filename, capture function, window size)
 SHOTS = [
     ('pam-menu.png', shot_menu, WINDOW),
     ('pam-about.png', shot_about, WINDOW),
     ('pam-reused-passwords.png', shot_reused_passwords, WINDOW),
+    ('pam-breached-passwords-disabled.png', shot_breach_disabled, WINDOW),
+    ('pam-breached-passwords.png', shot_breach_ready, WINDOW),
     ('pam-prefs-search.png', shot_prefs_search, WINDOW),
     ('pam-prefs-password.png', shot_prefs_passwords, WINDOW),
     ('pam-prefs-miscellaneous.png', shot_prefs_misc, WINDOW),

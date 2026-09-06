@@ -1778,8 +1778,13 @@ explaining what the feature would send and what it would not, so the disclosure
 appears when you are deciding rather than only in this document. **Nothing is
 sent while the preference is off, and nothing is sent by opening the report.**
 
+<img src="www/help/pam-breached-passwords-disabled.png" width="700" alt="the Breached Passwords report with the feature disabled">
+
 With it on, the report says how many requests a check would need — one per
 distinct password, so a password shared by three records costs one — and waits.
+
+<img src="www/help/pam-breached-passwords.png" width="700" alt="the Breached Passwords report ready to run">
+
 Press **Check** to start. Requests are sent one at a time with a short pause
 between them; a few hundred passwords takes about a minute. **Cancel** stops
 after the current request, and closing the dialogue stops it too.

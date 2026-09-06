@@ -412,6 +412,37 @@ capable of objecting.
 
 On demand, one request per press. Pressing **Regenerate** sends nothing.
 
+### A known cost of hiding the buttons
+
+The breach buttons are hidden when the preference is off rather than shown and
+disabled. That remains the right call: a disabled control on every password
+field whose only function is to say "go turn on a preference" is real clutter,
+and the menu entry does that discovery job once.
+
+The cost is that **"the feature is off" and "the feature is broken" look
+identical** at the point where you are looking for the button. The toolbar
+badge is the only signal, and it is at the other end of the screen from the
+record row or the generator dialogue.
+
+Both of us hit this within an hour of building it: a missing shield in the
+password generator was investigated through file sizes, greps and line numbers
+before anyone asked whether the preference was enabled. It was not.
+
+Recorded rather than changed. If it recurs, the cheapest fix is probably a line
+in the generator and record views when the feature is off — not a button, just
+text — but that reintroduces some of the clutter the hiding avoids. Ask whether
+it has actually bitten anyone twice before adding it.
+
+**Diagnostic order for "the button is not there", cheapest first:**
+
+1. Is `enablePasswordBreachCheck` on? The ⚠ BREACH CHECK badge in the footer
+   answers this without opening preferences.
+2. Was a file loaded since? `loadFileContent()` applies the loaded file's
+   preferences, so opening a shared vault can turn breach checking off.
+3. Shift-reload. `python -m http.server` sends no cache headers, so a plain
+   reload can serve a stale module.
+4. Then check the file on disk.
+
 ### Fixed: the per-field button needed a reload to appear
 
 Reported as "I do not see a breach icon in the password dialog yet".

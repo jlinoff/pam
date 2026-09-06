@@ -31,15 +31,20 @@ be the last resort, not the only door.
 v2.3.0 is released. Everything below targets **v2.4.0** on
 `feat/password-breach-check`.
 
+Item numbers are stable identifiers, not priorities: an item keeps its number
+for the life of the document so cross-references hold. Sections appear in
+numeric order. A low number means the item was raised early, nothing more.
+
 | Item | State |
 |---|---|
 | 1–4 | **released in v2.3.0** — see `RELEASE_NOTES_v2.3.0.md` |
 | 5. Password breach check | in progress, on `feat/password-breach-check` |
-| 11. Actionable reports | new — click through from both reports to the records |
 | 6. README pass | folded into item 5. NOTE: the preference section is already written and currently over-claims — re-read it against the built feature before merging |
 | 7. Vault diff | deferred — blocked on durable record IDs |
-| 9. Vault file integrity | new — v2 is AES-CBC with no MAC; needs a v3 format |
 | 8. Export tiering | deferred |
+| 9. Vault file integrity | open — v2 is AES-CBC with no MAC; needs a v3 format |
+| 10. Test suites ran without gating | **fixed** — finalize() ran per-runner, so two suites reported but did not count |
+| 11. Actionable reports | 11b done (breached/weak labelling); 11a and click-through outstanding |
 
 ---
 
@@ -469,65 +474,6 @@ building `pwcheck`, and each time the program looked like it worked.
 
 ---
 
-## 11. Reports should be actionable, not just informative
-
-Both reports currently tell you there is a problem and leave you to find the
-records yourself. In a vault of a few hundred entries that is most of the work.
-
-### 11a. Reuse report: click a group to select its records
-
-Clicking a group in the Reused Passwords report selects those records in the
-main window and closes the report.
-
-Mechanism: `searchRecords(value)` already filters the accordion, and
-`searchRecordTitles` is on by default. A regex alternation of the group's
-titles — `^(Facebook|Instagram)$` — filters to exactly that group. Points to
-settle:
-
-- **Decided: the search box shows the filter.** The regex goes into the box
-  where the user can see it, edit it, or clear it with the existing button.
-  Filtering without showing the term would leave the record list in a state
-  with no visible cause, and the next person to look at the window — including
-  the same person a minute later — would have no way to tell why records are
-  missing. An odd-looking search term is a smaller cost than an unexplained
-  one.
-
-  This also means the existing clear-search control is the undo, so nothing new
-  is needed for that.
-- Titles are not unique and are not escaped for regex. A title containing
-  `(` or `|` would break the alternation or, worse, match the wrong records.
-  Escape before building the pattern.
-- `searchPasswordFieldValues` must stay out of this. Building a filter from
-  password *values* would put a secret in the search box — the exact oracle
-  fixed in v2.3.0.
-
-### 11b. Breach report: click a record to open it
-
-Click any entry to select that record in the main window and close the report.
-
-**The verdict filter is dropped.** A real run over 220 passwords returned 85
-rejections, and the problem was not that they needed filtering — it was that
-breached and structurally weak entries rendered identically, so the reader had
-to parse the reason text to tell them apart. Labelling each entry solved that
-directly, and once labelled the list is scannable without a filter. Done, not
-deferred: see the section below.
-
-- Same escaping, and the same decision as 11a: the search box shows the term.
-- A record clicked from the report may be one of several sharing a password.
-  Decide whether clicking selects the one entry or the whole group; the entry
-  is probably right here, since the breach verdict is about the password and
-  the user is being sent somewhere to change it.
-
-### Shared work
-
-Both need one helper — "select these records in the main window and close this
-dialogue" — rather than two implementations. It belongs somewhere both
-`vault-ui.js` and `breach-ui.js` can reach without a circular import;
-`search.js` is the natural home since it already owns the filter.
-
-Neither is required for the breach feature to ship. If v2.4.0 gets long, 11a
-stands alone and could land in a smaller release of its own.
-
 ## 6. README pass
 
 Large, and it covers everything above. The README is the in-app help, so this
@@ -621,63 +567,6 @@ off, and the button is hidden in that state.
 
 ---
 
-## 10. Fixed: two suites ran without gating the build
-
-Found because 16 new breach tests were added and the reported total did not
-move: still 308.
-
-`finalize()` writes `window.__TEST_RESULTS__`, which `tests/test_unit.py` reads
-to decide pass or fail. It was called at the end of `runCryptTests` and
-`runSaveRegressionTests` but not by the two runners after them in the chain, so
-`runVaultFingerprintTests` (12 tests) and `runBreachTests` (16) rendered their
-results onto the page while the totals still reflected the state before they
-ran. **Their failures would have shown as red lines and passed the build.** The
-vaultFingerprint suite was in that position for the whole of v2.3.0.
-
-Two changes:
-
-- One `finalize()` at the end of the chain instead of per-runner. Adding a
-  runner can no longer leave it uncounted.
-- `test_unit.py` now reconciles the summary against the page: the number of
-  rendered `.test-line` elements must equal the reported total. Trusting the
-  summary without checking it against the lines is what let this go unnoticed,
-  and the same drift would otherwise recur the next time a runner is appended.
-
-The failure mode is the one this project keeps producing: not a wrong answer,
-but a right-looking answer that was never actually computed.
-
-## 9. Vault file integrity — new, unscheduled
-
-Found while investigating a flaky unit test, and worth recording even though it
-is not part of the breach work.
-
-`decryptV2()` uses **AES-CBC with no authentication tag**, and does not
-validate what comes out — it calls back with whatever bytes `decrypt()`
-produces. Two consequences:
-
-**A wrong password is not reliably detected.** Rejection depends on the garbage
-final block failing PKCS#7 padding validation, which random bytes pass about
-once in 256. When that happens the caller receives garbage, and the failure
-surfaces downstream as `invalid record format!` from `JSON.parse` rather than
-as a password error. Roughly one wrong-password load in 256 gives a confusing
-message. Annoying, not dangerous.
-
-**The vault file has no integrity protection.** This is the part that matters.
-CBC without a MAC is malleable: someone who can write to a PAM file can flip
-bits in the plaintext without detection. The README recommends storing PAM
-files in iCloud, Dropbox or Google Drive and sharing them between devices —
-exactly the settings where a file may be modified by something other than PAM.
-Confidentiality holds; tamper-evidence does not.
-
-The fix is AES-GCM, which authenticates as it decrypts, so a wrong password or
-a modified file fails cleanly every time. That is a **format change** and needs
-a v3 with migration, in the shape v1 to v2 already took. It should not be
-bolted onto the breach branch.
-
-Meanwhile the unit test asserts the property that actually holds — that a wrong
-password never recovers the plaintext — rather than that decryption fails,
-which is only true 255 times in 256.
-
 ## 7. Vault diff — deferred
 
 **Question:** "What differs between these two vaults?"
@@ -715,6 +604,122 @@ has shipped on iOS and Android; Apple, Google, Microsoft, 1Password, Bitwarden
 and Dashlane are all contributors.
 
 ---
+
+## 9. Vault file integrity — new, unscheduled
+
+Found while investigating a flaky unit test, and worth recording even though it
+is not part of the breach work.
+
+`decryptV2()` uses **AES-CBC with no authentication tag**, and does not
+validate what comes out — it calls back with whatever bytes `decrypt()`
+produces. Two consequences:
+
+**A wrong password is not reliably detected.** Rejection depends on the garbage
+final block failing PKCS#7 padding validation, which random bytes pass about
+once in 256. When that happens the caller receives garbage, and the failure
+surfaces downstream as `invalid record format!` from `JSON.parse` rather than
+as a password error. Roughly one wrong-password load in 256 gives a confusing
+message. Annoying, not dangerous.
+
+**The vault file has no integrity protection.** This is the part that matters.
+CBC without a MAC is malleable: someone who can write to a PAM file can flip
+bits in the plaintext without detection. The README recommends storing PAM
+files in iCloud, Dropbox or Google Drive and sharing them between devices —
+exactly the settings where a file may be modified by something other than PAM.
+Confidentiality holds; tamper-evidence does not.
+
+The fix is AES-GCM, which authenticates as it decrypts, so a wrong password or
+a modified file fails cleanly every time. That is a **format change** and needs
+a v3 with migration, in the shape v1 to v2 already took. It should not be
+bolted onto the breach branch.
+
+Meanwhile the unit test asserts the property that actually holds — that a wrong
+password never recovers the plaintext — rather than that decryption fails,
+which is only true 255 times in 256.
+
+## 10. Fixed: two suites ran without gating the build
+
+Found because 16 new breach tests were added and the reported total did not
+move: still 308.
+
+`finalize()` writes `window.__TEST_RESULTS__`, which `tests/test_unit.py` reads
+to decide pass or fail. It was called at the end of `runCryptTests` and
+`runSaveRegressionTests` but not by the two runners after them in the chain, so
+`runVaultFingerprintTests` (12 tests) and `runBreachTests` (16) rendered their
+results onto the page while the totals still reflected the state before they
+ran. **Their failures would have shown as red lines and passed the build.** The
+vaultFingerprint suite was in that position for the whole of v2.3.0.
+
+Two changes:
+
+- One `finalize()` at the end of the chain instead of per-runner. Adding a
+  runner can no longer leave it uncounted.
+- `test_unit.py` now reconciles the summary against the page: the number of
+  rendered `.test-line` elements must equal the reported total. Trusting the
+  summary without checking it against the lines is what let this go unnoticed,
+  and the same drift would otherwise recur the next time a runner is appended.
+
+The failure mode is the one this project keeps producing: not a wrong answer,
+but a right-looking answer that was never actually computed.
+
+## 11. Reports should be actionable, not just informative
+
+Both reports currently tell you there is a problem and leave you to find the
+records yourself. In a vault of a few hundred entries that is most of the work.
+
+### 11a. Reuse report: click a group to select its records
+
+Clicking a group in the Reused Passwords report selects those records in the
+main window and closes the report.
+
+Mechanism: `searchRecords(value)` already filters the accordion, and
+`searchRecordTitles` is on by default. A regex alternation of the group's
+titles — `^(Facebook|Instagram)$` — filters to exactly that group. Points to
+settle:
+
+- **Decided: the search box shows the filter.** The regex goes into the box
+  where the user can see it, edit it, or clear it with the existing button.
+  Filtering without showing the term would leave the record list in a state
+  with no visible cause, and the next person to look at the window — including
+  the same person a minute later — would have no way to tell why records are
+  missing. An odd-looking search term is a smaller cost than an unexplained
+  one.
+
+  This also means the existing clear-search control is the undo, so nothing new
+  is needed for that.
+- Titles are not unique and are not escaped for regex. A title containing
+  `(` or `|` would break the alternation or, worse, match the wrong records.
+  Escape before building the pattern.
+- `searchPasswordFieldValues` must stay out of this. Building a filter from
+  password *values* would put a secret in the search box — the exact oracle
+  fixed in v2.3.0.
+
+### 11b. Breach report: click a record to open it
+
+Click any entry to select that record in the main window and close the report.
+
+**The verdict filter is dropped.** A real run over 220 passwords returned 85
+rejections, and the problem was not that they needed filtering — it was that
+breached and structurally weak entries rendered identically, so the reader had
+to parse the reason text to tell them apart. Labelling each entry solved that
+directly, and once labelled the list is scannable without a filter. Done, not
+deferred: see the section below.
+
+- Same escaping, and the same decision as 11a: the search box shows the term.
+- A record clicked from the report may be one of several sharing a password.
+  Decide whether clicking selects the one entry or the whole group; the entry
+  is probably right here, since the breach verdict is about the password and
+  the user is being sent somewhere to change it.
+
+### Shared work
+
+Both need one helper — "select these records in the main window and close this
+dialogue" — rather than two implementations. It belongs somewhere both
+`vault-ui.js` and `breach-ui.js` can reach without a circular import;
+`search.js` is the natural home since it already owns the filter.
+
+Neither is required for the breach feature to ship. If v2.4.0 gets long, 11a
+stands alone and could land in a smaller release of its own.
 
 ## Open questions
 

@@ -3556,6 +3556,13 @@ async function runBreachTests11() {
   // the part under test, and a stub keeps the test exercising the real
   // function instead of a reimplementation of what it does.
   function withGenerator(fn) {
+    // showMainPasswordGeneratorDlg() finds its target with
+    // getElementById('mainPasswordGeneratorDlg'), so any earlier dialogue left
+    // attached with that id would be populated instead of this one. Clear the
+    // id before appending so the lookup cannot resolve to something else.
+    for (const stale of document.querySelectorAll('#mainPasswordGeneratorDlg')) {
+      stale.remove()
+    }
     const dlg = mkMainPasswordGeneratorDlg()
     document.body.appendChild(dlg)
     const hadBootstrap = 'bootstrap' in window
@@ -3563,6 +3570,13 @@ async function runBreachTests11() {
     window.bootstrap = {Modal: {getOrCreateInstance: () => ({show: () => {}})}}
     try {
       showMainPasswordGeneratorDlg()
+      // Report which stage failed rather than only the final count.
+      assertEqual(document.getElementById('mainPasswordGeneratorDlg'), dlg,
+                  'getElementById should resolve to the dialogue just built')
+      const body = dlg.querySelector('.modal-body')
+      assert(body, 'the dialogue should have a .modal-body')
+      assert(body.children.length > 0,
+             'showMainPasswordGeneratorDlg() should have populated the body')
       return fn(dlg)
     } finally {
       dlg.remove()
@@ -3578,6 +3592,9 @@ async function runBreachTests11() {
   // the dialogue attached so an async click can be awaited against it. The
   // caller removes it.
   function withGeneratorButton() {
+    for (const stale of document.querySelectorAll('#mainPasswordGeneratorDlg')) {
+      stale.remove()
+    }
     const dlg = mkMainPasswordGeneratorDlg()
     document.body.appendChild(dlg)
     const hadBootstrap = 'bootstrap' in window
@@ -3585,7 +3602,9 @@ async function runBreachTests11() {
     window.bootstrap = {Modal: {getOrCreateInstance: () => ({show: () => {}})}}
     try {
       showMainPasswordGeneratorDlg()
-      return dlg.querySelector('.x-gen-breach-check')
+      const button = dlg.querySelector('.x-gen-breach-check')
+      assert(button, 'the generator should have produced a check button')
+      return button
     } finally {
       if (hadBootstrap) {
         window.bootstrap = savedBootstrap
@@ -3615,7 +3634,11 @@ async function runBreachTests11() {
     withGenerator((dlg) => {
       window.prefs.enablePasswordBreachCheck = false
       enableBreachCheckButtons()
-      for (const button of dlg.querySelectorAll('.x-gen-breach-check')) {
+      const off = dlg.querySelectorAll('.x-gen-breach-check')
+      // Without this the loop below succeeds over an empty list: this test
+      // passed while the dialogue was producing no buttons at all.
+      assertEqual(off.length, 6, 'there should be buttons to hide')
+      for (const button of off) {
         assert(button.classList.contains('d-none'),
                'the toggle must reach the generator buttons too, not just the '
                + 'per-field ones')

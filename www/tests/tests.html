@@ -3352,6 +3352,93 @@ async function runBreachTests8() {
   })
 }
 
+
+async function runBreachTests9() {
+  suite('field.js — the per-field breach check button')
+
+  const STRONG = 'Zq7-Mvtl%Kdn#WroP2xj'
+  const savedPref = window.prefs.enablePasswordBreachCheck
+  const savedFetch = window.fetch
+  const btnOf = (row) => row.querySelector('.x-fld-breach-check')
+
+  test('hidden when the preference is off', () => {
+    // Not shown-and-disabled: with the preference off, every password field in
+    // the vault would carry a button whose only function is to say "go turn on
+    // a preference". The menu entry does that job once.
+    window.prefs.enablePasswordBreachCheck = false
+    const row = mkRecordField('password', 'password', STRONG)
+    assert(!btnOf(row), 'no breach button while the feature is off')
+    assert(row.querySelector('.bi-eye'), 'the show/hide button is unaffected')
+  })
+  test('shown for password fields when enabled, and only those', () => {
+    window.prefs.enablePasswordBreachCheck = true
+    assert(btnOf(mkRecordField('password', 'password', STRONG)),
+           'a password field should offer it')
+    assert(!btnOf(mkRecordField('login', 'text', 'joe@example.com')),
+           'a text field should not')
+  })
+
+  await runAsyncTest('a clean password reports that it is clean', async () => {
+    window.prefs.enablePasswordBreachCheck = true
+    window.fetch = async () => ({ok: true, status: 200,
+      text: async () => 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA:1'})
+    const row = mkRecordField('password', 'password', STRONG)
+    document.body.appendChild(row)
+    try {
+      btnOf(row).click()
+      await new Promise((r) => { setTimeout(r, 250) })
+      const result = row.querySelector('.x-fld-breach-result')
+      assert(result && result.textContent.indexOf('not in the breach corpus') > -1,
+             `unexpected: ${result ? result.textContent : '(no result)'}`)
+    } finally {
+      row.remove()
+    }
+  })
+
+  await runAsyncTest('offline says could not check, never clean', async () => {
+    // The whole feature turns on this. A button that silently did nothing when
+    // the network was down would be worse than no button.
+    window.prefs.enablePasswordBreachCheck = true
+    window.fetch = async () => { throw new TypeError('Failed to fetch') }
+    const row = mkRecordField('password', 'password', STRONG)
+    document.body.appendChild(row)
+    try {
+      btnOf(row).click()
+      await new Promise((r) => { setTimeout(r, 250) })
+      const result = row.querySelector('.x-fld-breach-result')
+      assert(result, 'a failure must still say something')
+      assert(result.textContent.indexOf('could not check') > -1,
+             `expected a could-not-check message: ${result.textContent}`)
+      assert(result.textContent.indexOf('not in the breach corpus') === -1,
+             'a failed lookup must never read as clean')
+      assert(result.textContent.indexOf('Nothing was learned') > -1,
+             'it should say plainly that nothing was established')
+    } finally {
+      row.remove()
+    }
+  })
+
+  await runAsyncTest('a breached password reports the count', async () => {
+    window.prefs.enablePasswordBreachCheck = true
+    const suffix = (await sha1Hex('hunter2')).slice(5)
+    window.fetch = async () => ({ok: true, status: 200,
+      text: async () => suffix + ':4242'})
+    const row = mkRecordField('password', 'password', 'hunter2')
+    document.body.appendChild(row)
+    try {
+      btnOf(row).click()
+      await new Promise((r) => { setTimeout(r, 250) })
+      const result = row.querySelector('.x-fld-breach-result')
+      assert(result.textContent.indexOf('BREACHED') > -1, result.textContent)
+      assert(result.textContent.indexOf('4242') > -1, 'the count should appear')
+    } finally {
+      row.remove()
+      window.prefs.enablePasswordBreachCheck = savedPref
+      window.fetch = savedFetch
+    }
+  })
+}
+
 async function runBreachTests() {
   await runBreachTests1()
   await runBreachTests2()
@@ -3361,6 +3448,7 @@ async function runBreachTests() {
   await runBreachTests6()
   await runBreachTests7()
   await runBreachTests8()
+  await runBreachTests9()
 }
 
 // Keep `.then(() => { window.__TESTS_COMPLETE__ = true })` as the final link

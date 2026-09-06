@@ -45,6 +45,7 @@ numeric order. A low number means the item was raised early, nothing more.
 | 9. Vault file integrity | open — v2 is AES-CBC with no MAC; needs a v3 format |
 | 10. Test suites ran without gating | **fixed** — finalize() ran per-runner, so two suites reported but did not count |
 | 11. Actionable reports | 11b done (breached/weak labelling); 11a and click-through outstanding |
+| 12. Per-field breach button | done — shield button on password fields when the preference is on |
 
 ---
 
@@ -360,6 +361,25 @@ the probe succeeds, then the network dies. Its first version used `'a'` and
 structural grounds and the test passed without exercising what it named. It now
 uses two structurally clean passwords, checked as such, so the corpus is the
 only variable.
+
+### Status: per-field button DONE
+
+A shield button beside the eye on password fields, present **only** when
+`enablePasswordBreachCheck` is set. Hidden rather than shown-and-disabled: with
+the preference off, every password field in the vault would carry a control
+whose only function is to say "go turn on a preference". The menu entry does
+that job once, which is where someone discovers the feature.
+
+The result is written into the row rather than a dialogue, so the answer
+arrives where the question was asked. All three outcomes are reported, and the
+offline case says both *could not check* and *nothing was learned about this
+password* — a button that silently did nothing when the network was down would
+be worse than no button.
+
+Icon names verified against the real Bootstrap Icons set rather than assumed:
+neither `bi-shield-check` (this button) nor `bi-key` (the menu entry) was
+previously used anywhere in PAM, and an unknown name renders as an invisible
+glyph — an icon-only button that is simply not there. Both resolve.
 
 ### Breached and structurally weak are told apart
 

@@ -3,6 +3,7 @@ import { xmk } from './lib.js'
 import { icon, isURL, mkDraggableRow, sortDictByKey, copyTextToClipboard } from './utils.js'
 import { findRecord } from './record.js'
 import { mkGeneratePasswordDlg } from './password.js'
+import { checkPassword, REJECT, UNDETERMINED } from './breach.js'
 
 // Make record field with the name, type and value.
 export function mkRecordField(name, type, value) {
@@ -23,6 +24,14 @@ export function mkRecordField(name, type, value) {
         // show/hide button for password fields
         fieldValue = '*'.repeat(value.length)  // emulate the **** for password fields
         fldButtons.push( mkRecordFieldPasswordShowHideButton(rawValue, fieldValue) )
+        // Only when breach checking is enabled. Hidden otherwise rather than
+        // shown-and-disabled: with the preference off, every password field in
+        // the vault would carry a button whose only function is to say "go
+        // turn on a preference". The menu entry is always present and does
+        // that job once, which is where someone discovers the feature.
+        if (window.prefs.enablePasswordBreachCheck) {
+            fldButtons.push( mkRecordFieldBreachCheckButton(rawValue) )
+        }
         break
     case 'textarea':
         fieldValue = `<pre>${rawValue}</pre>` // needed to keep line breaks in HTML
@@ -121,6 +130,62 @@ function mkRecordFieldPasswordShowHideButton(showValueIn, hideValueIn) {
                 valueElement.innerHTML = hideValue
             }
         })
+}
+
+// Make a button that checks one password against the breach corpus.
+//
+// A convenience for someone who has already opted in, not a route to
+// discovering the feature: it appears only when enablePasswordBreachCheck is
+// set. The result is written into the row rather than a dialogue, so the
+// answer arrives where the question was asked.
+export function mkRecordFieldBreachCheckButton(rawValue) {
+    const value = rawValue
+    return xmk('button')
+        .xClass('btn', 'btn-lg', 'p-0', 'ms-2', 'x-fld-breach-check')
+        .xAttrs({'title': 'check this password against known breaches'})
+        .xAppend(icon('bi-shield-check', 'check for breaches'))
+        .xAddEventListener('click', (event) => {
+            const button = event.target.xGetParentWithClass('btn')
+            const row = event.target.xGetParentWithClass('row')
+            checkOneFieldPassword(value, button, row)
+        })
+}
+
+// Run a single-password check and report it beside the field.
+//
+// Every outcome is reported, including the ones that are not answers. A button
+// that silently does nothing when the network is down would be worse than no
+// button, and "could not check" must never look like "fine".
+async function checkOneFieldPassword(value, button, row) {
+    let result = row.xGet('.x-fld-breach-result')
+    if (!result) {
+        result = xmk('div').xClass('x-fld-breach-result', 'small', 'ms-2')
+        row.appendChild(result)
+    }
+    result.textContent = 'checking\u2026'
+    button.disabled = true
+    try {
+        const verdict = await checkPassword(value, window.fetch.bind(window))
+        if (verdict.verdict === REJECT) {
+            const label = verdict.inCorpus ? '\u26A0 BREACHED' : '\u26A0 WEAK'
+            result.className = 'x-fld-breach-result small ms-2 text-danger'
+            result.textContent = `${label}: ${verdict.reasons.join('; ')}`
+        } else if (verdict.verdict === UNDETERMINED) {
+            result.className = 'x-fld-breach-result small ms-2 text-warning'
+            result.textContent =
+                `could not check \u2014 ${verdict.reasons.join('; ')}. ` +
+                'Nothing was learned about this password.'
+        } else {
+            result.className = 'x-fld-breach-result small ms-2 text-success'
+            result.textContent =
+                'not in the breach corpus, and no structural weakness found'
+        }
+    } catch (error) {
+        result.className = 'x-fld-breach-result small ms-2 text-warning'
+        result.textContent = `could not check \u2014 ${error}`
+    } finally {
+        button.disabled = false
+    }
 }
 
 // define dropdown-toggle list item.

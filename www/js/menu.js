@@ -10,6 +10,7 @@ import { checkRecordEditDlg,
 import { mkRecordEditDlg } from './field.js'
 import { menuAboutDlg } from './about.js'
 import { menuReuseDlg } from './vault-ui.js'
+import { menuBreachDlg } from './breach-ui.js'
 import { menuPrefsDlg, addDefaultRecordFields, resetPrefs } from './prefs.js'
 import { menuSaveDlg, enableSaveFile } from './save.js'
 import { menuLoadDlg } from './load.js'
@@ -196,6 +197,14 @@ export function mkMenu() {
                               'Reused Passwords',
                               'bi-files',
                               'entries that share a password'),
+                    // Always present, even when the preference is off. Hiding
+                    // it would be the stronger privacy stance, but then the
+                    // only route to the feature is reading the README; this
+                    // way the disclosure appears when someone is deciding.
+                    menuEntry('menuBreachDlg',
+                              'Breached Passwords',
+                              'bi-key',
+                              'check passwords against known breaches'),
                     xmk('li').xClass('x-print').xAppend(xmk('hr').xClass('dropdown-divider')),
                     xmk('button') // Print
                         .xAttrs({'type': 'button'})
@@ -227,6 +236,7 @@ export function mkMenu() {
     document.body.xAppendChild(menuLoadDlg())
     document.body.xAppendChild(menuSaveDlg())
     document.body.xAppendChild(menuReuseDlg())
+    document.body.xAppendChild(menuBreachDlg())
     document.body.xAppendChild(mkMainPasswordGeneratorDlg())
     return e
 }

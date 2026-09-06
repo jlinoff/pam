@@ -116,7 +116,8 @@ the on-line help is generated.
       * [Custom About](#custom-about)
     * [Record Fields](#record-fields-preferences)
     * [Saving Preferences](#saving-preferences)
-  * [Security Considerations](#security-considerations)
+  * [Content-Security-Policy](#content-security-policy)
+* [Security Considerations](#security-considerations)
     * [MITM](#mitm)
     * [Third Party Web Site Security](#third-party-web-site-security)
     * [Site Reliability](#site-reliability)
@@ -620,8 +621,9 @@ password without ever displaying the password itself. A
 more than once, so you do not have to go looking.
 
 The check runs **entirely on your device**. No request is made, nothing is
-uploaded, and no third party learns anything about your vault. That is not a
-policy promise — PAM has no network access to make one with.
+uploaded, and no third party learns anything about your vault. Reuse detection
+needs no network at all, so this holds whether or not
+[Password Breach Check](#enable-password-breach-check) is enabled.
 
 ### PAM vs mainstream password managers
 
@@ -637,7 +639,7 @@ _Analysis: April 2026. Compared against Bitwarden and 1Password as representativ
 | Multi-device sync | File-based — works naturally on iCloud/Dropbox for single users | Automatic cloud sync | PAM loses for teams; single-user sync via iCloud/Dropbox works naturally |
 | Mobile access | Mobile-friendly browser UI; PWA install available; no native app | Native iOS/Android app with Face ID | PAM loses — no native app, though PWA install is available |
 | **Security model** | | | |
-| Local-only operation | Fully local — no server traffic after page load | Cloud-dependent; requires trust in vendor | PAM wins for offline/air-gapped scenarios |
+| Local-only operation | Local by default — no server traffic after page load unless you enable [Password Breach Check](#enable-password-breach-check), which sends a 20-bit hash prefix to one host | Cloud-dependent; requires trust in vendor | PAM wins for offline/air-gapped scenarios: the one optional exception is off by default and named in the policy |
 | Encryption | AES-256-CBC; v2 format (shipped April 2026) fixes PBKDF2 iteration count and salt entropy bug. Existing v1 files need manual re-save to upgrade. | AES-256, strong PBKDF2 / Argon2 KDFs | Tie — v2 closes the gap; v1 files remain weak until re-saved |
 | Zero-knowledge architecture | Inherently — no server ever sees data | Bitwarden: yes. 1Password: yes | Tie |
 | Reused password detection | Yes — the [Reused Passwords](#reused-passwords) report and a footer badge, computed locally with no network request | Yes — 1Password Watchtower, Bitwarden reports; both require the vault to be synced to the vendor | Tie on capability, PAM wins on disclosure — the same answer without anything leaving the device |
@@ -651,7 +653,7 @@ _Analysis: April 2026. Compared against Bitwarden and 1Password as representativ
 | **Usability & setup** | | | |
 | Setup complexity | Open browser URL; file management required | App install + account creation | Comparable; PAM needs no account but needs file discipline |
 | Sharing credentials | Share the file + master password via out-of-band channel | Built-in sharing with fine-grained permissions | PAM loses — coarse sharing only |
-| Offline use | Full — no dependency on external service | Local vault cache; full offline possible | PAM wins — no caching surprises |
+| Offline use | Full — no dependency on any external service. Breach checking, if enabled, reports that it could not reach the corpus rather than implying a password is safe | Local vault cache; full offline possible | PAM wins — no caching surprises |
 | Cost | Free, open-source (MIT) | Bitwarden free tier; paid for advanced features. 1Password paid only. | PAM wins on cost |
 | **Bottom line** | | | |
 | Recommended for most users? | No — autofill absence is a dealbreaker for daily web login use | Yes — Bitwarden in particular covers the common case well | Direct most users to Bitwarden |
@@ -2095,6 +2097,42 @@ them: if any one site is breached, every entry sharing that password
 is exposed. No breach corpus can detect this — it is a property of
 your vault, not of the password.
 
+#### Enable Password Breach Check
+
+Check stored passwords against the [Have I Been Pwned](https://haveibeenpwned.com/)
+corpus of passwords exposed in known breaches. **Disabled by default**, and the
+only setting in PAM that causes it to contact anything.
+
+When enabled, PAM sends the first five characters of a password's SHA-1 hash —
+twenty bits — to `api.pwnedpasswords.com`, which returns every hash in the
+corpus beginning with that prefix, typically several hundred. The comparison
+happens in your browser. The password, its full hash, the record it belongs to,
+and the rest of your vault are never transmitted. This is the range API's
+k-anonymity model: the server learns that someone asked about one of roughly
+850,000 possible passwords, and nothing else.
+
+That is a real privacy property, but it is not nothing. A request is made, an
+IP address is visible to the other end, and checking a whole vault sends one
+request per password. Weigh that against not knowing whether a password you are
+still using has already been published.
+
+**What enabling it does not change.** The
+[Content-Security-Policy](#content-security-policy) permits that host whether
+the preference is on or off. The preference controls whether PAM makes the
+request, not whether it is able to.
+
+That is a limitation of the mechanism rather than a choice. A policy in a
+`<meta>` tag is only honoured while the page is being parsed, so it cannot be
+rewritten later from JavaScript. And when a page carries more than one policy,
+a request must be permitted by *all* of them — so adding a policy can only
+tighten, never relax. Both properties exist to stop an attacker widening the
+policy from injected script, and the same mechanism prevents PAM narrowing it
+conditionally.
+
+A **⚠ BREACH CHECK** badge appears in the toolbar while this is enabled, in the
+same style as the other warning badges, so an outbound-capable configuration is
+never invisible.
+
 #### Search Password Field Values
 
 WARNING: this only applies when Search Record Field Values is also
@@ -2180,6 +2218,44 @@ You _must_ scroll to the bottom of the dialogue and
 click on the `"Save"` button at the end to save changes.
 If you do not, any changes you made will be lost.
 
+## Content-Security-Policy
+
+`www/index.html` carries a Content-Security-Policy meta tag that constrains
+what the page is permitted to do, enforced by the browser rather than by PAM's
+own code:
+
+```
+default-src 'self';
+script-src  'self' https://cdn.jsdelivr.net;
+style-src   'self';
+img-src     'self' data:;
+font-src    'self';
+connect-src 'self' https://api.pwnedpasswords.com
+```
+
+The one entry worth understanding is `connect-src`, which lists every host the
+page may open a network connection to. It permits PAM's own origin and exactly
+one external host: the Have I Been Pwned range API used by
+[Password Breach Check](#enable-password-breach-check).
+
+Before v2.4.0 there was no `connect-src` directive at all, so it inherited
+`default-src 'self'` and the policy made a stronger statement — that the page
+could not contact anyone. That was verifiable by reading one line, without
+trusting any claim in this document. It now says something weaker but still
+useful: PAM cannot contact anyone **else**.
+
+Note that the policy cannot depend on your preference settings. A `<meta>`
+policy is fixed when the page is parsed, and a page's policies combine by
+intersection — every policy present must permit a request — so a second one
+could only ever tighten the first. Both rules exist so that injected script
+cannot widen a page's policy; the consequence is that PAM cannot narrow it
+either. See [Enable Password Breach Check](#enable-password-breach-check).
+
+The unit tests assert the exact contents of `connect-src`, so adding a host
+requires deliberately changing a test that says why not. That is the point:
+widening this policy is how a local-only application stops being one, a host at
+a time, each addition reasonable on its own.
+
 ## Security Considerations
 _PAM_, like all web applications, has security challenges. By
 fully disclosing them here you can understand the challenges
@@ -2219,12 +2295,24 @@ See [https://www.cve.org/](https://www.cve.org/) for more information.
 > Poor reporting of third party web site cybersecurity vulnerabilities
 > and exposures was one thing that motivated me to write _PAM_.
 
-Because _PAM_ does not send the data to a server, it is not vulnerable
+Because _PAM_ does not send your records to a server, it is not vulnerable
 to how cybersecurity is managed on the server by a third party.
 
-> You can verify that _PAM_ is not sending data out by monitoring
-> outbound traffic from your system. _PAM_ never sends any outbound
-> data.
+> You can verify what _PAM_ sends by monitoring outbound traffic from your
+> system. With default settings it sends nothing at all after the page loads.
+
+There is exactly one exception, and it is off by default:
+[Password Breach Check](#enable-password-breach-check). When you enable it,
+_PAM_ sends the first five characters of a password's SHA-1 hash — twenty bits
+— to `api.pwnedpasswords.com`, which returns every hash beginning with that
+prefix. The comparison happens in the browser. The password, its full hash,
+the record it belongs to and the rest of your vault are never transmitted.
+
+The [Content-Security-Policy](#content-security-policy) in `index.html` names
+that host explicitly and permits no other, so what _PAM_ is able to contact is
+verifiable from the page source rather than from this document. Note that the
+policy permits the host whether or not the preference is enabled: the
+preference controls whether _PAM_ makes the request, not whether it could.
 
 _PAM_ encryption and decryption operations are provided by and run
 _inside_ the _secure context_ of the browser. This is the same _secure

@@ -6,7 +6,21 @@
     <meta http-equiv="content-type" content="text/html; charset=utf-8" />
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net; style-src 'self'; img-src 'self' data:; font-src 'self'">
+    <!-- connect-src permits exactly one external host, api.pwnedpasswords.com,
+         for the optional breach check (Preferences > Administration >
+         Enable Password Breach Check, off by default).
+
+         This is a deliberate and permanent weakening. Before it, connect-src
+         fell back to default-src 'self' and the policy made PAM's local-only
+         claim structurally verifiable: a reader could check one meta tag and
+         know the application could not contact anyone. It now says only that
+         it cannot contact anyone ELSE.
+
+         The preference does not restore that. CSP is static markup and PAM has
+         no service worker, so with the feature disabled the application is
+         still PERMITTED to reach that host — the preference controls whether
+         it does, not whether it could. -->
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net; style-src 'self'; img-src 'self' data:; font-src 'self'; connect-src 'self' https://api.pwnedpasswords.com">
     <!-- favicon -->
     <link rel="apple-touch-icon" sizes="180x180" href="./apple-touch-icon.png">
     <link rel="icon" type="image/png" sizes="32x32" href="./favicon-32x32.png">

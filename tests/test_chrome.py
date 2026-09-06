@@ -105,7 +105,7 @@ def choose_menu_option(driver, option):
     menu_items = children[1].find_elements(By.CLASS_NAME, 'dropdown-item')
     # A hard count rather than a lookup, deliberately: it catches an
     # accidental menu change. Raised from 8 to 9 by the Reused Passwords entry.
-    assert len(menu_items) == 9, f'unexpected menu size: {[m.text for m in menu_items]}'
+    assert len(menu_items) == 10, f'unexpected menu size: {[m.text for m in menu_items]}'
     #breakpoint()
     for menu_item in menu_items:
         if option in menu_item.text:
@@ -164,7 +164,8 @@ def test_pam_setup():
     # Note choose_menu_option() asserts the length independently; both have to
     # move together when the menu changes.
     expected = ['About', 'Preferences', 'New Record', 'Clear Records',
-                'Load File', 'Save File', 'Reused Passwords', 'Print', 'Help']
+                'Load File', 'Save File', 'Reused Passwords',
+                'Breached Passwords', 'Print', 'Help']
     # textContent, not .text: Print is hidden unless enablePrinting is set, and
     # Selenium reports '' for the text of a non-displayed element. The previous
     # version of this check skipped index 6 for that reason. Reading textContent
@@ -700,6 +701,95 @@ def test_deactivating_updates_reuse_report():
         f'the deactivated record must not appear in the report: {dlg.text[:200]}'
     close_btn = dlg.find_element(By.CLASS_NAME, 'x-fld-record-close')
     scroll_and_click(driver, close_btn)
+
+    driver.quit()
+
+
+def test_breach_check_badge_follows_preference():
+    '''
+    E2E: the BREACH CHECK badge appears only when the preference is enabled.
+
+    An outbound-capable configuration must never be invisible: this is the one
+    setting that lets PAM contact a third party, so the toolbar says so while
+    it is on.
+
+    This is an e2e test rather than a unit test because
+    updateBreachCheckIndicator() lives in main.js, which tests.html cannot
+    import — it registers window.onload and pulls in menu.js, raw.js and
+    about.js. The existing indicator suites work around that by replicating
+    the logic inline, which tests the copy rather than the function.
+    '''
+    driver = get_driver()
+    driver.get('http://localhost:8081/')
+    time.sleep(1)
+
+    badge = driver.find_element(By.ID, 'x-breach-check-indicator')
+    assert not badge.is_displayed(), \
+        'the badge must be hidden by default; the preference is off'
+
+    dlg = choose_menu_option(driver, 'Preferences')
+    admin = dlg.find_element(By.ID, 'prefs-tab-admin-btn')
+    scroll_and_click(driver, admin)
+    time.sleep(0.5)
+
+    control = dlg.find_element(
+        By.CSS_SELECTOR, '[data-pref-id="enablePasswordBreachCheck"]')
+    scroll_and_click(driver, control)
+    time.sleep(0.5)
+
+    save = [b for b in dlg.find_elements(By.TAG_NAME, 'button')
+            if b.is_displayed() and b.text.strip() == 'Save']
+    assert save, 'no Save button on the Preferences dialogue'
+    scroll_and_click(driver, save[0])
+    time.sleep(1)
+
+    assert badge.is_displayed(), \
+        'enabling the preference must reveal the badge'
+    assert 'BREACH CHECK' in badge.get_attribute('textContent'), \
+        f'unexpected badge text: {badge.get_attribute("textContent")!r}'
+
+    driver.quit()
+
+
+def test_breach_dialog_opens_and_closes():
+    '''
+    E2E: the Breached Passwords dialogue opens from the menu and its Close
+    button actually closes it.
+
+    Regression. mkPopupModalDlgButton()'s click handler calls its callback
+    unconditionally and hides the modal only on a truthy return, so a button
+    created without one throws inside the handler and does nothing at all. The
+    unit test asserted the Close button existed, which it did — presence is not
+    behaviour.
+
+    The dialogue is checked in its disabled state, which is what most users
+    see: the preference is off by default.
+    '''
+    driver = get_driver()
+    driver.get('http://localhost:8081/')
+    time.sleep(1)
+
+    dlg = choose_menu_option(driver, 'Breached Passwords')
+    assert dlg is not None, 'the menu entry should open a dialogue'
+    time.sleep(0.5)
+
+    text = dlg.get_attribute('textContent')
+    assert 'Nothing has been sent' in text, \
+        f'the disabled state should lead with that: {text[:200]!r}'
+    assert 'Enable Password Breach Check' in text, \
+        'it should name where to turn the feature on'
+
+    # With the preference off there is nothing to run, so no Check button.
+    checks = [b for b in dlg.find_elements(By.ID, 'x-breach-check-button')
+              if b.is_displayed()]
+    assert not checks, 'Check should be hidden while the preference is off'
+
+    close = dlg.find_element(By.CLASS_NAME, 'x-fld-record-close')
+    scroll_and_click(driver, close)
+    time.sleep(1)
+
+    assert not dlg.is_displayed(), \
+        'Close must actually close the dialogue, not merely exist'
 
     driver.quit()
 

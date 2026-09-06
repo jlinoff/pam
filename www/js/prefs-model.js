@@ -52,6 +52,9 @@ export function getDefaultPrefs() {
         searchRecordFieldNames: false,
         searchRecordFieldValues: false,
         searchPasswordFieldValues: false,
+        // The only preference that causes PAM to contact anything. Off by
+        // default; see the Content-Security-Policy note in README.md.
+        enablePasswordBreachCheck: false,
         hideInactiveRecords: true,
         passwordRangeLengthDefault: 20,
         passwordRangeMinLength: 12,

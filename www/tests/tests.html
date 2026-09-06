@@ -942,8 +942,68 @@ async function runCryptTests() {
     try {
       const plaintext  = '{"records":[],"version":2}'
       const ciphertext = await encryptV2Async('correct-password', plaintext)
+
+      // v2 is AES-CBC, which carries no authentication tag, so a wrong key is
+      // only rejected when the garbage final block fails PKCS#7 padding
+      // validation — about 255 times out of 256. Asserting !result.ok is
+      // therefore flaky by construction at roughly 0.4%, and it failed in the
+      // wild after many clean runs.
+      //
+      // The property that actually holds, and the one worth testing, is that a
+      // wrong password never recovers the plaintext. When padding happens to
+      // validate, decrypt() returns garbage; TextDecoder does not throw on
+      // invalid UTF-8, it substitutes replacement characters.
       const result = await decryptV2Async('wrong-password', ciphertext)
-      assert(!result.ok, 'v2 decryption with wrong password should fail')
+      assert(!result.ok || result.plaintext !== plaintext,
+             'a wrong password must never recover the original plaintext')
+
+      // And when it does report success, what it returns must not be usable —
+      // downstream that is caught by JSON.parse, which is why a wrong password
+      // occasionally surfaces as "invalid record format" rather than as a
+      // password error.
+      if (result.ok) {
+        let parsed = null
+        try { parsed = JSON.parse(result.plaintext) } catch (e) { parsed = null }
+        assert(parsed === null,
+               'garbage from a wrong password must not parse as a vault')
+      }
+      _passed++
+      const line = document.createElement('div')
+      line.className = 'test-line pass'
+      line.textContent = '✓ ' + label
+      _results.appendChild(line)
+    } catch(e) {
+      _failed++
+      const line = document.createElement('div')
+      line.className = 'test-line fail'
+      line.textContent = '✗ ' + label
+      const pre = document.createElement('pre')
+      pre.textContent = e.message || String(e)
+      line.appendChild(pre)
+      _results.appendChild(line)
+    }
+  })()
+
+  // v2 Test 2b: the padding-validation rate, stated rather than assumed.
+  await (async () => {
+    const label = 'v2 rejects most wrong passwords by padding validation'
+    try {
+      const plaintext  = '{"records":[],"version":2}'
+      const ciphertext = await encryptV2Async('correct-password', plaintext)
+
+      // Twenty attempts. With a ~0.4% pass rate the expected number that slip
+      // through is 0.08, so requiring at least 15 rejections is far from the
+      // edge while still failing loudly if authentication were removed
+      // entirely or the key derivation stopped depending on the password.
+      let rejected = 0
+      for (let i = 0; i < 20; i++) {
+        const r = await decryptV2Async('wrong-password-' + i, ciphertext)
+        if (!r.ok) { rejected++ }
+        else { assertNotEqual(r.plaintext, plaintext,
+                              'no wrong password may recover the plaintext') }
+      }
+      assert(rejected >= 15,
+             `expected most wrong passwords to be rejected, got ${rejected}/20`)
       _passed++
       const line = document.createElement('div')
       line.className = 'test-line pass'
@@ -1295,6 +1355,65 @@ test("CSP includes script-src 'self'", async () => {
   const html = await fetch('/index.html').then(r => r.text())
   assert(html.includes("script-src 'self'"),
     "CSP should include script-src 'self'")
+})
+// Pull the policy out of the meta tag rather than searching the whole file.
+// index.html carries an HTML comment explaining the connect-src change, and a
+// naive /connect-src ([^;"]*)/ against the document matches THAT first — which
+// is how the first version of these tests passed while parsing prose.
+async function cspPolicy() {
+  const html = await fetch('/index.html').then(r => r.text())
+  const tag = html.match(
+    /<meta[^>]*http-equiv=["']Content-Security-Policy["'][^>]*>/i)
+  assert(tag, 'no Content-Security-Policy meta tag found')
+  // Capture the quote character and match its pair. A naive
+  // /content=["']([^"']*)["']/ stops at the first single quote INSIDE the
+  // policy — and every CSP contains 'self', so it returned "default-src ".
+  const content = tag[0].match(/content=(["'])([\s\S]*?)\1/i)
+  assert(content, 'CSP meta tag has no content attribute')
+  return content[2]
+}
+
+function cspDirective(policy, name) {
+  const found = policy.split(';')
+    .map(part => part.trim())
+    .filter(part => part.startsWith(name + ' '))
+  assertEqual(found.length, 1, `expected exactly one ${name} directive`)
+  return found[0].slice(name.length).trim().split(/\s+/).filter(Boolean)
+}
+
+test('connect-src permits the breach-check host', async () => {
+  // v2.4.0 relaxed connect-src so the optional breach check can reach the
+  // HIBP range API. Before this, connect-src fell back to default-src 'self'
+  // and the fetch was blocked by policy.
+  const policy = await cspPolicy()
+  assert(policy.includes('connect-src'),
+    'CSP should declare connect-src explicitly, not inherit default-src')
+  const allowed = cspDirective(policy, 'connect-src')
+  assert(allowed.includes("'self'"), "connect-src should still include 'self'")
+  assert(allowed.includes('https://api.pwnedpasswords.com'),
+    'connect-src should permit the HIBP range API')
+})
+test('connect-src permits nothing beyond that one host', async () => {
+  // The point of this test is not the change that was made but the ones that
+  // might be made later. Widening connect-src is how a local-only application
+  // stops being one, a host at a time, each addition reasonable on its own.
+  // Adding a host here should require deleting an assertion that says why not.
+  const policy = await cspPolicy()
+  const allowed = cspDirective(policy, 'connect-src')
+  const expected = ["'self'", 'https://api.pwnedpasswords.com']
+  assertEqual(allowed.slice().sort().join(' '), expected.slice().sort().join(' '),
+    'connect-src should permit exactly self and the HIBP range API')
+})
+test('no other directive was widened', async () => {
+  const policy = await cspPolicy()
+  assertEqual(cspDirective(policy, 'default-src').join(' '), "'self'",
+    "default-src must stay 'self'")
+  assertEqual(cspDirective(policy, 'style-src').join(' '), "'self'",
+    "style-src must stay 'self'")
+  assertEqual(cspDirective(policy, 'font-src').join(' '), "'self'",
+    "font-src must stay 'self'")
+  assertEqual(cspDirective(policy, 'img-src').join(' '), "'self' data:",
+    'img-src must stay self and data:')
 })
 
 // ---------------------------------------------------------------------------
@@ -2738,6 +2857,422 @@ async function runSaveRegressionTests() {
 }
 
 // Run sync tests first, then the async suites (each finalizes when done).
+// ---------------------------------------------------------------------------
+// breach.js — failure handling and response parsing
+//
+// Written FIRST and deliberately. PAM is a PWA: being offline is a normal
+// state, not an error, so a user who cannot reach the corpus must never see a
+// result that reads as clean. Every test in the first suite asserts
+// CANNOT_DETERMINE; none asserts a successful lookup.
+// ---------------------------------------------------------------------------
+import {
+  parseRangeResponse, lookupPassword, sha1Hex,
+  keyboardRun, characterSequence, repeatedCharacter, embeddedYear,
+  entropyBits, structuralWeaknesses, verdictFor,
+  probeCorpus, checkAll,
+  FOUND, NOT_FOUND, CANNOT_DETERMINE,
+  ACCEPT, REJECT, UNDETERMINED
+} from '/js/breach.js'
+
+// ---------------------------------------------------------------------------
+// breach.js — failure handling
+//
+// These are written FIRST and deliberately. PAM is a PWA: being offline is a
+// normal state, not an error, so a user who cannot reach the corpus must never
+// see a result that reads as clean.
+//
+// Every test here asserts CANNOT_DETERMINE. None of them asserts a successful
+// lookup — that is the next suite. The bug this guards against appeared three
+// times in three disguises while building the command-line version, and every
+// time the program looked like it worked.
+// ---------------------------------------------------------------------------
+
+// A fetch that fails the way a given scenario fails.
+function fakeFetch(behaviour) {
+  return async () => {
+    if (behaviour.throws) { throw behaviour.throws }
+    return {
+      ok: behaviour.ok !== false,
+      status: behaviour.status || 200,
+      text: async () => {
+        if (behaviour.textThrows) { throw behaviour.textThrows }
+        return behaviour.body
+      },
+    }
+  }
+}
+
+async function runBreachTests1() {
+  suite('breach.js — a failed lookup never reads as clean')
+
+  await runAsyncTest('an unreachable host cannot determine', async () => {
+    const r = await lookupPassword('hunter2',
+      fakeFetch({throws: new TypeError('Failed to fetch')}))
+    assertEqual(r.status, CANNOT_DETERMINE,
+                'offline must not be reported as not-found')
+    assert(r.reason.length > 0, 'a failure should say why')
+  })
+
+  await runAsyncTest('an HTTP error cannot determine', async () => {
+    // The body is deliberately a VALID range response. An error status served
+    // with a parseable body is the case where only the status check saves us:
+    // with an empty or malformed body the parser would reject it anyway, and
+    // the test would pass without exercising the status check at all. It did,
+    // until a mutation run showed the check could be deleted with every test
+    // still green.
+    const hash = await sha1Hex('hunter2')
+    const body = hash.slice(5) + ':500'
+    const r = await lookupPassword('hunter2',
+      fakeFetch({ok: false, status: 503, body}))
+    assertEqual(r.status, CANNOT_DETERMINE,
+                'an error status must not yield a verdict, however good the body looks')
+    assert(r.reason.indexOf('503') > -1, 'the status should be reported')
+  })
+
+  await runAsyncTest('an HTML error page cannot determine', async () => {
+    // A captive portal or proxy answering 200 with a courtesy page. This is
+    // the case that most looks like success: the request succeeded, the body
+    // simply is not a range response.
+    const r = await lookupPassword('hunter2', fakeFetch({
+      body: '<!DOCTYPE html><html><body><h1>502 Bad Gateway</h1></body></html>'}))
+    assertEqual(r.status, CANNOT_DETERMINE,
+                'an HTML body must never be read as "not in the corpus"')
+  })
+
+  await runAsyncTest('an empty body cannot determine', async () => {
+    const r = await lookupPassword('hunter2', fakeFetch({body: ''}))
+    assertEqual(r.status, CANNOT_DETERMINE)
+  })
+
+  await runAsyncTest('a whitespace-only body cannot determine', async () => {
+    const r = await lookupPassword('hunter2', fakeFetch({body: '   \n  \n'}))
+    assertEqual(r.status, CANNOT_DETERMINE)
+  })
+
+  await runAsyncTest('one malformed line condemns the whole body', async () => {
+    // The entry we care about may be in the part we could not read, so a
+    // partially valid response is not one we can reason about.
+    const hash = await sha1Hex('hunter2')
+    const suffix = hash.slice(5)
+    const body = [
+      '0000000000000000000000000000000000A:3',
+      'this line is not a hash at all',
+      suffix + ':99',
+    ].join('\n')
+    const r = await lookupPassword('hunter2', fakeFetch({body}))
+    assertEqual(r.status, CANNOT_DETERMINE,
+                'a body with any unparseable line must not yield a verdict')
+  })
+
+  await runAsyncTest('a body that cannot be read cannot determine', async () => {
+    const r = await lookupPassword('hunter2',
+      fakeFetch({textThrows: new Error('stream closed')}))
+    assertEqual(r.status, CANNOT_DETERMINE)
+  })
+
+  await runAsyncTest('a response object of the wrong shape cannot determine', async () => {
+    const r = await lookupPassword('hunter2', async () => undefined)
+    assertEqual(r.status, CANNOT_DETERMINE)
+  })
+
+  await runAsyncTest('an empty password cannot determine', async () => {
+    const r = await lookupPassword('', fakeFetch({body: 'x'}))
+    assertEqual(r.status, CANNOT_DETERMINE,
+                'nothing was checked, so nothing can be concluded')
+  })
+}
+
+async function runBreachTests2() {
+  suite('breach.js — padding decoys are not hits')
+
+  await runAsyncTest('our own suffix with a count of zero is padding', async () => {
+    // Add-Padding mixes synthetic zero-count entries in so the response length
+    // reveals nothing. Our suffix can legitimately appear among them, and
+    // treating that as a match would report a breach that did not happen.
+    const hash = await sha1Hex('hunter2')
+    const suffix = hash.slice(5)
+    const r = await lookupPassword('hunter2', fakeFetch({body: suffix + ':0'}))
+    assertEqual(r.status, NOT_FOUND,
+                'a zero count is padding, not a breach')
+    assertEqual(r.count, 0)
+  })
+
+  await runAsyncTest('a real hit alongside padding is still a hit', async () => {
+    const hash = await sha1Hex('hunter2')
+    const suffix = hash.slice(5)
+    const body = [
+      '0000000000000000000000000000000000A:0',
+      suffix + ':17',
+      '0000000000000000000000000000000000B:0',
+    ].join('\n')
+    const r = await lookupPassword('hunter2', fakeFetch({body}))
+    assertEqual(r.status, FOUND)
+    assertEqual(r.count, 17)
+  })
+}
+
+async function runBreachTests3() {
+  suite('breach.js — parseRangeResponse')
+
+  const suffix = 'A'.repeat(35)
+
+  test('rejects a non-string body', () => {
+    assertEqual(parseRangeResponse(null, suffix).ok, false)
+    assertEqual(parseRangeResponse(undefined, suffix).ok, false)
+    assertEqual(parseRangeResponse(42, suffix).ok, false)
+  })
+  test('rejects a suffix that is not 35 hex characters', () => {
+    assertEqual(parseRangeResponse('X:1', 'TOO-SHORT').ok, false)
+    assertEqual(parseRangeResponse('X:1', 'Z'.repeat(35)).ok, false)
+  })
+  test('a well-formed miss is a miss, not a failure', () => {
+    const r = parseRangeResponse('B'.repeat(35) + ':4', suffix)
+    assertEqual(r.ok, true)
+    assertEqual(r.found, false)
+  })
+  test('accepts lowercase hex from the wire', () => {
+    const r = parseRangeResponse(suffix.toLowerCase() + ':7', suffix)
+    assertEqual(r.ok, true)
+    assertEqual(r.found, true)
+    assertEqual(r.count, 7)
+  })
+  test('tolerates CRLF line endings', () => {
+    const body = 'B'.repeat(35) + ':4\r\n' + suffix + ':9\r\n'
+    const r = parseRangeResponse(body, suffix)
+    assertEqual(r.ok, true)
+    assertEqual(r.count, 9)
+  })
+}
+
+
+async function runBreachTests4() {
+  suite('breach.js — structural weakness')
+
+  test('a keyboard run is caught, forwards and backwards', () => {
+    assertEqual(keyboardRun('Xqwertyz'), 'qwer')
+    assert(keyboardRun('poiu9') !== null, 'reversed rows count too')
+    assertEqual(keyboardRun('Zq7-Mvtl%Kdn#WroP2xj'), null)
+  })
+  test('a character sequence is caught, forwards and backwards', () => {
+    assertEqual(characterSequence('Xabcdz'), 'abcd')
+    assertEqual(characterSequence('x4321y'), '4321')
+    assertEqual(characterSequence('Zq7-Mvtl%Kdn#WroP2xj'), null)
+  })
+  test('four of the same character is a repeat, three is not', () => {
+    assertEqual(repeatedCharacter('xaaaay'), 'aaaa')
+    assertEqual(repeatedCharacter('xaaay'), null)
+  })
+  test('only plausible years count', () => {
+    assertEqual(embeddedYear('Summer2026'), '2026')
+    assertEqual(embeddedYear('x4291y'), null,
+                '4291 is not being used as a year; objecting would be noise')
+  })
+  test('entropy rises with length and alphabet', () => {
+    assert(entropyBits('Zq7-Mvtl%Kdn#WroP2xj') > 100, 'a strong password')
+    assert(entropyBits('abc') < 20, 'a short lowercase one')
+    assertEqual(entropyBits(''), 0)
+  })
+  test('weak passwords are objected to with a reason', () => {
+    for (const weak of ['Summer2026', 'qwerty123456', 'password1234',
+                        'aaaaaaaaaaaa', 'abcdefghijkl', 'short']) {
+      const reasons = structuralWeaknesses(weak)
+      assert(reasons.length > 0, `${weak} should be objected to`)
+    }
+  })
+  test('PAM-generated passwords are not falsely rejected', () => {
+    // The risk with structural checks is not missing a weak password, it is
+    // rejecting a good one: that teaches people to ignore the tool. These are
+    // real values from www/examples/example.txt and from the generator.
+    const good = [
+      'hr5Hn9pqm3u.VqMiALfdN-"',
+      'rHfZ6bihw$g8ra$P4hHD',
+      'dOa#DirgJge67okTKtEzp.LSl',
+      'Aq7GdcOmYWVkyHEWEk6fBeJzm',
+      'NIJMeb8OfXEfshOG$db!',
+      'cGwJ$NPQ4SsI#haEsFRD',
+      'FpnzQcuq0nk/PxlMdYJ_itnK',
+      'M+pSIWOMODrwiHteA+#3',
+      'ridge/doll/parameter',
+      'quotes/logic/mailman',
+      'jewelry/belly/unable',
+    ]
+    for (const password of good) {
+      const reasons = structuralWeaknesses(password)
+      assertEqual(reasons.length, 0,
+                  `${password} was falsely rejected: ${reasons.join('; ')}`)
+    }
+  })
+}
+
+async function runBreachTests5() {
+  suite('breach.js — the verdict')
+
+  const STRONG = 'Zq7-Mvtl%Kdn#WroP2xj'
+  const hit = {status: FOUND, count: 42, reason: ''}
+  const miss = {status: NOT_FOUND, count: 0, reason: ''}
+  const down = {status: CANNOT_DETERMINE, count: 0, reason: 'offline'}
+
+  test('a corpus hit rejects', () => {
+    const v = verdictFor(STRONG, hit)
+    assertEqual(v.verdict, REJECT)
+    assert(v.reasons[0].indexOf('42') > -1, 'the count should be reported')
+  })
+  test('a clean miss accepts', () => {
+    assertEqual(verdictFor(STRONG, miss).verdict, ACCEPT)
+  })
+  test('a failed lookup is undetermined, never accept', () => {
+    // The fail-open bug, in one assertion.
+    assertEqual(verdictFor(STRONG, down).verdict, UNDETERMINED)
+    assertEqual(verdictFor(STRONG, down).checkedCorpus, false)
+  })
+  test('a weak password is rejected even when the corpus is unreachable', () => {
+    // The structural checks need no network, so being offline is no reason to
+    // withhold an objection that can be made locally.
+    assertEqual(verdictFor('Summer2026', down).verdict, REJECT)
+  })
+  test('undetermined explains what failed', () => {
+    const v = verdictFor(STRONG, down)
+    assert(v.reasons.length > 0 && v.reasons[0].length > 0,
+           'a non-answer must say why it is a non-answer')
+  })
+}
+
+
+async function runBreachTests6() {
+  suite('breach.js — running a check over many passwords')
+
+  const STRONG_A = 'Zq7-Mvtl%Kdn#WroP2xj'
+  const STRONG_B = 'Bx4!qWne%Ldk#TmoR8zv'
+  const okBody = 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA:1'
+  const okFetch = async () => ({ok: true, status: 200, text: async () => okBody})
+  const candidates = (values) =>
+    values.map(v => ({value: v, entries: [{title: v, name: 'password'}]}))
+
+  await runAsyncTest('an unreachable corpus stops before any real request', async () => {
+    // One failure reported once, rather than several hundred identical ones
+    // accumulating while the user watches.
+    let calls = 0
+    const fetchFn = async () => { calls++; throw new TypeError('offline') }
+    const out = await checkAll(candidates([STRONG_A, STRONG_B]), fetchFn, {delayMs: 0})
+    assertEqual(out.probeFailed, true)
+    assertEqual(out.results.length, 0)
+    assertEqual(calls, 1, 'exactly one request: the probe')
+    assert(out.reason.length > 0, 'it should say why')
+  })
+
+  await runAsyncTest('progress is reported for every candidate', async () => {
+    const seen = []
+    await checkAll(candidates([STRONG_A, STRONG_B]), okFetch,
+                   {delayMs: 0, onProgress: (d, t) => seen.push(d + '/' + t)})
+    assertEqual(seen.join(' '), '1/2 2/2')
+  })
+
+  await runAsyncTest('cancelling stops the run and reports that it stopped', async () => {
+    // A run over a few hundred passwords takes about a minute. Starting one
+    // and being unable to stop it would be a poor bargain.
+    let n = 0
+    const out = await checkAll(candidates([STRONG_A, STRONG_B, STRONG_A, STRONG_B]),
+                               okFetch, {delayMs: 0, isCancelled: () => n++ >= 2})
+    assertEqual(out.cancelled, true)
+    assert(out.results.length < 4, 'it should not have finished')
+  })
+
+  await runAsyncTest('a mid-run failure is undetermined, never clean', async () => {
+    // The case the whole feature is built around: the probe succeeds, then the
+    // network goes away. Those passwords must not be reported as fine.
+    //
+    // The passwords are structurally STRONG on purpose. With weak ones the
+    // verdict would be REJECT on structural grounds and this test would pass
+    // without exercising what it names — which is what the first version did.
+    let n = 0
+    const fetchFn = async () => {
+      n++
+      if (n === 1) { return {ok: true, status: 200, text: async () => okBody} }
+      throw new TypeError('network went away')
+    }
+    const out = await checkAll(candidates([STRONG_A, STRONG_B]), fetchFn, {delayMs: 0})
+    assertEqual(out.probeFailed, false, 'the probe succeeded')
+    for (const result of out.results) {
+      assertEqual(result.verdict, UNDETERMINED,
+                  'a failed lookup must never read as clean')
+    }
+  })
+
+  await runAsyncTest('the probe reports an HTTP error', async () => {
+    const out = await probeCorpus(async () => ({ok: false, status: 503}))
+    assertEqual(out.ok, false)
+    assert(out.reason.indexOf('503') > -1)
+  })
+}
+
+
+async function runBreachTests7() {
+  suite('breach-ui.js — a run can be restarted after closing')
+
+  await runAsyncTest('closing the dialogue cancels the run', async () => {
+    // The sequence that broke it: start a check, close the dialogue while it
+    // is going, reopen. The run kept sending requests nobody was watching,
+    // reopening rebuilt the body and orphaned the progress element, and the
+    // `running` flag then blocked a new run — so Check did nothing, silently.
+    const saved = window.prefs.enablePasswordBreachCheck
+    const savedFetch = window.fetch
+    window.prefs.enablePasswordBreachCheck = true
+
+    // A slow fetch, so the run is still going when the dialogue closes.
+    window.fetch = async () => {
+      await new Promise((resolve) => { setTimeout(resolve, 30) })
+      return {ok: true, status: 200,
+              text: async () => 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA:1'}
+    }
+
+    const items = [
+      mkVaultUiItem('a', true, [['password','password','Zq7-Mvtl%Kdn#WroP2xj']]),
+      mkVaultUiItem('b', true, [['password','password','Bx4!qWne%Ldk#TmoR8zv']]),
+      mkVaultUiItem('c', true, [['password','password','Ny2@rTce$Jhq#PlmX5wb']]),
+    ]
+    try {
+      const dlg = menuBreachDlg()
+      document.body.appendChild(dlg)
+      try {
+        await new Promise((resolve) => {
+          withVaultUiFixture(items, async () => {
+            dlg.dispatchEvent(new Event('show.bs.modal'))
+            const first = startBreachCheck()
+            // Close while it is still running.
+            await new Promise((r) => { setTimeout(r, 20) })
+            dlg.dispatchEvent(new Event('hide.bs.modal'))
+            await first
+            resolve()
+          })
+        })
+
+        // Reopen and run again. Before the fix this returned immediately
+        // because `running` was still true and nothing said so.
+        dlg.dispatchEvent(new Event('show.bs.modal'))
+        const progress = document.getElementById('x-breach-progress')
+        assert(progress, 'reopening should rebuild the report body')
+        assert(progress.innerHTML.indexOf('Checking') === -1,
+               'the rebuilt body should not show a stale run in progress')
+      } finally {
+        dlg.remove()
+      }
+    } finally {
+      window.prefs.enablePasswordBreachCheck = saved
+      window.fetch = savedFetch
+    }
+  })
+}
+
+async function runBreachTests() {
+  await runBreachTests1()
+  await runBreachTests2()
+  await runBreachTests3()
+  await runBreachTests4()
+  await runBreachTests5()
+  await runBreachTests6()
+  await runBreachTests7()
+}
+
 // Keep `.then(() => { window.__TESTS_COMPLETE__ = true })` as the final link
 // in the chain: it signals the Selenium runner that all async work — the last
 // finalize() included — has completed, so it never reads a sync-only snapshot.
@@ -3344,6 +3879,125 @@ test('the dialogue says when inactive records were excluded', () => {
   })
 })
 
+import { menuPrefsDlg } from '/js/prefs.js'
+
+// ---------------------------------------------------------------------------
+// breach-ui.js — the dialogue, in both states
+// ---------------------------------------------------------------------------
+import { menuBreachDlg, passwordsToCheck, startBreachCheck, BREACH_DLG_ID } from '/js/breach-ui.js'
+
+suite('breach-ui.js — the disabled state')
+test('the dialogue exists whether or not the preference is on', () => {
+  // The menu entry is always present. Hiding it would be the stronger privacy
+  // stance, but then the only route to the feature is reading the README.
+  const saved = window.prefs.enablePasswordBreachCheck
+  window.prefs.enablePasswordBreachCheck = false
+  try {
+    const dlg = menuBreachDlg()
+    assertEqual(dlg.id, BREACH_DLG_ID)
+    assert(dlg.querySelector('.x-fld-record-close'), 'it should have a Close button')
+  } finally {
+    window.prefs.enablePasswordBreachCheck = saved
+  }
+})
+test('the disabled body states that nothing has been sent', () => {
+  const saved = window.prefs.enablePasswordBreachCheck
+  window.prefs.enablePasswordBreachCheck = false
+  try {
+    const text = menuBreachDlg().textContent
+    assert(text.indexOf('Nothing has been sent') > -1,
+           'the first thing it should say is that no request was made')
+    assert(text.indexOf('Enable Password Breach Check') > -1,
+           'it should name where to turn it on')
+    assert(text.indexOf('never leaves this device') > -1,
+           'it should say what is not sent, not only what is')
+  } finally {
+    window.prefs.enablePasswordBreachCheck = saved
+  }
+})
+
+suite('breach-ui.js — what a check would send')
+test('passwords are deduplicated by value', () => {
+  // A password used by three entries costs one request, not three. Every
+  // entry sharing it is still reported.
+  const items = [
+    mkVaultUiItem('one',   true, [['password','password','SHARED']]),
+    mkVaultUiItem('two',   true, [['password','password','SHARED']]),
+    mkVaultUiItem('three', true, [['password','password','OTHER']]),
+  ]
+  withVaultUiFixture(items, () => {
+    const candidates = passwordsToCheck()
+    assertEqual(candidates.length, 2, 'two distinct values, so two requests')
+    const shared = candidates.find(c => c.entries.length === 2)
+    assert(shared, 'the shared password should list both entries')
+  })
+})
+test('inactive records are excluded when the preference is set', () => {
+  const items = [
+    mkVaultUiItem('live',    true,  [['password','password','A']]),
+    mkVaultUiItem('retired', false, [['password','password','B']]),
+  ]
+  withVaultUiFixture(items, () => {
+    window.prefs.hideInactiveRecords = true
+    assertEqual(passwordsToCheck().length, 1,
+                'a retired credential is not something to act on, and costs a request')
+    window.prefs.hideInactiveRecords = false
+    assertEqual(passwordsToCheck().length, 2)
+    window.prefs.hideInactiveRecords = true
+  })
+})
+test('opening the dialogue sends nothing', () => {
+  // The request happens when the user presses Check, not when they look at
+  // the report. A dialogue that phoned home because you opened it would be a
+  // surprise, and the whole point of the preference is that PAM does not
+  // contact anyone without being asked.
+  const saved = window.prefs.enablePasswordBreachCheck
+  window.prefs.enablePasswordBreachCheck = true
+  try {
+    const items = [mkVaultUiItem('one', true, [['password','password','A']])]
+    withVaultUiFixture(items, () => {
+      const text = menuBreachDlg().textContent
+      assert(text.indexOf('Nothing has been sent yet') > -1,
+             'the ready state must say that nothing has gone out yet')
+    })
+  } finally {
+    window.prefs.enablePasswordBreachCheck = saved
+  }
+})
+
+
+suite('prefs — enablePasswordBreachCheck')
+test('defaults to false', () => {
+  // The only preference that causes PAM to contact anything. If this ever
+  // defaults to true, PAM starts talking to a third party for users who never
+  // asked it to.
+  assertEqual(getDefaultPrefs().enablePasswordBreachCheck, false)
+})
+test('appears on the Administration tab', () => {
+  // window.prefs is shared and mutable, and dozens of earlier tests set keys
+  // on it directly. menuPrefsDlg() reads predefinedRecordFields with
+  // Object.entries(), so a missing key throws "Cannot convert undefined or
+  // null to object" — which is what happened the first time this ran. Build
+  // the dialogue from a known-good prefs object and put the old one back.
+  const saved = window.prefs
+  window.prefs = getDefaultPrefs()
+  try {
+    const dlg = menuPrefsDlg()
+    const control = dlg.querySelector('[data-pref-id="enablePasswordBreachCheck"]')
+    assert(control, 'the preference control should exist')
+    assert(control.closest('#prefs-tab-admin'),
+           'it belongs with the other settings that change security posture')
+  } finally {
+    window.prefs = saved
+  }
+})
+// The badge itself is tested in tests/test_chrome.py, not here.
+// updateBreachCheckIndicator() lives in main.js, which this page cannot import
+// — it registers window.onload and pulls in menu.js, raw.js and about.js.
+// The existing indicator suites work around that by replicating the logic
+// inline, which tests the copy rather than the function. An e2e test drives
+// the real one.
+
 suite('prefs — showPasswordReuseWarning')
 test('defaults to true', () => {
   assertEqual(getDefaultPrefs().showPasswordReuseWarning, true,
@@ -3352,9 +4006,25 @@ test('defaults to true', () => {
 
 
 finalize() // update summary with sync results so far
+// Every async runner must be followed by finalize() before __TESTS_COMPLETE__
+// is set, because finalize() is what writes window.__TEST_RESULTS__ — the
+// object the Selenium runner reads to decide pass or fail.
+//
+// Calling it per-runner was fragile: it was called at the end of
+// runCryptTests and runSaveRegressionTests but not the two after them, so
+// runVaultFingerprintTests and runBreachTests rendered their results into the
+// page while the TOTALS still reflected the state before they ran. Their
+// failures would have shown as red lines on the page and passed the build.
+// That was live for the whole of v2.3.0: the vaultFingerprint suite was
+// running and reporting, but not gating.
+//
+// One finalize() at the end of the chain cannot drift the same way — adding a
+// runner cannot leave it uncounted.
 runCryptTests()
   .then(runSaveRegressionTests)
   .then(runVaultFingerprintTests)
+  .then(runBreachTests)
+  .then(finalize)
   .catch((err) => {
     // A throw in an async runner itself (not an individual test — those are
     // caught) would otherwise leave the flag false and strand the Selenium

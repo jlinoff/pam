@@ -8,7 +8,7 @@ import { enableSaveFile } from './save.js'
 import { setDarkLightTheme } from './utils.js'
 import { searchRecords } from './search.js'
 import { enableRawJSONEdit } from './raw.js'
-import { updateHtmlRenderingIndicator, updateFilePassCacheIndicator, updatePasswordSearchIndicator } from './main.js'
+import { updateHtmlRenderingIndicator, updateFilePassCacheIndicator, updatePasswordSearchIndicator, updateBreachCheckIndicator } from './main.js'
 import { updateReuseIndicator, scheduleVaultStatsRefresh } from './vault-ui.js'
 import { clearFilePass } from './password.js'
 
@@ -317,6 +317,26 @@ export function menuPrefsDlg() {
                                'of them: if any one site is breached, every entry sharing that ' +
                                'password is exposed. No breach corpus can detect this \u2014 it is a ' +
                                'property of your vault, not of the password.'),
+                prefEnablePasswordBreachCheck(labelClasses, inputClasses),
+                prefPromptDesc('Check stored passwords against the ' +
+                               '<a href="https://haveibeenpwned.com/" target="_blank" rel="noopener">' +
+                               'Have I Been Pwned</a> corpus of passwords exposed in known breaches. ' +
+                               '<b>Disabled by default</b>, and the only setting in PAM that causes it ' +
+                               'to contact anything.<br>' +
+                               'When enabled, PAM sends the first five characters of a password\'s ' +
+                               'SHA-1 hash \u2014 twenty bits \u2014 to <code>api.pwnedpasswords.com</code>, ' +
+                               'which returns every hash beginning with that prefix. The comparison ' +
+                               'happens in your browser: the password, its full hash, the record it ' +
+                               'belongs to and the rest of your vault are never transmitted.<br>' +
+                               'That is a real privacy property but not nothing. A request is made, ' +
+                               'an IP address is visible to the other end, and checking a whole vault ' +
+                               'sends one request per password.<br>' +
+                               'Turning this off stops PAM making the request. It does not stop PAM ' +
+                               'being <i>able</i> to: the Content-Security-Policy names that host ' +
+                               'whether the preference is on or off, because a policy is fixed when ' +
+                               'the page is parsed and cannot depend on a setting.<br>' +
+                               'A <b>\u26A0 BREACH CHECK</b> warning badge will appear in the toolbar ' +
+                               'while this is active.'),
                 prefSearchPasswordFieldValues(labelClasses, inputClasses),
                 prefPromptDesc('WARNING: this only applies when <code>Search Record Field Values</code> ' +
                                'is also enabled. It allows the search box to match against the ' +
@@ -547,6 +567,7 @@ function savePrefs(el) {
     updateHtmlRenderingIndicator()  // SEC-001: update toolbar badge
     updateFilePassCacheIndicator()  // SEC-002: update toolbar badge
     updatePasswordSearchIndicator()  // update toolbar badge
+    updateBreachCheckIndicator()     // enablePasswordBreachCheck toggles the badge
     scheduleVaultStatsRefresh()      // hideInactiveRecords changes the reuse scope
     updateReuseIndicator()           // reuse badge follows showPasswordReuseWarning
     searchRecords()  // refresh
@@ -611,6 +632,15 @@ export function prefShowPasswordReuseWarning(labelClasses, inputClasses) {
                            'showPasswordReuseWarning',
                            'Show Password Reuse Warning',
                            'show a toolbar badge when a stored password is used more than once')
+}
+
+export function prefEnablePasswordBreachCheck(labelClasses, inputClasses) {
+    return mkPrefsCheckBox(labelClasses,
+                           inputClasses,
+                           'enablePasswordBreachCheck',
+                           'Enable Password Breach Check',
+                           'check stored passwords against the Have I Been Pwned corpus. ' +
+                           'This is the only setting that causes PAM to contact anything.')
 }
 
 export function prefSearchPasswordFieldValues(labelClasses, inputClasses) {

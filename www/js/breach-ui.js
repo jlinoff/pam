@@ -101,8 +101,14 @@ function readyBody() {
 
     const body = xmk('div').xClass('container').xId('x-breach-body')
     if (candidates.length === 0) {
+        // The progress and results containers are included even here. They
+        // were not, and the consequence was that Check on an empty vault
+        // reported "internal error: the breach report body is not present" —
+        // a correct message about the wrong thing.
         return body.xAppend(
-            xmk('p').xInnerHTML('There are no stored passwords to check.' + scope))
+            xmk('p').xInnerHTML('There are no stored passwords to check.' + scope),
+            xmk('div').xId('x-breach-progress'),
+            xmk('div').xId('x-breach-results'))
     }
     const requests = candidates.length === 1 ? '1 request' : `${candidates.length} requests`
     return body.xAppend(
@@ -186,7 +192,11 @@ function setButtons(state) {
     const check = document.getElementById('x-breach-check-button')
     const cancel = document.getElementById('x-breach-cancel-button')
     if (check) {
-        const show = state === 'ready' && window.prefs.enablePasswordBreachCheck
+        // Hidden when there is nothing to check, as well as when the feature
+        // is off. A button that can only report that it has no work to do is
+        // an invitation to press it and learn nothing.
+        const ready = state === 'ready' && window.prefs.enablePasswordBreachCheck
+        const show = ready && passwordsToCheck().length > 0
         check.style.display = show ? 'inline-block' : 'none'
     }
     if (cancel) {

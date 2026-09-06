@@ -356,6 +356,27 @@ structural grounds and the test passed without exercising what it named. It now
 uses two structurally clean passwords, checked as such, so the corpus is the
 only variable.
 
+### Fixed: an empty vault had no report body
+
+Found by the regression test for the close-and-restart fix, which failed for a
+reason unrelated to what it was testing.
+
+`readyBody()` omitted the progress and results containers when there was
+nothing to check. So on a vault with no stored passwords, Check was still
+shown, and pressing it reported *"internal error: the breach report body is not
+present"* — a correct message about entirely the wrong thing. The loud-failure
+change from the previous fix is what made this visible rather than silent.
+
+Both halves fixed: the containers are always present, and Check is hidden when
+there is no work for it. A button whose only possible outcome is to report that
+it has nothing to do is an invitation to press it and learn nothing.
+
+**The test was also wrong.** Its second `show.bs.modal` fired outside
+`withVaultUiFixture`, by which point the vault was empty — so it took the
+no-passwords branch and failed on a missing element that had nothing to do with
+the restart behaviour it was checking. Now scoped inside the fixture, with a
+separate test for the empty-vault case.
+
 ### Fixed: Check stopped working after closing the dialogue
 
 Reported as "Check does not seem to be working", and the qualifier — only

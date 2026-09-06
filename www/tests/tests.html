@@ -3209,6 +3209,35 @@ async function runBreachTests6() {
 async function runBreachTests7() {
   suite('breach-ui.js — a run can be restarted after closing')
 
+  await runAsyncTest('an empty vault still has a report body', async () => {
+    // readyBody() omitted the progress and results containers when there was
+    // nothing to check, so pressing Check on an empty vault reported an
+    // internal error. The containers are now always present, and Check is
+    // hidden when there is no work for it.
+    const saved = window.prefs.enablePasswordBreachCheck
+    window.prefs.enablePasswordBreachCheck = true
+    try {
+      withVaultUiFixture([], () => {
+        const dlg = menuBreachDlg()
+        document.body.appendChild(dlg)
+        try {
+          dlg.dispatchEvent(new Event('show.bs.modal'))
+          assert(document.getElementById('x-breach-progress'),
+                 'the progress container must exist even with nothing to check')
+          assert(document.getElementById('x-breach-results'),
+                 'so must the results container')
+          const check = document.getElementById('x-breach-check-button')
+          assertEqual(check.style.display, 'none',
+                      'Check should be hidden when there is nothing to check')
+        } finally {
+          dlg.remove()
+        }
+      })
+    } finally {
+      window.prefs.enablePasswordBreachCheck = saved
+    }
+  })
+
   await runAsyncTest('closing the dialogue cancels the run', async () => {
     // The sequence that broke it: start a check, close the dialogue while it
     // is going, reopen. The run kept sending requests nobody was watching,
@@ -3246,13 +3275,20 @@ async function runBreachTests7() {
           })
         })
 
-        // Reopen and run again. Before the fix this returned immediately
-        // because `running` was still true and nothing said so.
-        dlg.dispatchEvent(new Event('show.bs.modal'))
-        const progress = document.getElementById('x-breach-progress')
-        assert(progress, 'reopening should rebuild the report body')
-        assert(progress.innerHTML.indexOf('Checking') === -1,
-               'the rebuilt body should not show a stale run in progress')
+        // Reopen and check the body was rebuilt. Before the fix the `running`
+        // flag was still set and a new run returned immediately, silently.
+        //
+        // This must happen INSIDE the fixture: outside it the vault is empty,
+        // readyBody() takes its no-passwords branch, and the assertion below
+        // fails for a reason that has nothing to do with what is being tested.
+        // The first version of this test did exactly that.
+        withVaultUiFixture(items, () => {
+          dlg.dispatchEvent(new Event('show.bs.modal'))
+          const progress = document.getElementById('x-breach-progress')
+          assert(progress, 'reopening should rebuild the report body')
+          assert(progress.innerHTML.indexOf('Checking') === -1,
+                 'the rebuilt body should not show a stale run in progress')
+        })
       } finally {
         dlg.remove()
       }

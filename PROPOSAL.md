@@ -40,7 +40,7 @@ numeric order. A low number means the item was raised early, nothing more.
 | 1–4 | **released in v2.3.0** — see `RELEASE_NOTES_v2.3.0.md` |
 | 5. Password breach check | **done** — implementation, tests and docs complete; screenshots outstanding |
 | 6. README pass | **done** — including SECURITY.md, which claimed "No data is ever sent to a server" |
-| 7. Vault diff | deferred — blocked on durable record IDs |
+| 7. Vault diff | deferred — blocked on durable record IDs; pair with item 9 in v3.0 |
 | 8. Export tiering | deferred |
 | 9. Vault file integrity | **deferred to v3.0** — ⚠ BREAKING: rewrites data files so older PAM versions cannot open them, with no way back once a vault is re-saved |
 | 10. Test suites ran without gating | **fixed** — finalize() ran per-runner, so two suites reported but did not count |
@@ -614,6 +614,12 @@ and Dashlane are all contributors.
 > The major version number is the signal, but a version number is not a
 > warning. Users upgrade without reading, and the first symptom otherwise is a
 > vault that will not open on the device they happen to be holding.
+>
+> **Carry the durable record identifier in the same migration.** It is the
+> other outstanding schema change (see Open questions, and item 7), it is
+> equally breaking, and every format migration reopens the lockout window
+> described above. One migration that adds authentication *and* record IDs
+> costs users one disruption; two migrations cost them two.
 
 Found while investigating a flaky unit test, and worth recording even though it
 is not part of the breach work.
@@ -1485,6 +1491,22 @@ purpose is completeness.
 
 - *Does the schema have a durable per-entry ID?* — No, and nothing in v2.4.0
   changed that. Records are still identified by title plus field names, which
-  breaks as soon as either is edited. This gates item 7 (vault diff), and it is
-  also what makes the reports select records by title: a stable ID would be a
-  better key for the click-through than an escaped title pattern.
+  breaks as soon as either is edited.
+
+  **It now has two dependents, not one.** It has always gated item 7 (vault
+  diff). It also underpins the report click-throughs added in v2.4.0, which
+  match on an escaped title pattern because there is nothing better to match
+  on — and titles are not unique, so clicking a group can select a record that
+  merely shares a name with the one intended. That is a real if minor defect
+  shipping in v2.4.0, and it cannot be fixed at the UI layer.
+
+  **This belongs with item 9 in v3.0.** Both are schema-level and both are
+  breaking. v3.0 already requires a format change with migration for the
+  AES-GCM work, and adding a record identifier in the same change costs one
+  migration instead of two — which matters more than usual here, because each
+  migration is a release where older devices cannot read newly written vaults.
+  Doing them separately would open that window twice.
+
+  Sequencing note: the identifier is the easier half and has no cryptographic
+  risk, so it could reasonably land first within v3.0 development even though
+  both ship together.

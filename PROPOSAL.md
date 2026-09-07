@@ -40,7 +40,7 @@ numeric order. A low number means the item was raised early, nothing more.
 | 1–4 | **released in v2.3.0** — see `RELEASE_NOTES_v2.3.0.md` |
 | 5. Password breach check | **done** — implementation, tests and docs complete; screenshots outstanding |
 | 6. README pass | **done** — including SECURITY.md, which claimed "No data is ever sent to a server" |
-| 7. Vault diff | deferred — blocked on durable record IDs; pair with item 9 in v3.0 |
+| 7. Vault diff | deferred, **not blocked** — works today without record IDs; they add rename detection |
 | 8. Export tiering | deferred |
 | 9. Vault file integrity | **deferred to v3.0** — ⚠ BREAKING: rewrites data files so older PAM versions cannot open them, with no way back once a vault is re-saved |
 | 10. Test suites ran without gating | **fixed** — finalize() ran per-runner, so two suites reported but did not count |
@@ -548,13 +548,40 @@ Given a second vault file and its passphrase, report entries only in A, only in
 B, and entries in both whose passwords differ (report *that* they differ, never
 the values).
 
-### Blocked on
+### Not blocked — degraded
 
-- **Durable entry identity.** With no stable ID, "same entry" must be inferred
-  from title plus field names, which breaks as soon as either is edited. Adding
-  an ID is a schema migration and is a prerequisite, not part of this.
-- **Cross-version crypto.** Two files may be at different crypto versions.
-- Entries matching on title but not field set, and vice versa.
+This was recorded as "blocked on durable entry identity". That is too strong,
+and it kept the item unscheduled for no good reason.
+
+**Nothing here depends on item 9 (file integrity).** Items 7 and 9 are paired
+in the v3.0 plan for migration economics — each schema migration reopens the
+lockout window, so doing both at once costs users one disruption instead of
+two. That is a scheduling argument, not a dependency. Vault diff does not need
+authenticated encryption any more than any other comparison of two JSON
+documents does.
+
+**Cross-version crypto is not a constraint either.** `decrypt()` already
+dispatches on the `PAMv2:` prefix, so each file's format is detected
+independently, and once decrypted both are records with the same schema. A v1
+vault and a v2 vault can be compared today. Restricting a first version to
+matching formats would be a reasonable simplification, not a necessity.
+
+**Durable entry identity buys rename detection, and nothing else.** Without an
+ID, match records by title after canonicalisation — `canonicalizeRecords()`
+already exists from the fingerprint work — and compare field sets and password
+presence. That is a working, useful diff. What it cannot do is tell a rename
+from a delete plus an add, so editing a title reports as a credential lost and
+a credential gained. For a password manager that is the alarming direction to
+be wrong in, but it is a quality-of-result problem, not an impossibility.
+
+Even that is softenable without a schema change, the way `git diff -M` does it:
+match by title first, then pair the leftovers by similarity — an identical
+password value, or an identical field set — and report those as probable
+renames. Less certain than an ID, and considerably better than nothing.
+
+**So this could ship before v3.0.** The remaining genuine wrinkle is entries
+matching on title but not field set, and vice versa, which is a presentation
+question rather than a blocker.
 
 ## 8. Export tiering — deferred
 
@@ -615,10 +642,10 @@ and Dashlane are all contributors.
 > warning. Users upgrade without reading, and the first symptom otherwise is a
 > vault that will not open on the device they happen to be holding.
 >
-> **Carry the durable record identifier in the same migration.** It is the
-> other outstanding schema change (see Open questions, and item 7), it is
-> equally breaking, and every format migration reopens the lockout window
-> described above. One migration that adds authentication *and* record IDs
+> **Carry the durable record identifier in the same migration.** Not because
+> anything here depends on it — it is simply the other outstanding schema
+> change (see Open questions, and item 7), it is equally breaking, and every
+> format migration reopens the lockout window described above. One migration that adds authentication *and* record IDs
 > costs users one disruption; two migrations cost them two.
 
 Found while investigating a flaky unit test, and worth recording even though it
@@ -1493,15 +1520,17 @@ purpose is completeness.
   changed that. Records are still identified by title plus field names, which
   breaks as soon as either is edited.
 
-  **It now has two dependents, not one.** It has always gated item 7 (vault
-  diff). It also underpins the report click-throughs added in v2.4.0, which
-  match on an escaped title pattern because there is nothing better to match
-  on — and titles are not unique, so clicking a group can select a record that
-  merely shares a name with the one intended. That is a real if minor defect
-  shipping in v2.4.0, and it cannot be fixed at the UI layer.
+  **It improves two things; it blocks neither.** Item 7 (vault diff) was
+  recorded as blocked on this and is not: a title-based diff works today, and
+  an ID adds rename detection rather than making the feature possible. It also
+  underpins the report click-throughs added in v2.4.0, which match on an
+  escaped title pattern because there is nothing better to match on — and
+  titles are not unique, so clicking a group can select a record that merely
+  shares a name with the one intended. That is a real if minor defect shipping
+  in v2.4.0, and it cannot be fixed at the UI layer.
 
-  **This belongs with item 9 in v3.0.** Both are schema-level and both are
-  breaking. v3.0 already requires a format change with migration for the
+  **It still belongs with item 9 in v3.0** — for migration cost, not because
+  anything depends on it. Both are schema-level and both are breaking. v3.0 already requires a format change with migration for the
   AES-GCM work, and adding a record identifier in the same change costs one
   migration instead of two — which matters more than usual here, because each
   migration is a release where older devices cannot read newly written vaults.

@@ -31,7 +31,7 @@ the on-line help is generated.
 
 </details>
 
-<details>
+<details open>
 <summary>Table of Contents</summary>
 
 <!--ts-->

@@ -457,6 +457,28 @@ Nothing catches this. The text was in the source, jshint was clean, and the
 tests do not assert what is *visible* in a preference tab. It took looking at
 the dialogue.
 
+**The real argument is mobile, not discoverability.** A `title` attribute needs
+a pointer. On a phone — where PAM is installed as a PWA, and which the iPhone
+captures document — there is no hover, so the text is not merely hard to find
+but unreachable. "Does this work without a pointer" belongs in the default set
+of questions, not discovered afterwards.
+
+**Audited the rest: nothing else is affected.** All 19 preferences were checked,
+and every tooltip carrying more than a restatement of its own label already has
+a visible `prefPromptDesc` beneath it — including the SEC-001 HTML rendering
+warning, which would have been the worst one to hide. The remaining tooltips
+say things like "enable printing", where losing them on a touch device costs
+nothing.
+
+The first pass through that audit reported the HTML warning as a problem. It
+was a false positive: the check derived the function name from the label, and
+`Allow HTML Field Rendering` does not case-fold to `prefAllowHtmlFieldRendering`.
+Worth recording because a security warning wrongly reported as missing is the
+kind of finding that gets acted on before it is verified.
+
+So the convention was already right throughout the codebase, and this branch
+broke it once.
+
 ### The reuse-report failure: a duplicated element id
 
 Real, reproducible, and unrelated to the stale directory.

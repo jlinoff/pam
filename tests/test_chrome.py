@@ -4,6 +4,7 @@ PAM pytest module.
 import json
 import os
 import re
+import socket
 import time
 
 from selenium import webdriver
@@ -18,10 +19,39 @@ from selenium.webdriver.remote.webdriver import WebDriver
 #NO_OPTIONS = False if not os.getenv('NO_OPTIONS') else True
 NO_OPTIONS = 'NO_OPTIONS' in os.environ
 
+# The port make's e2e-test target serves www/ on. Every test loads a page from
+# it, so a missing server is a single cause with 32 identical symptoms.
+SERVER_PORT = 8081
+
+
+def require_server(port=SERVER_PORT):
+    """Fail with a useful message when nothing is listening.
+
+    Without this, every test dies inside driver.get() with
+    net::ERR_CONNECTION_REFUSED buried under two dozen frames of chromedriver
+    stack — one useful token in sixty lines of output, and nothing saying what
+    to do about it. The tests are normally run through `make e2e-test`, which
+    starts the server; running pytest directly does not.
+    """
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as probe:
+        probe.settimeout(1.0)
+        if probe.connect_ex(('127.0.0.1', port)) == 0:
+            return
+    raise RuntimeError(
+        f'no server is listening on port {port}, so every test would fail '
+        f'with ERR_CONNECTION_REFUSED.\n'
+        f'Run `make e2e-test`, which starts one, or start it by hand:\n'
+        f'    ( cd www && python3 -m http.server {port} ) &')
+
+
 def get_driver():
     '''
     Get the webdriver and set the options for headless mode.
+
+    Checks the server first: it is the one dependency every test shares, and
+    the failure it produces otherwise is unreadable.
     '''
+    require_server()
     # https://stackoverflow.com/questions/53657215/running-selenium-with-headless-chrome-webdriver
     if NO_OPTIONS:
         return webdriver.Chrome()  # pylint: disable=not-callable

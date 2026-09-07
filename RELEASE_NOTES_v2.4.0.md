@@ -146,6 +146,9 @@ structural checks catch word-based weakness either. This is why
 estimator error, tuning a threshold between 60 and 80 would be false precision.
 Recorded in `PROPOSAL.md` as item 13.
 
+`std/creature/history` now scores 40 bits rather than 118, and is rejected.
+Cryptic passwords are unaffected at 131.
+
 ## Also in this release
 
 - **Fixed:** deactivating a record left it in the reuse report. The toggle
@@ -163,10 +166,22 @@ Recorded in `PROPOSAL.md` as item 13.
   ten, and neither `Reused Passwords` nor `Breached Passwords` appeared in the
   table of contents.
 
+## A dictionary-aware entropy estimate
+
+`entropyBits()` now computes both a character estimate and a
+word estimate and returns the **lower** of the two. A passphrase is both a
+sequence of characters and a sequence of words, and its real strength is
+whichever description an attacker will use — the cheaper one.
+
+Only separator-delimited passwords are recognised as word-based, and every part
+must be in the list. Detecting concatenated words would need segmentation, and
+guessing wrongly there would understate a password that merely happens to
+contain a word — the expensive direction of error, since a false REJECT teaches
+people to ignore the tool.
+
 ## Not in this release
 
 - **Vault file integrity.** `decryptV2` uses AES-CBC with no authentication
   tag, so a wrong password is only detected when the padding happens to fail —
   about 255 times in 256 — and a PAM file has no tamper-evidence. Fixing it
   means AES-GCM and a v3 format with migration. Item 9.
-- **A dictionary-aware entropy estimate.** Item 13.

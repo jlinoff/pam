@@ -38,8 +38,8 @@ numeric order. A low number means the item was raised early, nothing more.
 | Item | State |
 |---|---|
 | 1–4 | **released in v2.3.0** — see `RELEASE_NOTES_v2.3.0.md` |
-| 5. Password breach check | in progress, on `feat/password-breach-check` |
-| 6. README pass | folded into item 5. NOTE: the preference section is already written and currently over-claims — re-read it against the built feature before merging |
+| 5. Password breach check | **done** — implementation, tests and docs complete; screenshots outstanding |
+| 6. README pass | **done** — including SECURITY.md, which claimed "No data is ever sent to a server" |
 | 7. Vault diff | deferred — blocked on durable record IDs |
 | 8. Export tiering | deferred |
 | 9. Vault file integrity | open — v2 is AES-CBC with no MAC; needs a v3 format |

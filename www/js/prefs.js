@@ -11,6 +11,9 @@ import { enableRawJSONEdit } from './raw.js'
 import { updateHtmlRenderingIndicator, updateFilePassCacheIndicator, updatePasswordSearchIndicator, updateBreachCheckIndicator } from './main.js'
 import { updateReuseIndicator, scheduleVaultStatsRefresh } from './vault-ui.js'
 import { clearFilePass } from './password.js'
+// The single source of preference defaults. prefs.js used to keep its own
+// copy in initPrefs() and the two drifted; see the note there.
+import { getDefaultPrefs } from './prefs-model.js'
 
 // These are the input types that the tool knows how to handle.
 export const VALID_FIELD_TYPES = {
@@ -57,70 +60,19 @@ export function resetPrefs() {
 }
 
 export function initPrefs() {
-    window.prefs = {
-        // Use the '.txt' extension because the '.pam' extension
-        // does not work on some mobile devices.
-        themeName: 'dark', // choices are dark or light
-        enablePrinting: false,
-        enableSaveFile: true,
-        fileName: 'example.txt',
-        filePass: '',
-        filePassCache: 'session',   // options: none, global, local, session — default session; overridden per-device by pamCacheStrategy in localStorage
-        textareaMinHeight: '5em',
-        editableFieldName: false, // if true, allow field names to be changed
-        searchCaseInsensitive: true,
-        searchRecordTitles: true,
-        searchRecordFieldNames: false,
-        searchRecordFieldValues: false,
-        hideInactiveRecords: true, // hide inactive records if true
-        passwordRangeLengthDefault: 20,
-        passwordRangeMinLength: 12,
-        passwordRangeMaxLength: 32,
-        memorablePasswordWordSeparator: '/',
-        memorablePasswordMinWordLength: 2,
-        memorablePasswordMinWords: 3,
-        memorablePasswordMaxWords: 5,
-        memorablePasswordMaxTries: 10000,
-        clearBeforeLoad: true,
-        customAboutInfo: '',
-        cloneFieldValues: true, // keep field values when cloning a record
-        memorablePasswordPrefix: '', // common prefix for all memorable passwords
-        memorablePasswordSuffix: '', // common suffix for all memorable passwords
-        helpLink: './help/index.html', // link to the help page.
-        projectLink: 'https://github.com/jlinoff/pam', // link to the project page.
-        // valid dup strategies are 'ignore', 'replace', 'allow'
-        loadDupStrategy: 'ignore', // only used if clearBeforeLoad is false
-        logStatusToConsole: false, // tee the status to console.log
-        statusMsgDurationMS: 1500, // status message duration.
-        predefinedRecordFields: { // key=name and value=type
-            'account': 'text',
-            'datetime': 'datetime-local',
-            'email': 'email',
-            'host': 'text',
-            'html': 'html',
-            'key': 'password',
-            'login': 'text',
-            'name': 'text',
-            'note': 'textarea',
-            'number': 'number',
-            'phone': 'phone',
-            'password': 'password',
-            'secret': 'password',
-            'text': 'text',
-            'textarea': 'textarea',
-            'time': 'time',
-            'url': 'url',
-            'username': 'text',
-            'website': 'url',
-        },
-        predefinedRecordFieldsDefault: 'text',
-        requireRecordFields: false,
-        lockPreferencesPassword: '',
-        allowHtmlFieldRendering: false,  // SEC-001: html fields render as escaped text by default
-        defaultRecordFields: 'website,login,password,note',
-        enableRawJSONEdit: false,
-        encryptionFormat: 'v1',  // v1 (default) or v2 — see SECURITY.md SEC-003/SEC-004
-    }
+    // Delegates to getDefaultPrefs() rather than repeating the defaults.
+    //
+    // This used to be its own object literal, and the two drifted. By v2.4.0
+    // initPrefs() was missing searchPasswordFieldValues (the v2.3.0 search
+    // oracle fix), showPasswordReuseWarning and enablePasswordBreachCheck
+    // entirely — they worked only because undefined is falsy — and still had
+    // passwordRangeLengthDefault at 20 and memorablePasswordMinWords at 3
+    // after those were raised.
+    //
+    // The unit tests assert getDefaultPrefs(), which the application was not
+    // using. Every preference test was therefore checking a value the running
+    // app never read.
+    window.prefs = getDefaultPrefs()
     setHelpLinks()
 
     // Per-device cache strategy override (SEC-002).

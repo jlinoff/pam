@@ -3916,6 +3916,46 @@ async function runBreachTests14() {
   })
 }
 
+
+async function runBreachTests15() {
+  suite('prefs — one source of defaults')
+
+  test('initPrefs() produces exactly getDefaultPrefs()', () => {
+    // These were two hardcoded lists and they drifted. By v2.4.0 initPrefs()
+    // was missing searchPasswordFieldValues (the v2.3.0 search oracle fix),
+    // showPasswordReuseWarning and enablePasswordBreachCheck entirely — they
+    // worked only because undefined is falsy — and still had the old password
+    // length and word count after those were raised.
+    //
+    // The consequence was that every preference test asserted a value the
+    // running application never read. initPrefs() now delegates, and this
+    // check keeps it that way.
+    const saved = window.prefs
+    try {
+      initPrefs()
+      const running = window.prefs
+      const expected = getDefaultPrefs()
+      const keys = new Set(Object.keys(expected).concat(Object.keys(running)))
+      const differences = []
+      for (const key of keys) {
+        // filePassCache is legitimately overridden per device from
+        // localStorage (SEC-002), so it is the one key allowed to differ.
+        if (key === 'filePassCache') { continue }
+        if (JSON.stringify(expected[key]) !== JSON.stringify(running[key])) {
+          differences.push(
+            `${key}: model=${JSON.stringify(expected[key])} ` +
+            `app=${JSON.stringify(running[key])}`)
+        }
+      }
+      assertEqual(differences.length, 0,
+                  'initPrefs() and getDefaultPrefs() disagree: ' +
+                  differences.join('; '))
+    } finally {
+      window.prefs = saved
+    }
+  })
+}
+
 async function runBreachTests() {
   await runBreachTests1()
   await runBreachTests2()
@@ -3931,6 +3971,7 @@ async function runBreachTests() {
   await runBreachTests12()
   await runBreachTests13()
   await runBreachTests14()
+  await runBreachTests15()
 }
 
 // Keep `.then(() => { window.__TESTS_COMPLETE__ = true })` as the final link
@@ -4549,7 +4590,7 @@ test('the dialogue says when inactive records were excluded', () => {
   })
 })
 
-import { menuPrefsDlg } from '/js/prefs.js'
+import { menuPrefsDlg, initPrefs } from '/js/prefs.js'
 
 // ---------------------------------------------------------------------------
 // breach-ui.js — the dialogue, in both states

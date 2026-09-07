@@ -47,6 +47,7 @@ numeric order. A low number means the item was raised early, nothing more.
 | 11. Actionable reports | **done** — click-through from both reports, in v2.4.0 |
 | 12. Per-field breach button | done — on password fields, edit rows, and the standalone generator |
 | 13. Entropy estimate ignores dictionary words | **done in v2.4.0** — estimator is dictionary-aware; generator defaults raised to match |
+| 14. Loaded files apply security preferences | open — a shared file can silently weaken settings; badges show the result but nothing asks first |
 
 ---
 
@@ -1278,6 +1279,94 @@ building `pwcheck`, and each time the program looked like it worked.
 - Every response line validated before a non-match is believed.
 
 ---
+
+## Two sets of defaults, drifting since v2.3.0
+
+The e2e generator test failed with `reed/mini/ties/rover` — four words, and
+**exactly 20 characters**. That length was the clue: the running application
+was using `passwordRangeLengthDefault: 20` after it had been raised to 30.
+
+`prefs-model.js` exports `getDefaultPrefs()`. `prefs.js` had its own hardcoded
+object literal in `initPrefs()`. **The application used the second; every unit
+test asserted the first.**
+
+They had drifted well beyond my change:
+
+| Preference | model | initPrefs |
+|---|---|---|
+| `searchPasswordFieldValues` | `false` | **missing** |
+| `showPasswordReuseWarning` | `true` | **missing** |
+| `enablePasswordBreachCheck` | `false` | **missing** |
+| `passwordRangeLengthDefault` | 30 | 20 |
+| `memorablePasswordMinWords` | 5 | 3 |
+
+The three missing ones are worse than the two stale ones. `searchPasswordFieldValues`
+is the v2.3.0 search-oracle fix: its default was never set in the running app
+at all, and worked only because `undefined` is falsy. The unit tests asserting
+it defaults to `false` were checking an object the application did not use.
+
+`initPrefs()` now delegates to `getDefaultPrefs()` and keeps only what is
+genuinely its own — `setHelpLinks()` and the per-device `filePassCache`
+override. Verified: 41 keys each, no differences. A test compares the two and
+fails on any disagreement, with `filePassCache` excepted since SEC-002 overrides
+it per device by design.
+
+`prefs.js` did not import `prefs-model.js` at all before this, which is how two
+files ended up owning the same facts. Note `VALID_FIELD_TYPES` and
+`VALID_CACHE_STRATEGIES` are still defined in both — the same shape of problem,
+not yet fixed.
+
+## A separator is not a password type
+
+The e2e assertion added for item 13 failed, and the fault was in the test.
+
+It identified memorable passwords by looking for `/`. But `SPECIAL` is
+`_-+!./#$%^`, so a **cryptic** password can contain a slash —
+`FpnzQcuq0nk/PxlMdYJ_itnK` is one from the example vault. The check treated it
+as a three-part memorable password and failed it on word count.
+
+The reliable discriminator is shape, not the presence of a character: memorable
+passwords are lowercase alphabetic words joined by separators, so every part is
+alphabetic. Verified against six cases including cryptic passwords with slashes,
+dots and underscores.
+
+Worth noting `wordEntropyBits()` in `breach.js` does not have this problem — it
+splits on non-alphabetic characters and then requires every part to be a
+dictionary word, so `FpnzQcuq0nk/PxlMdYJ_itnK` fails on the second condition
+rather than the first. The production code was written more carefully than the
+test asserting things about it.
+
+## Loading a file applies its preferences — including security settings
+
+The stale `pam-password-generator-standalone.png` capture looked like a
+screenshot problem and was not. It showed Length 20 and three-word passwords
+because that is genuinely what the application was doing: the harness loads
+`www/examples/example.txt`, and **a loaded file carries its own preferences,
+which override the defaults**.
+
+`example.txt` still held `passwordRangeLengthDefault: 20` and
+`memorablePasswordMinWords: 3`. Both example files now carry the v2.4.0 values.
+Without that, a user loading the example vault would get three-word passwords
+from the generator that the breach check immediately rejects.
+
+**The wider point is a security one.** Preferences that change security posture
+travel inside PAM files, and are applied on load without confirmation. The
+example file was setting `filePassCache: 'local'` — persisting the file
+password to `localStorage` across browser sessions, which is the weaker of the
+two strategies and the one SEC-002 deliberately made non-default. Loading the
+examples silently switched the user to it. Now `session` in both files.
+
+The same mechanism could carry `allowHtmlFieldRendering` (XSS on load),
+`searchPasswordFieldValues` (the search oracle fixed in v2.3.0), or
+`enablePasswordBreachCheck` (outbound traffic). None is set in the shipped
+examples, and nothing stops a *shared* file setting them.
+
+**Worth considering for a later release:** either do not apply security-relevant
+preferences from a loaded file, or say which ones changed. The toolbar badges
+already make the resulting state visible — ⚠ HTML ON, ⚠ PW SEARCH,
+⚠ BREACH CHECK, and the filepass indicator — which is a real mitigation, but it
+tells you the state afterwards rather than asking first. Recorded rather than
+fixed: it changes established load behaviour and belongs in its own change.
 
 ## The screenshot mode was invisible, and came from the environment
 

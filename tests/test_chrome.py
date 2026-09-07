@@ -903,13 +903,23 @@ def assert_generator_uses_v240_defaults(buttons):
     getMemorablePassword() directly with those defaults; this checks the
     defaults actually reach the dialogue, which nothing else does.
     '''
+    # A cryptic password can contain a slash: SPECIAL is "_-+!./#$%^", so the
+    # separator is not a reliable way to tell the two kinds apart. The first
+    # version of this check treated any password containing "/" as memorable
+    # and then failed it on word count.
+    #
+    # Memorable passwords are all-lowercase words joined by separators, so
+    # every part is alphabetic. That is what distinguishes them.
     generated = [b.text.strip() for b in buttons if b.text.strip()]
-    memorable = [p for p in generated if '/' in p]
+    memorable = []
+    for password in generated:
+        parts = [w for w in password.split('/') if w]
+        if len(parts) >= 2 and all(w.isalpha() and w.islower() for w in parts):
+            memorable.append((password, parts))
     assert memorable, f'expected memorable passwords among: {generated}'
-    for password in memorable:
-        words = [w for w in password.split('/') if w]
-        assert len(words) >= 5, (
-            f'{password!r} has {len(words)} words; five are needed for 66 bits, '
+    for password, parts in memorable:
+        assert len(parts) >= 5, (
+            f'{password!r} has {len(parts)} words; five are needed for 66 bits, '
             'and fewer means the generator is not using the v2.4.0 defaults')
 
 

@@ -439,6 +439,28 @@ harness.** Every discrepancy this session — accumulated `window.prefs` state,
 an empty accordion, a missing Bootstrap global — has been the harness being
 kinder than the page.
 
+### Unexplained: the generator tests failed once, then stopped
+
+After the Bootstrap stub landed, the generator suite reported zero buttons
+where six were expected. The next two runs passed, unchanged except for added
+assertions — and assertions do not change behaviour.
+
+So the cause is unknown. The stale-id removal added at the same time should not
+have mattered: the failure was in the first test of the suite, on a DOM where
+no earlier dialogue with that id existed. Something environmental resolved
+between runs.
+
+Recorded rather than closed. The suite now reports **which stage** failed —
+whether `getElementById` resolved to the dialogue just built, whether the
+dialogue has a `.modal-body`, and whether `showMainPasswordGeneratorDlg()`
+populated it — so a recurrence produces a diagnosis instead of a bare count of
+zero.
+
+A vacuous assertion was also fixed while looking: the toggle test iterated over
+the buttons asserting each was hidden, and with zero buttons that loop
+succeeded. It reported green while the dialogue produced nothing at all. It now
+asserts there are six to hide first.
+
 ### Gap found on review: the generator button had no tests
 
 Verified in a scratch jsdom harness when it was written, never carried across

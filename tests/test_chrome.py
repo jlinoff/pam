@@ -19,9 +19,18 @@ from selenium.webdriver.remote.webdriver import WebDriver
 #NO_OPTIONS = False if not os.getenv('NO_OPTIONS') else True
 NO_OPTIONS = 'NO_OPTIONS' in os.environ
 
-# The port make's e2e-test target serves www/ on. Every test loads a page from
-# it, so a missing server is a single cause with 32 identical symptoms.
-SERVER_PORT = 8081
+# The port the server is serving www/ on.
+#
+# Taken from the environment so the Makefile's PORT variable actually reaches
+# the tests. It did not: the Makefile threaded $(PORT) through the server and
+# the kill command and even documented `make test PORT=8088`, while these
+# tests hardcoded localhost:8081 in twenty-nine places — so a non-default port
+# started a server the tests never talked to.
+#
+# It also lets `make test` and `make screenshots` run at the same time on
+# different ports.
+SERVER_PORT = int(os.environ.get('PORT', '8081'))
+URL = f'http://localhost:{SERVER_PORT}/'
 
 
 def require_server(port=SERVER_PORT):
@@ -168,10 +177,10 @@ def test_basic_setup():
 
 
 def test_pam_setup():
-    '''Verify that chrome works in selenium for PAM on port 8081.
+    '''Verify that chrome works in selenium for PAM on the configured port.
     '''
     driver = get_driver()
-    driver.get('http://localhost:8081/')
+    driver.get(URL)
     time.sleep(1)
     menu = driver.find_element(By.ID, 'menu')
     assert menu
@@ -221,7 +230,7 @@ def test_about_dlg():
     Test the About dialogue
     '''
     driver = get_driver()
-    driver.get('http://localhost:8081/')
+    driver.get(URL)
     time.sleep(1)
 
     # About dialog (light)
@@ -250,7 +259,7 @@ def test_prefs_dlg():
     Test the Preferences dialogue
     '''
     driver = get_driver()
-    driver.get('http://localhost:8081/')
+    driver.get(URL)
     time.sleep(1)
 
     # Preferences dialog (light)
@@ -279,7 +288,7 @@ def test_new_dlg():
     Test the new record dialogue.
     '''
     driver = get_driver()
-    driver.get('http://localhost:8081/')
+    driver.get(URL)
     time.sleep(1)
 
     # New Record (light)
@@ -312,7 +321,7 @@ def test_clear_dlg():
     Test the clear records dialogue.
     '''
     driver = get_driver()
-    driver.get('http://localhost:8081/')
+    driver.get(URL)
     time.sleep(1)
 
     # Clear Records (light)
@@ -345,7 +354,7 @@ def test_load_dlg():
     Test the load file dialogue.
     '''
     driver = get_driver()
-    driver.get('http://localhost:8081/')
+    driver.get(URL)
     time.sleep(1)
 
     # Load File (light)
@@ -378,7 +387,7 @@ def test_save_dlg():
     Test the save file dialogue.
     '''
     driver = get_driver()
-    driver.get('http://localhost:8081/')
+    driver.get(URL)
     time.sleep(1)
 
     # Save File (light)
@@ -411,7 +420,7 @@ def test_help_dlg():
     Test the help dialogue.
     '''
     driver = get_driver()
-    driver.get('http://localhost:8081/')
+    driver.get(URL)
     time.sleep(1)
     pam_window_handle = driver.current_window_handle
 
@@ -445,7 +454,7 @@ def test_example_records():
     Test the example records.
     '''
     driver = get_driver()
-    driver.get('http://localhost:8081/')
+    driver.get(URL)
     time.sleep(1)
 
     dlg = choose_menu_option(driver, 'Load File')
@@ -487,7 +496,7 @@ def test_record_create_and_delete():
     E2E: Create a new record, verify it appears, then delete it.
     '''
     driver = get_driver()
-    driver.get('http://localhost:8081/')
+    driver.get(URL)
     time.sleep(1)
 
     # Create a new record.
@@ -616,7 +625,7 @@ def test_reuse_badge_and_dialog():
     password, so the badge is correctly showing after a load.
     '''
     driver = get_driver()
-    driver.get('http://localhost:8081/')
+    driver.get(URL)
     time.sleep(1)
 
     badge = driver.find_element(By.ID, 'x-reuse-indicator')
@@ -699,7 +708,7 @@ def test_deactivating_updates_reuse_report():
     was.
     '''
     driver = get_driver()
-    driver.get('http://localhost:8081/')
+    driver.get(URL)
     time.sleep(1)
 
     badge = driver.find_element(By.ID, 'x-reuse-indicator')
@@ -750,7 +759,7 @@ def test_breach_check_badge_follows_preference():
     the logic inline, which tests the copy rather than the function.
     '''
     driver = get_driver()
-    driver.get('http://localhost:8081/')
+    driver.get(URL)
     time.sleep(1)
 
     badge = driver.find_element(By.ID, 'x-breach-check-indicator')
@@ -796,7 +805,7 @@ def test_breach_dialog_opens_and_closes():
     see: the preference is off by default.
     '''
     driver = get_driver()
-    driver.get('http://localhost:8081/')
+    driver.get(URL)
     time.sleep(1)
 
     dlg = choose_menu_option(driver, 'Breached Passwords')
@@ -829,7 +838,7 @@ def test_about_dialog_shows_fingerprint():
     E2E: the About dialogue reports a vault fingerprint.
     '''
     driver = get_driver()
-    driver.get('http://localhost:8081/')
+    driver.get(URL)
     time.sleep(1)
     load_example_records(driver)
     time.sleep(1.5)
@@ -854,7 +863,7 @@ def test_search_filters_records():
     E2E: Load example records and verify search filters correctly.
     '''
     driver = get_driver()
-    driver.get('http://localhost:8081/')
+    driver.get(URL)
     time.sleep(1)
 
     # Load example records
@@ -904,7 +913,7 @@ def test_preferences_dialog_opens_and_closes():
     E2E: Open preferences dialog and close it successfully.
     '''
     driver = get_driver()
-    driver.get('http://localhost:8081/')
+    driver.get(URL)
     time.sleep(1)
 
     dlg = choose_menu_option(driver, 'Preferences')
@@ -959,7 +968,7 @@ def test_password_generator():
     with password buttons, test Regenerate, then close it.
     '''
     driver = get_driver()
-    driver.get('http://localhost:8081/')
+    driver.get(URL)
     time.sleep(1)
 
     # Click the Pwd Gen button in the toolbar footer
@@ -1021,7 +1030,7 @@ def test_about_dialog_shows_version():
     E2E: Open the About dialog and verify version information is present.
     '''
     driver = get_driver()
-    driver.get('http://localhost:8081/')
+    driver.get(URL)
     time.sleep(1)
 
     dlg = choose_menu_option(driver, 'About')
@@ -1045,7 +1054,7 @@ def test_print_dialog_opens():
     Verifies the print window opens without error.
     '''
     driver = get_driver()
-    driver.get('http://localhost:8081/')
+    driver.get(URL)
     time.sleep(1)
 
     # Enable printing via prefs
@@ -1073,7 +1082,7 @@ def test_print_dialog_opens():
 
 def _load_example_and_enable_printing(driver):
     '''Helper: load example records and enable printing via JS.'''
-    driver.get('http://localhost:8081/')
+    driver.get(URL)
     time.sleep(1)
     # Load example records first — loading resets prefs from file data,
     # so enablePrinting must be set AFTER the load completes.
@@ -1197,7 +1206,7 @@ def test_print_cover_record_count():
 def test_print_empty_fields_skipped():
     '''E2E: fields with empty values are not rendered in the print output.'''
     driver = get_driver()
-    driver.get('http://localhost:8081/')
+    driver.get(URL)
     time.sleep(1)
 
     # Load a minimal JSON structure with one populated and one empty field.
@@ -1257,7 +1266,7 @@ def test_save_and_reload_round_trip():
     record count is preserved.
     '''
     driver = get_driver()
-    driver.get('http://localhost:8081/')
+    driver.get(URL)
     time.sleep(1)
 
     # Load example records
@@ -1302,7 +1311,7 @@ def test_delete_record_confirmation():
     Clicking Delete and confirming should remove the record.
     '''
     driver = get_driver()
-    driver.get('http://localhost:8081/')
+    driver.get(URL)
     time.sleep(1)
 
     # Load example records so there is something to delete
@@ -1407,7 +1416,7 @@ def test_load_dup_strategy_ignore():
     should not increase the record count.
     '''
     driver = get_driver()
-    driver.get('http://localhost:8081/')
+    driver.get(URL)
     time.sleep(1)
 
     set_load_dup_strategy(driver, 'ignore')
@@ -1431,7 +1440,7 @@ def test_load_dup_strategy_replace():
     should not increase the record count (old record replaced by new).
     '''
     driver = get_driver()
-    driver.get('http://localhost:8081/')
+    driver.get(URL)
     time.sleep(1)
 
     set_load_dup_strategy(driver, 'replace')
@@ -1463,7 +1472,7 @@ def test_load_dup_strategy_allow():
     that the prefs UI correctly reflects it.
     '''
     driver = get_driver()
-    driver.get('http://localhost:8081/')
+    driver.get(URL)
     time.sleep(1)
 
     # Verify loadDupStrategy pref exists and has the expected default
@@ -1484,7 +1493,7 @@ def test_prefs_tabbed_navigation():
     Verify tabs exist and switching between them works.
     '''
     driver = get_driver()
-    driver.get('http://localhost:8081/')
+    driver.get(URL)
     time.sleep(1)
 
     dlg = choose_menu_option(driver, 'Preferences')
@@ -1541,7 +1550,7 @@ def test_bug002_filepass_survives_session_teardown():
     sessionStorage, reload, verify password is still retrievable.
     '''
     driver = get_driver()
-    driver.get('http://localhost:8081/')
+    driver.get(URL)
     time.sleep(2)
 
     test_password = 'pwa-test-password-bug002'

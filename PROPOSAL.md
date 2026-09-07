@@ -1280,6 +1280,39 @@ building `pwcheck`, and each time the program looked like it worked.
 
 ---
 
+## `make test PORT=8088` never worked
+
+The Makefile threaded `$(PORT)` through the server and the kill command, and
+documented `make test PORT=8088` as an example. The tests hardcoded
+`http://localhost:8081/` in twenty-nine places. So a non-default port started a
+server the tests never spoke to, and they either failed against nothing or
+silently tested whatever happened to be on 8081.
+
+`tests/test_unit.py` already read `PORT` from the environment correctly. The
+pattern existed; the other two files had not followed it.
+
+Now `test_chrome.py` and `screenshots.py` derive their URL from `PORT`, and the
+Makefile passes it to every process that talks to the server. Verified against a
+server on 8082: `PORT=8082` finds it, `PORT=8081` correctly reports none.
+
+**Concurrency was the motivation and is now possible:**
+
+    make test &
+    make screenshots PORT=8082
+
+The other shared state was `www/js/version.js`. Its recipe truncated with `>`
+and appended six times, so a browser fetching it mid-write would get a partial
+module and every import would fail. It is now written to `$@.tmp` and moved
+into place — `mv` within a directory is atomic on POSIX, so a reader sees the
+old file or the new one, never half of one.
+
+**CPU contention was considered and dismissed.** Both suites are dominated by
+waiting rather than computing — 120ms inter-request delays, `SETTLE` pauses,
+page loads, Selenium round trips. Two headless browsers on a 16-thread machine
+will not contend enough to matter. The one theoretical risk is a capture-timing
+poll expiring under load, and `wait_for_modal()` has a five-second budget
+against transitions that take about 300ms.
+
 ## Two sets of defaults, drifting since v2.3.0
 
 The e2e generator test failed with `reed/mini/ties/rover` — four words, and

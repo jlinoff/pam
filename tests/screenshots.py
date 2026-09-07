@@ -126,7 +126,9 @@ NOISE_REPORT = {}
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 HELP = os.path.join(os.path.dirname(HERE), 'www', 'help')
-URL = 'http://localhost:8081/'
+# Port from the environment so this can run alongside `make test` on a
+# different one. Defaults to the Makefile's PORT default.
+URL = f'http://localhost:{os.environ.get("PORT", "8081")}/'
 
 # The About dialogue carries two sources of per-run churn:
 #

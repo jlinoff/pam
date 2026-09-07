@@ -1956,6 +1956,34 @@ The minimum number of words in a generated memorable password.
 
 The default is 3.
 
+**How many words you need depends on what you are defending against.** _PAM_
+draws from a list of 9,858 words, so each word contributes about 13.3 bits:
+
+| Words | Entropy | Exhausted against a fast hash (10<sup>10</sup>/s) | Against bcrypt-class (10<sup>4</sup>/s) |
+|---|---|---|---|
+| 3 | 40 bits | 96 seconds | 3 years |
+| 4 | 53 bits | 11 days | 30,000 years |
+| 5 | 66 bits | 295 years | astronomically long |
+
+Against an **online** login that rate-limits attempts, even three words is
+ample — at ten guesses per second the keyspace takes thousands of years. The
+column that matters is the offline one: if the site you used the password on is
+breached and its password hashes leak, the attacker computes guesses locally at
+whatever rate their hardware allows, and a fast unsalted hash makes three words
+a matter of minutes.
+
+You cannot know in advance which sites store your password badly. **If you use
+memorable passwords for anything that matters, set this to 5.** Four is a
+reasonable compromise; three is suitable for low-value accounts and for places
+where you would notice and could recover from a compromise.
+
+Note that [Breached Passwords](#breached-passwords) will not warn you about
+this. Its local entropy estimate measures length and character variety, not
+dictionary structure, so it scores a three-word password far higher than the
+40 bits above and raises no objection. The corpus check still applies — a
+memorable password that has appeared in a breach is still reported — but the
+structural check cannot see word-based weakness.
+
 #### Memorable Password Max Tries
 The maximum number of attempts to generate a memorable password
 that meets the specified criteria from the other password preferences.

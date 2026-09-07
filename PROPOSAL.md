@@ -395,8 +395,39 @@ checks being appropriately lenient. It was the estimator being blind.
 
 **The fix, when it comes:** detect word-boundary structure and score
 `k × log2(wordlist)` instead of `length × log2(alphabet)`. `en_words.js` is
-already in the bundle. Not done here because it changes verdicts for existing
-passwords and belongs in its own change.
+already in the bundle.
+
+**Why this is not a bug fix.** Correcting the estimate makes PAM's own
+generator produce passwords PAM's own checker rejects. The generator defaults
+to a minimum of three words, and against the 60-bit floor:
+
+| Words | Entropy | Verdict under a corrected estimate |
+|---|---|---|
+| 3 | 40 bits | REJECT |
+| 4 | 53 bits | REJECT |
+| 5 | 66 bits | accept |
+
+So the fix forces a decision nobody has made — accept the rejections and watch
+people stop using memorable passwords; raise the generator minimum to five;
+lower `MIN_ENTROPY_BITS` for everything; score word-based passwords against a
+separate threshold; or conclude that 60 bits is the wrong floor. That last one
+is live: 60 was a judgement, not a derived number.
+
+**The threat model is what settles it, and it is not one number.** Three words
+falls in 96 seconds against a fast unsalted hash at 10^10 guesses/sec, holds
+for 3 years against bcrypt-class work factors, and holds for 3,000 years
+against a login that rate-limits to ten attempts a second. Same password, same
+entropy, three completely different answers. A single global floor cannot
+express that, which is the deeper reason the estimator fix is entangled with a
+design question.
+
+**Documented in the meantime, because the mitigation already exists.**
+`memorablePasswordMinWords` is a preference: a user can set 5 today and clear
+the floor with no code change. The README's *Memorable Password Min Words*
+section now gives the table above, explains that the offline column is the one
+that matters because you cannot know which sites store passwords badly, and
+states plainly that the breach report will **not** warn about this — its
+structural check cannot see word-based weakness.
 
 ### Added: a breach check in the standalone password generator
 

@@ -649,6 +649,11 @@ It also applies local checks that need no network — keyboard runs, sequences,
 repeats, embedded years, an entropy floor — because being absent from a breach
 corpus is a low bar. A password can be unpublished and still bad.
 
+You can check the whole vault at once, or a single password from the record
+view, the record editor, or the password generator. Checking while you are
+choosing a password is the most useful of these: it is the last point at which
+changing your mind is free.
+
 ### PAM vs mainstream password managers
 
 _Analysis: April 2026. Compared against Bitwarden and 1Password as representative mainstream alternatives._
@@ -2230,10 +2235,38 @@ never invisible.
 
 Enabling it also adds a
 <img src="www/icons/blue/shield-check.svg" height="24" width="24" alt="shield"/>
-button beside the
-<img src="www/icons/blue/eye.svg" height="24" width="24" alt="eye"/>
-on every password field, for checking one password without running the whole
-vault. That button is hidden while the preference is off.
+button in three places, for checking a single password without running the
+whole vault:
+
+- **On every password field** in a record, beside the
+  <img src="www/icons/blue/eye.svg" height="24" width="24" alt="eye"/>
+  show/hide button.
+- **In the record editor**, beside the
+  <img src="www/icons/blue/gear.svg" height="24" width="24" alt="gear"/>
+  password generator button. This is the most useful of the three: it is the
+  last moment before a password is adopted, whether typed, pasted, or taken
+  from the generator. The result clears as soon as you edit the value, because
+  it would otherwise describe a password you no longer have.
+- **In the [password generator](#password-generator)**, beside each suggested
+  password.
+
+All three are hidden while the preference is off, and the result appears beside
+the password it describes.
+
+The generator button is worth explaining, because a randomly generated password
+is not going to be in a breach corpus. It is there for the **memorable**
+passwords. A 20-character cryptic password carries around 130 bits of entropy;
+three words drawn from PAM's 9,858-word list carries around 40. That is still a
+reasonable password, but it is within reach of a corpus in a way the cryptic
+one is not — and _PAM_'s local entropy estimate cannot see the difference,
+because it measures length and character variety rather than recognising
+dictionary words. For word-based passwords the corpus is the only check that
+can object at all.
+
+**If you cannot find the button**, the most likely reason is that the
+preference is off — the ⚠ BREACH CHECK badge in the toolbar tells you at a
+glance. Note also that loading a records file applies that file's preferences,
+so opening a shared vault can switch breach checking off.
 
 #### Search Password Field Values
 

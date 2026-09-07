@@ -258,7 +258,11 @@ screenshots: init ## Capture README screenshots. SHOT=<substr> limits the set.
 	# -u keeps output unbuffered. Without it, piping to tee or a file makes
 	# Python block-buffer stdout and the per-shot lines do not appear until
 	# the run ends, which looks exactly like a hang.
-	SHOT="$(SHOT)" pipenv run python3 -u tests/screenshots.py
+	# CHECK=0 explicitly: the script reads CHECK from the environment, so an
+	# exported CHECK=1 left over from a screenshots-check run would make this
+	# target silently stop writing files. Stating the intent here means the
+	# target decides, not whatever the shell happens to be carrying.
+	CHECK=0 SHOT="$(SHOT)" pipenv run python3 -u tests/screenshots.py
 	$(KILL_SERVER)
 
 # NOTE: only meaningful on the machine that regenerates the images. Font

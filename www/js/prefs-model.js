@@ -56,12 +56,25 @@ export function getDefaultPrefs() {
         // default; see the Content-Security-Policy note in README.md.
         enablePasswordBreachCheck: false,
         hideInactiveRecords: true,
-        passwordRangeLengthDefault: 20,
+        // 30, not 20. The generator adds words until it reaches this length,
+        // so 20 characters cannot hold five words: memorablePasswordMinWords
+        // would reject the result and the generator would give up. Measured
+        // over 200 generations, 20 fails about 3% of the time and 30 never
+        // does. It also lengthens cryptic passwords from 131 to 196 bits,
+        // which costs nothing since they are pasted rather than typed.
+        passwordRangeLengthDefault: 30,
         passwordRangeMinLength: 12,
         passwordRangeMaxLength: 32,
         memorablePasswordWordSeparator: '/',
         memorablePasswordMinWordLength: 2,
-        memorablePasswordMinWords: 3,
+        // Five words from the 9,858-word list is 66 bits, which clears
+        // MIN_ENTROPY_BITS. Three words is 40 and does not — PAM would
+        // otherwise generate passwords its own breach check rejects.
+        //
+        // Word count is derived from the target length rather than chosen, so
+        // this cannot be raised without raising passwordRangeLengthDefault
+        // too: at length 20 a five-word minimum fails about 3% of the time.
+        memorablePasswordMinWords: 5,
         memorablePasswordMaxWords: 5,
         memorablePasswordMaxTries: 10000,
         clearBeforeLoad: true,

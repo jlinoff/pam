@@ -21,10 +21,12 @@
 // command-line version of this check, and every time the program looked like
 // it worked.
 
-// No imports on purpose. This module is reached on the error path, and a
-// logging helper that reads window.prefs would throw there if preferences were
-// not yet initialised — a secondary failure in the one place it is least
-// welcome. Every failure returns its reason to the caller instead.
+// One import: the word list, needed to recognise a passphrase for what it is.
+// Nothing else. This module is reached on the error path, and a logging helper
+// that reads window.prefs would throw there if preferences were not yet
+// initialised — a secondary failure in the one place it is least welcome.
+// Every failure returns its reason to the caller instead.
+import { words } from './en_words.js'
 
 export const FOUND = 'found'
 export const NOT_FOUND = 'not-found'
@@ -272,19 +274,16 @@ export function embeddedYear(password) {
 }
 
 /**
- * A rough entropy floor, in bits.
+ * Entropy assuming the password is a random string of characters.
  *
  * log2(alphabet) * length, where the alphabet is inferred from which classes
- * appear. This overestimates for anything with structure — which is exactly
- * why the checks above exist alongside it rather than instead of it.
+ * appear. Correct for a random string and a large overestimate for anything
+ * with structure.
  *
  * @param {string} password
  * @returns {number} estimated bits
  */
-export function entropyBits(password) {
-    if (!password) {
-        return 0
-    }
+function characterEntropyBits(password) {
     let alphabet = 0
     if (/[a-z]/.test(password)) { alphabet += 26 }
     if (/[A-Z]/.test(password)) { alphabet += 26 }
@@ -293,7 +292,64 @@ export function entropyBits(password) {
     if (alphabet === 0) {
         return 0
     }
-    return Math.round(password.length * Math.log2(alphabet))
+    return password.length * Math.log2(alphabet)
+}
+
+// Built once, on first use. 9,858 entries, so a Set rather than a linear scan.
+let WORD_SET = null
+
+/**
+ * Entropy assuming the password is words drawn from PAM's list.
+ *
+ * A passphrase's strength is the number of words times log2(list size),
+ * regardless of how many characters that happens to occupy. Measuring it by
+ * length instead is what made `std/creature/history` score 118 bits when it
+ * carries 40.
+ *
+ * Only separator-delimited passwords are recognised. Detecting concatenated
+ * words would need segmentation, and guessing wrongly there would understate
+ * a password that merely happens to contain a word — the expensive direction
+ * of error, since a false REJECT teaches people to ignore the tool.
+ *
+ * @param {string} password
+ * @returns {number|null} bits, or null if this is not a word-based password
+ */
+function wordEntropyBits(password) {
+    const parts = password.split(/[^a-zA-Z]+/).filter(Boolean)
+    if (parts.length < 2) {
+        return null
+    }
+    if (WORD_SET === null) {
+        WORD_SET = new Set(words.map((w) => w.toLowerCase()))
+    }
+    for (const part of parts) {
+        if (!WORD_SET.has(part.toLowerCase())) {
+            return null
+        }
+    }
+    return parts.length * Math.log2(WORD_SET.size)
+}
+
+/**
+ * A rough entropy floor, in bits.
+ *
+ * Takes the LOWER of the two estimates. A passphrase is both a sequence of
+ * characters and a sequence of words, and its real strength is whichever
+ * description the attacker will use — which is the cheaper one.
+ *
+ * @param {string} password
+ * @returns {number} estimated bits
+ */
+export function entropyBits(password) {
+    if (!password) {
+        return 0
+    }
+    const chars = characterEntropyBits(password)
+    const asWords = wordEntropyBits(password)
+    if (asWords === null) {
+        return Math.round(chars)
+    }
+    return Math.round(Math.min(chars, asWords))
 }
 
 // Below this a password is weak whatever its shape. 60 bits is not a strong

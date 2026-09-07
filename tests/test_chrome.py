@@ -893,6 +893,26 @@ def test_preferences_dialog_opens_and_closes():
 # Phase 6 E2E tests — UX-001, UX-002, about.js, print.js
 # ---------------------------------------------------------------------------
 
+def assert_generator_uses_v240_defaults(buttons):
+    '''
+    The generated memorable passwords should have at least five words.
+
+    v2.4.0 raised passwordRangeLengthDefault to 30 and
+    memorablePasswordMinWords to 5, so generated memorable passwords clear the
+    60-bit floor the breach check applies. The unit tests call
+    getMemorablePassword() directly with those defaults; this checks the
+    defaults actually reach the dialogue, which nothing else does.
+    '''
+    generated = [b.text.strip() for b in buttons if b.text.strip()]
+    memorable = [p for p in generated if '/' in p]
+    assert memorable, f'expected memorable passwords among: {generated}'
+    for password in memorable:
+        words = [w for w in password.split('/') if w]
+        assert len(words) >= 5, (
+            f'{password!r} has {len(words)} words; five are needed for 66 bits, '
+            'and fewer means the generator is not using the v2.4.0 defaults')
+
+
 def test_password_generator():
     '''
     UX-001: Open the toolbar password generator modal, verify it appears
@@ -924,6 +944,8 @@ def test_password_generator():
     pwd_btns = body.find_elements(By.CLASS_NAME, 'btn-secondary')
     assert len(pwd_btns) >= 6, \
         f'Expected at least 6 password buttons, got {len(pwd_btns)}'
+
+    assert_generator_uses_v240_defaults(pwd_btns)
 
     # Each button should contain non-empty text (the password)
     for btn in pwd_btns:

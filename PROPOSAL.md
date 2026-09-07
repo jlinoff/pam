@@ -42,11 +42,11 @@ numeric order. A low number means the item was raised early, nothing more.
 | 6. README pass | **done** — including SECURITY.md, which claimed "No data is ever sent to a server" |
 | 7. Vault diff | deferred — blocked on durable record IDs |
 | 8. Export tiering | deferred |
-| 9. Vault file integrity | open — v2 is AES-CBC with no MAC; needs a v3 format |
+| 9. Vault file integrity | **deferred to v3.0** — ⚠ BREAKING: rewrites data files so older PAM versions cannot open them, with no way back once a vault is re-saved |
 | 10. Test suites ran without gating | **fixed** — finalize() ran per-runner, so two suites reported but did not count |
 | 11. Actionable reports | **done** — click-through from both reports, in v2.4.0 |
 | 12. Per-field breach button | done — on password fields, edit rows, and the standalone generator |
-| 13. Entropy estimate ignores dictionary words | open — scores a 40-bit memorable password at 118 bits |
+| 13. Entropy estimate ignores dictionary words | **done in v2.4.0** — estimator is dictionary-aware; generator defaults raised to match |
 
 ---
 
@@ -363,7 +363,455 @@ structural grounds and the test passed without exercising what it named. It now
 uses two structurally clean passwords, checked as such, so the corpus is the
 only variable.
 
-## 13. The entropy estimate is blind to dictionary words
+## 6. README pass
+
+Large, and it covers everything above. The README is the in-app help, so this
+is a user-facing defect until done.
+
+- The reuse report, its preference, and the `Reused Passwords` dialogue
+- The fingerprint rows in About, and what the two lines mean
+- `searchPasswordFieldValues` and the search behaviour change, with the oracle
+  explained in the security section
+- The whole breach-check feature and the CSP trade
+- **The local-only claims.** "Fully local — no server traffic after page load"
+  and "Offline use: Full — no dependency on external service" become false once
+  breach checking is enabled. They need qualifying, not deleting.
+- **Reason 11: Breached Passwords Detection** — a "reasons to use PAM" section
+  parallel to Reason 10. **Write it when the feature lands, not before.** The
+  README would otherwise claim a capability PAM does not have, which is the
+  same failure as leaving the local-only claim in place after breach checking
+  arrives, just in the other direction.
+
+- **The comparison table row** on audit/breach alerts. It currently says PAM
+  loses because it "cannot alert you when third-party sites are breached" and
+  cites 1Password flagging "breached, weak, and reused" passwords. PAM now does
+  reuse and will do breach; the row needs splitting rather than editing.
+  **Done for reuse:** the row is now two — "Reused password detection" (a tie
+  on capability, a PAM win on disclosure, since the same answer is computed
+  without anything leaving the device) and "Breach alerts" (still a PAM loss).
+  The breach row changes when the feature ships.
+### The README is currently AHEAD of the code
+
+`#### Enable Password Breach Check` was written when the CSP changed, because a
+policy naming an external host with no explanation would have been worse than a
+section describing a feature that was not finished. That was the right call,
+but the consequence is that the README describes, in the present tense,
+behaviour nothing yet performs: the module can look a password up, the
+preference toggles a badge, and **no code path calls `checkPassword()`**. A
+user who enables the preference today gets a badge and nothing else.
+
+This is the same failure as writing Reason 11 early, which was deliberately
+held — just in the direction I was not watching for.
+
+**Before this branch merges, re-read that section against the built feature and
+check each claim is true of what exists rather than of what was designed:**
+
+- "typically several hundred" hashes returned — verify against real responses.
+- The `Add-Padding` claim: confirm the header is actually sent and that the
+  response length genuinely does not vary with it.
+- Anything the section implies about when requests happen, which depends on
+  choices the report has not made yet — per password, throttled, on demand.
+- "A ⚠ BREACH CHECK warning badge will appear in the toolbar while this is
+  active" — true today, but check it still is after the report lands.
+
+The same re-read applies to the **Content-Security-Policy** section and the two
+qualified comparison-table rows.
+
+### The Menu subsection was counting wrong
+
+Under **Menu and Search Section → Menu**, the README said *"there are seven menu
+options"* and listed seven. There are ten. It was missing Reused Passwords,
+Breached Passwords and Print, along with the "Click or tap on…" paragraph each
+entry has.
+
+`Reused Passwords` and `Print` were already absent before this branch, so that
+text was wrong in the v2.3.0 release too. **The prose stated a count**, which is
+the kind of claim that goes stale silently — nothing checks a number written in
+a sentence against the code that produces the thing being counted.
+
+The `pam-menu.png` capture beside it shows the real menu, so once the
+screenshots are regenerated the picture and the prose will finally agree.
+
+Now nine listed, with Print described separately as the conditional entry it
+is. The icons were cross-checked against `menu.js` rather than assumed: `files`
+for Reused Passwords, `key` for Breached Passwords, `printer` for Print.
+
+### The navigation lagged the sections
+
+Both `Reused Passwords` and `Breached Passwords` had full sections written, and
+neither appeared in the table of contents or in the Menu Functions index. The
+prose existed; there was no route to it except scrolling or following a
+cross-reference from elsewhere.
+
+Reused Passwords shipped in **v2.3.0** in that state, so it went a whole
+release with a section nobody could navigate to.
+
+Nothing catches this. `check-images` verifies that every link resolves, which
+is the opposite direction — it finds links pointing at nothing, not sections
+nothing points at. A "section with no inbound link" check would be a natural
+companion, though headings legitimately reachable only by scrolling exist too,
+so it would need judgement rather than a hard rule.
+
+Audited the rest: all twelve Menu Functions subsections are now in both.
+
+### Status: README pass DONE
+
+**Corrections to what was already written.** The preference section was drafted
+when the CSP changed, before the feature existed, and it over-claimed:
+
+- *"the server learns that someone asked about one of roughly 850,000 possible
+  passwords"* was **wrong**. Five hex characters divide the corpus into about a
+  million buckets, so a prefix is shared by roughly **eight hundred** corpus
+  entries — 847M/1,048,576. The 850,000 figure had no basis.
+- *"one request per password"* is now *one request per **distinct** password*,
+  since the report deduplicates by value.
+- *"typically several hundred"* hashes returned checks out at about 808 on
+  average; sharpened to "around eight hundred".
+
+**What was missing entirely.** The section described only the corpus lookup and
+said nothing about the local structural checks, which is half of what the
+feature does — a reader would have thought ACCEPT meant "not published". Now
+documented, along with the could-not-check outcome, that nothing is sent until
+Check is pressed, and the per-field button.
+
+**Added:** a `Breached Passwords` report section with a table of the three
+labels, **Reason 11**, and two replacement comparison rows. The old breach row
+claimed PAM simply loses; it is now split into breach checking (close, and PAM
+sends less) and unsolicited alerts (PAM loses, and the row says so).
+
+**A gap in the tooling, found by nearly falling into it.** `check-images`
+tracked only the 51 `pam-*.png` captures, but the README embeds 69 images —
+the rest are icons from `www/icons/`. A reference to an icon that does not
+exist renders as a broken image and nothing would have caught it. It now checks
+every `www/` image reference. Verified by removing `shield-check.svg` and
+watching it fail.
+
+`shield-check.svg` was added to `www/icons/black/` and derived into
+`www/icons/blue/` the way `update-blue-icons` does, keeping the black/blue
+listing invariant that `lint` asserts.
+
+### Screenshots — what this feature invalidates
+
+`make screenshots` must be re-run, and two new captures added to
+`tests/screenshots.py`. `make check-images` will refuse to pass until the
+README and the harness agree, so the list below is a checklist rather than a
+thing to remember.
+
+**Already stale, right now:**
+
+- `pam-prefs-administration.png` — `enablePasswordBreachCheck` was added to
+  that tab. The image went out of date the moment the preference landed, and
+  nothing flags that, because the filename has not changed. This is the failure
+  mode `check-images` cannot catch: a captured image whose *content* is stale
+  is indistinguishable from a current one until it is regenerated.
+
+**Stale once the menu entry lands:**
+
+- `pam-menu.png` — gains `Breached Passwords`, which also changes its height.
+- `pam-prefs-enable-printing-menu.png` — the same menu with Print showing.
+
+**New captures — added to `tests/screenshots.py`, awaiting a run:**
+
+- `pam-breached-passwords-disabled.png` — the report with the preference off.
+  The more important of the two: it is the state almost every reader will meet,
+  and where the trade-off is explained at the moment someone is deciding.
+- `pam-breached-passwords.png` — the report with the preference on, captured
+  **before Check is pressed**. Neither shot makes a network request; the
+  disabled one cannot, and the enabled one is photographed at the point where
+  the request count is stated and nothing has gone out. A screenshot has no
+  business sending several hundred requests, and this is also the honest
+  picture of what opening the report does.
+
+No capture for the per-field shield button. Every shot runs with the preference
+off, so photographing it would mean setting the preference purely for the
+picture; the README describes it in prose instead.
+
+**Also affected, outside the images:**
+
+- `test_pam_setup` asserts the menu contents as an ordered list and
+  `choose_menu_option` asserts a hard count of 9. Both move to 10, and they are
+  independent assertions of the same fact — the second was missed on the first
+  pass in v2.3.0 because only the helper was searched.
+
+The per-field button needs no new capture: every shot runs with the preference
+off, and the button is hidden in that state.
+
+---
+
+## 7. Vault diff — deferred
+
+**Question:** "What differs between these two vaults?"
+**Discloses:** titles and field names of differing entries. Never secrets.
+
+Given a second vault file and its passphrase, report entries only in A, only in
+B, and entries in both whose passwords differ (report *that* they differ, never
+the values).
+
+### Blocked on
+
+- **Durable entry identity.** With no stable ID, "same entry" must be inferred
+  from title plus field names, which breaks as soon as either is edited. Adding
+  an ID is a schema migration and is a prerequisite, not part of this.
+- **Cross-version crypto.** Two files may be at different crypto versions.
+- Entries matching on title but not field set, and vice versa.
+
+## 8. Export tiering — deferred
+
+The actual lesson of the origin story. Today the industry offers one export:
+everything, in the clear. Offer three:
+
+| Tier | Contents | Use case |
+|---|---|---|
+| Fingerprint | 64 bits | "Are these the same vault?" |
+| Metadata | titles + field names, no secrets | audit, inventory, diff |
+| Full | everything | migration to another manager |
+
+Most reasons people export are satisfied by the first two. Each one satisfied is
+a plaintext dump that never gets created.
+
+If full export stays, consider emitting FIDO CXF rather than CSV. CXF became a
+FIDO Proposed Standard in August 2025 and CXP (which wraps the transfer in HPKE)
+has shipped on iOS and Android; Apple, Google, Microsoft, 1Password, Bitwarden
+and Dashlane are all contributors.
+
+---
+
+## 9. Vault file integrity — deferred to v3.0
+
+> ## ⚠ BREAKING CHANGE TO THE FILE FORMAT
+>
+> **This change rewrites PAM data files in a format that no earlier version of
+> PAM can open.** It is not a code change with a compatibility note attached;
+> it changes the user's own data.
+>
+> Concretely, for a user who does nothing wrong:
+>
+> - A vault saved on an updated device **cannot be opened** on any device still
+>   running an older PAM. For a file kept in iCloud, Dropbox or Drive — which
+>   the README recommends — the first save from one device locks out every
+>   other one until they are all updated.
+> - **There is no going back.** Once a vault has been re-saved, downgrading
+>   PAM makes it unreadable. A user who hits any problem in the new version,
+>   crypto-related or not, cannot simply revert.
+> - A shared file becomes unreadable to whoever it was shared with until they
+>   update too.
+> - A backup taken after the upgrade cannot be restored on an older install.
+>
+> **Requirements before this ships, not optional extras:**
+>
+> - The release notes must lead with this, not mention it.
+> - _PAM_ should warn in the application at the moment it is about to write the
+>   new format for the first time, and say what will stop working.
+> - Update every device before saving from any of them.
+> - Keep a copy of the vault in the old format, outside the sync folder, until
+>   every device is confirmed working.
+> - Prefer a staged migration: one release that **reads** the new format
+>   without writing it, then a later one that writes it. That way readers are
+>   deployed everywhere before any file changes, and the lockout window never
+>   opens.
+>
+> The major version number is the signal, but a version number is not a
+> warning. Users upgrade without reading, and the first symptom otherwise is a
+> vault that will not open on the device they happen to be holding.
+
+Found while investigating a flaky unit test, and worth recording even though it
+is not part of the breach work.
+
+`decryptV2()` uses **AES-CBC with no authentication tag**, and does not
+validate what comes out — it calls back with whatever bytes `decrypt()`
+produces. Two consequences:
+
+**A wrong password is not reliably detected.** Rejection depends on the garbage
+final block failing PKCS#7 padding validation, which random bytes pass about
+once in 256. When that happens the caller receives garbage, and the failure
+surfaces downstream as `invalid record format!` from `JSON.parse` rather than
+as a password error. Roughly one wrong-password load in 256 gives a confusing
+message. Annoying, not dangerous.
+
+**The vault file has no integrity protection.** This is the part that matters.
+CBC without a MAC is malleable: someone who can write to a PAM file can flip
+bits in the plaintext without detection. The README recommends storing PAM
+files in iCloud, Dropbox or Google Drive and sharing them between devices —
+exactly the settings where a file may be modified by something other than PAM.
+Confidentiality holds; tamper-evidence does not.
+
+The fix is AES-GCM, which authenticates as it decrypts, so a wrong password or
+a modified file fails cleanly every time.
+
+**Scheduled for v3.0, and the major version is the point.** A file written in
+the new format cannot be read by any earlier release. PAM is explicitly
+multi-device — the README recommends syncing through iCloud, Dropbox or Drive,
+and a typical user runs it on a laptop, a tablet and a phone — so the moment
+one device writes the new format, every device still on an older version is
+locked out of its own vault. There is also no downgrade path: a user who has
+re-saved cannot go back, even for a problem unrelated to crypto.
+
+A staged migration would soften that — read the new format in one release,
+write it in the next, so readers are deployed everywhere before any file
+changes. Either way it is a breaking change to the data format, which is what
+major versions exist to signal.
+
+Meanwhile the unit test asserts the property that actually holds — that a wrong
+password never recovers the plaintext — rather than that decryption fails,
+which is only true 255 times in 256.
+
+## 10. Fixed: two suites ran without gating the build
+
+Found because 16 new breach tests were added and the reported total did not
+move: still 308.
+
+`finalize()` writes `window.__TEST_RESULTS__`, which `tests/test_unit.py` reads
+to decide pass or fail. It was called at the end of `runCryptTests` and
+`runSaveRegressionTests` but not by the two runners after them in the chain, so
+`runVaultFingerprintTests` (12 tests) and `runBreachTests` (16) rendered their
+results onto the page while the totals still reflected the state before they
+ran. **Their failures would have shown as red lines and passed the build.** The
+vaultFingerprint suite was in that position for the whole of v2.3.0.
+
+Two changes:
+
+- One `finalize()` at the end of the chain instead of per-runner. Adding a
+  runner can no longer leave it uncounted.
+- `test_unit.py` now reconciles the summary against the page: the number of
+  rendered `.test-line` elements must equal the reported total. Trusting the
+  summary without checking it against the lines is what let this go unnoticed,
+  and the same drift would otherwise recur the next time a runner is appended.
+
+The failure mode is the one this project keeps producing: not a wrong answer,
+but a right-looking answer that was never actually computed.
+
+## 11. Reports should be actionable, not just informative
+
+Both reports currently tell you there is a problem and leave you to find the
+records yourself. In a vault of a few hundred entries that is most of the work.
+
+### Status: 11a and 11b click-through DONE
+
+Both reports are now actionable. `selectRecordsByTitle()` in `search.js` is
+shared by them, so the escaping and the guard exist once.
+
+- **Reuse report** — the group heading is a button. Clicking it selects that
+  group's records and closes the report. The titles come from the cached
+  group rather than the rendered list, because the displayed title has had its
+  INACTIVE marker stripped and is not always the record's title.
+- **Breach report** — each entry's title is a button, selecting that one
+  record. Not the whole group sharing the password: the verdict is about a
+  password, but the user is being sent somewhere to change it, and they change
+  it one record at a time.
+
+**The escaping is the part that could have gone wrong quietly.** Titles are
+arbitrary user text and are not unique. A title containing `(`, `|` or `.`
+would otherwise alter the meaning of the pattern built from it and match the
+wrong records — silently, in a feature whose entire purpose is finding the
+right ones. `escapeRegExp()` handles it and four tests cover the cases,
+including that an escaped pattern still matches its own title and nothing else.
+
+The pattern is anchored — `^(Facebook|Instagram)$` — so selecting `Google` does
+not also bring in `Google Cloud`.
+
+**When `searchRecordTitles` is off, selection is disabled rather than merely
+warned about.** `searchRecords()` only compares against titles when that
+preference is set, so any pattern built from titles matches nothing.
+
+Three layers, because a transient status message at the bottom of the screen is
+easy to miss:
+
+- The reports render those entries as **plain text**, not buttons. A control
+  that looks clickable and silently does nothing is worse than one that does
+  not look clickable at all.
+- Each report carries a line saying why selection is unavailable and where to
+  turn it back on.
+- `selectRecordsByTitle()` still refuses and explains, as a backstop for the
+  preference changing while a report is open.
+
+Documented in the preference's own description in the dialogue and in the
+README, since the dependency is not guessable: nothing about "Search Record
+Titles" suggests it governs clicking an entry in a report.
+
+Neither report puts a password in the search box. The pattern is built from
+titles only — building one from password *values* would recreate the search
+oracle fixed in v2.3.0.
+
+### 11a. Reuse report: click a group to select its records
+
+Clicking a group in the Reused Passwords report selects those records in the
+main window and closes the report.
+
+Mechanism: `searchRecords(value)` already filters the accordion, and
+`searchRecordTitles` is on by default. A regex alternation of the group's
+titles — `^(Facebook|Instagram)$` — filters to exactly that group. Points to
+settle:
+
+- **Decided: the search box shows the filter.** The regex goes into the box
+  where the user can see it, edit it, or clear it with the existing button.
+  Filtering without showing the term would leave the record list in a state
+  with no visible cause, and the next person to look at the window — including
+  the same person a minute later — would have no way to tell why records are
+  missing. An odd-looking search term is a smaller cost than an unexplained
+  one.
+
+  This also means the existing clear-search control is the undo, so nothing new
+  is needed for that.
+- Titles are not unique and are not escaped for regex. A title containing
+  `(` or `|` would break the alternation or, worse, match the wrong records.
+  Escape before building the pattern.
+- `searchPasswordFieldValues` must stay out of this. Building a filter from
+  password *values* would put a secret in the search box — the exact oracle
+  fixed in v2.3.0.
+
+### 11b. Breach report: click a record to open it
+
+Click any entry to select that record in the main window and close the report.
+
+**The verdict filter is dropped.** A real run over 220 passwords returned 85
+rejections, and the problem was not that they needed filtering — it was that
+breached and structurally weak entries rendered identically, so the reader had
+to parse the reason text to tell them apart. Labelling each entry solved that
+directly, and once labelled the list is scannable without a filter. Done, not
+deferred: see the section below.
+
+- Same escaping, and the same decision as 11a: the search box shows the term.
+- A record clicked from the report may be one of several sharing a password.
+  Decide whether clicking selects the one entry or the whole group; the entry
+  is probably right here, since the breach verdict is about the password and
+  the user is being sent somewhere to change it.
+
+### Shared work
+
+Both need one helper — "select these records in the main window and close this
+dialogue" — rather than two implementations. It belongs somewhere both
+`vault-ui.js` and `breach-ui.js` can reach without a circular import;
+`search.js` is the natural home since it already owns the filter.
+
+Neither is required for the breach feature to ship. If v2.4.0 gets long, 11a
+stands alone and could land in a smaller release of its own.
+
+## 13. The entropy estimate is blind to dictionary words — FIXED in v2.4.0
+
+**Implemented.** `entropyBits()` now computes both a character estimate and a
+word estimate and returns the **lower** of the two. A passphrase is both a
+sequence of characters and a sequence of words, and its real strength is
+whichever description an attacker will use — the cheaper one.
+
+Only separator-delimited passwords are recognised as word-based, and every part
+must be in the list. Detecting concatenated words would need segmentation, and
+guessing wrongly there would understate a password that merely happens to
+contain a word — the expensive direction of error, since a false REJECT teaches
+people to ignore the tool.
+
+`std/creature/history` now scores 40 bits rather than 118, and is rejected.
+Cryptic passwords are unaffected at 131.
+
+**Generator defaults raised in the same change**, so PAM does not flag its own
+output: `memorablePasswordMinWords` 3 → 5 and `passwordRangeLengthDefault`
+20 → 30. Verified over 100 generations — every one is five words and none is
+rejected, and 50 cryptic passwords are likewise clean.
+
+The README's saved-file example still showed the old values; it now shows the
+new ones. Nothing checks example JSON against the actual defaults, which is a
+gap of the same kind as the menu count.
+
+
 
 Found while deciding whether the standalone generator needed a breach button.
 
@@ -420,6 +868,32 @@ against a login that rate-limits to ten attempts a second. Same password, same
 entropy, three completely different answers. A single global floor cannot
 express that, which is the deeper reason the estimator fix is entangled with a
 design question.
+
+**Word count is derived from length, not chosen.** The generator adds words
+until the result reaches the target length; `memorablePasswordMinWords` is only
+a rejection filter applied afterwards. So the two cannot be changed
+independently — measured over 200 generations each:
+
+| minWords | length | outcome |
+|---|---|---|
+| 3 | 20 (today) | mostly 3 words, **40 bits** |
+| 5 | 20 | ~3% give up and return `???` plus random hex |
+| 5 | 30 | 200/200 clean, **66 bits** |
+
+So v2.4.0 raises **both**: `passwordRangeLengthDefault` 20 → 30 and
+`memorablePasswordMinWords` 3 → 5. That also lengthens cryptic passwords from
+20 to 30 characters — 131 to 196 bits — which is a visible change to what the
+generator produces, and harmless since cryptic passwords are pasted rather than
+typed.
+
+**A larger word list is the wrong lever.** Entropy grows logarithmically with
+list size and linearly with word count: a tenfold larger dictionary buys about
+3 bits per word, one extra word buys 13. Six words from the existing list
+(80 bits) matches a 100,000-word list at five words (83 bits) with no 1.4 MB
+bundle cost. And a list of uncommon words makes people press Regenerate until
+something familiar appears, which silently shrinks the effective keyspace to
+whatever subset they recognise — weaker in practice while looking stronger on
+paper. Documented in the README under *Memorable Password Min Words*.
 
 **Documented in the meantime, because the mitigation already exists.**
 `memorablePasswordMinWords` is a preference: a user can set 5 today and clear
@@ -805,386 +1279,90 @@ building `pwcheck`, and each time the program looked like it worked.
 
 ---
 
-## 6. README pass
-
-Large, and it covers everything above. The README is the in-app help, so this
-is a user-facing defect until done.
-
-- The reuse report, its preference, and the `Reused Passwords` dialogue
-- The fingerprint rows in About, and what the two lines mean
-- `searchPasswordFieldValues` and the search behaviour change, with the oracle
-  explained in the security section
-- The whole breach-check feature and the CSP trade
-- **The local-only claims.** "Fully local — no server traffic after page load"
-  and "Offline use: Full — no dependency on external service" become false once
-  breach checking is enabled. They need qualifying, not deleting.
-- **Reason 11: Breached Passwords Detection** — a "reasons to use PAM" section
-  parallel to Reason 10. **Write it when the feature lands, not before.** The
-  README would otherwise claim a capability PAM does not have, which is the
-  same failure as leaving the local-only claim in place after breach checking
-  arrives, just in the other direction.
-
-- **The comparison table row** on audit/breach alerts. It currently says PAM
-  loses because it "cannot alert you when third-party sites are breached" and
-  cites 1Password flagging "breached, weak, and reused" passwords. PAM now does
-  reuse and will do breach; the row needs splitting rather than editing.
-  **Done for reuse:** the row is now two — "Reused password detection" (a tie
-  on capability, a PAM win on disclosure, since the same answer is computed
-  without anything leaving the device) and "Breach alerts" (still a PAM loss).
-  The breach row changes when the feature ships.
-### The README is currently AHEAD of the code
-
-`#### Enable Password Breach Check` was written when the CSP changed, because a
-policy naming an external host with no explanation would have been worse than a
-section describing a feature that was not finished. That was the right call,
-but the consequence is that the README describes, in the present tense,
-behaviour nothing yet performs: the module can look a password up, the
-preference toggles a badge, and **no code path calls `checkPassword()`**. A
-user who enables the preference today gets a badge and nothing else.
-
-This is the same failure as writing Reason 11 early, which was deliberately
-held — just in the direction I was not watching for.
-
-**Before this branch merges, re-read that section against the built feature and
-check each claim is true of what exists rather than of what was designed:**
-
-- "typically several hundred" hashes returned — verify against real responses.
-- The `Add-Padding` claim: confirm the header is actually sent and that the
-  response length genuinely does not vary with it.
-- Anything the section implies about when requests happen, which depends on
-  choices the report has not made yet — per password, throttled, on demand.
-- "A ⚠ BREACH CHECK warning badge will appear in the toolbar while this is
-  active" — true today, but check it still is after the report lands.
-
-The same re-read applies to the **Content-Security-Policy** section and the two
-qualified comparison-table rows.
-
-### The Menu subsection was counting wrong
-
-Under **Menu and Search Section → Menu**, the README said *"there are seven menu
-options"* and listed seven. There are ten. It was missing Reused Passwords,
-Breached Passwords and Print, along with the "Click or tap on…" paragraph each
-entry has.
-
-`Reused Passwords` and `Print` were already absent before this branch, so that
-text was wrong in the v2.3.0 release too. **The prose stated a count**, which is
-the kind of claim that goes stale silently — nothing checks a number written in
-a sentence against the code that produces the thing being counted.
-
-The `pam-menu.png` capture beside it shows the real menu, so once the
-screenshots are regenerated the picture and the prose will finally agree.
-
-Now nine listed, with Print described separately as the conditional entry it
-is. The icons were cross-checked against `menu.js` rather than assumed: `files`
-for Reused Passwords, `key` for Breached Passwords, `printer` for Print.
-
-### The navigation lagged the sections
-
-Both `Reused Passwords` and `Breached Passwords` had full sections written, and
-neither appeared in the table of contents or in the Menu Functions index. The
-prose existed; there was no route to it except scrolling or following a
-cross-reference from elsewhere.
-
-Reused Passwords shipped in **v2.3.0** in that state, so it went a whole
-release with a section nobody could navigate to.
-
-Nothing catches this. `check-images` verifies that every link resolves, which
-is the opposite direction — it finds links pointing at nothing, not sections
-nothing points at. A "section with no inbound link" check would be a natural
-companion, though headings legitimately reachable only by scrolling exist too,
-so it would need judgement rather than a hard rule.
-
-Audited the rest: all twelve Menu Functions subsections are now in both.
-
-### Status: README pass DONE
-
-**Corrections to what was already written.** The preference section was drafted
-when the CSP changed, before the feature existed, and it over-claimed:
-
-- *"the server learns that someone asked about one of roughly 850,000 possible
-  passwords"* was **wrong**. Five hex characters divide the corpus into about a
-  million buckets, so a prefix is shared by roughly **eight hundred** corpus
-  entries — 847M/1,048,576. The 850,000 figure had no basis.
-- *"one request per password"* is now *one request per **distinct** password*,
-  since the report deduplicates by value.
-- *"typically several hundred"* hashes returned checks out at about 808 on
-  average; sharpened to "around eight hundred".
-
-**What was missing entirely.** The section described only the corpus lookup and
-said nothing about the local structural checks, which is half of what the
-feature does — a reader would have thought ACCEPT meant "not published". Now
-documented, along with the could-not-check outcome, that nothing is sent until
-Check is pressed, and the per-field button.
-
-**Added:** a `Breached Passwords` report section with a table of the three
-labels, **Reason 11**, and two replacement comparison rows. The old breach row
-claimed PAM simply loses; it is now split into breach checking (close, and PAM
-sends less) and unsolicited alerts (PAM loses, and the row says so).
-
-**A gap in the tooling, found by nearly falling into it.** `check-images`
-tracked only the 51 `pam-*.png` captures, but the README embeds 69 images —
-the rest are icons from `www/icons/`. A reference to an icon that does not
-exist renders as a broken image and nothing would have caught it. It now checks
-every `www/` image reference. Verified by removing `shield-check.svg` and
-watching it fail.
-
-`shield-check.svg` was added to `www/icons/black/` and derived into
-`www/icons/blue/` the way `update-blue-icons` does, keeping the black/blue
-listing invariant that `lint` asserts.
-
-### Screenshots — what this feature invalidates
-
-`make screenshots` must be re-run, and two new captures added to
-`tests/screenshots.py`. `make check-images` will refuse to pass until the
-README and the harness agree, so the list below is a checklist rather than a
-thing to remember.
-
-**Already stale, right now:**
-
-- `pam-prefs-administration.png` — `enablePasswordBreachCheck` was added to
-  that tab. The image went out of date the moment the preference landed, and
-  nothing flags that, because the filename has not changed. This is the failure
-  mode `check-images` cannot catch: a captured image whose *content* is stale
-  is indistinguishable from a current one until it is regenerated.
-
-**Stale once the menu entry lands:**
-
-- `pam-menu.png` — gains `Breached Passwords`, which also changes its height.
-- `pam-prefs-enable-printing-menu.png` — the same menu with Print showing.
-
-**New captures — added to `tests/screenshots.py`, awaiting a run:**
-
-- `pam-breached-passwords-disabled.png` — the report with the preference off.
-  The more important of the two: it is the state almost every reader will meet,
-  and where the trade-off is explained at the moment someone is deciding.
-- `pam-breached-passwords.png` — the report with the preference on, captured
-  **before Check is pressed**. Neither shot makes a network request; the
-  disabled one cannot, and the enabled one is photographed at the point where
-  the request count is stated and nothing has gone out. A screenshot has no
-  business sending several hundred requests, and this is also the honest
-  picture of what opening the report does.
-
-No capture for the per-field shield button. Every shot runs with the preference
-off, so photographing it would mean setting the preference purely for the
-picture; the README describes it in prose instead.
-
-**Also affected, outside the images:**
-
-- `test_pam_setup` asserts the menu contents as an ordered list and
-  `choose_menu_option` asserts a hard count of 9. Both move to 10, and they are
-  independent assertions of the same fact — the second was missed on the first
-  pass in v2.3.0 because only the helper was searched.
-
-The per-field button needs no new capture: every shot runs with the preference
-off, and the button is hidden in that state.
-
----
-
-## 7. Vault diff — deferred
-
-**Question:** "What differs between these two vaults?"
-**Discloses:** titles and field names of differing entries. Never secrets.
-
-Given a second vault file and its passphrase, report entries only in A, only in
-B, and entries in both whose passwords differ (report *that* they differ, never
-the values).
-
-### Blocked on
-
-- **Durable entry identity.** With no stable ID, "same entry" must be inferred
-  from title plus field names, which breaks as soon as either is edited. Adding
-  an ID is a schema migration and is a prerequisite, not part of this.
-- **Cross-version crypto.** Two files may be at different crypto versions.
-- Entries matching on title but not field set, and vice versa.
-
-## 8. Export tiering — deferred
-
-The actual lesson of the origin story. Today the industry offers one export:
-everything, in the clear. Offer three:
-
-| Tier | Contents | Use case |
-|---|---|---|
-| Fingerprint | 64 bits | "Are these the same vault?" |
-| Metadata | titles + field names, no secrets | audit, inventory, diff |
-| Full | everything | migration to another manager |
-
-Most reasons people export are satisfied by the first two. Each one satisfied is
-a plaintext dump that never gets created.
-
-If full export stays, consider emitting FIDO CXF rather than CSV. CXF became a
-FIDO Proposed Standard in August 2025 and CXP (which wraps the transfer in HPKE)
-has shipped on iOS and Android; Apple, Google, Microsoft, 1Password, Bitwarden
-and Dashlane are all contributors.
-
----
-
-## 9. Vault file integrity — new, unscheduled
-
-Found while investigating a flaky unit test, and worth recording even though it
-is not part of the breach work.
-
-`decryptV2()` uses **AES-CBC with no authentication tag**, and does not
-validate what comes out — it calls back with whatever bytes `decrypt()`
-produces. Two consequences:
-
-**A wrong password is not reliably detected.** Rejection depends on the garbage
-final block failing PKCS#7 padding validation, which random bytes pass about
-once in 256. When that happens the caller receives garbage, and the failure
-surfaces downstream as `invalid record format!` from `JSON.parse` rather than
-as a password error. Roughly one wrong-password load in 256 gives a confusing
-message. Annoying, not dangerous.
-
-**The vault file has no integrity protection.** This is the part that matters.
-CBC without a MAC is malleable: someone who can write to a PAM file can flip
-bits in the plaintext without detection. The README recommends storing PAM
-files in iCloud, Dropbox or Google Drive and sharing them between devices —
-exactly the settings where a file may be modified by something other than PAM.
-Confidentiality holds; tamper-evidence does not.
-
-The fix is AES-GCM, which authenticates as it decrypts, so a wrong password or
-a modified file fails cleanly every time. That is a **format change** and needs
-a v3 with migration, in the shape v1 to v2 already took. It should not be
-bolted onto the breach branch.
-
-Meanwhile the unit test asserts the property that actually holds — that a wrong
-password never recovers the plaintext — rather than that decryption fails,
-which is only true 255 times in 256.
-
-## 10. Fixed: two suites ran without gating the build
-
-Found because 16 new breach tests were added and the reported total did not
-move: still 308.
-
-`finalize()` writes `window.__TEST_RESULTS__`, which `tests/test_unit.py` reads
-to decide pass or fail. It was called at the end of `runCryptTests` and
-`runSaveRegressionTests` but not by the two runners after them in the chain, so
-`runVaultFingerprintTests` (12 tests) and `runBreachTests` (16) rendered their
-results onto the page while the totals still reflected the state before they
-ran. **Their failures would have shown as red lines and passed the build.** The
-vaultFingerprint suite was in that position for the whole of v2.3.0.
-
-Two changes:
-
-- One `finalize()` at the end of the chain instead of per-runner. Adding a
-  runner can no longer leave it uncounted.
-- `test_unit.py` now reconciles the summary against the page: the number of
-  rendered `.test-line` elements must equal the reported total. Trusting the
-  summary without checking it against the lines is what let this go unnoticed,
-  and the same drift would otherwise recur the next time a runner is appended.
-
-The failure mode is the one this project keeps producing: not a wrong answer,
-but a right-looking answer that was never actually computed.
-
-## 11. Reports should be actionable, not just informative
-
-Both reports currently tell you there is a problem and leave you to find the
-records yourself. In a vault of a few hundred entries that is most of the work.
-
-### Status: 11a and 11b click-through DONE
-
-Both reports are now actionable. `selectRecordsByTitle()` in `search.js` is
-shared by them, so the escaping and the guard exist once.
-
-- **Reuse report** — the group heading is a button. Clicking it selects that
-  group's records and closes the report. The titles come from the cached
-  group rather than the rendered list, because the displayed title has had its
-  INACTIVE marker stripped and is not always the record's title.
-- **Breach report** — each entry's title is a button, selecting that one
-  record. Not the whole group sharing the password: the verdict is about a
-  password, but the user is being sent somewhere to change it, and they change
-  it one record at a time.
-
-**The escaping is the part that could have gone wrong quietly.** Titles are
-arbitrary user text and are not unique. A title containing `(`, `|` or `.`
-would otherwise alter the meaning of the pattern built from it and match the
-wrong records — silently, in a feature whose entire purpose is finding the
-right ones. `escapeRegExp()` handles it and four tests cover the cases,
-including that an escaped pattern still matches its own title and nothing else.
-
-The pattern is anchored — `^(Facebook|Instagram)$` — so selecting `Google` does
-not also bring in `Google Cloud`.
-
-**When `searchRecordTitles` is off, selection is disabled rather than merely
-warned about.** `searchRecords()` only compares against titles when that
-preference is set, so any pattern built from titles matches nothing.
-
-Three layers, because a transient status message at the bottom of the screen is
-easy to miss:
-
-- The reports render those entries as **plain text**, not buttons. A control
-  that looks clickable and silently does nothing is worse than one that does
-  not look clickable at all.
-- Each report carries a line saying why selection is unavailable and where to
-  turn it back on.
-- `selectRecordsByTitle()` still refuses and explains, as a backstop for the
-  preference changing while a report is open.
-
-Documented in the preference's own description in the dialogue and in the
-README, since the dependency is not guessable: nothing about "Search Record
-Titles" suggests it governs clicking an entry in a report.
-
-Neither report puts a password in the search box. The pattern is built from
-titles only — building one from password *values* would recreate the search
-oracle fixed in v2.3.0.
-
-### 11a. Reuse report: click a group to select its records
-
-Clicking a group in the Reused Passwords report selects those records in the
-main window and closes the report.
-
-Mechanism: `searchRecords(value)` already filters the accordion, and
-`searchRecordTitles` is on by default. A regex alternation of the group's
-titles — `^(Facebook|Instagram)$` — filters to exactly that group. Points to
-settle:
-
-- **Decided: the search box shows the filter.** The regex goes into the box
-  where the user can see it, edit it, or clear it with the existing button.
-  Filtering without showing the term would leave the record list in a state
-  with no visible cause, and the next person to look at the window — including
-  the same person a minute later — would have no way to tell why records are
-  missing. An odd-looking search term is a smaller cost than an unexplained
-  one.
-
-  This also means the existing clear-search control is the undo, so nothing new
-  is needed for that.
-- Titles are not unique and are not escaped for regex. A title containing
-  `(` or `|` would break the alternation or, worse, match the wrong records.
-  Escape before building the pattern.
-- `searchPasswordFieldValues` must stay out of this. Building a filter from
-  password *values* would put a secret in the search box — the exact oracle
-  fixed in v2.3.0.
-
-### 11b. Breach report: click a record to open it
-
-Click any entry to select that record in the main window and close the report.
-
-**The verdict filter is dropped.** A real run over 220 passwords returned 85
-rejections, and the problem was not that they needed filtering — it was that
-breached and structurally weak entries rendered identically, so the reader had
-to parse the reason text to tell them apart. Labelling each entry solved that
-directly, and once labelled the list is scannable without a filter. Done, not
-deferred: see the section below.
-
-- Same escaping, and the same decision as 11a: the search box shows the term.
-- A record clicked from the report may be one of several sharing a password.
-  Decide whether clicking selects the one entry or the whole group; the entry
-  is probably right here, since the breach verdict is about the password and
-  the user is being sent somewhere to change it.
-
-### Shared work
-
-Both need one helper — "select these records in the main window and close this
-dialogue" — rather than two implementations. It belongs somewhere both
-`vault-ui.js` and `breach-ui.js` can reach without a circular import;
-`search.js` is the natural home since it already owns the filter.
-
-Neither is required for the breach feature to ship. If v2.4.0 gets long, 11a
-stands alone and could land in a smaller release of its own.
+## The screenshot mode was invisible, and came from the environment
+
+`tests/screenshots.py` decided whether to write files by reading `CHECK` from
+the environment. Two consequences, the second serious:
+
+- The per-shot lines were identical in both modes. A line reading `CHG` claims
+  the file on disk was updated; in check mode it was not, and nothing said so.
+  When nothing changed, both modes printed the same summary.
+- **An exported `CHECK=1` would make `make screenshots` silently stop writing
+  files, permanently.** Every run would report changes and update nothing, and
+  the only symptom would be captures that never seem to take. Nothing in the
+  output contradicted the assumption that files were being written.
+
+Fixed in two layers, because either alone is insufficient:
+
+1. **The Makefile passes `CHECK` explicitly for both targets** — `CHECK=0` for
+   `screenshots`, `CHECK=1` for `screenshots-check`. The target decides, not
+   whatever the shell is carrying. This prevents it rather than detecting it.
+2. **The mode is announced before any work and repeated in the summary**, and
+   check mode uses distinct per-shot markers — `chg?` and `new?` rather than
+   `CHG` and `NEW`, kept to five characters so the columns hold. If the
+   environment ever wins anyway, the first line of output says so.
+
+The general shape is one worth remembering: a mode flag taken from ambient
+state, with no visible indication of which mode is active, fails silently and
+in the direction of doing nothing.
+
+## Where claims live
+
+Every stale-documentation miss this session came from searching a scope defined
+by where the work had been, rather than by what the change could reach. This is
+the list that would have prevented them.
+
+**When changing a default, a threshold, or anything with a stated value:**
+
+- `www/js/prefs-model.js` — the default itself.
+- `www/tests/tests.html` — tests asserting the default, *and* tests asserting
+  behaviour that depends on it. The false-positive suite holds literal password
+  strings; no search for a preference name will find them.
+- `README.md` — the preference's own section, **and** the saved-file example
+  JSON, which lists values and goes stale silently.
+- `tests/test_chrome.py` — e2e assertions on counts and content.
+
+**When changing behaviour a document describes:**
+
+- `README.md`, `SECURITY.md`, `ARCHITECTURE.md`, `QUICKSTART.md`. The security
+  document was missed entirely while the README was audited twice; it claimed
+  "No data is ever sent to a server" for the whole branch.
+- The README states counts in prose — "there are seven menu options" was wrong
+  for two releases. Nothing compares a number in a sentence to the code that
+  produces the thing counted.
+- The preferences dialogue itself: visible text comes from `prefPromptDesc()`,
+  not from the fifth argument of `mkPrefsCheckBox()`, which is a `title`
+  attribute and therefore unreachable on a phone.
+
+**One mechanical rule that would have caught the most:** do not pipe an audit
+through `head`. Twenty matches were truncated to eight, and the missing test was
+at number nine. Truncation is right for exploring and wrong for any search whose
+purpose is completeness.
 
 ## Open questions
 
-- What does the per-field breach button show — an inline result, or does it
-  open the same dialogue scoped to one field?
-- Should the vault-wide check offer to stop early once it finds a hit, or
-  always run to completion?
-- Does the schema have a durable per-entry ID? (Gates item 7.)
+**Answered in v2.4.0:**
+
+- *What does the per-field breach button show — an inline result, or the same
+  dialogue scoped to one field?* — **An inline result**, written into the row
+  beside the field, so the answer arrives where the question was asked. It is
+  cleared as soon as the value is edited, since it would otherwise describe a
+  password the user no longer has. A dialogue would have been heavier than the
+  question deserves.
+
+- *Should the vault-wide check stop early once it finds a hit, or run to
+  completion?* — **Run to completion**, with Cancel available throughout.
+  Stopping at the first hit would report that one password is breached while
+  leaving every other one unknown — the same shape as reporting a failed lookup
+  as clean, which is the failure this whole feature is built to avoid. A real
+  run over 220 passwords takes 37 seconds, so there is no strong argument for
+  cutting it short, and a partial result would need its own marker
+  distinguishing "not breached" from "never checked".
+
+**Still open:**
+
+- *Does the schema have a durable per-entry ID?* — No, and nothing in v2.4.0
+  changed that. Records are still identified by title plus field names, which
+  breaks as soon as either is edited. This gates item 7 (vault diff), and it is
+  also what makes the reports select records by title: a stable ID would be a
+  better key for the click-through than an escaped title pattern.

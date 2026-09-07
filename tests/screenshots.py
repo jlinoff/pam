@@ -2055,7 +2055,12 @@ def capture(driver, filename, func, check_only, fit=False):
     return state, png_size(png)
 
 
-def progress_line(state, size, position, elapsed, filename):
+def run_mode(check_only):
+    """How the run should describe itself in its output."""
+    return 'CHECK ONLY, nothing written' if check_only else 'WRITE'
+
+
+def progress_line(state, size, position, run, filename):
     """One result line, with how far through the run it is.
 
     A full pass is several minutes with no other sign of life, and knowing
@@ -2065,10 +2070,16 @@ def progress_line(state, size, position, elapsed, filename):
     time — so optimisation can follow measurement rather than guesswork.
     """
     index, total = position
+    elapsed, check_only = run
     # All five characters wide: `same~` is one longer than the rest, and
     # without padding it shifted every column after it on that line.
     marker = {'new': 'NEW  ', 'changed': 'CHG  ', 'same': 'same ',
               'noise': 'same~'}[state]
+    if check_only and state in ('new', 'changed'):
+        # A line reading CHG is a claim that the file on disk was updated. In
+        # check mode it was not, so the marker is lowercase and questioning —
+        # and five characters wide, like the others, so the columns hold.
+        marker = {'new': 'new? ', 'changed': 'chg? '}[state]
     dimensions = f'{size[0]}x{size[1]}'
     percent = f'{index * 100 // total}%'
     return f'  {marker}  {dimensions:>9}  {percent:>4}  {elapsed:5.1f}s  {filename}'
@@ -2113,6 +2124,18 @@ def main():
     '''Walk the shot list. Returns 0, or 1 in check mode if anything differs.'''
     check_only = os.environ.get('CHECK') == '1'
 
+    # Announced before anything runs, not inferred from the summary.
+    #
+    # The mode comes from an environment variable, so an exported CHECK=1 would
+    # otherwise make this silently stop writing files — and a run that reports
+    # CHANGED while writing nothing looks exactly like a run that wrote. The
+    # Makefile now passes CHECK explicitly for both targets, which prevents it;
+    # this line makes it visible if it happens anyway.
+    if check_only:
+        print('MODE: CHECK ONLY (CHECK=1) — nothing will be written to disk\n')
+    else:
+        print('MODE: WRITE — changed captures will be saved\n')
+
     # Substring match on the filename, so SHOT=google runs the three
     # pam-google-* captures and SHOT=prefs runs the preference tabs.
     shots = selected_shots()
@@ -2145,7 +2168,7 @@ def main():
             started = time.time()
             state, size = capture(driver, filename, func, check_only, fit)
             print(progress_line(state, size, (index, len(shots)),
-                                time.time() - started, filename))
+                                (time.time() - started, check_only), filename))
             if state not in ('same', 'noise'):
                 changed.append(filename)
             reset_between_shots(driver)
@@ -2159,10 +2182,11 @@ def main():
             print(f'  {name}: {count} pixels')
         print()
     if not changed:
-        print(f'{len(shots)} screenshots, none changed')
+        print(f'{len(shots)} screenshots, none changed [{run_mode(check_only)}]')
         return 0
     verb = 'would change' if check_only else 'written'
-    print(f'{len(changed)} of {len(shots)} {verb}: {", ".join(changed)}')
+    print(f'{len(changed)} of {len(shots)} {verb} '
+          f'[{run_mode(check_only)}]: {", ".join(changed)}')
     return 1 if check_only else 0
 
 

@@ -1472,12 +1472,12 @@ example that shows how simple the format is.
     "format-version": "1.0.0"
   },
   "prefs": {
-    "passwordRangeLengthDefault": 20,
+    "passwordRangeLengthDefault": 30,
     "passwordRangeMinLength": 12,
     "passwordRangeMaxLength": 32,
     "memorablePasswordWordSeparator": "/",
     "memorablePasswordMinWordLength": 2,
-    "memorablePasswordMinWords": 3,
+    "memorablePasswordMinWords": 5,
     "memorablePasswordMaxWords": 5,
     "memorablePasswordMaxTries": 10000,
     "clearBeforeLoad": true,
@@ -1954,7 +1954,15 @@ The minimum number of words in a generated memorable password.
 
 > It has no affect on cryptic passwords.
 
-The default is 3.
+The default is 5.
+
+> Raised from 3 in v2.4.0. Three words carry about 40 bits, which is below the
+> floor _PAM_'s own breach check applies — so _PAM_ was generating passwords it
+> would have rejected had it been able to measure them correctly. Because the
+> word count is derived from the password length rather than chosen directly,
+> the default password length was raised from 20 to 30 at the same time; the
+> two cannot be changed independently. That also lengthens generated cryptic
+> passwords, from about 131 bits to 196.
 
 **How many words you need depends on what you are defending against.** _PAM_
 draws from a list of 9,858 words, so each word contributes about 13.3 bits:
@@ -1983,6 +1991,33 @@ dictionary structure, so it scores a three-word password far higher than the
 40 bits above and raises no objection. The corpus check still applies — a
 memorable password that has appeared in a breach is still reported — but the
 structural check cannot see word-based weakness.
+
+##### Why not just use a bigger dictionary?
+
+It is the obvious thought and the arithmetic argues against it. Entropy grows
+**logarithmically** with the size of the word list but **linearly** with the
+number of words, so adding words is far cheaper than adding vocabulary:
+
+| Approach | Entropy | Cost |
+|---|---|---|
+| 5 words from the current 9,858-word list | 66 bits | none |
+| 5 words from a 100,000-word list | 83 bits | a 1.4 MB word list |
+| **6 words** from the current list | **80 bits** | none |
+| **7 words** from the current list | **93 bits** | none |
+
+A tenfold larger dictionary buys about 3 bits per word. One extra word buys
+13. A sixth word matches a tenfold expansion; a seventh beats it.
+
+There is a second reason, and it matters more. _PAM_ uses
+[google-10000-english](https://github.com/first20hours/google-10000-english),
+a list of **common** words — which is the whole point of calling them
+memorable. A 100,000-word list contains words most people cannot recall or
+spell, so they press **Regenerate** until something familiar appears. That
+quietly reduces the real keyspace to whatever subset they recognise, which is
+smaller than the list you started with. A larger dictionary can make passwords
+weaker in practice while looking stronger on paper.
+
+If you want more entropy, increase the length so more words are used.
 
 #### Memorable Password Max Tries
 The maximum number of attempts to generate a memorable password

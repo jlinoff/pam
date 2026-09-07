@@ -1778,9 +1778,13 @@ test('getCrypticPassword uses only alphabet characters', () => {
 })
 
 suite('password.js — getDefaultPrefs password values')
-test('passwordRangeLengthDefault is 20', () => {
-  assertEqual(getDefaultPrefs().passwordRangeLengthDefault, 20,
-    'getDefaultPrefs passwordRangeLengthDefault should be 20')
+test('passwordRangeLengthDefault is 30', () => {
+  // Raised from 20 in v2.4.0. The generator adds words until it reaches this
+  // length, so 20 characters cannot hold the five words that
+  // memorablePasswordMinWords now requires — it would reject the result and
+  // give up. These two defaults are coupled and cannot be changed separately.
+  assertEqual(getDefaultPrefs().passwordRangeLengthDefault, 30,
+    'getDefaultPrefs passwordRangeLengthDefault should be 30')
 })
 test('passwordRangeMinLength is 12', () => {
   assertEqual(getDefaultPrefs().passwordRangeMinLength, 12,
@@ -1829,9 +1833,14 @@ test('memorablePasswordMinWordLength default is 2', () => {
 })
 
 suite('password.js — memorablePasswordMinWords / MaxWords')
-test('memorablePasswordMinWords default is 3', () => {
-  assertEqual(getDefaultPrefs().memorablePasswordMinWords, 3,
-    'getDefaultPrefs memorablePasswordMinWords should be 3')
+test('memorablePasswordMinWords default is 5', () => {
+  // Raised from 3 in v2.4.0. Three words carry about 40 bits, below the
+  // 60-bit floor the breach check applies — PAM was generating passwords it
+  // would reject if it could measure them. Coupled to
+  // passwordRangeLengthDefault, which moved 20 -> 30 in the same change,
+  // because word count is derived from length rather than chosen.
+  assertEqual(getDefaultPrefs().memorablePasswordMinWords, 5,
+    'getDefaultPrefs memorablePasswordMinWords should be 5')
 })
 test('memorablePasswordMaxWords default is 5', () => {
   assertEqual(getDefaultPrefs().memorablePasswordMaxWords, 5,
@@ -3093,9 +3102,16 @@ async function runBreachTests4() {
       'cGwJ$NPQ4SsI#haEsFRD',
       'FpnzQcuq0nk/PxlMdYJ_itnK',
       'M+pSIWOMODrwiHteA+#3',
-      'ridge/doll/parameter',
-      'quotes/logic/mailman',
-      'jewelry/belly/unable',
+      // Five-word memorable passwords, generated at the v2.4.0 defaults.
+      //
+      // These were three-word examples until the entropy estimate learned
+      // about dictionary words. They are now correctly rejected at 40 bits,
+      // and that is the point of the change rather than a regression: this
+      // suite exists to check that PAM does not reject its OWN current output,
+      // and its own current output is five words.
+      'latinas/slowly/los/sheets/have',
+      'asylum/academy/sol/oliver/tone',
+      'annex/london/ssl/stats/connect',
     ]
     for (const password of good) {
       const reasons = structuralWeaknesses(password)
@@ -3831,6 +3847,75 @@ async function runBreachTests13() {
   })
 }
 
+
+async function runBreachTests14() {
+  suite('breach.js — the entropy estimate knows about words')
+
+  test('a passphrase is scored by words, not by length', () => {
+    // The bug: length x log2(alphabet) scored std/creature/history at 118
+    // bits. Three words from a 9,858-word list carry 40. The estimate was
+    // wrong by threefold, in the unsafe direction, for exactly the passwords
+    // PAM's own generator produces.
+    const three = entropyBits('std/creature/history')
+    assert(three >= 38 && three <= 42,
+           `three words should score about 40 bits, got ${three}`)
+    const five = entropyBits('vehicle/adverse/make/ours/craft')
+    assert(five >= 64 && five <= 68,
+           `five words should score about 66 bits, got ${five}`)
+  })
+
+  test('a random string is unaffected', () => {
+    // The lower of the two estimates is taken, and for a cryptic password the
+    // word estimate does not apply at all.
+    assert(entropyBits('Zq7-Mvtl%Kdn#WroP2xj') > 100)
+  })
+
+  test('only dictionary words count', () => {
+    // Guessing at concatenated words would understate a password that merely
+    // contains one — a false REJECT teaches people to ignore the tool, which
+    // costs more than the check saves.
+    assert(entropyBits('xyzzy/plugh/frotz') > 60,
+           'non-words fall back to the character estimate')
+    assert(entropyBits('history') > 20,
+           'a single word is not a passphrase')
+  })
+
+  test('the verdict follows', () => {
+    const miss = {status: NOT_FOUND, count: 0, reason: ''}
+    assertEqual(verdictFor('std/creature/history', miss).verdict, REJECT,
+                'three words is below the floor and now says so')
+    assertEqual(verdictFor('vehicle/adverse/make/ours/craft', miss).verdict, ACCEPT)
+  })
+
+  test('PAM no longer generates passwords its own checker rejects', () => {
+    // The point of raising the generator defaults alongside the estimator fix.
+    // Without it, correcting the measurement would have made PAM flag its own
+    // output as weak.
+    const saved = window.prefs
+    window.prefs = getDefaultPrefs()
+    try {
+      const length = window.prefs.passwordRangeLengthDefault
+      for (let i = 0; i < 20; i++) {
+        const memorable = getMemorablePassword(length)
+        assertEqual(structuralWeaknesses(memorable).length, 0,
+                    `generated memorable password rejected: ${memorable} ` +
+                    `(${structuralWeaknesses(memorable).join('; ')})`)
+        const cryptic = getCrypticPassword(length, ALPHABET)
+        assertEqual(structuralWeaknesses(cryptic).length, 0,
+                    `generated cryptic password rejected: ${cryptic}`)
+      }
+    } finally {
+      window.prefs = saved
+    }
+  })
+
+  test('memorablePasswordMinWords is 5', () => {
+    // Five words is 66 bits, which clears the 60-bit floor. Three is 40 and
+    // does not.
+    assertEqual(getDefaultPrefs().memorablePasswordMinWords, 5)
+  })
+}
+
 async function runBreachTests() {
   await runBreachTests1()
   await runBreachTests2()
@@ -3845,6 +3930,7 @@ async function runBreachTests() {
   await runBreachTests11()
   await runBreachTests12()
   await runBreachTests13()
+  await runBreachTests14()
 }
 
 // Keep `.then(() => { window.__TESTS_COMPLETE__ = true })` as the final link

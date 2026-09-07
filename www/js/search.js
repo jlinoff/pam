@@ -1,4 +1,5 @@
 import { xmk, xget } from './lib.js'
+import { statusBlip } from './status.js'
 
 let CACHED_SEARCH_VALUE = ''
 
@@ -132,4 +133,79 @@ export function searchRecords(value) {
 export function clearSearch() {
     document.body.xGet('#search').value = ''
     CACHED_SEARCH_VALUE = ''
+}
+
+/**
+ * Escape a string so it matches literally inside a regular expression.
+ *
+ * Record titles are arbitrary user text and are not unique. A title containing
+ * `(`, `|`, `.` or `?` would otherwise change the meaning of a pattern built
+ * from it — quietly matching the wrong records, which is the worst outcome for
+ * a feature whose whole purpose is to help you find the right ones.
+ *
+ * @param {string} text
+ * @returns {string} the text with every regex metacharacter escaped
+ */
+export function escapeRegExp(text) {
+    return String(text).replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+}
+
+// Shown by the reports when selection is unavailable, so the explanation is
+// written once beside the rule that causes it.
+export const SELECTION_DISABLED_NOTE =
+    'Selecting records from this report needs the ' +
+    '<b>Search Record Titles</b> preference, which is currently off. ' +
+    'Turn it on in Preferences \u2192 Search to make these entries clickable.'
+
+/**
+ * Whether records can be selected from a report at all.
+ *
+ * searchRecords() only compares against titles when this is set, so with it
+ * off any pattern built from titles matches nothing.
+ *
+ * @returns {boolean}
+ */
+export function canSelectRecords() {
+    return Boolean(window.prefs.searchRecordTitles)
+}
+
+/**
+ * Filter the main window down to a named set of records.
+ *
+ * Used by the Reused Passwords and Breached Passwords reports so a finding can
+ * be acted on rather than merely read. In a vault of a few hundred entries,
+ * locating the records a report names is most of the work.
+ *
+ * The search box is POPULATED with the pattern rather than filtered behind the
+ * user's back. An unexplained filtered list is worse than an odd-looking
+ * search term: the state has a visible cause, it can be edited, and the
+ * existing clear button undoes it.
+ *
+ * Titles are matched whole and case-sensitively, anchored, so selecting
+ * `Google` does not also bring in `Google Cloud`.
+ *
+ * @param {Array<string>} titles - record titles to select
+ * @returns {string} the search pattern that was applied
+ */
+export function selectRecordsByTitle(titles) {
+    const unique = Array.from(new Set(titles.filter(Boolean)))
+    if (unique.length === 0) {
+        return ''
+    }
+    const pattern = '^(' + unique.map(escapeRegExp).join('|') + ')$'
+
+    // searchRecords() only compares against titles when this is set. With it
+    // off, the pattern below matches nothing and the records simply vanish —
+    // a silent empty list with no explanation. Say so instead.
+    if (!window.prefs.searchRecordTitles) {
+        statusBlip('cannot select records: Search Record Titles is turned off')
+        return ''
+    }
+
+    const box = document.body.xGet('#search')
+    if (box) {
+        box.value = pattern
+    }
+    searchRecords(pattern)
+    return pattern
 }

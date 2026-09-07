@@ -190,6 +190,13 @@ export function menuPrefsDlg() {
             mkTabPane('prefs-tab-search', true,
                 prefSearchCaseInsensitive(labelClasses, inputClasses),
                 prefSearchRecordTitles(labelClasses, inputClasses),
+                prefPromptDesc('Turning this <b>off</b> also disables selecting ' +
+                               'records from the reports. Clicking a group in ' +
+                               '<b>Reused Passwords</b>, or an entry in ' +
+                               '<b>Breached Passwords</b>, works by searching for ' +
+                               'the record titles \u2014 which finds nothing when ' +
+                               'titles are not searched. Those entries are shown as ' +
+                               'plain text instead of clickable ones while this is off.'),
                 prefSearchRecordFieldNames(labelClasses, inputClasses),
                 prefSearchRecordFieldValues(labelClasses, inputClasses),
                 prefPromptDesc('Use caution when enabling this option because '+
@@ -888,7 +895,8 @@ function prefSearchRecordTitles(labelClasses, inputClasses) {
                            inputClasses,
                            'searchRecordTitles',
                            'Search Record Titles',
-                           'search record titles')
+                           'search record titles; also required to select ' +
+                           'records from the reports')
 }
 
 function prefSearchRecordFieldNames(labelClasses, inputClasses) {

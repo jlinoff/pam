@@ -1871,6 +1871,14 @@ If enabled, all searches look at the record titles, otherwise they do not.
 
 The default is enabled.
 
+**Turning this off also disables selecting records from the reports.** Clicking
+a group in [Reused Passwords](#reused-passwords), or an entry in
+[Breached Passwords](#breached-passwords), works by putting a search pattern
+built from the record titles into the search box — which finds nothing if
+titles are not searched. Rather than filtering your records down to an empty
+list, _PAM_ shows those entries as plain text instead of clickable ones and
+says why at the top of the report.
+
 #### Search Record Field Names
 If enabled, all searches look at the record field names, otherwise they do not.
 

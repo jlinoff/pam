@@ -11,6 +11,7 @@ import { statusBlip } from './status.js'
 import { getCurrentRecords } from './vault-ui.js'
 import { partitionByActive, secretFields } from './vault.js'
 import { checkAll, REJECT, UNDETERMINED } from './breach.js'
+import { selectRecordsByTitle, canSelectRecords, SELECTION_DISABLED_NOTE } from './search.js'
 
 export const BREACH_DLG_ID = 'menuBreachDlg'
 
@@ -247,6 +248,56 @@ export async function startBreachCheck() {
     renderBreachResults(progress, results, outcome, candidates.length)
 }
 
+// One handler for every entry: the title travels on the element rather than in
+// a closure, so this is not declared inside the rendering loop.
+function onRecordLinkClick(event) {
+    selectBreachRecord(event.currentTarget.getAttribute('data-title'))
+}
+
+/**
+ * A record title that selects that record in the main window when clicked.
+ *
+ * Only the one entry, not everything sharing its password: the verdict is
+ * about a password, but the user is being sent somewhere to change it, and
+ * they change it in one record at a time.
+ */
+function mkRecordLink(title) {
+    if (!canSelectRecords()) {
+        // Plain text rather than a dead button.
+        return xmk('span').xClass('fw-bold').xTextContent(title)
+    }
+    const link = xmk('button')
+        .xClass('btn', 'btn-link', 'p-0', 'fw-bold', 'text-decoration-none',
+                'align-baseline', 'x-breach-record-select')
+        .xAttrs({'type': 'button',
+                 'title': 'select this record in the main window'})
+        .xTextContent(title)
+        .xAddEventListener('click', onRecordLinkClick)
+    link.setAttribute('data-title', title)
+    return link
+}
+
+/**
+ * Select one record in the main window and close the report.
+ */
+export function selectBreachRecord(title) {
+    if (!title) {
+        return
+    }
+    if (!selectRecordsByTitle([title])) {
+        // selectRecordsByTitle() has said why; leaving the report open beats
+        // closing it over an unchanged window.
+        return
+    }
+    const dlg = document.getElementById(BREACH_DLG_ID)
+    if (dlg && window.bootstrap) {
+        const modal = window.bootstrap.Modal.getInstance(dlg)
+        if (modal) {
+            modal.hide()
+        }
+    }
+}
+
 /**
  * Render the outcome of a run.
  *
@@ -264,6 +315,12 @@ export function renderBreachResults(progress, results, outcome, total) {
             'checked</b>. This is not the same as finding no problems.'))
         results.appendChild(xmk('p').xClass('fst-italic').xInnerHTML(outcome.reason))
         return
+    }
+
+    if (!canSelectRecords()) {
+        results.appendChild(
+            xmk('p').xClass('small', 'text-warning')
+                .xInnerHTML(SELECTION_DISABLED_NOTE))
     }
 
     const breached = outcome.results.filter((r) => r.verdict === REJECT)
@@ -314,7 +371,7 @@ export function renderBreachResults(progress, results, outcome, total) {
                 list.appendChild(xmk('li').xAppend(
                     xmk('span').xClass('badge', ...tone.split(' '), 'me-2')
                         .xTextContent(label),
-                    xmk('span').xClass('fw-bold').xTextContent(entry.title),
+                    mkRecordLink(entry.title),
                     xmk('span').xClass('text-secondary')
                         .xTextContent(' \u2014 ' + entry.name),
                     xmk('div').xClass('text-secondary', 'ms-1').xTextContent(
@@ -333,7 +390,7 @@ export function renderBreachResults(progress, results, outcome, total) {
         for (const item of unknown) {
             for (const entry of item.entries) {
                 list.appendChild(xmk('li').xAppend(
-                    xmk('span').xClass('fw-bold').xTextContent(entry.title),
+                    mkRecordLink(entry.title),
                     xmk('span').xClass('text-secondary')
                         .xTextContent(' \u2014 ' + entry.name)))
             }

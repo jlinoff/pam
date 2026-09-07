@@ -44,7 +44,7 @@ numeric order. A low number means the item was raised early, nothing more.
 | 8. Export tiering | deferred |
 | 9. Vault file integrity | open — v2 is AES-CBC with no MAC; needs a v3 format |
 | 10. Test suites ran without gating | **fixed** — finalize() ran per-runner, so two suites reported but did not count |
-| 11. Actionable reports | 11b done (breached/weak labelling); 11a and click-through outstanding |
+| 11. Actionable reports | **done** — click-through from both reports, in v2.4.0 |
 | 12. Per-field breach button | done — on password fields, edit rows, and the standalone generator |
 | 13. Entropy estimate ignores dictionary words | open — scores a 40-bit memorable password at 118 bits |
 
@@ -438,6 +438,82 @@ Worth stating as a rule: **a scratch harness proves a module works in the
 harness.** Every discrepancy this session — accumulated `window.prefs` state,
 an empty accordion, a missing Bootstrap global — has been the harness being
 kinder than the page.
+
+### The preference description went into a tooltip
+
+`mkPrefsCheckBox(labelClasses, inputClasses, id, label, tooltip)` — the fifth
+argument is a `title` attribute, not visible text. The dependency note landed
+there, so it was correct, present, and only discoverable by hovering.
+
+Visible descriptions come from a separate `prefPromptDesc()` call in the tab
+assembly, which is how **Search Record Field Values** gets its warning
+paragraph. The `enablePasswordBreachCheck` preference was written that way
+earlier in this branch; the same mistake was made on the next one.
+
+Fixed: a `prefPromptDesc()` after `prefSearchRecordTitles`, with the tooltip
+shortened to something tooltip-sized.
+
+Nothing catches this. The text was in the source, jshint was clean, and the
+tests do not assert what is *visible* in a preference tab. It took looking at
+the dialogue.
+
+### The reuse-report failure: a duplicated element id
+
+Real, reproducible, and unrelated to the stale directory.
+
+`withVaultUiFixture()` swapped the vault out from under the code under test by
+taking `document.getElementById('records-accordion')`, removing that id, and
+appending its own element with it. That works when exactly one element claims
+the id. The test page has **three** that claim it at different points, and when
+two were live at once the survivor sat earlier in document order and won the
+lookup inside `convertInternalDataToJSON()`.
+
+The fixture's records were therefore invisible: `getCurrentRecords()` returned
+`[]`, the reuse report had nothing to draw, and no error appeared anywhere
+because `refreshVaultStats()` wraps that call in a `try/catch` that returns
+silently.
+
+Reproduced directly — with two claimants, the old fixture sees 0 records and
+the new one sees 2 — rather than inferred. The fixture now neutralises **every**
+element carrying the id and restores them all afterwards.
+
+**Three wrong hypotheses preceded this**, and the thing that ended it was the
+staged diagnostic reporting `saw []` instead of a bare count of zero. Knowing
+the records were invisible rather than the button unrendered turned an
+open-ended search into one lookup.
+
+Worth noting the silent `try/catch` in `refreshVaultStats()` made this much
+harder than it needed to be. It is defensible in production — the accordion
+genuinely may not exist during startup — but it converts every later failure
+into an empty report with no explanation.
+
+### Two "unexplained" failures were a deleted working directory
+
+A directory deleted and recreated leaves any shell that was open at the time
+attached to the dead inode. The path string is the same; the inode is not. The
+symptom that finally exposed it was `python3 -m http.server` failing with
+`FileNotFoundError` from `os.getcwd()` — a process that cannot resolve its own
+working directory.
+
+Test runs from that shell were serving the **old tree**. That is the likely
+cause of both failures below that no code change explained:
+
+- the generator suite reporting zero buttons once and never again;
+- the reuse-report fixture reporting zero records, which resolved when the
+  files were re-read from a fresh shell rather than by any edit.
+
+Neither was diagnosed by reasoning — three hypotheses were wrong on the second
+one — and neither was fixed by the diagnostics added while chasing them.
+Assertions do not change behaviour.
+
+**The lesson is about the debugging, not the bug.** When a failure survives
+several plausible explanations and then vanishes without a corresponding
+change, the environment is a better suspect than the code. It is worth checking
+`pwd -P` and the file sizes on disk before instrumenting further.
+
+The staged diagnostics stay. They cost nothing and they would have narrowed
+this faster: reporting *which* stage failed — records not visible, cache empty,
+button not rendered — rather than a bare count of zero.
 
 ### Unexplained: the generator tests failed once, then stopped
 
@@ -950,6 +1026,53 @@ but a right-looking answer that was never actually computed.
 
 Both reports currently tell you there is a problem and leave you to find the
 records yourself. In a vault of a few hundred entries that is most of the work.
+
+### Status: 11a and 11b click-through DONE
+
+Both reports are now actionable. `selectRecordsByTitle()` in `search.js` is
+shared by them, so the escaping and the guard exist once.
+
+- **Reuse report** — the group heading is a button. Clicking it selects that
+  group's records and closes the report. The titles come from the cached
+  group rather than the rendered list, because the displayed title has had its
+  INACTIVE marker stripped and is not always the record's title.
+- **Breach report** — each entry's title is a button, selecting that one
+  record. Not the whole group sharing the password: the verdict is about a
+  password, but the user is being sent somewhere to change it, and they change
+  it one record at a time.
+
+**The escaping is the part that could have gone wrong quietly.** Titles are
+arbitrary user text and are not unique. A title containing `(`, `|` or `.`
+would otherwise alter the meaning of the pattern built from it and match the
+wrong records — silently, in a feature whose entire purpose is finding the
+right ones. `escapeRegExp()` handles it and four tests cover the cases,
+including that an escaped pattern still matches its own title and nothing else.
+
+The pattern is anchored — `^(Facebook|Instagram)$` — so selecting `Google` does
+not also bring in `Google Cloud`.
+
+**When `searchRecordTitles` is off, selection is disabled rather than merely
+warned about.** `searchRecords()` only compares against titles when that
+preference is set, so any pattern built from titles matches nothing.
+
+Three layers, because a transient status message at the bottom of the screen is
+easy to miss:
+
+- The reports render those entries as **plain text**, not buttons. A control
+  that looks clickable and silently does nothing is worse than one that does
+  not look clickable at all.
+- Each report carries a line saying why selection is unavailable and where to
+  turn it back on.
+- `selectRecordsByTitle()` still refuses and explains, as a backstop for the
+  preference changing while a report is open.
+
+Documented in the preference's own description in the dialogue and in the
+README, since the dependency is not guessable: nothing about "Search Record
+Titles" suggests it governs clicking an entry in a report.
+
+Neither report puts a password in the search box. The pattern is built from
+titles only — building one from password *values* would recreate the search
+oracle fixed in v2.3.0.
 
 ### 11a. Reuse report: click a group to select its records
 

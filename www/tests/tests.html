@@ -524,7 +524,7 @@ test('mkMainPasswordGeneratorDlg title contains Password Generator', () => {
 // ---------------------------------------------------------------------------
 // search.js — searchRecords (needs minimal DOM fixture)
 // ---------------------------------------------------------------------------
-import { searchRecords, clearSearch } from '/js/search.js'
+import { searchRecords, clearSearch, escapeRegExp, selectRecordsByTitle, canSelectRecords } from '/js/search.js'
 import { hashPrefsPassword } from '/js/prefs.js'
 import { getDefaultPrefs, VALID_FIELD_TYPES, VALID_CACHE_STRATEGIES } from '/js/prefs-model.js'
 
@@ -3684,6 +3684,153 @@ async function runBreachTests11() {
   })
 }
 
+
+async function runBreachTests12() {
+  suite('search.js — selecting records from a report')
+
+  test('regex metacharacters in titles are escaped', () => {
+    // Titles are arbitrary user text and are not unique. Unescaped, a title
+    // containing ( or | or . changes the meaning of the pattern built from it
+    // and quietly matches the wrong records — the worst outcome for a feature
+    // whose purpose is helping you find the right ones.
+    assertEqual(escapeRegExp('Google'), 'Google')
+    assertEqual(escapeRegExp('Bank (old)'), 'Bank \\(old\\)')
+    assertEqual(escapeRegExp('a|b'), 'a\\|b')
+    assertEqual(escapeRegExp('example.com'), 'example\\.com')
+  })
+
+  test('the pattern is anchored, deduplicated, and shown in the search box', () => {
+    const saved = document.getElementById('search').value
+    try {
+      const pattern = selectRecordsByTitle(['Facebook', 'Instagram'])
+      assertEqual(pattern, '^(Facebook|Instagram)$')
+      assertEqual(document.getElementById('search').value, pattern,
+                  'the box shows the term: a filtered list with no visible '
+                  + 'cause is worse than an odd-looking search')
+      assertEqual(selectRecordsByTitle(['Google', 'Google']), '^(Google)$',
+                  'duplicates collapse')
+      assert(!new RegExp('^(Google)$').test('Google Cloud'),
+             'anchoring stops a prefix match')
+      assertEqual(selectRecordsByTitle([]), '', 'an empty list does nothing')
+    } finally {
+      document.getElementById('search').value = saved
+    }
+  })
+
+  test('an escaped title matches literally and nothing else', () => {
+    const pattern = selectRecordsByTitle(['Bank (old)'])
+    assertEqual(pattern, '^(Bank \\(old\\))$')
+    assert(new RegExp(pattern).test('Bank (old)'), 'it should match itself')
+    assert(!new RegExp(pattern).test('Bank old'),
+           'and not the string the unescaped pattern would have matched')
+  })
+
+  test('it refuses rather than emptying the window', () => {
+    // searchRecords() only compares against titles when this is set. Without
+    // the guard the pattern matches nothing and the records simply vanish,
+    // with no explanation.
+    const saved = window.prefs.searchRecordTitles
+    try {
+      window.prefs.searchRecordTitles = false
+      assertEqual(selectRecordsByTitle(['Google']), '')
+    } finally {
+      window.prefs.searchRecordTitles = saved
+    }
+  })
+}
+
+
+async function runBreachTests13() {
+  suite('reports degrade when Search Record Titles is off')
+
+  const saved = window.prefs.searchRecordTitles
+
+  test('canSelectRecords follows the preference', () => {
+    window.prefs.searchRecordTitles = false
+    assertEqual(canSelectRecords(), false)
+    window.prefs.searchRecordTitles = true
+    assertEqual(canSelectRecords(), true)
+  })
+
+  test('the reuse report shows plain text instead of a dead button', () => {
+    // A control that looks clickable and silently does nothing is worse than
+    // one that does not look clickable at all.
+    const items = [
+      mkVaultUiItem('one', true, [['password','password','SHARED']]),
+      mkVaultUiItem('two', true, [['password','password','SHARED']]),
+    ]
+    withVaultUiFixture(items, () => {
+      window.prefs.searchRecordTitles = true
+      refreshVaultStats()
+
+      // Diagnose in stages. "no button" has two very different causes — no
+      // reuse was detected at all, or the button was not rendered — and a bare
+      // assertion on the button cannot tell them apart.
+      //
+      // getCurrentRecords() is called directly first because
+      // refreshVaultStats() wraps it in a try/catch that returns silently: if
+      // reading the accordion throws, the cache simply keeps its old value and
+      // nothing says why. Calling it here lets the exception surface.
+      const seen = getCurrentRecords()
+      assertEqual(seen.length, 2,
+                  `the fixture should expose two records, saw ${JSON.stringify(
+                      seen.map(r => r.title))}`)
+      assertEqual(getCachedReuseCount(), 2,
+                  'the fixture should produce one reuse group of two entries')
+      assertEqual(canSelectRecords(), true,
+                  'searchRecordTitles was just set')
+
+      let dlg = menuReuseDlg()
+      assert(dlg.querySelector('.x-reuse-group-select'),
+             'clickable while titles are searched')
+      assert(dlg.textContent.indexOf('currently off') === -1, 'and no warning')
+
+      window.prefs.searchRecordTitles = false
+      dlg = menuReuseDlg()
+      assert(!dlg.querySelector('.x-reuse-group-select'),
+             'not clickable when titles are not searched')
+      assert(dlg.textContent.indexOf('entries share a password') > -1,
+             'the group label is still shown')
+      assert(dlg.textContent.indexOf('Search Record Titles') > -1,
+             'and the report says why selection is unavailable')
+      window.prefs.searchRecordTitles = true
+    })
+  })
+
+  test('the breach report does the same', () => {
+    const progress = xmk('div')
+    const results = xmk('div')
+    document.body.appendChild(progress)
+    document.body.appendChild(results)
+    try {
+      const verdict = verdictFor('Summer2026',
+                                 {status: NOT_FOUND, count: 0, reason: ''})
+      const outcome = {probeFailed: false, cancelled: false, results: [
+        Object.assign({entries: [{title: 'Facebook', name: 'password'}]}, verdict)]}
+
+      window.prefs.searchRecordTitles = false
+      renderBreachResults(progress, results, outcome, 1)
+      assert(!results.querySelector('.x-breach-record-select'),
+             'titles are plain text when selection cannot work')
+      assert(results.textContent.indexOf('Facebook') > -1,
+             'the title is still readable')
+      assert(results.textContent.indexOf('Search Record Titles') > -1,
+             'and the report says why')
+
+      window.prefs.searchRecordTitles = true
+      renderBreachResults(progress, results, outcome, 1)
+      assert(results.querySelector('.x-breach-record-select'),
+             'clickable again once the preference is back on')
+      assert(results.textContent.indexOf('currently off') === -1,
+             'and the note is gone')
+    } finally {
+      progress.remove()
+      results.remove()
+      window.prefs.searchRecordTitles = saved
+    }
+  })
+}
+
 async function runBreachTests() {
   await runBreachTests1()
   await runBreachTests2()
@@ -3696,6 +3843,8 @@ async function runBreachTests() {
   await runBreachTests9()
   await runBreachTests10()
   await runBreachTests11()
+  await runBreachTests12()
+  await runBreachTests13()
 }
 
 // Keep `.then(() => { window.__TESTS_COMPLETE__ = true })` as the final link
@@ -4079,8 +4228,18 @@ function mkVaultUiItem(title, active, fields) {
 }
 
 function withVaultUiFixture(items, fn) {
-  const real = document.getElementById('records-accordion')
-  if (real) { real.removeAttribute('id') }
+  // Neutralise EVERY element carrying the id, not just the first.
+  //
+  // This used to take document.getElementById(), which returns one match. The
+  // page has three elements that claim `records-accordion` at different
+  // points, and if two were live at once the survivor sat earlier in document
+  // order and won the lookup inside convertInternalDataToJSON() — so the
+  // fixture's records were invisible and getCurrentRecords() returned []. The
+  // symptom was a reuse report with nothing in it and no error anywhere,
+  // because refreshVaultStats() swallows the failure.
+  const displaced = Array.from(document.querySelectorAll('#records-accordion'))
+  displaced.forEach(el => el.removeAttribute('id'))
+
   const fixture = xmk('div').xId('records-accordion')
   items.forEach(i => fixture.appendChild(i))
   document.body.appendChild(fixture)
@@ -4092,7 +4251,7 @@ function withVaultUiFixture(items, fn) {
   } finally {
     fixture.remove()
     badge.remove()
-    if (real) { real.setAttribute('id', 'records-accordion') }
+    displaced.forEach(el => el.setAttribute('id', 'records-accordion'))
   }
 }
 

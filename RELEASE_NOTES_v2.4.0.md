@@ -121,6 +121,22 @@ local entropy estimate cannot tell the difference — it measures length and
 character variety, not dictionary structure — so for word-based passwords the
 corpus is the only check capable of objecting.
 
+## The reports are actionable
+
+Both reports let you act on a finding rather than only read it. In a vault of a
+few hundred entries, locating the records a report names is most of the work.
+
+- In **Reused Passwords**, clicking a group's heading selects that group's
+  records in the main window and closes the report.
+- In **Breached Passwords**, clicking an entry's title selects that record.
+
+The search box is populated with the pattern rather than filtered behind your
+back — an unexplained filtered list is worse than an odd-looking search term,
+and the existing clear button undoes it. Titles are escaped before the pattern
+is built, so a record called `Bank (old)` selects itself rather than something
+unexpected, and the pattern is anchored so `Google` does not also bring in
+`Google Cloud`.
+
 ## Known limitation
 
 The entropy estimate scores `std/creature/history` at 118 bits when the true
@@ -149,9 +165,6 @@ Recorded in `PROPOSAL.md` as item 13.
 
 ## Not in this release
 
-- **Actionable reports** — clicking a group in the reuse report, or an entry in
-  the breach report, to select those records in the main window. Specified as
-  item 11 in `PROPOSAL.md`.
 - **Vault file integrity.** `decryptV2` uses AES-CBC with no authentication
   tag, so a wrong password is only detected when the padding happens to fail —
   about 255 times in 256 — and a PAM file has no tamper-evidence. Fixing it

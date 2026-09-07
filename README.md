@@ -87,6 +87,8 @@ the on-line help is generated.
     * [Clear Records](#clear-records)
     * [Save File](#save-file)
     * [Load File](#load-file)
+    * [Reused Passwords](#reused-passwords)
+    * [Breached Passwords](#breached-passwords)
     * [Get Help](#get-help)
   * [Preferences](#preferences)
     * [Search Preferences](#search-preferences)
@@ -1152,7 +1154,7 @@ like.
 
 <img src="www/help/pam-menu.png" width="400" alt="menu">
 
-As you can see, there are seven menu options:
+As you can see, there are nine menu options:
 
 1. [About](#about)
 1. [Preferences](#preferences)
@@ -1160,7 +1162,12 @@ As you can see, there are seven menu options:
 1. [Clear Records](#clear-records)
 1. [Load File](#load-file)
 1. [Save File](#save-file)
+1. [Reused Passwords](#reused-passwords)
+1. [Breached Passwords](#breached-passwords)
 1. [Help](#get-help).
+
+A tenth, **Print**, appears between Breached Passwords and Help when the
+[Enable Printing](#enable-printing) preference is set. It is hidden by default.
 
 Click or tap on the "<img src="www/icons/blue/info-circle.svg" height='32' width='32' />&nbsp;About"
 entry to see information about the app.
@@ -1190,6 +1197,23 @@ See the [Load File](#load-file) section for more details.
 Click or tap on the "<img src="www/icons/blue/file-arrow-down-fill.svg" height='32' width='32' />&nbsp;Save File" entry
 to save all of the records to a file.
 See the [Save File](#save-file) section for more details.
+
+Click or tap on the "<img src="www/icons/blue/files.svg" height='32' width='32' />&nbsp;Reused Passwords"
+entry to see which stored passwords are used by more than one entry. A password
+shared between entries is only as safe as the least safe of them. The check
+runs entirely on your device.
+See the [Reused Passwords](#reused-passwords) section for more details.
+
+Click or tap on the "<img src="www/icons/blue/key.svg" height='32' width='32' />&nbsp;Breached Passwords"
+entry to check your passwords against a corpus of passwords exposed in known
+breaches. This entry is always present, but the check itself is **off by
+default** — with it off, the entry opens a page explaining what would be sent
+and what would not, so you can decide.
+See the [Breached Passwords](#breached-passwords) section for more details.
+
+Click or tap on the "<img src="www/icons/blue/printer.svg" height='32' width='32' />&nbsp;Print"
+entry to print your records. This entry only appears when the
+[Enable Printing](#enable-printing) preference is set.
 
 Click or tap on the "<img src="www/icons/blue/question-circle.svg" height='32' width='32' />&nbsp;Help"
 entry to see this help message.
@@ -1247,6 +1271,8 @@ In a nutshell they are:
 1. [Clear Records](#clear-records)
 1. [Save Records](#save-file)
 1. [Load Records](#load-file)
+1. [Reused Passwords](#reused-passwords)
+1. [Breached Passwords](#breached-passwords)
 1. [Help](#get-help).
 
 Each function will be discussed in a separate subsection below.

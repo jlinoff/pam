@@ -730,6 +730,43 @@ check each claim is true of what exists rather than of what was designed:**
 The same re-read applies to the **Content-Security-Policy** section and the two
 qualified comparison-table rows.
 
+### The Menu subsection was counting wrong
+
+Under **Menu and Search Section → Menu**, the README said *"there are seven menu
+options"* and listed seven. There are ten. It was missing Reused Passwords,
+Breached Passwords and Print, along with the "Click or tap on…" paragraph each
+entry has.
+
+`Reused Passwords` and `Print` were already absent before this branch, so that
+text was wrong in the v2.3.0 release too. **The prose stated a count**, which is
+the kind of claim that goes stale silently — nothing checks a number written in
+a sentence against the code that produces the thing being counted.
+
+The `pam-menu.png` capture beside it shows the real menu, so once the
+screenshots are regenerated the picture and the prose will finally agree.
+
+Now nine listed, with Print described separately as the conditional entry it
+is. The icons were cross-checked against `menu.js` rather than assumed: `files`
+for Reused Passwords, `key` for Breached Passwords, `printer` for Print.
+
+### The navigation lagged the sections
+
+Both `Reused Passwords` and `Breached Passwords` had full sections written, and
+neither appeared in the table of contents or in the Menu Functions index. The
+prose existed; there was no route to it except scrolling or following a
+cross-reference from elsewhere.
+
+Reused Passwords shipped in **v2.3.0** in that state, so it went a whole
+release with a section nobody could navigate to.
+
+Nothing catches this. `check-images` verifies that every link resolves, which
+is the opposite direction — it finds links pointing at nothing, not sections
+nothing points at. A "section with no inbound link" check would be a natural
+companion, though headings legitimately reachable only by scrolling exist too,
+so it would need judgement rather than a hard rule.
+
+Audited the rest: all twelve Menu Functions subsections are now in both.
+
 ### Status: README pass DONE
 
 **Corrections to what was already written.** The preference section was drafted

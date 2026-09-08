@@ -39,11 +39,42 @@ figures are stated on the assumption of a uniform draw.
 
 Verified over 60,000 draws: within 1.2% of uniform, always in range.
 
+## Also fixed: the in-record generator ignored the length preference
+
+The password generator that opens inside a record's password field had its
+length hardcoded to 20 characters and never read
+`passwordRangeLengthDefault`. The standalone generator honoured it.
+
+This did not matter before v2.4.0, when the default was also 20. Raising it to
+30 made the two diverge.
+
+The practical effect is on **memorable** passwords generated from inside a
+record in v2.4.0. Fitting five words into twenty characters forces short words,
+which draws from a smaller part of the list — roughly 3,500 usable words rather
+than 9,858, so about **59 bits instead of the 66** the documentation states.
+That is below the 60-bit floor PAM's own strength check applies, and the check
+does not notice, because it assumes the full word list.
+
+It also occasionally failed outright: about 3% of the time the generator could
+not fit five words into twenty characters and returned `???` followed by random
+hex.
+
+Cryptic passwords from that generator were 20 characters rather than 30 — 131
+bits instead of 196, both comfortably strong.
+
+**Should you regenerate?** Only if you want the documented strength. 59 bits is
+a meaningful password for anything rate-limited, and well short of the 66 the
+README promises. Memorable passwords made with the *standalone* generator are
+unaffected.
+
 ## What you should do
 
 - **Regenerate memorable passwords that protect anything valuable**, whichever
-  version of PAM produced them. Cryptic passwords are unaffected — they were
-  always drawn from the cryptographic generator.
+  version of PAM produced them. Cryptic passwords are unaffected by the
+  randomness fix — they were always drawn from the cryptographic generator.
+- Optionally, regenerate memorable passwords created from **inside a record**
+  in v2.4.0: they are about 59 bits rather than the documented 66. Less urgent
+  than the item above.
 - Nothing about stored data changed. Vault files, encryption and the file
   format are untouched, and v2.4.1 reads and writes exactly what v2.4.0 does.
 

@@ -1431,6 +1431,31 @@ list size, the word count, the threat model and the attack times, and never
 asked whether the words were being drawn properly. Every figure in that
 analysis rested on an assumption about a line of code nobody had read.
 
+### The screenshot seed had to change with it
+
+`SEED_RNG_JS` overrides `crypto.getRandomValues` so generated passwords are
+deterministic in captures. It filled every element with `next() & 0xff`, which
+was correct when every caller used a `Uint8Array`.
+
+`randomInt()` uses a `Uint32Array` and expects a full 32-bit draw. Under the
+old seed it would only ever have seen values 0-255, so `randomInt(9858)` would
+have selected from **the first 256 words of the list** — 2.6% of the
+vocabulary. The captures would not have failed; they would have shown
+passwords drawn from a crippled generator, and nothing would have said so.
+
+Now `array[i] = next() >>> 0`, letting the typed array truncate. `Uint8Array`
+output is byte-identical to before, so no existing capture is affected by this
+change. The probe that verifies the seed took now also checks that a
+`Uint32Array` receives a wide value, so the same mistake cannot pass silently
+again.
+
+**The two generator captures must be regenerated regardless.** Both generators
+now consume the seeded stream differently — `getCrypticPassword()` makes one
+32-bit draw per character instead of one `Uint8Array` for the whole password,
+and `getRandomWord()` draws from the CSPRNG rather than `Math.random()`. The
+passwords in `pam-password-generator-standalone.png` and
+`pam-password-generator.png` will differ.
+
 ### False positive: URL substring sanitization in a test
 
 CodeQL flagged `allowed.includes('https://api.pwnedpasswords.com')` in

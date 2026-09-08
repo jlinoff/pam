@@ -192,27 +192,6 @@ never read.
 genuinely its own: the help links and the per-device `filePassCache` override.
 A test compares the two and fails on any disagreement.
 
-## Fixed: memorable passwords used a non-cryptographic generator
-
-Found by CodeQL on the release pull request.
-
-Cryptic passwords were generated with `crypto.getRandomValues()`. **Memorable
-passwords were not** — word selection used `Math.random()`, which is not a
-cryptographic generator: its internal state is recoverable from a small number
-of observed outputs, and the generator shows five suggestions drawn from the
-same stream.
-
-This also undercut the entropy figures above. "Five words is 66 bits" assumes
-each word is an independent uniform draw from the list; it was neither.
-
-Both generators now use a shared `randomInt()` that draws from the CSPRNG and
-rejects values that would introduce modulo bias. That bias was present in the
-cryptic path too — it mapped a random byte with `% 72`, slightly favouring the
-first 40 characters of the alphabet.
-
-**If you generated a memorable password with an earlier version of PAM and it
-protects something that matters, regenerate it.**
-
 ## Also in this release
 
 - **Fixed:** deactivating a record left it in the reuse report. The toggle

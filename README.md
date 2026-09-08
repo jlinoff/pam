@@ -2281,6 +2281,12 @@ an IP address is visible to the other end. Checking a whole vault sends one
 request per **distinct** password: a password used by three records costs one
 request, not three.
 
+> **Note on memorable passwords generated before v2.4.1.** Word selection used
+> `Math.random()`, which is not a cryptographic generator, so the entropy
+> figures in this section did not hold for them. If a memorable password from
+> an earlier version protects something that matters, regenerate it. Cryptic
+> passwords were never affected. See `RELEASE_NOTES_v2.4.1.md`.
+
 **Nothing is sent until you ask.** Opening the report does not contact anyone;
 the requests begin when you press **Check** and stop when you press **Cancel**
 or close the dialogue.

@@ -45,9 +45,10 @@ numeric order. A low number means the item was raised early, nothing more.
 | 9. Vault file integrity | **deferred to v3.0** — ⚠ BREAKING: rewrites data files so older PAM versions cannot open them, with no way back once a vault is re-saved |
 | 10. Test suites ran without gating | **fixed** — finalize() ran per-runner, so two suites reported but did not count |
 | 11. Actionable reports | **done** — click-through from both reports, in v2.4.0 |
-| 12. Per-field breach button | done — on password fields, edit rows, and the standalone generator |
+| 12. Per-field breach button | done — on password fields, edit rows, and the standalone generator (documented under item 5, no separate section) |
 | 13. Entropy estimate ignores dictionary words | **done in v2.4.0** — estimator is dictionary-aware; generator defaults raised to match |
 | 14. Loaded files apply security preferences | open — a shared file can silently weaken settings; badges show the result but nothing asks first |
+| 15. Vault merge | idea — extends item 7; needs durable IDs because it writes, and can use inactive records as undo |
 
 ---
 
@@ -1313,6 +1314,86 @@ building `pwcheck`, and each time the program looked like it worked.
 
 ---
 
+## 14. Loading a file applies its preferences — including security settings
+
+The stale `pam-password-generator-standalone.png` capture looked like a
+screenshot problem and was not. It showed Length 20 and three-word passwords
+because that is genuinely what the application was doing: the harness loads
+`www/examples/example.txt`, and **a loaded file carries its own preferences,
+which override the defaults**.
+
+`example.txt` still held `passwordRangeLengthDefault: 20` and
+`memorablePasswordMinWords: 3`. Both example files now carry the v2.4.0 values.
+Without that, a user loading the example vault would get three-word passwords
+from the generator that the breach check immediately rejects.
+
+**The wider point is a security one.** Preferences that change security posture
+travel inside PAM files, and are applied on load without confirmation. The
+example file was setting `filePassCache: 'local'` — persisting the file
+password to `localStorage` across browser sessions, which is the weaker of the
+two strategies and the one SEC-002 deliberately made non-default. Loading the
+examples silently switched the user to it. Now `session` in both files.
+
+The same mechanism could carry `allowHtmlFieldRendering` (XSS on load),
+`searchPasswordFieldValues` (the search oracle fixed in v2.3.0), or
+`enablePasswordBreachCheck` (outbound traffic). None is set in the shipped
+examples, and nothing stops a *shared* file setting them.
+
+**Worth considering for a later release:** either do not apply security-relevant
+preferences from a loaded file, or say which ones changed. The toolbar badges
+already make the resulting state visible — ⚠ HTML ON, ⚠ PW SEARCH,
+⚠ BREACH CHECK, and the filepass indicator — which is a real mitigation, but it
+tells you the state afterwards rather than asking first. Recorded rather than
+fixed: it changes established load behaviour and belongs in its own change.
+
+## 15. Vault merge — an opportunity worth scoping properly
+
+Raised as a natural extension of item 7: once you can see what differs between
+two vaults, the obvious next question is whether you can reconcile them.
+
+**The need is real and current.** PAM is explicitly multi-device with file sync.
+Editing on a phone and a laptop between saves produces two divergent vaults, and
+today the only resolution is to pick a file and lose the other side's changes.
+Nothing warns that this happened. A per-record merge is the missing operation.
+
+**But merge is a different risk class from diff, and the difference matters.**
+Diff is read-only: a mis-matched record produces a confusing report. Merge
+writes: a mis-matched record silently overwrites a credential, and PAM has no
+history to recover it from.
+
+That inverts the conclusion reached for item 7. Durable entry identity is
+merely *nice to have* for diff — it adds rename detection to a feature that
+works without it. For merge it is **load-bearing**, because the cost of
+matching the wrong records changes from a bad report to a destroyed password.
+
+**Automatic resolution is not available, and should not be faked.** Records
+carry no modification timestamp — only `created`, assigned at save — and fields
+carry none at all. There is no basis for last-write-wins at any granularity.
+Every conflict therefore needs the user to choose, which is the right answer
+for this application regardless: a password manager silently picking between
+two credentials is not a behaviour worth having.
+
+**The interesting part: PAM already has the undo mechanism.** Records can be
+deactivated rather than deleted. A merge that *deactivates* the losing version
+instead of discarding it is reversible, visible in the record list, and needs no
+new schema. It also composes with existing behaviour — the reuse report already
+excludes inactive records under `hideInactiveRecords`, so superseded versions
+would not generate noise. That reuses machinery built for other reasons and
+turns the most dangerous property of merge, irreversibility, into a
+non-problem.
+
+**Sketch, not a design:**
+
+- Match records the way diff does; require confirmation for anything matched
+  heuristically rather than by ID.
+- Present each conflict as a choice; never resolve silently.
+- Keep the losing version as an inactive record rather than deleting it.
+- Never display password values in the conflict UI — report *that* they differ,
+  as item 7 does.
+
+Scheduling: this wants durable IDs, so it sits after that lands. Item 7 does
+not, and can precede it.
+
 ## `make test PORT=8088` never worked
 
 The Makefile threaded `$(PORT)` through the server and the kill command, and
@@ -1401,38 +1482,6 @@ splits on non-alphabetic characters and then requires every part to be a
 dictionary word, so `FpnzQcuq0nk/PxlMdYJ_itnK` fails on the second condition
 rather than the first. The production code was written more carefully than the
 test asserting things about it.
-
-## Loading a file applies its preferences — including security settings
-
-The stale `pam-password-generator-standalone.png` capture looked like a
-screenshot problem and was not. It showed Length 20 and three-word passwords
-because that is genuinely what the application was doing: the harness loads
-`www/examples/example.txt`, and **a loaded file carries its own preferences,
-which override the defaults**.
-
-`example.txt` still held `passwordRangeLengthDefault: 20` and
-`memorablePasswordMinWords: 3`. Both example files now carry the v2.4.0 values.
-Without that, a user loading the example vault would get three-word passwords
-from the generator that the breach check immediately rejects.
-
-**The wider point is a security one.** Preferences that change security posture
-travel inside PAM files, and are applied on load without confirmation. The
-example file was setting `filePassCache: 'local'` — persisting the file
-password to `localStorage` across browser sessions, which is the weaker of the
-two strategies and the one SEC-002 deliberately made non-default. Loading the
-examples silently switched the user to it. Now `session` in both files.
-
-The same mechanism could carry `allowHtmlFieldRendering` (XSS on load),
-`searchPasswordFieldValues` (the search oracle fixed in v2.3.0), or
-`enablePasswordBreachCheck` (outbound traffic). None is set in the shipped
-examples, and nothing stops a *shared* file setting them.
-
-**Worth considering for a later release:** either do not apply security-relevant
-preferences from a loaded file, or say which ones changed. The toolbar badges
-already make the resulting state visible — ⚠ HTML ON, ⚠ PW SEARCH,
-⚠ BREACH CHECK, and the filepass indicator — which is a real mitigation, but it
-tells you the state afterwards rather than asking first. Recorded rather than
-fixed: it changes established load behaviour and belongs in its own change.
 
 ## The screenshot mode was invisible, and came from the environment
 

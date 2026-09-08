@@ -137,17 +137,60 @@ is built, so a record called `Bank (old)` selects itself rather than something
 unexpected, and the pattern is anchored so `Google` does not also bring in
 `Google Cloud`.
 
-## Known limitation
+## The entropy estimate now understands words
 
-The entropy estimate scores `std/creature/history` at 118 bits when the true
-figure is about 40, because it has no notion of dictionary words. None of the
-structural checks catch word-based weakness either. This is why
-`MIN_ENTROPY_BITS` is not exposed as a preference: against a threefold
-estimator error, tuning a threshold between 60 and 80 would be false precision.
-Recorded in `PROPOSAL.md` as item 13.
+Found while deciding whether the password generator needed a breach button.
 
-`std/creature/history` now scores 40 bits rather than 118, and is rejected.
-Cryptic passwords are unaffected at 131.
+The estimate was `length x log2(alphabet)`, which is right for a random string
+and badly wrong for a passphrase. It scored `std/creature/history` at **118
+bits** when three words from PAM's 9,858-word list carry about **40** — a
+threefold overestimate, in the unsafe direction, for exactly the passwords PAM
+generates. None of the structural checks caught it either: a passphrase has no
+keyboard run, no character sequence, no repeat, and cleared the 60-bit floor on
+the inflated figure.
+
+`entropyBits()` now computes both a character estimate and a word estimate and
+returns the **lower** of the two. A passphrase is both a sequence of characters
+and a sequence of words, and its real strength is whichever description an
+attacker will use. Only separator-delimited passwords where every part is a
+dictionary word are treated as word-based; guessing at concatenated words would
+understate a password that merely contains one, and a false rejection teaches
+people to ignore the tool.
+
+**The generator defaults moved with it**, because correcting the measurement
+would otherwise have made PAM flag its own output as weak:
+
+| | before | after |
+|---|---|---|
+| `memorablePasswordMinWords` | 3 (40 bits) | **5 (66 bits)** |
+| `passwordRangeLengthDefault` | 20 | **30** |
+
+These are coupled and cannot be changed separately: the generator adds words
+until it reaches the target length, so 20 characters cannot hold five words.
+Raising the length also lengthens generated cryptic passwords, from about 131
+bits to 196.
+
+If you prefer shorter memorable passwords, the README's *Memorable Password Min
+Words* section gives the trade-off in full — three words falls in 96 seconds
+against a fast unsalted hash, and holds for millennia against a rate-limited
+login. The offline column is the one that matters, because you cannot know
+which sites store passwords badly.
+
+## Fixed: two sets of preference defaults
+
+`prefs-model.js` exported `getDefaultPrefs()`. `prefs.js` had its own hardcoded
+copy in `initPrefs()`. **The application used the second; every unit test
+asserted the first.**
+
+They had drifted since v2.3.0. `searchPasswordFieldValues` — the search-oracle
+fix — `showPasswordReuseWarning` and `enablePasswordBreachCheck` were missing
+from `initPrefs()` entirely, and worked only because `undefined` is falsy. The
+tests asserting their defaults were checking an object the running application
+never read.
+
+`initPrefs()` now delegates to `getDefaultPrefs()`, keeping only what is
+genuinely its own: the help links and the per-device `filePassCache` override.
+A test compares the two and fails on any disagreement.
 
 ## Also in this release
 
@@ -165,19 +208,16 @@ Cryptic passwords are unaffected at 131.
 - The Menu section of the README claimed seven menu entries when there were
   ten, and neither `Reused Passwords` nor `Breached Passwords` appeared in the
   table of contents.
-
-## A dictionary-aware entropy estimate
-
-`entropyBits()` now computes both a character estimate and a
-word estimate and returns the **lower** of the two. A passphrase is both a
-sequence of characters and a sequence of words, and its real strength is
-whichever description an attacker will use — the cheaper one.
-
-Only separator-delimited passwords are recognised as word-based, and every part
-must be in the list. Detecting concatenated words would need segmentation, and
-guessing wrongly there would understate a password that merely happens to
-contain a word — the expensive direction of error, since a false REJECT teaches
-people to ignore the tool.
+- **The README's table of contents is open by default.**
+- **`make test PORT=8088` never worked.** The Makefile threaded `$(PORT)`
+  through the server while the tests hardcoded `localhost:8081`, so a
+  non-default port started a server the tests never spoke to. `PORT` now
+  reaches the tests, which also lets `make test` and `make screenshots` run
+  concurrently on different ports.
+- The shipped example vault carried its own preferences, including
+  `filePassCache: 'local'` — the weaker of the two caching strategies, and the
+  one SEC-002 deliberately made non-default. Loading the examples silently
+  switched you to it. Both example files now match the current defaults.
 
 ## Not in this release
 
@@ -185,3 +225,4 @@ people to ignore the tool.
   tag, so a wrong password is only detected when the padding happens to fail —
   about 255 times in 256 — and a PAM file has no tamper-evidence. Fixing it
   means AES-GCM and a v3 format with migration. Item 9.
+- **A dictionary-aware entropy estimate.** Item 13.

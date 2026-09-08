@@ -42,8 +42,31 @@ and the mitigations in place.</p>
 <h2 id="threat-model">Threat model</h2>
 <p>PAM is a client-side web application. All encryption and decryption
 happens in the browser using the Web Crypto API
-(<code>SubtleCrypto</code>). No data is ever sent to a server. The
-encrypted file is stored locally by the user.</p>
+(<code>SubtleCrypto</code>). The encrypted file is stored locally by the
+user.</p>
+<p>Your records are never sent to a server. There is exactly one feature
+that contacts anything at all, it is off by default, and it does not
+transmit your data:</p>
+<ul>
+<li><strong>Password breach checking</strong> (v2.4.0,
+<code>enablePasswordBreachCheck</code>, disabled by default) sends the
+first five characters of a password’s SHA-1 hash — twenty bits — to
+<code>api.pwnedpasswords.com</code>, which returns every hash in its
+corpus beginning with that prefix. The comparison happens in the
+browser. The password, its full hash, the record it belongs to, and the
+rest of the vault are never transmitted. A <strong>⚠ BREACH
+CHECK</strong> badge appears in the toolbar while it is enabled.</li>
+</ul>
+<p>The <code>Content-Security-Policy</code> in
+<code>www/index.html</code> names that one host in
+<code>connect-src</code> and permits no other, so what PAM is
+<em>able</em> to contact is verifiable from the page source rather than
+from this document. Note that the policy permits the host whether or not
+the preference is enabled: a <code>&lt;meta&gt;</code> policy is fixed
+when the page is parsed and cannot depend on a runtime setting, and
+multiple policies compose by intersection, so a second one could only
+tighten the first. The preference controls whether PAM makes the
+request, not whether it could.</p>
 <p>The primary threat vectors are:</p>
 <ol type="1">
 <li><strong>Compromise of the encrypted file</strong> — an attacker

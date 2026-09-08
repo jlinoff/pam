@@ -126,7 +126,9 @@ NOISE_REPORT = {}
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 HELP = os.path.join(os.path.dirname(HERE), 'www', 'help')
-URL = 'http://localhost:8081/'
+# Port from the environment so this can run alongside `make test` on a
+# different one. Defaults to the Makefile's PORT default.
+URL = f'http://localhost:{os.environ.get("PORT", "8081")}/'
 
 # The About dialogue carries two sources of per-run churn:
 #
@@ -1785,11 +1787,73 @@ def shot_print_example(driver):
     return driver.find_element(By.ID, 'x-shot-print-preview')
 
 
+# ---------------------------------------------------------------------------
+# Breach checking
+# ---------------------------------------------------------------------------
+#
+# Two captures, and the DISABLED one is the more important. The preference is
+# off by default, so that is the state almost every reader will meet, and it is
+# where the trade-off is explained at the moment someone is deciding.
+#
+# Neither capture makes a network request. The disabled state cannot, and the
+# enabled one is photographed before Check is pressed — which is also the
+# honest picture of what opening the report does.
+
+
+def open_breach_dialogue(driver):
+    """Open Breached Passwords and return its modal content."""
+    dlg = choose_menu_option(driver, 'Breached Passwords')
+    if dlg is None:
+        raise RuntimeError('the Breached Passwords menu entry opened nothing')
+    wait_for_modal(driver)
+    return modal_content(dlg)
+
+
+def shot_breach_disabled(driver):
+    """The report with breach checking off — the default state."""
+    set_theme(driver, 'dark')
+    driver.execute_script('window.prefs.enablePasswordBreachCheck = false;')
+    content = open_breach_dialogue(driver)
+
+    text = content.get_attribute('textContent')
+    if 'Nothing has been sent' not in text:
+        raise RuntimeError(
+            'the disabled report should lead with the fact that no request was '
+            f'made. Got: {text[:200]!r}')
+    if 'Enable Password Breach Check' not in text:
+        raise RuntimeError('it should name where to turn the feature on')
+    blur(driver)
+    return content
+
+
+def shot_breach_ready(driver):
+    """The report with breach checking on, before anything is sent.
+
+    Captured deliberately at the point where the request count is stated and
+    nothing has gone out. Pressing Check would make one request per distinct
+    password in the example vault, which a screenshot has no business doing.
+    """
+    set_theme(driver, 'dark')
+    driver.execute_script('window.prefs.enablePasswordBreachCheck = true;')
+    content = open_breach_dialogue(driver)
+
+    text = content.get_attribute('textContent')
+    if 'Nothing has been sent yet' not in text:
+        raise RuntimeError(
+            f'the ready state should say nothing has gone out yet: {text[:200]!r}')
+    if 'requests' not in text and 'request' not in text:
+        raise RuntimeError('it should state how many requests a check would send')
+    blur(driver)
+    return content
+
+
 # (filename, capture function, window size)
 SHOTS = [
     ('pam-menu.png', shot_menu, WINDOW),
     ('pam-about.png', shot_about, WINDOW),
     ('pam-reused-passwords.png', shot_reused_passwords, WINDOW),
+    ('pam-breached-passwords-disabled.png', shot_breach_disabled, WINDOW),
+    ('pam-breached-passwords.png', shot_breach_ready, WINDOW),
     ('pam-prefs-search.png', shot_prefs_search, WINDOW),
     ('pam-prefs-password.png', shot_prefs_passwords, WINDOW),
     ('pam-prefs-miscellaneous.png', shot_prefs_misc, WINDOW),
@@ -1993,7 +2057,12 @@ def capture(driver, filename, func, check_only, fit=False):
     return state, png_size(png)
 
 
-def progress_line(state, size, position, elapsed, filename):
+def run_mode(check_only):
+    """How the run should describe itself in its output."""
+    return 'CHECK ONLY, nothing written' if check_only else 'WRITE'
+
+
+def progress_line(state, size, position, run, filename):
     """One result line, with how far through the run it is.
 
     A full pass is several minutes with no other sign of life, and knowing
@@ -2003,10 +2072,16 @@ def progress_line(state, size, position, elapsed, filename):
     time — so optimisation can follow measurement rather than guesswork.
     """
     index, total = position
+    elapsed, check_only = run
     # All five characters wide: `same~` is one longer than the rest, and
     # without padding it shifted every column after it on that line.
     marker = {'new': 'NEW  ', 'changed': 'CHG  ', 'same': 'same ',
               'noise': 'same~'}[state]
+    if check_only and state in ('new', 'changed'):
+        # A line reading CHG is a claim that the file on disk was updated. In
+        # check mode it was not, so the marker is lowercase and questioning —
+        # and five characters wide, like the others, so the columns hold.
+        marker = {'new': 'new? ', 'changed': 'chg? '}[state]
     dimensions = f'{size[0]}x{size[1]}'
     percent = f'{index * 100 // total}%'
     return f'  {marker}  {dimensions:>9}  {percent:>4}  {elapsed:5.1f}s  {filename}'
@@ -2051,6 +2126,18 @@ def main():
     '''Walk the shot list. Returns 0, or 1 in check mode if anything differs.'''
     check_only = os.environ.get('CHECK') == '1'
 
+    # Announced before anything runs, not inferred from the summary.
+    #
+    # The mode comes from an environment variable, so an exported CHECK=1 would
+    # otherwise make this silently stop writing files — and a run that reports
+    # CHANGED while writing nothing looks exactly like a run that wrote. The
+    # Makefile now passes CHECK explicitly for both targets, which prevents it;
+    # this line makes it visible if it happens anyway.
+    if check_only:
+        print('MODE: CHECK ONLY (CHECK=1) — nothing will be written to disk\n')
+    else:
+        print('MODE: WRITE — changed captures will be saved\n')
+
     # Substring match on the filename, so SHOT=google runs the three
     # pam-google-* captures and SHOT=prefs runs the preference tabs.
     shots = selected_shots()
@@ -2083,7 +2170,7 @@ def main():
             started = time.time()
             state, size = capture(driver, filename, func, check_only, fit)
             print(progress_line(state, size, (index, len(shots)),
-                                time.time() - started, filename))
+                                (time.time() - started, check_only), filename))
             if state not in ('same', 'noise'):
                 changed.append(filename)
             reset_between_shots(driver)
@@ -2097,10 +2184,11 @@ def main():
             print(f'  {name}: {count} pixels')
         print()
     if not changed:
-        print(f'{len(shots)} screenshots, none changed')
+        print(f'{len(shots)} screenshots, none changed [{run_mode(check_only)}]')
         return 0
     verb = 'would change' if check_only else 'written'
-    print(f'{len(changed)} of {len(shots)} {verb}: {", ".join(changed)}')
+    print(f'{len(changed)} of {len(shots)} {verb} '
+          f'[{run_mode(check_only)}]: {", ".join(changed)}')
     return 1 if check_only else 0
 
 

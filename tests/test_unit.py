@@ -79,6 +79,29 @@ def test_unit_tests_pass():
         failed = results.get('failed', 0)
         total  = results.get('total', 0)
 
+        # The totals must account for every result rendered on the page.
+        #
+        # window.__TEST_RESULTS__ is written by finalize(), and for the whole
+        # of v2.3.0 finalize() was called per-runner rather than once at the
+        # end of the chain. Two suites ran after the last call: their results
+        # appeared on the page and were absent from the totals, so a failure
+        # in either would have been visible and still passed the build.
+        # Trusting the summary without checking it against the lines is what
+        # let that go unnoticed.
+        rendered = driver.execute_script(
+            'return {'
+            '  pass: document.querySelectorAll(".test-line.pass").length,'
+            '  fail: document.querySelectorAll(".test-line.fail").length'
+            '}')
+        shown = rendered['pass'] + rendered['fail']
+        assert shown == total, (
+            f'the summary reports {total} tests but the page shows {shown} '
+            f"({rendered['pass']} passed, {rendered['fail']} failed). "
+            'A suite is running after the last finalize(), so its results are '
+            'displayed but not counted — and its failures would not fail this '
+            'test.'
+        )
+
         # Collect failure details for the pytest output
         if failed > 0:
             fail_lines = driver.execute_script('''

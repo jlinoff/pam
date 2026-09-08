@@ -8,6 +8,7 @@ import { xmk, xget } from './lib.js'
 import { mkPopupModalDlgButton, mkPopupModalDlg } from './utils.js'
 import { convertInternalDataToJSON } from './save.js'
 import { vaultFingerprint, reuseGroups, reuseCount, partitionByActive } from './vault.js'
+import { selectRecordsByTitle, canSelectRecords, SELECTION_DISABLED_NOTE } from './search.js'
 
 // Last computed values. The fingerprint is asynchronous (crypto.subtle) but
 // the About dialogue is built synchronously, so it reads this cache and gets
@@ -188,6 +189,11 @@ function mkReuseDlgBody() {
         xmk('p').xClass('fst-italic').xInnerHTML(
             'The passwords themselves are not shown. They are used only to group ' +
             'the entries below.' + scope))
+    if (!canSelectRecords()) {
+        body.xAppendChild(
+            xmk('p').xClass('small', 'text-warning')
+                .xInnerHTML(SELECTION_DISABLED_NOTE))
+    }
     for (let i = 0; i < cachedReuseGroups.length; i++) {
         let group = cachedReuseGroups[i]
         let list = xmk('ul').xClass('x-reuse-group')
@@ -207,13 +213,67 @@ function mkReuseDlgBody() {
                 xmk('span').xClass('text-secondary').xTextContent(' \u2014 ' + member.name))
             list.xAppendChild(item)
         }
+        // Clicking the heading selects the group's records in the main window
+        // and closes the report. A report that names 12 groups without helping
+        // you reach them leaves most of the work undone.
+        // Rendered as plain text when selection cannot work, rather than as a
+        // button that looks clickable and silently does nothing.
+        let label = 'Group ' + (i + 1) + ' \u2014 ' + group.length +
+                    ' entries share a password'
+        let heading = null
+        if (canSelectRecords()) {
+            heading = xmk('button')
+                .xClass('btn', 'btn-link', 'p-0', 'text-secondary',
+                        'text-decoration-none', 'x-reuse-group-select')
+                .xAttrs({'type': 'button',
+                         'title': 'select these records in the main window'})
+                .xInnerHTML(label + ' \u2192')
+                .xAddEventListener('click', onReuseGroupClick)
+            heading.setAttribute('data-group', String(i))
+        } else {
+            heading = xmk('div').xClass('text-secondary').xInnerHTML(label)
+        }
+
         body.xAppendChild(
-            xmk('div').xClass('mb-3').xAppend(
-                xmk('div').xClass('text-secondary').xInnerHTML(
-                    'Group ' + (i + 1) + ' \u2014 ' + group.length + ' entries share a password'),
-                list))
+            xmk('div').xClass('mb-3').xAppend(heading, list))
     }
     return body
+}
+
+// Hoisted out of the rendering loop: the group is carried on the element as a
+// data attribute rather than captured in a closure, so one handler serves every
+// group and jshint has nothing to complain about.
+function onReuseGroupClick(event) {
+    selectReuseGroup(event.currentTarget.getAttribute('data-group'))
+}
+
+/**
+ * Select the records in one reuse group and close the report.
+ *
+ * Reads the group from the cache by index rather than scraping the rendered
+ * list: the displayed title has had its INACTIVE marker stripped, so the text
+ * on screen is not always the record's title.
+ *
+ * @param {string} index - the group's position in cachedReuseGroups
+ */
+export function selectReuseGroup(index) {
+    const group = cachedReuseGroups[Number(index)]
+    if (!group) {
+        return
+    }
+    const applied = selectRecordsByTitle(group.map((member) => member.title))
+    if (!applied) {
+        // selectRecordsByTitle() has already explained why; leaving the report
+        // open is better than closing it and showing an unchanged window.
+        return
+    }
+    const dlg = document.getElementById('menuReuseDlg')
+    if (dlg && window.bootstrap) {
+        const modal = window.bootstrap.Modal.getInstance(dlg)
+        if (modal) {
+            modal.hide()
+        }
+    }
 }
 
 function refreshReuseDlgBody() {

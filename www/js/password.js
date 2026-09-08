@@ -3,6 +3,7 @@ import { xmk } from './lib.js'
 import { statusBlip } from './status.js'
 import { words } from './en_words.js'
 import { icon, clog, setDarkLightTheme, copyTextToClipboard, mkPopupModalDlg, mkPopupModalDlgButton } from './utils.js'
+import { checkPassword, REJECT, UNDETERMINED } from './breach.js'
 
 export const ALPHA_LOWER = "abcdefghijklmnopqrstuvwxyz"
 export const ALPHA_UPPER = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
@@ -11,29 +12,67 @@ export const HEX_DIGITS = "0123456789abcdef"
 export const SPECIAL = "_-+!./#$%^"
 export const ALPHABET = ALPHA_LOWER + ALPHA_UPPER + DEC_DIGITS + SPECIAL
 
+/**
+ * A uniformly distributed integer in [0, bound), from the CSPRNG.
+ *
+ * Two properties matter here, and neither is optional for generating
+ * passwords.
+ *
+ * **Cryptographic source.** Math.random() is not one. V8 implements it with
+ * xorshift128+, whose internal state is recoverable from a small number of
+ * observed outputs — past and future values can then be derived. The password
+ * generator displays several suggestions drawn from the same stream, so this
+ * is not a theoretical concern.
+ *
+ * **No modulo bias.** Taking `random % bound` skews towards the low values
+ * whenever bound does not divide the generator's range evenly. Values are
+ * rejected and redrawn above the largest exact multiple instead. With a
+ * 9,858-word list against a 32-bit range the bias would be tiny, but the
+ * entropy figures in the README are stated on the assumption of a uniform
+ * draw, and a rejection loop costs nothing.
+ *
+ * @param {number} bound - exclusive upper bound, must be positive
+ * @returns {number} an integer in [0, bound)
+ */
+export function randomInt(bound) {
+    if (!Number.isInteger(bound) || bound <= 0) {
+        throw new RangeError(`randomInt bound must be a positive integer: ${bound}`)
+    }
+    const range = 0x100000000            // 2^32, the range of a Uint32
+    const limit = Math.floor(range / bound) * bound
+    const buffer = new Uint32Array(1)
+    let value = limit
+    while (value >= limit) {
+        crypto.getRandomValues(buffer)
+        value = buffer[0]
+    }
+    return value % bound
+}
+
 // generate a cryptic password
 // length - is the length for the resulting password
 // alphabet - is the array of characters to use
 export function getCrypticPassword(length, alphabet) {
-    // Define the array and initially load it with random values.
-    let array = new Uint8Array(length) // length of the desired password
-    // https://developer.mozilla.org/en-US/docs/Web/API/Crypto/getRandomValues
-    crypto.getRandomValues(array) // load with random values.
+    // randomInt() per character rather than one Uint8Array masked with
+    // `% alphabet.length`: 256 is not a multiple of the 72-character
+    // alphabet, so that mapping favoured the first 40 characters slightly.
     let result = ''
-    for (let i=0; i < array.length; i++) {
-        // pick a random character from the alphabet
-        result += alphabet.charAt(array[i] % alphabet.length);
+    for (let i = 0; i < length; i++) {
+        result += alphabet.charAt(randomInt(alphabet.length))
     }
     return result;
 }
 
 export function getRandomWord(minlen, maxlen) {
-    var i = Math.floor(Math.random() * words.length);
+    // randomInt(), not Math.random(). The entropy claimed for a memorable
+    // password — about 13.3 bits per word — assumes each word is an
+    // independent uniform draw. Math.random() provides neither guarantee.
+    var i = randomInt(words.length)
     var tries = 0
     let maxtries = 1000
     var word = words[i]
     while (tries < maxtries && (word.length < minlen || word.length > maxlen)) {
-        i = Math.floor(Math.random() * words.length)
+        i = randomInt(words.length)
         word = words[i]
         tries += 1
     }
@@ -381,9 +420,68 @@ function refreshMainPasswordGeneratorDlg(dlg, len) {
             })
     }
 
+    // Breach check for one generated password.
+    //
+    // Worth having here for the MEMORABLE passwords specifically. A cryptic
+    // 20-character password carries about 131 bits, so a corpus hit is
+    // essentially impossible. Three words from a 9,858-word list carries about
+    // 40 — and the local entropy estimate cannot see that, because it
+    // multiplies length by alphabet size and has no notion of dictionary
+    // words: it scores `std/creature/history` at 118 bits rather than 40.
+    //
+    // So for word-based passwords the corpus is the only check that can
+    // object at all. On demand, one request per press: pressing Regenerate
+    // sends nothing.
+    function mkCheckButton(pwd) {
+        const hidden = window.prefs.enablePasswordBreachCheck ? [] : ['d-none']
+        return xmk('button')
+            .xClass('btn', 'btn-lg', 'p-0', 'ms-1', 'x-gen-breach-check', ...hidden)
+            .xAttrs({'type': 'button',
+                     'title': 'check this password against known breaches'})
+            .xAppend(icon('bi-shield-check', 'check for breaches'))
+            .xAddEventListener('click', async (event) => {
+                const button = event.currentTarget
+                const wrapper = button.parentElement
+                let out = wrapper.querySelector('.x-gen-breach-result')
+                if (!out) {
+                    out = xmk('div').xClass('x-gen-breach-result', 'small', 'ms-2')
+                    wrapper.appendChild(out)
+                }
+                out.textContent = 'checking\u2026'
+                button.disabled = true
+                try {
+                    const v = await checkPassword(pwd, window.fetch.bind(window))
+                    if (v.verdict === REJECT) {
+                        out.className = 'x-gen-breach-result small ms-2 text-danger'
+                        const label = v.inCorpus ? '\u26A0 BREACHED' : '\u26A0 WEAK'
+                        out.textContent = `${label}: ${v.reasons.join('; ')}`
+                    } else if (v.verdict === UNDETERMINED) {
+                        out.className = 'x-gen-breach-result small ms-2 text-warning'
+                        out.textContent = `could not check \u2014 ${v.reasons.join('; ')}. ` +
+                            'Nothing was learned about this password.'
+                    } else {
+                        out.className = 'x-gen-breach-result small ms-2 text-success'
+                        out.textContent = 'not in the breach corpus'
+                    }
+                } catch (error) {
+                    out.className = 'x-gen-breach-result small ms-2 text-warning'
+                    out.textContent = `could not check \u2014 ${error}`
+                } finally {
+                    button.disabled = false
+                }
+            })
+    }
+
+    // A password and its check button travel together, so the result lands
+    // beside the password it describes.
+    function mkPasswordRow(pwd) {
+        return xmk('span').xClass('d-inline-block').xAppend(
+            mkCopyButton(pwd), mkCheckButton(pwd))
+    }
+
     const mpBtns = []
     for (let i = 0; i < num; i++) {
-        mpBtns.push(mkCopyButton(getMemorablePassword(len)))
+        mpBtns.push(mkPasswordRow(getMemorablePassword(len)))
     }
 
     // Length slider — regenerates passwords live as the user drags
@@ -414,7 +512,7 @@ function refreshMainPasswordGeneratorDlg(dlg, len) {
                 lenLabel,
             ),
             xmk('p').xClass('fs-5', 'mb-1').xInnerHTML('Cryptic Password'),
-            mkCopyButton(cp0),
+            mkPasswordRow(cp0),
             xmk('p').xClass('fs-5', 'mb-1', 'mt-3').xInnerHTML('Memorable Passwords'),
             ...mpBtns,
         )

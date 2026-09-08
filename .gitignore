@@ -8,6 +8,7 @@ www/Pipfile
 bootstrap-*
 www/help/index.html
 www/js/version.js
+www/js/version.js.tmp
 *~
 *.deb
 .bs

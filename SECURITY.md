@@ -6,7 +6,13 @@ This document describes the security model for PAM, the known risks, and the mit
 
 ## Threat model
 
-PAM is a client-side web application. All encryption and decryption happens in the browser using the Web Crypto API (`SubtleCrypto`). No data is ever sent to a server. The encrypted file is stored locally by the user.
+PAM is a client-side web application. All encryption and decryption happens in the browser using the Web Crypto API (`SubtleCrypto`). The encrypted file is stored locally by the user.
+
+Your records are never sent to a server. There is exactly one feature that contacts anything at all, it is off by default, and it does not transmit your data:
+
+- **Password breach checking** (v2.4.0, `enablePasswordBreachCheck`, disabled by default) sends the first five characters of a password's SHA-1 hash — twenty bits — to `api.pwnedpasswords.com`, which returns every hash in its corpus beginning with that prefix. The comparison happens in the browser. The password, its full hash, the record it belongs to, and the rest of the vault are never transmitted. A **⚠ BREACH CHECK** badge appears in the toolbar while it is enabled.
+
+The `Content-Security-Policy` in `www/index.html` names that one host in `connect-src` and permits no other, so what PAM is *able* to contact is verifiable from the page source rather than from this document. Note that the policy permits the host whether or not the preference is enabled: a `<meta>` policy is fixed when the page is parsed and cannot depend on a runtime setting, and multiple policies compose by intersection, so a second one could only tighten the first. The preference controls whether PAM makes the request, not whether it could.
 
 The primary threat vectors are:
 

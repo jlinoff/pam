@@ -6,8 +6,6 @@ personal account manager webapp
 
 > **New to PAM?** Start with the [Quick Start guide](./QUICKSTART.md) — get up and running in five minutes.
 
-> **Documentation note:** The screenshots and UI descriptions in this document reflect PAM 1.2.5 and earlier. PAM 1.3.0 introduced tabbed preferences navigation and other visual changes. The concepts and features are identical — the documentation remains accurate and useful, but some screenshots and UI descriptions may not map 1:1 to what you see on screen.
-
 
 <details>
 <summary>Metadata</summary>
@@ -31,7 +29,7 @@ the on-line help is generated.
 
 </details>
 
-<details>
+<details open>
 <summary>Table of Contents</summary>
 
 <!--ts-->
@@ -53,6 +51,7 @@ the on-line help is generated.
       * [Reason 8: Access from mobile devices](#reason-8-access-from-mobile-devices)
       * [Reason 9: FOSS](#reason-9-foss)
       * [Reason 10: Duplicate Password Checking](#reason-10-duplicate-password-checking)
+      * [Reason 11: Breached Password Detection](#reason-11-breached-password-detection)
     * [PAM vs mainstream password managers](#pam-vs-mainstream-password-managers)
   * [Records](#records)
     * [Unexpanded View of all Records](#unexpanded-view-of-all-records)
@@ -86,6 +85,8 @@ the on-line help is generated.
     * [Clear Records](#clear-records)
     * [Save File](#save-file)
     * [Load File](#load-file)
+    * [Reused Passwords](#reused-passwords)
+    * [Breached Passwords](#breached-passwords)
     * [Get Help](#get-help)
   * [Preferences](#preferences)
     * [Search Preferences](#search-preferences)
@@ -116,7 +117,8 @@ the on-line help is generated.
       * [Custom About](#custom-about)
     * [Record Fields](#record-fields-preferences)
     * [Saving Preferences](#saving-preferences)
-  * [Security Considerations](#security-considerations)
+  * [Content-Security-Policy](#content-security-policy)
+* [Security Considerations](#security-considerations)
     * [MITM](#mitm)
     * [Third Party Web Site Security](#third-party-web-site-security)
     * [Site Reliability](#site-reliability)
@@ -620,8 +622,37 @@ password without ever displaying the password itself. A
 more than once, so you do not have to go looking.
 
 The check runs **entirely on your device**. No request is made, nothing is
-uploaded, and no third party learns anything about your vault. That is not a
-policy promise — PAM has no network access to make one with.
+uploaded, and no third party learns anything about your vault. Reuse detection
+needs no network at all, so this holds whether or not
+[Password Breach Check](#enable-password-breach-check) is enabled.
+
+#### Reason 11: Breached Password Detection
+
+A password that has appeared in a public breach is not yours any more, whatever
+its length or complexity. Attackers try published passwords first because it is
+cheap and it works.
+
+_PAM_ can check yours against the
+[Have I Been Pwned](https://haveibeenpwned.com/) corpus without revealing them:
+it sends a twenty-bit hash prefix and compares the returned list locally, so no
+password, no full hash, and nothing about which record it belongs to ever
+leaves the device. See
+[Breached Passwords](#breached-passwords) for the report and
+[Enable Password Breach Check](#enable-password-breach-check) for what is sent.
+
+This is the one feature that makes _PAM_ contact anything, so it is **off by
+default**, it announces itself with a toolbar badge while active, and the one
+host it may reach is named in the
+[Content-Security-Policy](#content-security-policy) where you can check it.
+
+It also applies local checks that need no network — keyboard runs, sequences,
+repeats, embedded years, an entropy floor — because being absent from a breach
+corpus is a low bar. A password can be unpublished and still bad.
+
+You can check the whole vault at once, or a single password from the record
+view, the record editor, or the password generator. Checking while you are
+choosing a password is the most useful of these: it is the last point at which
+changing your mind is free.
 
 ### PAM vs mainstream password managers
 
@@ -637,11 +668,12 @@ _Analysis: April 2026. Compared against Bitwarden and 1Password as representativ
 | Multi-device sync | File-based — works naturally on iCloud/Dropbox for single users | Automatic cloud sync | PAM loses for teams; single-user sync via iCloud/Dropbox works naturally |
 | Mobile access | Mobile-friendly browser UI; PWA install available; no native app | Native iOS/Android app with Face ID | PAM loses — no native app, though PWA install is available |
 | **Security model** | | | |
-| Local-only operation | Fully local — no server traffic after page load | Cloud-dependent; requires trust in vendor | PAM wins for offline/air-gapped scenarios |
+| Local-only operation | Local by default — no server traffic after page load unless you enable [Password Breach Check](#enable-password-breach-check), which sends a 20-bit hash prefix to one host | Cloud-dependent; requires trust in vendor | PAM wins for offline/air-gapped scenarios: the one optional exception is off by default and named in the policy |
 | Encryption | AES-256-CBC; v2 format (shipped April 2026) fixes PBKDF2 iteration count and salt entropy bug. Existing v1 files need manual re-save to upgrade. | AES-256, strong PBKDF2 / Argon2 KDFs | Tie — v2 closes the gap; v1 files remain weak until re-saved |
 | Zero-knowledge architecture | Inherently — no server ever sees data | Bitwarden: yes. 1Password: yes | Tie |
 | Reused password detection | Yes — the [Reused Passwords](#reused-passwords) report and a footer badge, computed locally with no network request | Yes — 1Password Watchtower, Bitwarden reports; both require the vault to be synced to the vendor | Tie on capability, PAM wins on disclosure — the same answer without anything leaving the device |
-| Breach alerts | None — if a third-party site you use is breached and your credentials leaked, PAM has no way to notify you. PAM's own encrypted data remains secure. | Bitwarden checks passwords against HaveIBeenPwned; 1Password's Watchtower flags breached passwords automatically | PAM loses on monitoring — not because PAM's data is at risk, but because it cannot alert you when third-party sites you have accounts on are breached |
+| Breach checking | Yes, on demand — [Breached Passwords](#breached-passwords) checks against the same Have I Been Pwned corpus, using a 20-bit hash prefix so nothing identifying is sent. Off by default | Bitwarden checks against HaveIBeenPwned; 1Password's Watchtower does it automatically, for a vault synced to the vendor | Close. The competitors check continuously and in the background; PAM checks when you ask. PAM sends less and tells you when it could not check rather than implying all is well |
+| Unsolicited breach alerts | None — PAM cannot notify you of a breach you did not ask about, because it does not run in the background or hold your address | Push and email alerts when a breach affects a stored credential | PAM loses. Checking on demand means you have to remember to check |
 | **Flexible / non-password data** | | | |
 | Free-form text records | Excellent — first-class textarea fields | Secure notes exist but limited formatting | PAM wins for general text storage |
 | Custom field types | Full HTML input types: text, textarea, url, phone, email, number, html | Fixed item templates; some custom fields | PAM wins — more flexible data model |
@@ -651,7 +683,7 @@ _Analysis: April 2026. Compared against Bitwarden and 1Password as representativ
 | **Usability & setup** | | | |
 | Setup complexity | Open browser URL; file management required | App install + account creation | Comparable; PAM needs no account but needs file discipline |
 | Sharing credentials | Share the file + master password via out-of-band channel | Built-in sharing with fine-grained permissions | PAM loses — coarse sharing only |
-| Offline use | Full — no dependency on external service | Local vault cache; full offline possible | PAM wins — no caching surprises |
+| Offline use | Full — no dependency on any external service. Breach checking, if enabled, reports that it could not reach the corpus rather than implying a password is safe | Local vault cache; full offline possible | PAM wins — no caching surprises |
 | Cost | Free, open-source (MIT) | Bitwarden free tier; paid for advanced features. 1Password paid only. | PAM wins on cost |
 | **Bottom line** | | | |
 | Recommended for most users? | No — autofill absence is a dealbreaker for daily web login use | Yes — Bitwarden in particular covers the common case well | Direct most users to Bitwarden |
@@ -1120,7 +1152,7 @@ like.
 
 <img src="www/help/pam-menu.png" width="400" alt="menu">
 
-As you can see, there are seven menu options:
+As you can see, there are nine menu options:
 
 1. [About](#about)
 1. [Preferences](#preferences)
@@ -1128,7 +1160,12 @@ As you can see, there are seven menu options:
 1. [Clear Records](#clear-records)
 1. [Load File](#load-file)
 1. [Save File](#save-file)
+1. [Reused Passwords](#reused-passwords)
+1. [Breached Passwords](#breached-passwords)
 1. [Help](#get-help).
+
+A tenth, **Print**, appears between Breached Passwords and Help when the
+[Enable Printing](#enable-printing) preference is set. It is hidden by default.
 
 Click or tap on the "<img src="www/icons/blue/info-circle.svg" height='32' width='32' />&nbsp;About"
 entry to see information about the app.
@@ -1158,6 +1195,23 @@ See the [Load File](#load-file) section for more details.
 Click or tap on the "<img src="www/icons/blue/file-arrow-down-fill.svg" height='32' width='32' />&nbsp;Save File" entry
 to save all of the records to a file.
 See the [Save File](#save-file) section for more details.
+
+Click or tap on the "<img src="www/icons/blue/files.svg" height='32' width='32' />&nbsp;Reused Passwords"
+entry to see which stored passwords are used by more than one entry. A password
+shared between entries is only as safe as the least safe of them. The check
+runs entirely on your device.
+See the [Reused Passwords](#reused-passwords) section for more details.
+
+Click or tap on the "<img src="www/icons/blue/key.svg" height='32' width='32' />&nbsp;Breached Passwords"
+entry to check your passwords against a corpus of passwords exposed in known
+breaches. This entry is always present, but the check itself is **off by
+default** — with it off, the entry opens a page explaining what would be sent
+and what would not, so you can decide.
+See the [Breached Passwords](#breached-passwords) section for more details.
+
+Click or tap on the "<img src="www/icons/blue/printer.svg" height='32' width='32' />&nbsp;Print"
+entry to print your records. This entry only appears when the
+[Enable Printing](#enable-printing) preference is set.
 
 Click or tap on the "<img src="www/icons/blue/question-circle.svg" height='32' width='32' />&nbsp;Help"
 entry to see this help message.
@@ -1215,6 +1269,8 @@ In a nutshell they are:
 1. [Clear Records](#clear-records)
 1. [Save Records](#save-file)
 1. [Load Records](#load-file)
+1. [Reused Passwords](#reused-passwords)
+1. [Breached Passwords](#breached-passwords)
 1. [Help](#get-help).
 
 Each function will be discussed in a separate subsection below.
@@ -1414,12 +1470,12 @@ example that shows how simple the format is.
     "format-version": "1.0.0"
   },
   "prefs": {
-    "passwordRangeLengthDefault": 20,
+    "passwordRangeLengthDefault": 30,
     "passwordRangeMinLength": 12,
     "passwordRangeMaxLength": 32,
     "memorablePasswordWordSeparator": "/",
     "memorablePasswordMinWordLength": 2,
-    "memorablePasswordMinWords": 3,
+    "memorablePasswordMinWords": 5,
     "memorablePasswordMaxWords": 5,
     "memorablePasswordMaxTries": 10000,
     "clearBeforeLoad": true,
@@ -1738,6 +1794,42 @@ suppresses the badge only — the check still runs and the report is still
 available from the menu, so there is no state in which PAM knows about reuse
 and cannot tell you.
 
+### Breached Passwords
+
+Checks your stored passwords against the
+[Have I Been Pwned](https://haveibeenpwned.com/) corpus, and against local
+structural checks that need no network. Turn it on in
+[Preferences → Administration → Enable Password Breach Check](#enable-password-breach-check);
+it is off by default.
+
+The menu entry is always present. With the preference off it opens a page
+explaining what the feature would send and what it would not, so the disclosure
+appears when you are deciding rather than only in this document. **Nothing is
+sent while the preference is off, and nothing is sent by opening the report.**
+
+<img src="www/help/pam-breached-passwords-disabled.png" width="700" alt="the Breached Passwords report with the feature disabled">
+
+With it on, the report says how many requests a check would need — one per
+distinct password, so a password shared by three records costs one — and waits.
+
+<img src="www/help/pam-breached-passwords.png" width="700" alt="the Breached Passwords report ready to run">
+
+Press **Check** to start. Requests are sent one at a time with a short pause
+between them; a few hundred passwords takes about a minute. **Cancel** stops
+after the current request, and closing the dialogue stops it too.
+
+Each result is labelled:
+
+| Label | Meaning |
+|---|---|
+| **⚠ BREACHED** | found in the corpus; it is published, change it |
+| **⚠ WEAK** | not in the corpus, but the local checks objected |
+| **could not check** | the lookup failed; **nothing was learned** about it |
+
+The last is not a verdict. It is _PAM_ reporting that it failed to reach one,
+and it is never merged with the clean result — if you were offline, the report
+says so rather than implying your passwords are fine.
+
 ### Get Help
 To get this help message, choose the `"Help"` option from the menu.
 
@@ -1776,6 +1868,14 @@ The default is enabled.
 If enabled, all searches look at the record titles, otherwise they do not.
 
 The default is enabled.
+
+**Turning this off also disables selecting records from the reports.** Clicking
+a group in [Reused Passwords](#reused-passwords), or an entry in
+[Breached Passwords](#breached-passwords), works by putting a search pattern
+built from the record titles into the search box — which finds nothing if
+titles are not searched. Rather than filtering your records down to an empty
+list, _PAM_ shows those entries as plain text instead of clickable ones and
+says why at the top of the report.
 
 #### Search Record Field Names
 If enabled, all searches look at the record field names, otherwise they do not.
@@ -1852,7 +1952,70 @@ The minimum number of words in a generated memorable password.
 
 > It has no affect on cryptic passwords.
 
-The default is 3.
+The default is 5.
+
+> Raised from 3 in v2.4.0. Three words carry about 40 bits, which is below the
+> floor _PAM_'s own breach check applies — so _PAM_ was generating passwords it
+> would have rejected had it been able to measure them correctly. Because the
+> word count is derived from the password length rather than chosen directly,
+> the default password length was raised from 20 to 30 at the same time; the
+> two cannot be changed independently. That also lengthens generated cryptic
+> passwords, from about 131 bits to 196.
+
+**How many words you need depends on what you are defending against.** _PAM_
+draws from a list of 9,858 words, so each word contributes about 13.3 bits:
+
+| Words | Entropy | Exhausted against a fast hash (10<sup>10</sup>/s) | Against bcrypt-class (10<sup>4</sup>/s) |
+|---|---|---|---|
+| 3 | 40 bits | 96 seconds | 3 years |
+| 4 | 53 bits | 11 days | 30,000 years |
+| 5 | 66 bits | 295 years | astronomically long |
+
+Against an **online** login that rate-limits attempts, even three words is
+ample — at ten guesses per second the keyspace takes thousands of years. The
+column that matters is the offline one: if the site you used the password on is
+breached and its password hashes leak, the attacker computes guesses locally at
+whatever rate their hardware allows, and a fast unsalted hash makes three words
+a matter of minutes.
+
+You cannot know in advance which sites store your password badly. **If you use
+memorable passwords for anything that matters, set this to 5.** Four is a
+reasonable compromise; three is suitable for low-value accounts and for places
+where you would notice and could recover from a compromise.
+
+Note that [Breached Passwords](#breached-passwords) will not warn you about
+this. Its local entropy estimate measures length and character variety, not
+dictionary structure, so it scores a three-word password far higher than the
+40 bits above and raises no objection. The corpus check still applies — a
+memorable password that has appeared in a breach is still reported — but the
+structural check cannot see word-based weakness.
+
+##### Why not just use a bigger dictionary?
+
+It is the obvious thought and the arithmetic argues against it. Entropy grows
+**logarithmically** with the size of the word list but **linearly** with the
+number of words, so adding words is far cheaper than adding vocabulary:
+
+| Approach | Entropy | Cost |
+|---|---|---|
+| 5 words from the current 9,858-word list | 66 bits | none |
+| 5 words from a 100,000-word list | 83 bits | a 1.4 MB word list |
+| **6 words** from the current list | **80 bits** | none |
+| **7 words** from the current list | **93 bits** | none |
+
+A tenfold larger dictionary buys about 3 bits per word. One extra word buys
+13. A sixth word matches a tenfold expansion; a seventh beats it.
+
+There is a second reason, and it matters more. _PAM_ uses
+[google-10000-english](https://github.com/first20hours/google-10000-english),
+a list of **common** words — which is the whole point of calling them
+memorable. A 100,000-word list contains words most people cannot recall or
+spell, so they press **Regenerate** until something familiar appears. That
+quietly reduces the real keyspace to whatever subset they recognise, which is
+smaller than the list you started with. A larger dictionary can make passwords
+weaker in practice while looking stronger on paper.
+
+If you want more entropy, increase the length so more words are used.
 
 #### Memorable Password Max Tries
 The maximum number of attempts to generate a memorable password
@@ -2095,6 +2258,111 @@ them: if any one site is breached, every entry sharing that password
 is exposed. No breach corpus can detect this — it is a property of
 your vault, not of the password.
 
+#### Enable Password Breach Check
+
+Check stored passwords against the [Have I Been Pwned](https://haveibeenpwned.com/)
+corpus of passwords exposed in known breaches. **Disabled by default**, and the
+only setting in PAM that causes it to contact anything.
+
+When enabled, PAM sends the first five characters of a password's SHA-1 hash —
+twenty bits — to `api.pwnedpasswords.com`, which returns every hash in the
+corpus beginning with that prefix, typically around eight hundred. The
+comparison happens in your browser. The password, its full hash, the record it
+belongs to, and the rest of your vault are never transmitted.
+
+This is the range API's k-anonymity model. Five hex characters divide the corpus
+into about a million buckets, so the server learns only that you asked about
+one of the several hundred corpus entries sharing that prefix — or about some
+password that is not in the corpus at all, which it cannot distinguish from the
+first case.
+
+That is a real privacy property, but it is not nothing. A request is made, and
+an IP address is visible to the other end. Checking a whole vault sends one
+request per **distinct** password: a password used by three records costs one
+request, not three.
+
+**Nothing is sent until you ask.** Opening the report does not contact anyone;
+the requests begin when you press **Check** and stop when you press **Cancel**
+or close the dialogue.
+
+### What it checks besides the corpus
+
+Being absent from a breach corpus is a low bar. `Summer2026` appears in no
+corpus worth the name and is still a bad password, so PAM also applies checks
+that need no network at all:
+
+- keyboard runs (`qwer`, `asdf`)
+- character sequences (`abcd`, `4321`)
+- a character repeated four or more times
+- an embedded year between 1900 and 2099
+- a rough entropy floor of 60 bits, and a minimum length of 12
+
+These run whether or not the corpus is reachable, and the report distinguishes
+them: an entry is labelled **BREACHED** if it was found in the corpus and
+**WEAK** if only the local checks objected. The reasons are listed either way.
+The distinction matters because the urgency differs — a password in the corpus
+is published, and whoever holds the dump has it.
+
+### When the check cannot be made
+
+_PAM_ is a progressive web app; being offline is a normal state, not an error.
+A lookup that fails is reported as **could not check**, never as a clean
+result, and the report says plainly that nothing was learned about those
+passwords. If the corpus is unreachable when a run starts, _PAM_ says so once
+rather than making several hundred requests that will all fail.
+
+**What enabling it does not change.** The
+[Content-Security-Policy](#content-security-policy) permits that host whether
+the preference is on or off. The preference controls whether PAM makes the
+request, not whether it is able to.
+
+That is a limitation of the mechanism rather than a choice. A policy in a
+`<meta>` tag is only honoured while the page is being parsed, so it cannot be
+rewritten later from JavaScript. And when a page carries more than one policy,
+a request must be permitted by *all* of them — so adding a policy can only
+tighten, never relax. Both properties exist to stop an attacker widening the
+policy from injected script, and the same mechanism prevents PAM narrowing it
+conditionally.
+
+A **⚠ BREACH CHECK** badge appears in the toolbar while this is enabled, in the
+same style as the other warning badges, so an outbound-capable configuration is
+never invisible.
+
+Enabling it also adds a
+<img src="www/icons/blue/shield-check.svg" height="24" width="24" alt="shield"/>
+button in three places, for checking a single password without running the
+whole vault:
+
+- **On every password field** in a record, beside the
+  <img src="www/icons/blue/eye.svg" height="24" width="24" alt="eye"/>
+  show/hide button.
+- **In the record editor**, beside the
+  <img src="www/icons/blue/gear.svg" height="24" width="24" alt="gear"/>
+  password generator button. This is the most useful of the three: it is the
+  last moment before a password is adopted, whether typed, pasted, or taken
+  from the generator. The result clears as soon as you edit the value, because
+  it would otherwise describe a password you no longer have.
+- **In the [password generator](#password-generator)**, beside each suggested
+  password.
+
+All three are hidden while the preference is off, and the result appears beside
+the password it describes.
+
+The generator button is worth explaining, because a randomly generated password
+is not going to be in a breach corpus. It is there for the **memorable**
+passwords. A 20-character cryptic password carries around 130 bits of entropy;
+three words drawn from PAM's 9,858-word list carries around 40. That is still a
+reasonable password, but it is within reach of a corpus in a way the cryptic
+one is not — and _PAM_'s local entropy estimate cannot see the difference,
+because it measures length and character variety rather than recognising
+dictionary words. For word-based passwords the corpus is the only check that
+can object at all.
+
+**If you cannot find the button**, the most likely reason is that the
+preference is off — the ⚠ BREACH CHECK badge in the toolbar tells you at a
+glance. Note also that loading a records file applies that file's preferences,
+so opening a shared vault can switch breach checking off.
+
 #### Search Password Field Values
 
 WARNING: this only applies when Search Record Field Values is also
@@ -2180,6 +2448,44 @@ You _must_ scroll to the bottom of the dialogue and
 click on the `"Save"` button at the end to save changes.
 If you do not, any changes you made will be lost.
 
+## Content-Security-Policy
+
+`www/index.html` carries a Content-Security-Policy meta tag that constrains
+what the page is permitted to do, enforced by the browser rather than by PAM's
+own code:
+
+```
+default-src 'self';
+script-src  'self' https://cdn.jsdelivr.net;
+style-src   'self';
+img-src     'self' data:;
+font-src    'self';
+connect-src 'self' https://api.pwnedpasswords.com
+```
+
+The one entry worth understanding is `connect-src`, which lists every host the
+page may open a network connection to. It permits PAM's own origin and exactly
+one external host: the Have I Been Pwned range API used by
+[Password Breach Check](#enable-password-breach-check).
+
+Before v2.4.0 there was no `connect-src` directive at all, so it inherited
+`default-src 'self'` and the policy made a stronger statement — that the page
+could not contact anyone. That was verifiable by reading one line, without
+trusting any claim in this document. It now says something weaker but still
+useful: PAM cannot contact anyone **else**.
+
+Note that the policy cannot depend on your preference settings. A `<meta>`
+policy is fixed when the page is parsed, and a page's policies combine by
+intersection — every policy present must permit a request — so a second one
+could only ever tighten the first. Both rules exist so that injected script
+cannot widen a page's policy; the consequence is that PAM cannot narrow it
+either. See [Enable Password Breach Check](#enable-password-breach-check).
+
+The unit tests assert the exact contents of `connect-src`, so adding a host
+requires deliberately changing a test that says why not. That is the point:
+widening this policy is how a local-only application stops being one, a host at
+a time, each addition reasonable on its own.
+
 ## Security Considerations
 _PAM_, like all web applications, has security challenges. By
 fully disclosing them here you can understand the challenges
@@ -2219,12 +2525,24 @@ See [https://www.cve.org/](https://www.cve.org/) for more information.
 > Poor reporting of third party web site cybersecurity vulnerabilities
 > and exposures was one thing that motivated me to write _PAM_.
 
-Because _PAM_ does not send the data to a server, it is not vulnerable
+Because _PAM_ does not send your records to a server, it is not vulnerable
 to how cybersecurity is managed on the server by a third party.
 
-> You can verify that _PAM_ is not sending data out by monitoring
-> outbound traffic from your system. _PAM_ never sends any outbound
-> data.
+> You can verify what _PAM_ sends by monitoring outbound traffic from your
+> system. With default settings it sends nothing at all after the page loads.
+
+There is exactly one exception, and it is off by default:
+[Password Breach Check](#enable-password-breach-check). When you enable it,
+_PAM_ sends the first five characters of a password's SHA-1 hash — twenty bits
+— to `api.pwnedpasswords.com`, which returns every hash beginning with that
+prefix. The comparison happens in the browser. The password, its full hash,
+the record it belongs to and the rest of your vault are never transmitted.
+
+The [Content-Security-Policy](#content-security-policy) in `index.html` names
+that host explicitly and permits no other, so what _PAM_ is able to contact is
+verifiable from the page source rather than from this document. Note that the
+policy permits the host whether or not the preference is enabled: the
+preference controls whether _PAM_ makes the request, not whether it could.
 
 _PAM_ encryption and decryption operations are provided by and run
 _inside_ the _secure context_ of the browser. This is the same _secure

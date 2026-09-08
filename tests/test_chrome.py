@@ -4,6 +4,7 @@ PAM pytest module.
 import json
 import os
 import re
+import socket
 import time
 
 from selenium import webdriver
@@ -18,10 +19,48 @@ from selenium.webdriver.remote.webdriver import WebDriver
 #NO_OPTIONS = False if not os.getenv('NO_OPTIONS') else True
 NO_OPTIONS = 'NO_OPTIONS' in os.environ
 
+# The port the server is serving www/ on.
+#
+# Taken from the environment so the Makefile's PORT variable actually reaches
+# the tests. It did not: the Makefile threaded $(PORT) through the server and
+# the kill command and even documented `make test PORT=8088`, while these
+# tests hardcoded localhost:8081 in twenty-nine places — so a non-default port
+# started a server the tests never talked to.
+#
+# It also lets `make test` and `make screenshots` run at the same time on
+# different ports.
+SERVER_PORT = int(os.environ.get('PORT', '8081'))
+URL = f'http://localhost:{SERVER_PORT}/'
+
+
+def require_server(port=SERVER_PORT):
+    """Fail with a useful message when nothing is listening.
+
+    Without this, every test dies inside driver.get() with
+    net::ERR_CONNECTION_REFUSED buried under two dozen frames of chromedriver
+    stack — one useful token in sixty lines of output, and nothing saying what
+    to do about it. The tests are normally run through `make e2e-test`, which
+    starts the server; running pytest directly does not.
+    """
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as probe:
+        probe.settimeout(1.0)
+        if probe.connect_ex(('127.0.0.1', port)) == 0:
+            return
+    raise RuntimeError(
+        f'no server is listening on port {port}, so every test would fail '
+        f'with ERR_CONNECTION_REFUSED.\n'
+        f'Run `make e2e-test`, which starts one, or start it by hand:\n'
+        f'    ( cd www && python3 -m http.server {port} ) &')
+
+
 def get_driver():
     '''
     Get the webdriver and set the options for headless mode.
+
+    Checks the server first: it is the one dependency every test shares, and
+    the failure it produces otherwise is unreadable.
     '''
+    require_server()
     # https://stackoverflow.com/questions/53657215/running-selenium-with-headless-chrome-webdriver
     if NO_OPTIONS:
         return webdriver.Chrome()  # pylint: disable=not-callable
@@ -105,7 +144,7 @@ def choose_menu_option(driver, option):
     menu_items = children[1].find_elements(By.CLASS_NAME, 'dropdown-item')
     # A hard count rather than a lookup, deliberately: it catches an
     # accidental menu change. Raised from 8 to 9 by the Reused Passwords entry.
-    assert len(menu_items) == 9, f'unexpected menu size: {[m.text for m in menu_items]}'
+    assert len(menu_items) == 10, f'unexpected menu size: {[m.text for m in menu_items]}'
     #breakpoint()
     for menu_item in menu_items:
         if option in menu_item.text:
@@ -138,10 +177,10 @@ def test_basic_setup():
 
 
 def test_pam_setup():
-    '''Verify that chrome works in selenium for PAM on port 8081.
+    '''Verify that chrome works in selenium for PAM on the configured port.
     '''
     driver = get_driver()
-    driver.get('http://localhost:8081/')
+    driver.get(URL)
     time.sleep(1)
     menu = driver.find_element(By.ID, 'menu')
     assert menu
@@ -164,7 +203,8 @@ def test_pam_setup():
     # Note choose_menu_option() asserts the length independently; both have to
     # move together when the menu changes.
     expected = ['About', 'Preferences', 'New Record', 'Clear Records',
-                'Load File', 'Save File', 'Reused Passwords', 'Print', 'Help']
+                'Load File', 'Save File', 'Reused Passwords',
+                'Breached Passwords', 'Print', 'Help']
     # textContent, not .text: Print is hidden unless enablePrinting is set, and
     # Selenium reports '' for the text of a non-displayed element. The previous
     # version of this check skipped index 6 for that reason. Reading textContent
@@ -190,7 +230,7 @@ def test_about_dlg():
     Test the About dialogue
     '''
     driver = get_driver()
-    driver.get('http://localhost:8081/')
+    driver.get(URL)
     time.sleep(1)
 
     # About dialog (light)
@@ -219,7 +259,7 @@ def test_prefs_dlg():
     Test the Preferences dialogue
     '''
     driver = get_driver()
-    driver.get('http://localhost:8081/')
+    driver.get(URL)
     time.sleep(1)
 
     # Preferences dialog (light)
@@ -248,7 +288,7 @@ def test_new_dlg():
     Test the new record dialogue.
     '''
     driver = get_driver()
-    driver.get('http://localhost:8081/')
+    driver.get(URL)
     time.sleep(1)
 
     # New Record (light)
@@ -281,7 +321,7 @@ def test_clear_dlg():
     Test the clear records dialogue.
     '''
     driver = get_driver()
-    driver.get('http://localhost:8081/')
+    driver.get(URL)
     time.sleep(1)
 
     # Clear Records (light)
@@ -314,7 +354,7 @@ def test_load_dlg():
     Test the load file dialogue.
     '''
     driver = get_driver()
-    driver.get('http://localhost:8081/')
+    driver.get(URL)
     time.sleep(1)
 
     # Load File (light)
@@ -347,7 +387,7 @@ def test_save_dlg():
     Test the save file dialogue.
     '''
     driver = get_driver()
-    driver.get('http://localhost:8081/')
+    driver.get(URL)
     time.sleep(1)
 
     # Save File (light)
@@ -380,7 +420,7 @@ def test_help_dlg():
     Test the help dialogue.
     '''
     driver = get_driver()
-    driver.get('http://localhost:8081/')
+    driver.get(URL)
     time.sleep(1)
     pam_window_handle = driver.current_window_handle
 
@@ -414,7 +454,7 @@ def test_example_records():
     Test the example records.
     '''
     driver = get_driver()
-    driver.get('http://localhost:8081/')
+    driver.get(URL)
     time.sleep(1)
 
     dlg = choose_menu_option(driver, 'Load File')
@@ -456,7 +496,7 @@ def test_record_create_and_delete():
     E2E: Create a new record, verify it appears, then delete it.
     '''
     driver = get_driver()
-    driver.get('http://localhost:8081/')
+    driver.get(URL)
     time.sleep(1)
 
     # Create a new record.
@@ -585,7 +625,7 @@ def test_reuse_badge_and_dialog():
     password, so the badge is correctly showing after a load.
     '''
     driver = get_driver()
-    driver.get('http://localhost:8081/')
+    driver.get(URL)
     time.sleep(1)
 
     badge = driver.find_element(By.ID, 'x-reuse-indicator')
@@ -668,7 +708,7 @@ def test_deactivating_updates_reuse_report():
     was.
     '''
     driver = get_driver()
-    driver.get('http://localhost:8081/')
+    driver.get(URL)
     time.sleep(1)
 
     badge = driver.find_element(By.ID, 'x-reuse-indicator')
@@ -704,12 +744,101 @@ def test_deactivating_updates_reuse_report():
     driver.quit()
 
 
+def test_breach_check_badge_follows_preference():
+    '''
+    E2E: the BREACH CHECK badge appears only when the preference is enabled.
+
+    An outbound-capable configuration must never be invisible: this is the one
+    setting that lets PAM contact a third party, so the toolbar says so while
+    it is on.
+
+    This is an e2e test rather than a unit test because
+    updateBreachCheckIndicator() lives in main.js, which tests.html cannot
+    import — it registers window.onload and pulls in menu.js, raw.js and
+    about.js. The existing indicator suites work around that by replicating
+    the logic inline, which tests the copy rather than the function.
+    '''
+    driver = get_driver()
+    driver.get(URL)
+    time.sleep(1)
+
+    badge = driver.find_element(By.ID, 'x-breach-check-indicator')
+    assert not badge.is_displayed(), \
+        'the badge must be hidden by default; the preference is off'
+
+    dlg = choose_menu_option(driver, 'Preferences')
+    admin = dlg.find_element(By.ID, 'prefs-tab-admin-btn')
+    scroll_and_click(driver, admin)
+    time.sleep(0.5)
+
+    control = dlg.find_element(
+        By.CSS_SELECTOR, '[data-pref-id="enablePasswordBreachCheck"]')
+    scroll_and_click(driver, control)
+    time.sleep(0.5)
+
+    save = [b for b in dlg.find_elements(By.TAG_NAME, 'button')
+            if b.is_displayed() and b.text.strip() == 'Save']
+    assert save, 'no Save button on the Preferences dialogue'
+    scroll_and_click(driver, save[0])
+    time.sleep(1)
+
+    assert badge.is_displayed(), \
+        'enabling the preference must reveal the badge'
+    assert 'BREACH CHECK' in badge.get_attribute('textContent'), \
+        f'unexpected badge text: {badge.get_attribute("textContent")!r}'
+
+    driver.quit()
+
+
+def test_breach_dialog_opens_and_closes():
+    '''
+    E2E: the Breached Passwords dialogue opens from the menu and its Close
+    button actually closes it.
+
+    Regression. mkPopupModalDlgButton()'s click handler calls its callback
+    unconditionally and hides the modal only on a truthy return, so a button
+    created without one throws inside the handler and does nothing at all. The
+    unit test asserted the Close button existed, which it did — presence is not
+    behaviour.
+
+    The dialogue is checked in its disabled state, which is what most users
+    see: the preference is off by default.
+    '''
+    driver = get_driver()
+    driver.get(URL)
+    time.sleep(1)
+
+    dlg = choose_menu_option(driver, 'Breached Passwords')
+    assert dlg is not None, 'the menu entry should open a dialogue'
+    time.sleep(0.5)
+
+    text = dlg.get_attribute('textContent')
+    assert 'Nothing has been sent' in text, \
+        f'the disabled state should lead with that: {text[:200]!r}'
+    assert 'Enable Password Breach Check' in text, \
+        'it should name where to turn the feature on'
+
+    # With the preference off there is nothing to run, so no Check button.
+    checks = [b for b in dlg.find_elements(By.ID, 'x-breach-check-button')
+              if b.is_displayed()]
+    assert not checks, 'Check should be hidden while the preference is off'
+
+    close = dlg.find_element(By.CLASS_NAME, 'x-fld-record-close')
+    scroll_and_click(driver, close)
+    time.sleep(1)
+
+    assert not dlg.is_displayed(), \
+        'Close must actually close the dialogue, not merely exist'
+
+    driver.quit()
+
+
 def test_about_dialog_shows_fingerprint():
     '''
     E2E: the About dialogue reports a vault fingerprint.
     '''
     driver = get_driver()
-    driver.get('http://localhost:8081/')
+    driver.get(URL)
     time.sleep(1)
     load_example_records(driver)
     time.sleep(1.5)
@@ -734,7 +863,7 @@ def test_search_filters_records():
     E2E: Load example records and verify search filters correctly.
     '''
     driver = get_driver()
-    driver.get('http://localhost:8081/')
+    driver.get(URL)
     time.sleep(1)
 
     # Load example records
@@ -784,7 +913,7 @@ def test_preferences_dialog_opens_and_closes():
     E2E: Open preferences dialog and close it successfully.
     '''
     driver = get_driver()
-    driver.get('http://localhost:8081/')
+    driver.get(URL)
     time.sleep(1)
 
     dlg = choose_menu_option(driver, 'Preferences')
@@ -803,13 +932,43 @@ def test_preferences_dialog_opens_and_closes():
 # Phase 6 E2E tests — UX-001, UX-002, about.js, print.js
 # ---------------------------------------------------------------------------
 
+def assert_generator_uses_v240_defaults(buttons):
+    '''
+    The generated memorable passwords should have at least five words.
+
+    v2.4.0 raised passwordRangeLengthDefault to 30 and
+    memorablePasswordMinWords to 5, so generated memorable passwords clear the
+    60-bit floor the breach check applies. The unit tests call
+    getMemorablePassword() directly with those defaults; this checks the
+    defaults actually reach the dialogue, which nothing else does.
+    '''
+    # A cryptic password can contain a slash: SPECIAL is "_-+!./#$%^", so the
+    # separator is not a reliable way to tell the two kinds apart. The first
+    # version of this check treated any password containing "/" as memorable
+    # and then failed it on word count.
+    #
+    # Memorable passwords are all-lowercase words joined by separators, so
+    # every part is alphabetic. That is what distinguishes them.
+    generated = [b.text.strip() for b in buttons if b.text.strip()]
+    memorable = []
+    for password in generated:
+        parts = [w for w in password.split('/') if w]
+        if len(parts) >= 2 and all(w.isalpha() and w.islower() for w in parts):
+            memorable.append((password, parts))
+    assert memorable, f'expected memorable passwords among: {generated}'
+    for password, parts in memorable:
+        assert len(parts) >= 5, (
+            f'{password!r} has {len(parts)} words; five are needed for 66 bits, '
+            'and fewer means the generator is not using the v2.4.0 defaults')
+
+
 def test_password_generator():
     '''
     UX-001: Open the toolbar password generator modal, verify it appears
     with password buttons, test Regenerate, then close it.
     '''
     driver = get_driver()
-    driver.get('http://localhost:8081/')
+    driver.get(URL)
     time.sleep(1)
 
     # Click the Pwd Gen button in the toolbar footer
@@ -834,6 +993,8 @@ def test_password_generator():
     pwd_btns = body.find_elements(By.CLASS_NAME, 'btn-secondary')
     assert len(pwd_btns) >= 6, \
         f'Expected at least 6 password buttons, got {len(pwd_btns)}'
+
+    assert_generator_uses_v240_defaults(pwd_btns)
 
     # Each button should contain non-empty text (the password)
     for btn in pwd_btns:
@@ -869,7 +1030,7 @@ def test_about_dialog_shows_version():
     E2E: Open the About dialog and verify version information is present.
     '''
     driver = get_driver()
-    driver.get('http://localhost:8081/')
+    driver.get(URL)
     time.sleep(1)
 
     dlg = choose_menu_option(driver, 'About')
@@ -893,7 +1054,7 @@ def test_print_dialog_opens():
     Verifies the print window opens without error.
     '''
     driver = get_driver()
-    driver.get('http://localhost:8081/')
+    driver.get(URL)
     time.sleep(1)
 
     # Enable printing via prefs
@@ -921,7 +1082,7 @@ def test_print_dialog_opens():
 
 def _load_example_and_enable_printing(driver):
     '''Helper: load example records and enable printing via JS.'''
-    driver.get('http://localhost:8081/')
+    driver.get(URL)
     time.sleep(1)
     # Load example records first — loading resets prefs from file data,
     # so enablePrinting must be set AFTER the load completes.
@@ -1045,7 +1206,7 @@ def test_print_cover_record_count():
 def test_print_empty_fields_skipped():
     '''E2E: fields with empty values are not rendered in the print output.'''
     driver = get_driver()
-    driver.get('http://localhost:8081/')
+    driver.get(URL)
     time.sleep(1)
 
     # Load a minimal JSON structure with one populated and one empty field.
@@ -1105,7 +1266,7 @@ def test_save_and_reload_round_trip():
     record count is preserved.
     '''
     driver = get_driver()
-    driver.get('http://localhost:8081/')
+    driver.get(URL)
     time.sleep(1)
 
     # Load example records
@@ -1150,7 +1311,7 @@ def test_delete_record_confirmation():
     Clicking Delete and confirming should remove the record.
     '''
     driver = get_driver()
-    driver.get('http://localhost:8081/')
+    driver.get(URL)
     time.sleep(1)
 
     # Load example records so there is something to delete
@@ -1255,7 +1416,7 @@ def test_load_dup_strategy_ignore():
     should not increase the record count.
     '''
     driver = get_driver()
-    driver.get('http://localhost:8081/')
+    driver.get(URL)
     time.sleep(1)
 
     set_load_dup_strategy(driver, 'ignore')
@@ -1279,7 +1440,7 @@ def test_load_dup_strategy_replace():
     should not increase the record count (old record replaced by new).
     '''
     driver = get_driver()
-    driver.get('http://localhost:8081/')
+    driver.get(URL)
     time.sleep(1)
 
     set_load_dup_strategy(driver, 'replace')
@@ -1311,7 +1472,7 @@ def test_load_dup_strategy_allow():
     that the prefs UI correctly reflects it.
     '''
     driver = get_driver()
-    driver.get('http://localhost:8081/')
+    driver.get(URL)
     time.sleep(1)
 
     # Verify loadDupStrategy pref exists and has the expected default
@@ -1332,7 +1493,7 @@ def test_prefs_tabbed_navigation():
     Verify tabs exist and switching between them works.
     '''
     driver = get_driver()
-    driver.get('http://localhost:8081/')
+    driver.get(URL)
     time.sleep(1)
 
     dlg = choose_menu_option(driver, 'Preferences')
@@ -1389,7 +1550,7 @@ def test_bug002_filepass_survives_session_teardown():
     sessionStorage, reload, verify password is still retrievable.
     '''
     driver = get_driver()
-    driver.get('http://localhost:8081/')
+    driver.get(URL)
     time.sleep(2)
 
     test_password = 'pwa-test-password-bug002'

@@ -47,6 +47,22 @@ export function updatePasswordSearchIndicator() {
     }
 }
 
+// Update the breach-check indicator in the toolbar.
+// Call this whenever window.prefs.enablePasswordBreachCheck changes.
+//
+// This badge marks an outbound-capable configuration, which is a different
+// kind of warning from the others: they mark a weaker local posture, this one
+// marks that PAM may talk to a third party. It is shown for the same reason —
+// a setting that changes what PAM does with your data should never be
+// invisible.
+export function updateBreachCheckIndicator() {
+    let indicator = document.getElementById('x-breach-check-indicator')
+    if (indicator) {
+        indicator.style.display =
+            window.prefs.enablePasswordBreachCheck ? 'inline' : 'none'
+    }
+}
+
 export function updateFilePassCacheIndicator() {
     let indicator = document.getElementById('x-filepass-cache-indicator')
     if (indicator) {
@@ -70,6 +86,7 @@ export function main() {
     updateHtmlRenderingIndicator()   // SEC-001: show badge if enabled at startup
     updateFilePassCacheIndicator()   // SEC-002: show badge if local at startup
     updatePasswordSearchIndicator()  // show badge if password search enabled at startup
+    updateBreachCheckIndicator()     // outbound-capable configuration
     scheduleVaultStatsRefresh()      // reuse badge and About fingerprint
     const secure = window.isSecureContext? '(secure)' : ''
     statusBlip(`initializing PAM... ${secure} ${window.screen.width}x${window.screen.height}`)
@@ -180,6 +197,12 @@ function topLayout() {
                         .xStyle({'display': 'none'})
                         .xAttrs({'title': 'Search matches against password values \u2014 the search box can be used to recover them one character at a time'})
                         .xInnerHTML('&#x26A0; PW SEARCH'),
+                    xmk('span')
+                        .xId('x-breach-check-indicator')
+                        .xClass('badge', 'bg-warning', 'text-dark', 'ms-2')
+                        .xStyle({'display': 'none'})
+                        .xAttrs({'title': 'Breach checking is enabled \u2014 PAM may send a 20-bit hash prefix to api.pwnedpasswords.com when you ask it to check a password'})
+                        .xInnerHTML('&#x26A0; BREACH CHECK'),
                     xmk('span')
                         .xId('x-filepass-cache-indicator')
                         .xClass('badge', 'bg-warning', 'text-dark', 'ms-2')

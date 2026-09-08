@@ -413,6 +413,7 @@ import {
   getFilePass,
   clearFilePass,
   mkMainPasswordGeneratorDlg,
+  showMainPasswordGeneratorDlg,
   ALPHABET,
   ALPHA_LOWER,
   ALPHA_UPPER,
@@ -523,7 +524,7 @@ test('mkMainPasswordGeneratorDlg title contains Password Generator', () => {
 // ---------------------------------------------------------------------------
 // search.js — searchRecords (needs minimal DOM fixture)
 // ---------------------------------------------------------------------------
-import { searchRecords, clearSearch } from '/js/search.js'
+import { searchRecords, clearSearch, escapeRegExp, selectRecordsByTitle, canSelectRecords } from '/js/search.js'
 import { hashPrefsPassword } from '/js/prefs.js'
 import { getDefaultPrefs, VALID_FIELD_TYPES, VALID_CACHE_STRATEGIES } from '/js/prefs-model.js'
 
@@ -942,8 +943,68 @@ async function runCryptTests() {
     try {
       const plaintext  = '{"records":[],"version":2}'
       const ciphertext = await encryptV2Async('correct-password', plaintext)
+
+      // v2 is AES-CBC, which carries no authentication tag, so a wrong key is
+      // only rejected when the garbage final block fails PKCS#7 padding
+      // validation — about 255 times out of 256. Asserting !result.ok is
+      // therefore flaky by construction at roughly 0.4%, and it failed in the
+      // wild after many clean runs.
+      //
+      // The property that actually holds, and the one worth testing, is that a
+      // wrong password never recovers the plaintext. When padding happens to
+      // validate, decrypt() returns garbage; TextDecoder does not throw on
+      // invalid UTF-8, it substitutes replacement characters.
       const result = await decryptV2Async('wrong-password', ciphertext)
-      assert(!result.ok, 'v2 decryption with wrong password should fail')
+      assert(!result.ok || result.plaintext !== plaintext,
+             'a wrong password must never recover the original plaintext')
+
+      // And when it does report success, what it returns must not be usable —
+      // downstream that is caught by JSON.parse, which is why a wrong password
+      // occasionally surfaces as "invalid record format" rather than as a
+      // password error.
+      if (result.ok) {
+        let parsed = null
+        try { parsed = JSON.parse(result.plaintext) } catch (e) { parsed = null }
+        assert(parsed === null,
+               'garbage from a wrong password must not parse as a vault')
+      }
+      _passed++
+      const line = document.createElement('div')
+      line.className = 'test-line pass'
+      line.textContent = '✓ ' + label
+      _results.appendChild(line)
+    } catch(e) {
+      _failed++
+      const line = document.createElement('div')
+      line.className = 'test-line fail'
+      line.textContent = '✗ ' + label
+      const pre = document.createElement('pre')
+      pre.textContent = e.message || String(e)
+      line.appendChild(pre)
+      _results.appendChild(line)
+    }
+  })()
+
+  // v2 Test 2b: the padding-validation rate, stated rather than assumed.
+  await (async () => {
+    const label = 'v2 rejects most wrong passwords by padding validation'
+    try {
+      const plaintext  = '{"records":[],"version":2}'
+      const ciphertext = await encryptV2Async('correct-password', plaintext)
+
+      // Twenty attempts. With a ~0.4% pass rate the expected number that slip
+      // through is 0.08, so requiring at least 15 rejections is far from the
+      // edge while still failing loudly if authentication were removed
+      // entirely or the key derivation stopped depending on the password.
+      let rejected = 0
+      for (let i = 0; i < 20; i++) {
+        const r = await decryptV2Async('wrong-password-' + i, ciphertext)
+        if (!r.ok) { rejected++ }
+        else { assertNotEqual(r.plaintext, plaintext,
+                              'no wrong password may recover the plaintext') }
+      }
+      assert(rejected >= 15,
+             `expected most wrong passwords to be rejected, got ${rejected}/20`)
       _passed++
       const line = document.createElement('div')
       line.className = 'test-line pass'
@@ -1117,7 +1178,7 @@ test('empty password with JSON ciphertext: callback fires exactly once', () => {
 // The function is now exported so we can test it directly.
 // ---------------------------------------------------------------------------
 import { prefMemorablePasswordMaxWords } from '/js/prefs.js'
-import { mkRecordField } from '/js/field.js'
+import { mkRecordField, mkRecordEditField, enableBreachCheckButtons } from '/js/field.js'
 import { findRecord, findRecordAfter, deleteRecord, insertRecord, clearRecords, mkRecord } from '/js/record.js'
 import { convertInternalDataToJSON } from '/js/save.js'
 import { isValidLoadUrl, formatTimeElapsed } from '/js/load.js'
@@ -1295,6 +1356,71 @@ test("CSP includes script-src 'self'", async () => {
   const html = await fetch('/index.html').then(r => r.text())
   assert(html.includes("script-src 'self'"),
     "CSP should include script-src 'self'")
+})
+// Pull the policy out of the meta tag rather than searching the whole file.
+// index.html carries an HTML comment explaining the connect-src change, and a
+// naive /connect-src ([^;"]*)/ against the document matches THAT first — which
+// is how the first version of these tests passed while parsing prose.
+async function cspPolicy() {
+  const html = await fetch('/index.html').then(r => r.text())
+  const tag = html.match(
+    /<meta[^>]*http-equiv=["']Content-Security-Policy["'][^>]*>/i)
+  assert(tag, 'no Content-Security-Policy meta tag found')
+  // Capture the quote character and match its pair. A naive
+  // /content=["']([^"']*)["']/ stops at the first single quote INSIDE the
+  // policy — and every CSP contains 'self', so it returned "default-src ".
+  const content = tag[0].match(/content=(["'])([\s\S]*?)\1/i)
+  assert(content, 'CSP meta tag has no content attribute')
+  return content[2]
+}
+
+function cspDirective(policy, name) {
+  const found = policy.split(';')
+    .map(part => part.trim())
+    .filter(part => part.startsWith(name + ' '))
+  assertEqual(found.length, 1, `expected exactly one ${name} directive`)
+  return found[0].slice(name.length).trim().split(/\s+/).filter(Boolean)
+}
+
+test('connect-src permits the breach-check host', async () => {
+  // v2.4.0 relaxed connect-src so the optional breach check can reach the
+  // HIBP range API. Before this, connect-src fell back to default-src 'self'
+  // and the fetch was blocked by policy.
+  const policy = await cspPolicy()
+  assert(policy.includes('connect-src'),
+    'CSP should declare connect-src explicitly, not inherit default-src')
+  // allowed is an ARRAY of directive tokens, so .includes() is exact element
+  // equality, not substring matching. CodeQL's "incomplete URL substring
+  // sanitization" rule flags this shape because on a *string* it would match
+  // https://evil.com/?x=https://api.pwnedpasswords.com. It cannot here — but
+  // indexOf on the split tokens says so unambiguously, to a reader as well as
+  // to the analyser.
+  const allowed = cspDirective(policy, 'connect-src')
+  assert(allowed.indexOf("'self'") > -1, "connect-src should still include 'self'")
+  assert(allowed.indexOf('https://api.pwnedpasswords.com') > -1,
+    'connect-src should permit the HIBP range API')
+})
+test('connect-src permits nothing beyond that one host', async () => {
+  // The point of this test is not the change that was made but the ones that
+  // might be made later. Widening connect-src is how a local-only application
+  // stops being one, a host at a time, each addition reasonable on its own.
+  // Adding a host here should require deleting an assertion that says why not.
+  const policy = await cspPolicy()
+  const allowed = cspDirective(policy, 'connect-src')
+  const expected = ["'self'", 'https://api.pwnedpasswords.com']
+  assertEqual(allowed.slice().sort().join(' '), expected.slice().sort().join(' '),
+    'connect-src should permit exactly self and the HIBP range API')
+})
+test('no other directive was widened', async () => {
+  const policy = await cspPolicy()
+  assertEqual(cspDirective(policy, 'default-src').join(' '), "'self'",
+    "default-src must stay 'self'")
+  assertEqual(cspDirective(policy, 'style-src').join(' '), "'self'",
+    "style-src must stay 'self'")
+  assertEqual(cspDirective(policy, 'font-src').join(' '), "'self'",
+    "font-src must stay 'self'")
+  assertEqual(cspDirective(policy, 'img-src').join(' '), "'self' data:",
+    'img-src must stay self and data:')
 })
 
 // ---------------------------------------------------------------------------
@@ -1658,9 +1784,13 @@ test('getCrypticPassword uses only alphabet characters', () => {
 })
 
 suite('password.js — getDefaultPrefs password values')
-test('passwordRangeLengthDefault is 20', () => {
-  assertEqual(getDefaultPrefs().passwordRangeLengthDefault, 20,
-    'getDefaultPrefs passwordRangeLengthDefault should be 20')
+test('passwordRangeLengthDefault is 30', () => {
+  // Raised from 20 in v2.4.0. The generator adds words until it reaches this
+  // length, so 20 characters cannot hold the five words that
+  // memorablePasswordMinWords now requires — it would reject the result and
+  // give up. These two defaults are coupled and cannot be changed separately.
+  assertEqual(getDefaultPrefs().passwordRangeLengthDefault, 30,
+    'getDefaultPrefs passwordRangeLengthDefault should be 30')
 })
 test('passwordRangeMinLength is 12', () => {
   assertEqual(getDefaultPrefs().passwordRangeMinLength, 12,
@@ -1709,9 +1839,14 @@ test('memorablePasswordMinWordLength default is 2', () => {
 })
 
 suite('password.js — memorablePasswordMinWords / MaxWords')
-test('memorablePasswordMinWords default is 3', () => {
-  assertEqual(getDefaultPrefs().memorablePasswordMinWords, 3,
-    'getDefaultPrefs memorablePasswordMinWords should be 3')
+test('memorablePasswordMinWords default is 5', () => {
+  // Raised from 3 in v2.4.0. Three words carry about 40 bits, below the
+  // 60-bit floor the breach check applies — PAM was generating passwords it
+  // would reject if it could measure them. Coupled to
+  // passwordRangeLengthDefault, which moved 20 -> 30 in the same change,
+  // because word count is derived from length rather than chosen.
+  assertEqual(getDefaultPrefs().memorablePasswordMinWords, 5,
+    'getDefaultPrefs memorablePasswordMinWords should be 5')
 })
 test('memorablePasswordMaxWords default is 5', () => {
   assertEqual(getDefaultPrefs().memorablePasswordMaxWords, 5,
@@ -2738,6 +2873,1113 @@ async function runSaveRegressionTests() {
 }
 
 // Run sync tests first, then the async suites (each finalizes when done).
+// ---------------------------------------------------------------------------
+// breach.js — failure handling and response parsing
+//
+// Written FIRST and deliberately. PAM is a PWA: being offline is a normal
+// state, not an error, so a user who cannot reach the corpus must never see a
+// result that reads as clean. Every test in the first suite asserts
+// CANNOT_DETERMINE; none asserts a successful lookup.
+// ---------------------------------------------------------------------------
+import {
+  parseRangeResponse, lookupPassword, sha1Hex,
+  keyboardRun, characterSequence, repeatedCharacter, embeddedYear,
+  entropyBits, structuralWeaknesses, verdictFor,
+  probeCorpus, checkAll,
+  FOUND, NOT_FOUND, CANNOT_DETERMINE,
+  ACCEPT, REJECT, UNDETERMINED
+} from '/js/breach.js'
+
+// ---------------------------------------------------------------------------
+// breach.js — failure handling
+//
+// These are written FIRST and deliberately. PAM is a PWA: being offline is a
+// normal state, not an error, so a user who cannot reach the corpus must never
+// see a result that reads as clean.
+//
+// Every test here asserts CANNOT_DETERMINE. None of them asserts a successful
+// lookup — that is the next suite. The bug this guards against appeared three
+// times in three disguises while building the command-line version, and every
+// time the program looked like it worked.
+// ---------------------------------------------------------------------------
+
+// A fetch that fails the way a given scenario fails.
+function fakeFetch(behaviour) {
+  return async () => {
+    if (behaviour.throws) { throw behaviour.throws }
+    return {
+      ok: behaviour.ok !== false,
+      status: behaviour.status || 200,
+      text: async () => {
+        if (behaviour.textThrows) { throw behaviour.textThrows }
+        return behaviour.body
+      },
+    }
+  }
+}
+
+async function runBreachTests1() {
+  suite('breach.js — a failed lookup never reads as clean')
+
+  await runAsyncTest('an unreachable host cannot determine', async () => {
+    const r = await lookupPassword('hunter2',
+      fakeFetch({throws: new TypeError('Failed to fetch')}))
+    assertEqual(r.status, CANNOT_DETERMINE,
+                'offline must not be reported as not-found')
+    assert(r.reason.length > 0, 'a failure should say why')
+  })
+
+  await runAsyncTest('an HTTP error cannot determine', async () => {
+    // The body is deliberately a VALID range response. An error status served
+    // with a parseable body is the case where only the status check saves us:
+    // with an empty or malformed body the parser would reject it anyway, and
+    // the test would pass without exercising the status check at all. It did,
+    // until a mutation run showed the check could be deleted with every test
+    // still green.
+    const hash = await sha1Hex('hunter2')
+    const body = hash.slice(5) + ':500'
+    const r = await lookupPassword('hunter2',
+      fakeFetch({ok: false, status: 503, body}))
+    assertEqual(r.status, CANNOT_DETERMINE,
+                'an error status must not yield a verdict, however good the body looks')
+    assert(r.reason.indexOf('503') > -1, 'the status should be reported')
+  })
+
+  await runAsyncTest('an HTML error page cannot determine', async () => {
+    // A captive portal or proxy answering 200 with a courtesy page. This is
+    // the case that most looks like success: the request succeeded, the body
+    // simply is not a range response.
+    const r = await lookupPassword('hunter2', fakeFetch({
+      body: '<!DOCTYPE html><html><body><h1>502 Bad Gateway</h1></body></html>'}))
+    assertEqual(r.status, CANNOT_DETERMINE,
+                'an HTML body must never be read as "not in the corpus"')
+  })
+
+  await runAsyncTest('an empty body cannot determine', async () => {
+    const r = await lookupPassword('hunter2', fakeFetch({body: ''}))
+    assertEqual(r.status, CANNOT_DETERMINE)
+  })
+
+  await runAsyncTest('a whitespace-only body cannot determine', async () => {
+    const r = await lookupPassword('hunter2', fakeFetch({body: '   \n  \n'}))
+    assertEqual(r.status, CANNOT_DETERMINE)
+  })
+
+  await runAsyncTest('one malformed line condemns the whole body', async () => {
+    // The entry we care about may be in the part we could not read, so a
+    // partially valid response is not one we can reason about.
+    const hash = await sha1Hex('hunter2')
+    const suffix = hash.slice(5)
+    const body = [
+      '0000000000000000000000000000000000A:3',
+      'this line is not a hash at all',
+      suffix + ':99',
+    ].join('\n')
+    const r = await lookupPassword('hunter2', fakeFetch({body}))
+    assertEqual(r.status, CANNOT_DETERMINE,
+                'a body with any unparseable line must not yield a verdict')
+  })
+
+  await runAsyncTest('a body that cannot be read cannot determine', async () => {
+    const r = await lookupPassword('hunter2',
+      fakeFetch({textThrows: new Error('stream closed')}))
+    assertEqual(r.status, CANNOT_DETERMINE)
+  })
+
+  await runAsyncTest('a response object of the wrong shape cannot determine', async () => {
+    const r = await lookupPassword('hunter2', async () => undefined)
+    assertEqual(r.status, CANNOT_DETERMINE)
+  })
+
+  await runAsyncTest('an empty password cannot determine', async () => {
+    const r = await lookupPassword('', fakeFetch({body: 'x'}))
+    assertEqual(r.status, CANNOT_DETERMINE,
+                'nothing was checked, so nothing can be concluded')
+  })
+}
+
+async function runBreachTests2() {
+  suite('breach.js — padding decoys are not hits')
+
+  await runAsyncTest('our own suffix with a count of zero is padding', async () => {
+    // Add-Padding mixes synthetic zero-count entries in so the response length
+    // reveals nothing. Our suffix can legitimately appear among them, and
+    // treating that as a match would report a breach that did not happen.
+    const hash = await sha1Hex('hunter2')
+    const suffix = hash.slice(5)
+    const r = await lookupPassword('hunter2', fakeFetch({body: suffix + ':0'}))
+    assertEqual(r.status, NOT_FOUND,
+                'a zero count is padding, not a breach')
+    assertEqual(r.count, 0)
+  })
+
+  await runAsyncTest('a real hit alongside padding is still a hit', async () => {
+    const hash = await sha1Hex('hunter2')
+    const suffix = hash.slice(5)
+    const body = [
+      '0000000000000000000000000000000000A:0',
+      suffix + ':17',
+      '0000000000000000000000000000000000B:0',
+    ].join('\n')
+    const r = await lookupPassword('hunter2', fakeFetch({body}))
+    assertEqual(r.status, FOUND)
+    assertEqual(r.count, 17)
+  })
+}
+
+async function runBreachTests3() {
+  suite('breach.js — parseRangeResponse')
+
+  const suffix = 'A'.repeat(35)
+
+  test('rejects a non-string body', () => {
+    assertEqual(parseRangeResponse(null, suffix).ok, false)
+    assertEqual(parseRangeResponse(undefined, suffix).ok, false)
+    assertEqual(parseRangeResponse(42, suffix).ok, false)
+  })
+  test('rejects a suffix that is not 35 hex characters', () => {
+    assertEqual(parseRangeResponse('X:1', 'TOO-SHORT').ok, false)
+    assertEqual(parseRangeResponse('X:1', 'Z'.repeat(35)).ok, false)
+  })
+  test('a well-formed miss is a miss, not a failure', () => {
+    const r = parseRangeResponse('B'.repeat(35) + ':4', suffix)
+    assertEqual(r.ok, true)
+    assertEqual(r.found, false)
+  })
+  test('accepts lowercase hex from the wire', () => {
+    const r = parseRangeResponse(suffix.toLowerCase() + ':7', suffix)
+    assertEqual(r.ok, true)
+    assertEqual(r.found, true)
+    assertEqual(r.count, 7)
+  })
+  test('tolerates CRLF line endings', () => {
+    const body = 'B'.repeat(35) + ':4\r\n' + suffix + ':9\r\n'
+    const r = parseRangeResponse(body, suffix)
+    assertEqual(r.ok, true)
+    assertEqual(r.count, 9)
+  })
+}
+
+
+async function runBreachTests4() {
+  suite('breach.js — structural weakness')
+
+  test('a keyboard run is caught, forwards and backwards', () => {
+    assertEqual(keyboardRun('Xqwertyz'), 'qwer')
+    assert(keyboardRun('poiu9') !== null, 'reversed rows count too')
+    assertEqual(keyboardRun('Zq7-Mvtl%Kdn#WroP2xj'), null)
+  })
+  test('a character sequence is caught, forwards and backwards', () => {
+    assertEqual(characterSequence('Xabcdz'), 'abcd')
+    assertEqual(characterSequence('x4321y'), '4321')
+    assertEqual(characterSequence('Zq7-Mvtl%Kdn#WroP2xj'), null)
+  })
+  test('four of the same character is a repeat, three is not', () => {
+    assertEqual(repeatedCharacter('xaaaay'), 'aaaa')
+    assertEqual(repeatedCharacter('xaaay'), null)
+  })
+  test('only plausible years count', () => {
+    assertEqual(embeddedYear('Summer2026'), '2026')
+    assertEqual(embeddedYear('x4291y'), null,
+                '4291 is not being used as a year; objecting would be noise')
+  })
+  test('entropy rises with length and alphabet', () => {
+    assert(entropyBits('Zq7-Mvtl%Kdn#WroP2xj') > 100, 'a strong password')
+    assert(entropyBits('abc') < 20, 'a short lowercase one')
+    assertEqual(entropyBits(''), 0)
+  })
+  test('weak passwords are objected to with a reason', () => {
+    for (const weak of ['Summer2026', 'qwerty123456', 'password1234',
+                        'aaaaaaaaaaaa', 'abcdefghijkl', 'short']) {
+      const reasons = structuralWeaknesses(weak)
+      assert(reasons.length > 0, `${weak} should be objected to`)
+    }
+  })
+  test('PAM-generated passwords are not falsely rejected', () => {
+    // The risk with structural checks is not missing a weak password, it is
+    // rejecting a good one: that teaches people to ignore the tool. These are
+    // real values from www/examples/example.txt and from the generator.
+    const good = [
+      'hr5Hn9pqm3u.VqMiALfdN-"',
+      'rHfZ6bihw$g8ra$P4hHD',
+      'dOa#DirgJge67okTKtEzp.LSl',
+      'Aq7GdcOmYWVkyHEWEk6fBeJzm',
+      'NIJMeb8OfXEfshOG$db!',
+      'cGwJ$NPQ4SsI#haEsFRD',
+      'FpnzQcuq0nk/PxlMdYJ_itnK',
+      'M+pSIWOMODrwiHteA+#3',
+      // Five-word memorable passwords, generated at the v2.4.0 defaults.
+      //
+      // These were three-word examples until the entropy estimate learned
+      // about dictionary words. They are now correctly rejected at 40 bits,
+      // and that is the point of the change rather than a regression: this
+      // suite exists to check that PAM does not reject its OWN current output,
+      // and its own current output is five words.
+      'latinas/slowly/los/sheets/have',
+      'asylum/academy/sol/oliver/tone',
+      'annex/london/ssl/stats/connect',
+    ]
+    for (const password of good) {
+      const reasons = structuralWeaknesses(password)
+      assertEqual(reasons.length, 0,
+                  `${password} was falsely rejected: ${reasons.join('; ')}`)
+    }
+  })
+}
+
+async function runBreachTests5() {
+  suite('breach.js — the verdict')
+
+  const STRONG = 'Zq7-Mvtl%Kdn#WroP2xj'
+  const hit = {status: FOUND, count: 42, reason: ''}
+  const miss = {status: NOT_FOUND, count: 0, reason: ''}
+  const down = {status: CANNOT_DETERMINE, count: 0, reason: 'offline'}
+
+  test('a corpus hit rejects', () => {
+    const v = verdictFor(STRONG, hit)
+    assertEqual(v.verdict, REJECT)
+    assert(v.reasons[0].indexOf('42') > -1, 'the count should be reported')
+  })
+  test('a clean miss accepts', () => {
+    assertEqual(verdictFor(STRONG, miss).verdict, ACCEPT)
+  })
+  test('a failed lookup is undetermined, never accept', () => {
+    // The fail-open bug, in one assertion.
+    assertEqual(verdictFor(STRONG, down).verdict, UNDETERMINED)
+    assertEqual(verdictFor(STRONG, down).checkedCorpus, false)
+  })
+  test('a weak password is rejected even when the corpus is unreachable', () => {
+    // The structural checks need no network, so being offline is no reason to
+    // withhold an objection that can be made locally.
+    assertEqual(verdictFor('Summer2026', down).verdict, REJECT)
+  })
+  test('undetermined explains what failed', () => {
+    const v = verdictFor(STRONG, down)
+    assert(v.reasons.length > 0 && v.reasons[0].length > 0,
+           'a non-answer must say why it is a non-answer')
+  })
+}
+
+
+async function runBreachTests6() {
+  suite('breach.js — running a check over many passwords')
+
+  const STRONG_A = 'Zq7-Mvtl%Kdn#WroP2xj'
+  const STRONG_B = 'Bx4!qWne%Ldk#TmoR8zv'
+  const okBody = 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA:1'
+  const okFetch = async () => ({ok: true, status: 200, text: async () => okBody})
+  const candidates = (values) =>
+    values.map(v => ({value: v, entries: [{title: v, name: 'password'}]}))
+
+  await runAsyncTest('an unreachable corpus stops before any real request', async () => {
+    // One failure reported once, rather than several hundred identical ones
+    // accumulating while the user watches.
+    let calls = 0
+    const fetchFn = async () => { calls++; throw new TypeError('offline') }
+    const out = await checkAll(candidates([STRONG_A, STRONG_B]), fetchFn, {delayMs: 0})
+    assertEqual(out.probeFailed, true)
+    assertEqual(out.results.length, 0)
+    assertEqual(calls, 1, 'exactly one request: the probe')
+    assert(out.reason.length > 0, 'it should say why')
+  })
+
+  await runAsyncTest('progress is reported for every candidate', async () => {
+    const seen = []
+    await checkAll(candidates([STRONG_A, STRONG_B]), okFetch,
+                   {delayMs: 0, onProgress: (d, t) => seen.push(d + '/' + t)})
+    assertEqual(seen.join(' '), '1/2 2/2')
+  })
+
+  await runAsyncTest('cancelling stops the run and reports that it stopped', async () => {
+    // A run over a few hundred passwords takes about a minute. Starting one
+    // and being unable to stop it would be a poor bargain.
+    let n = 0
+    const out = await checkAll(candidates([STRONG_A, STRONG_B, STRONG_A, STRONG_B]),
+                               okFetch, {delayMs: 0, isCancelled: () => n++ >= 2})
+    assertEqual(out.cancelled, true)
+    assert(out.results.length < 4, 'it should not have finished')
+  })
+
+  await runAsyncTest('a mid-run failure is undetermined, never clean', async () => {
+    // The case the whole feature is built around: the probe succeeds, then the
+    // network goes away. Those passwords must not be reported as fine.
+    //
+    // The passwords are structurally STRONG on purpose. With weak ones the
+    // verdict would be REJECT on structural grounds and this test would pass
+    // without exercising what it names — which is what the first version did.
+    let n = 0
+    const fetchFn = async () => {
+      n++
+      if (n === 1) { return {ok: true, status: 200, text: async () => okBody} }
+      throw new TypeError('network went away')
+    }
+    const out = await checkAll(candidates([STRONG_A, STRONG_B]), fetchFn, {delayMs: 0})
+    assertEqual(out.probeFailed, false, 'the probe succeeded')
+    for (const result of out.results) {
+      assertEqual(result.verdict, UNDETERMINED,
+                  'a failed lookup must never read as clean')
+    }
+  })
+
+  await runAsyncTest('the probe reports an HTTP error', async () => {
+    const out = await probeCorpus(async () => ({ok: false, status: 503}))
+    assertEqual(out.ok, false)
+    assert(out.reason.indexOf('503') > -1)
+  })
+}
+
+
+async function runBreachTests7() {
+  suite('breach-ui.js — a run can be restarted after closing')
+
+  await runAsyncTest('an empty vault still has a report body', async () => {
+    // readyBody() omitted the progress and results containers when there was
+    // nothing to check, so pressing Check on an empty vault reported an
+    // internal error. The containers are now always present, and Check is
+    // hidden when there is no work for it.
+    const saved = window.prefs.enablePasswordBreachCheck
+    window.prefs.enablePasswordBreachCheck = true
+    try {
+      withVaultUiFixture([], () => {
+        const dlg = menuBreachDlg()
+        document.body.appendChild(dlg)
+        try {
+          dlg.dispatchEvent(new Event('show.bs.modal'))
+          assert(document.getElementById('x-breach-progress'),
+                 'the progress container must exist even with nothing to check')
+          assert(document.getElementById('x-breach-results'),
+                 'so must the results container')
+          const check = document.getElementById('x-breach-check-button')
+          assertEqual(check.style.display, 'none',
+                      'Check should be hidden when there is nothing to check')
+        } finally {
+          dlg.remove()
+        }
+      })
+    } finally {
+      window.prefs.enablePasswordBreachCheck = saved
+    }
+  })
+
+  await runAsyncTest('closing the dialogue cancels the run', async () => {
+    // The sequence that broke it: start a check, close the dialogue while it
+    // is going, reopen. The run kept sending requests nobody was watching,
+    // reopening rebuilt the body and orphaned the progress element, and the
+    // `running` flag then blocked a new run — so Check did nothing, silently.
+    const saved = window.prefs.enablePasswordBreachCheck
+    const savedFetch = window.fetch
+    window.prefs.enablePasswordBreachCheck = true
+
+    // A slow fetch, so the run is still going when the dialogue closes.
+    window.fetch = async () => {
+      await new Promise((resolve) => { setTimeout(resolve, 30) })
+      return {ok: true, status: 200,
+              text: async () => 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA:1'}
+    }
+
+    const items = [
+      mkVaultUiItem('a', true, [['password','password','Zq7-Mvtl%Kdn#WroP2xj']]),
+      mkVaultUiItem('b', true, [['password','password','Bx4!qWne%Ldk#TmoR8zv']]),
+      mkVaultUiItem('c', true, [['password','password','Ny2@rTce$Jhq#PlmX5wb']]),
+    ]
+    try {
+      const dlg = menuBreachDlg()
+      document.body.appendChild(dlg)
+      try {
+        await new Promise((resolve) => {
+          withVaultUiFixture(items, async () => {
+            dlg.dispatchEvent(new Event('show.bs.modal'))
+            const first = startBreachCheck()
+            // Close while it is still running.
+            await new Promise((r) => { setTimeout(r, 20) })
+            dlg.dispatchEvent(new Event('hide.bs.modal'))
+            await first
+            resolve()
+          })
+        })
+
+        // Reopen and check the body was rebuilt. Before the fix the `running`
+        // flag was still set and a new run returned immediately, silently.
+        //
+        // This must happen INSIDE the fixture: outside it the vault is empty,
+        // readyBody() takes its no-passwords branch, and the assertion below
+        // fails for a reason that has nothing to do with what is being tested.
+        // The first version of this test did exactly that.
+        withVaultUiFixture(items, () => {
+          dlg.dispatchEvent(new Event('show.bs.modal'))
+          const progress = document.getElementById('x-breach-progress')
+          assert(progress, 'reopening should rebuild the report body')
+          assert(progress.innerHTML.indexOf('Checking') === -1,
+                 'the rebuilt body should not show a stale run in progress')
+        })
+      } finally {
+        dlg.remove()
+      }
+    } finally {
+      window.prefs.enablePasswordBreachCheck = saved
+      window.fetch = savedFetch
+    }
+  })
+}
+
+
+async function runBreachTests8() {
+  suite('breach-ui.js — breached and weak are told apart')
+
+  const inCorpus = verdictFor('Zq7-Mvtl%Kdn#WroP2xj',
+                              {status: FOUND, count: 42, reason: ''})
+  const weakOnly = verdictFor('Summer2026',
+                              {status: NOT_FOUND, count: 0, reason: ''})
+
+  test('the verdict reports the two findings separately', () => {
+    // Not left for the UI to infer from reason text: a renderer that had to
+    // pattern-match prose would break the first time the wording changed.
+    assertEqual(inCorpus.inCorpus, true)
+    assertEqual(inCorpus.structural, false)
+    assertEqual(weakOnly.inCorpus, false)
+    assertEqual(weakOnly.structural, true)
+  })
+  test('a password can be both', () => {
+    const both = verdictFor('Summer2026', {status: FOUND, count: 7, reason: ''})
+    assertEqual(both.inCorpus, true)
+    assertEqual(both.structural, true)
+  })
+  test('each entry is labelled, and the reasons are kept', () => {
+    // A report of 85 problems is unusable if every entry renders the same and
+    // the reader has to parse prose to tell a breach from a short password.
+    const progress = xmk('div')
+    const results = xmk('div')
+    document.body.appendChild(progress)
+    document.body.appendChild(results)
+    try {
+      renderBreachResults(progress, results, {
+        probeFailed: false, cancelled: false,
+        results: [
+          Object.assign({entries: [{title: 'Facebook', name: 'password'}]}, inCorpus),
+          Object.assign({entries: [{title: 'Notes', name: 'password'}]}, weakOnly),
+        ]}, 2)
+      const html = results.innerHTML
+      assert(html.indexOf('>BREACHED<') > -1, 'a corpus hit should be labelled')
+      assert(html.indexOf('>WEAK<') > -1, 'a weak password should be labelled')
+      assert(html.indexOf('bg-danger') > -1 && html.indexOf('bg-warning') > -1,
+             'the two should be visually distinct, not only textually')
+      assert(results.textContent.indexOf('1 found in the breach corpus') > -1 &&
+             results.textContent.indexOf('1 structurally weak') > -1,
+             'the summary should count them separately')
+      assert(results.textContent.indexOf('appears in the breach corpus 42 times') > -1,
+             'the existing reasoning must be kept, not replaced by the label')
+    } finally {
+      progress.remove()
+      results.remove()
+    }
+  })
+}
+
+
+async function runBreachTests9() {
+  suite('field.js — the per-field breach check button')
+
+  const STRONG = 'Zq7-Mvtl%Kdn#WroP2xj'
+  const savedPref = window.prefs.enablePasswordBreachCheck
+  const savedFetch = window.fetch
+  const btnOf = (row) => row.querySelector('.x-fld-breach-check')
+
+  test('hidden when the preference is off', () => {
+    // Present in the DOM but hidden, not absent. The button has to exist so
+    // enableBreachCheckButtons() can reveal it without rebuilding the row —
+    // an earlier version created it conditionally and the button then needed a
+    // page reload to appear. Not visible, though: with the preference off it
+    // would otherwise be a control on every password field whose only function
+    // is to say "go turn on a preference", and the menu entry does that once.
+    window.prefs.enablePasswordBreachCheck = false
+    const row = mkRecordField('password', 'password', STRONG)
+    const button = btnOf(row)
+    assert(button, 'the button should be built regardless')
+    assert(button.classList.contains('d-none'),
+           'but hidden while the feature is off')
+    assert(row.querySelector('.bi-eye'), 'the show/hide button is unaffected')
+  })
+  test('shown for password fields when enabled, and only those', () => {
+    window.prefs.enablePasswordBreachCheck = true
+    const button = btnOf(mkRecordField('password', 'password', STRONG))
+    assert(button, 'a password field should offer it')
+    assert(!button.classList.contains('d-none'), 'and it should be visible')
+    assert(!btnOf(mkRecordField('login', 'text', 'joe@example.com')),
+           'a text field should not have one at all')
+  })
+
+  await runAsyncTest('a clean password reports that it is clean', async () => {
+    window.prefs.enablePasswordBreachCheck = true
+    window.fetch = async () => ({ok: true, status: 200,
+      text: async () => 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA:1'})
+    const row = mkRecordField('password', 'password', STRONG)
+    document.body.appendChild(row)
+    try {
+      btnOf(row).click()
+      await new Promise((r) => { setTimeout(r, 250) })
+      const result = row.querySelector('.x-fld-breach-result')
+      assert(result && result.textContent.indexOf('not in the breach corpus') > -1,
+             `unexpected: ${result ? result.textContent : '(no result)'}`)
+    } finally {
+      row.remove()
+    }
+  })
+
+  await runAsyncTest('offline says could not check, never clean', async () => {
+    // The whole feature turns on this. A button that silently did nothing when
+    // the network was down would be worse than no button.
+    window.prefs.enablePasswordBreachCheck = true
+    window.fetch = async () => { throw new TypeError('Failed to fetch') }
+    const row = mkRecordField('password', 'password', STRONG)
+    document.body.appendChild(row)
+    try {
+      btnOf(row).click()
+      await new Promise((r) => { setTimeout(r, 250) })
+      const result = row.querySelector('.x-fld-breach-result')
+      assert(result, 'a failure must still say something')
+      assert(result.textContent.indexOf('could not check') > -1,
+             `expected a could-not-check message: ${result.textContent}`)
+      assert(result.textContent.indexOf('not in the breach corpus') === -1,
+             'a failed lookup must never read as clean')
+      assert(result.textContent.indexOf('Nothing was learned') > -1,
+             'it should say plainly that nothing was established')
+    } finally {
+      row.remove()
+    }
+  })
+
+  await runAsyncTest('a breached password reports the count', async () => {
+    window.prefs.enablePasswordBreachCheck = true
+    const suffix = (await sha1Hex('hunter2')).slice(5)
+    window.fetch = async () => ({ok: true, status: 200,
+      text: async () => suffix + ':4242'})
+    const row = mkRecordField('password', 'password', 'hunter2')
+    document.body.appendChild(row)
+    try {
+      btnOf(row).click()
+      await new Promise((r) => { setTimeout(r, 250) })
+      const result = row.querySelector('.x-fld-breach-result')
+      assert(result.textContent.indexOf('BREACHED') > -1, result.textContent)
+      assert(result.textContent.indexOf('4242') > -1, 'the count should appear')
+    } finally {
+      row.remove()
+      window.prefs.enablePasswordBreachCheck = savedPref
+      window.fetch = savedFetch
+    }
+  })
+}
+
+
+async function runBreachTests10() {
+  suite('field.js — the button follows the preference at runtime')
+
+  test('built always, shown only when enabled', () => {
+    // The first version created the button conditionally, which read correctly
+    // and behaved wrongly: rows are built when records are rendered, so
+    // enabling the preference afterwards left every existing field without a
+    // button until the page was reloaded.
+    const saved = window.prefs.enablePasswordBreachCheck
+    try {
+      window.prefs.enablePasswordBreachCheck = false
+      const row = mkRecordField('password', 'password', 'Zq7-Mvtl%Kdn#WroP2xj')
+      document.body.appendChild(row)
+      try {
+        const button = row.querySelector('.x-fld-breach-check')
+        assert(button, 'the button should exist even while the feature is off')
+        assert(button.classList.contains('d-none'), 'but hidden')
+
+        window.prefs.enablePasswordBreachCheck = true
+        enableBreachCheckButtons()
+        assert(!button.classList.contains('d-none'),
+               'enabling the preference must reveal it without a reload')
+
+        window.prefs.enablePasswordBreachCheck = false
+        enableBreachCheckButtons()
+        assert(button.classList.contains('d-none'), 'and disabling hides it again')
+      } finally {
+        row.remove()
+      }
+    } finally {
+      window.prefs.enablePasswordBreachCheck = saved
+    }
+  })
+
+  suite('field.js — checking a password while editing it')
+
+  test('the editable row offers the check too', () => {
+    // The last moment before a password is adopted, and the most useful place
+    // to object. Most of that value is local: a generated password passes
+    // every check, a hand-typed Summer2026 fails on structure with no network.
+    const saved = window.prefs.enablePasswordBreachCheck
+    window.prefs.enablePasswordBreachCheck = true
+    try {
+      const container = xmk('div')
+      document.body.appendChild(container)
+      try {
+        const row = mkRecordEditField('password', 'password', container, 'Summer2026')
+        container.appendChild(row)
+        assert(row.querySelector('.x-fld-breach-check'),
+               'a password edit row should offer the check')
+        const text = mkRecordEditField('login', 'text', container, 'joe@example.com')
+        assert(!text.querySelector('.x-fld-breach-check'),
+               'a text edit row should not')
+      } finally {
+        container.remove()
+      }
+    } finally {
+      window.prefs.enablePasswordBreachCheck = saved
+    }
+  })
+
+  await runAsyncTest('editing clears a result that no longer applies', async () => {
+    // A result describes the value it was computed from. Left in place while
+    // the value changes, it would describe a password the user no longer has
+    // — the same stale-display trap as the orphaned progress element.
+    const savedPref = window.prefs.enablePasswordBreachCheck
+    const savedFetch = window.fetch
+    window.prefs.enablePasswordBreachCheck = true
+    window.fetch = async () => { throw new TypeError('offline') }
+    const container = xmk('div')
+    document.body.appendChild(container)
+    try {
+      const row = mkRecordEditField('password', 'password', container, 'Summer2026')
+      container.appendChild(row)
+      row.querySelector('.x-fld-breach-check').click()
+      await new Promise((r) => { setTimeout(r, 250) })
+      assert(row.querySelector('.x-fld-breach-result'),
+             'a weak password should be objected to even with no network')
+
+      const input = row.querySelector('.x-fld-value')
+      input.value = 'Zq7-Mvtl%Kdn#WroP2xj'
+      input.dispatchEvent(new Event('input', {bubbles: true}))
+      assert(!row.querySelector('.x-fld-breach-result'),
+             'the stale result must go as soon as the value changes')
+    } finally {
+      container.remove()
+      window.prefs.enablePasswordBreachCheck = savedPref
+      window.fetch = savedFetch
+    }
+  })
+}
+
+
+async function runBreachTests11() {
+  suite('password.js — the breach check in the standalone generator')
+
+  const savedPref = window.prefs.enablePasswordBreachCheck
+  const savedFetch = window.fetch
+
+  // showMainPasswordGeneratorDlg() populates the body, and it also calls
+  // bootstrap.Modal.getOrCreateInstance(). This page does not load Bootstrap's
+  // JavaScript at all, so that global is undefined here and the call throws
+  // before the body is built.
+  //
+  // Stubbed for the duration rather than working around it: the population is
+  // the part under test, and a stub keeps the test exercising the real
+  // function instead of a reimplementation of what it does.
+  function withGenerator(fn) {
+    // showMainPasswordGeneratorDlg() finds its target with
+    // getElementById('mainPasswordGeneratorDlg'), so any earlier dialogue left
+    // attached with that id would be populated instead of this one. Clear the
+    // id before appending so the lookup cannot resolve to something else.
+    for (const stale of document.querySelectorAll('#mainPasswordGeneratorDlg')) {
+      stale.remove()
+    }
+    const dlg = mkMainPasswordGeneratorDlg()
+    document.body.appendChild(dlg)
+    const hadBootstrap = 'bootstrap' in window
+    const savedBootstrap = window.bootstrap
+    window.bootstrap = {Modal: {getOrCreateInstance: () => ({show: () => {}})}}
+    try {
+      showMainPasswordGeneratorDlg()
+      // Report which stage failed rather than only the final count.
+      assertEqual(document.getElementById('mainPasswordGeneratorDlg'), dlg,
+                  'getElementById should resolve to the dialogue just built')
+      const body = dlg.querySelector('.modal-body')
+      assert(body, 'the dialogue should have a .modal-body')
+      assert(body.children.length > 0,
+             'showMainPasswordGeneratorDlg() should have populated the body')
+      return fn(dlg)
+    } finally {
+      dlg.remove()
+      if (hadBootstrap) {
+        window.bootstrap = savedBootstrap
+      } else {
+        delete window.bootstrap
+      }
+    }
+  }
+
+  // Builds a populated generator and returns its first check button, leaving
+  // the dialogue attached so an async click can be awaited against it. The
+  // caller removes it.
+  function withGeneratorButton() {
+    for (const stale of document.querySelectorAll('#mainPasswordGeneratorDlg')) {
+      stale.remove()
+    }
+    const dlg = mkMainPasswordGeneratorDlg()
+    document.body.appendChild(dlg)
+    const hadBootstrap = 'bootstrap' in window
+    const savedBootstrap = window.bootstrap
+    window.bootstrap = {Modal: {getOrCreateInstance: () => ({show: () => {}})}}
+    try {
+      showMainPasswordGeneratorDlg()
+      const button = dlg.querySelector('.x-gen-breach-check')
+      assert(button, 'the generator should have produced a check button')
+      return button
+    } finally {
+      if (hadBootstrap) {
+        window.bootstrap = savedBootstrap
+      } else {
+        delete window.bootstrap
+      }
+    }
+  }
+
+  test('one check button per generated password', () => {
+    // Worth having for the MEMORABLE passwords specifically: they carry about
+    // 40 bits, and entropyBits() cannot see that because it has no notion of
+    // dictionary words. The corpus is the only check that can object to them.
+    window.prefs.enablePasswordBreachCheck = true
+    withGenerator((dlg) => {
+      const buttons = dlg.querySelectorAll('.x-gen-breach-check')
+      assertEqual(buttons.length, 6, 'one cryptic plus five memorable')
+      for (const button of buttons) {
+        assert(!button.classList.contains('d-none'),
+               'all visible while the feature is on')
+      }
+    })
+  })
+
+  test('hidden when the preference is off, and toggled without a rebuild', () => {
+    window.prefs.enablePasswordBreachCheck = true
+    withGenerator((dlg) => {
+      window.prefs.enablePasswordBreachCheck = false
+      enableBreachCheckButtons()
+      const off = dlg.querySelectorAll('.x-gen-breach-check')
+      // Without this the loop below succeeds over an empty list: this test
+      // passed while the dialogue was producing no buttons at all.
+      assertEqual(off.length, 6, 'there should be buttons to hide')
+      for (const button of off) {
+        assert(button.classList.contains('d-none'),
+               'the toggle must reach the generator buttons too, not just the '
+               + 'per-field ones')
+      }
+      window.prefs.enablePasswordBreachCheck = true
+      enableBreachCheckButtons()
+      for (const button of dlg.querySelectorAll('.x-gen-breach-check')) {
+        assert(!button.classList.contains('d-none'), 'and back again')
+      }
+    })
+  })
+
+  await runAsyncTest('offline says could not check, never clean', async () => {
+    window.prefs.enablePasswordBreachCheck = true
+    window.fetch = async () => { throw new TypeError('offline') }
+    const button = withGeneratorButton()
+    button.click()
+    await new Promise((r) => { setTimeout(r, 250) })
+    const out = button.parentElement.querySelector('.x-gen-breach-result')
+    assert(out, 'a failure must still say something')
+    assert(out.textContent.indexOf('could not check') > -1, out.textContent)
+    assert(out.textContent.indexOf('not in the breach corpus') === -1,
+           'a failed lookup must never read as clean')
+    button.closest('.modal').remove()
+  })
+
+  await runAsyncTest('a clean generated password says so', async () => {
+    window.prefs.enablePasswordBreachCheck = true
+    window.fetch = async () => ({ok: true, status: 200,
+      text: async () => 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA:1'})
+    try {
+      const button = withGeneratorButton()
+      button.click()
+      await new Promise((r) => { setTimeout(r, 250) })
+      const out = button.parentElement.querySelector('.x-gen-breach-result')
+      assert(out.textContent.indexOf('not in the breach corpus') > -1,
+             out.textContent)
+      button.closest('.modal').remove()
+    } finally {
+      window.prefs.enablePasswordBreachCheck = savedPref
+      window.fetch = savedFetch
+    }
+  })
+}
+
+
+async function runBreachTests12() {
+  suite('search.js — selecting records from a report')
+
+  test('regex metacharacters in titles are escaped', () => {
+    // Titles are arbitrary user text and are not unique. Unescaped, a title
+    // containing ( or | or . changes the meaning of the pattern built from it
+    // and quietly matches the wrong records — the worst outcome for a feature
+    // whose purpose is helping you find the right ones.
+    assertEqual(escapeRegExp('Google'), 'Google')
+    assertEqual(escapeRegExp('Bank (old)'), 'Bank \\(old\\)')
+    assertEqual(escapeRegExp('a|b'), 'a\\|b')
+    assertEqual(escapeRegExp('example.com'), 'example\\.com')
+  })
+
+  test('the pattern is anchored, deduplicated, and shown in the search box', () => {
+    const saved = document.getElementById('search').value
+    try {
+      const pattern = selectRecordsByTitle(['Facebook', 'Instagram'])
+      assertEqual(pattern, '^(Facebook|Instagram)$')
+      assertEqual(document.getElementById('search').value, pattern,
+                  'the box shows the term: a filtered list with no visible '
+                  + 'cause is worse than an odd-looking search')
+      assertEqual(selectRecordsByTitle(['Google', 'Google']), '^(Google)$',
+                  'duplicates collapse')
+      assert(!new RegExp('^(Google)$').test('Google Cloud'),
+             'anchoring stops a prefix match')
+      assertEqual(selectRecordsByTitle([]), '', 'an empty list does nothing')
+    } finally {
+      document.getElementById('search').value = saved
+    }
+  })
+
+  test('an escaped title matches literally and nothing else', () => {
+    const pattern = selectRecordsByTitle(['Bank (old)'])
+    assertEqual(pattern, '^(Bank \\(old\\))$')
+    assert(new RegExp(pattern).test('Bank (old)'), 'it should match itself')
+    assert(!new RegExp(pattern).test('Bank old'),
+           'and not the string the unescaped pattern would have matched')
+  })
+
+  test('it refuses rather than emptying the window', () => {
+    // searchRecords() only compares against titles when this is set. Without
+    // the guard the pattern matches nothing and the records simply vanish,
+    // with no explanation.
+    const saved = window.prefs.searchRecordTitles
+    try {
+      window.prefs.searchRecordTitles = false
+      assertEqual(selectRecordsByTitle(['Google']), '')
+    } finally {
+      window.prefs.searchRecordTitles = saved
+    }
+  })
+}
+
+
+async function runBreachTests13() {
+  suite('reports degrade when Search Record Titles is off')
+
+  const saved = window.prefs.searchRecordTitles
+
+  test('canSelectRecords follows the preference', () => {
+    window.prefs.searchRecordTitles = false
+    assertEqual(canSelectRecords(), false)
+    window.prefs.searchRecordTitles = true
+    assertEqual(canSelectRecords(), true)
+  })
+
+  test('the reuse report shows plain text instead of a dead button', () => {
+    // A control that looks clickable and silently does nothing is worse than
+    // one that does not look clickable at all.
+    const items = [
+      mkVaultUiItem('one', true, [['password','password','SHARED']]),
+      mkVaultUiItem('two', true, [['password','password','SHARED']]),
+    ]
+    withVaultUiFixture(items, () => {
+      window.prefs.searchRecordTitles = true
+      refreshVaultStats()
+
+      // Diagnose in stages. "no button" has two very different causes — no
+      // reuse was detected at all, or the button was not rendered — and a bare
+      // assertion on the button cannot tell them apart.
+      //
+      // getCurrentRecords() is called directly first because
+      // refreshVaultStats() wraps it in a try/catch that returns silently: if
+      // reading the accordion throws, the cache simply keeps its old value and
+      // nothing says why. Calling it here lets the exception surface.
+      const seen = getCurrentRecords()
+      assertEqual(seen.length, 2,
+                  `the fixture should expose two records, saw ${JSON.stringify(
+                      seen.map(r => r.title))}`)
+      assertEqual(getCachedReuseCount(), 2,
+                  'the fixture should produce one reuse group of two entries')
+      assertEqual(canSelectRecords(), true,
+                  'searchRecordTitles was just set')
+
+      let dlg = menuReuseDlg()
+      assert(dlg.querySelector('.x-reuse-group-select'),
+             'clickable while titles are searched')
+      assert(dlg.textContent.indexOf('currently off') === -1, 'and no warning')
+
+      window.prefs.searchRecordTitles = false
+      dlg = menuReuseDlg()
+      assert(!dlg.querySelector('.x-reuse-group-select'),
+             'not clickable when titles are not searched')
+      assert(dlg.textContent.indexOf('entries share a password') > -1,
+             'the group label is still shown')
+      assert(dlg.textContent.indexOf('Search Record Titles') > -1,
+             'and the report says why selection is unavailable')
+      window.prefs.searchRecordTitles = true
+    })
+  })
+
+  test('the breach report does the same', () => {
+    const progress = xmk('div')
+    const results = xmk('div')
+    document.body.appendChild(progress)
+    document.body.appendChild(results)
+    try {
+      const verdict = verdictFor('Summer2026',
+                                 {status: NOT_FOUND, count: 0, reason: ''})
+      const outcome = {probeFailed: false, cancelled: false, results: [
+        Object.assign({entries: [{title: 'Facebook', name: 'password'}]}, verdict)]}
+
+      window.prefs.searchRecordTitles = false
+      renderBreachResults(progress, results, outcome, 1)
+      assert(!results.querySelector('.x-breach-record-select'),
+             'titles are plain text when selection cannot work')
+      assert(results.textContent.indexOf('Facebook') > -1,
+             'the title is still readable')
+      assert(results.textContent.indexOf('Search Record Titles') > -1,
+             'and the report says why')
+
+      window.prefs.searchRecordTitles = true
+      renderBreachResults(progress, results, outcome, 1)
+      assert(results.querySelector('.x-breach-record-select'),
+             'clickable again once the preference is back on')
+      assert(results.textContent.indexOf('currently off') === -1,
+             'and the note is gone')
+    } finally {
+      progress.remove()
+      results.remove()
+      window.prefs.searchRecordTitles = saved
+    }
+  })
+}
+
+
+async function runBreachTests14() {
+  suite('breach.js — the entropy estimate knows about words')
+
+  test('a passphrase is scored by words, not by length', () => {
+    // The bug: length x log2(alphabet) scored std/creature/history at 118
+    // bits. Three words from a 9,858-word list carry 40. The estimate was
+    // wrong by threefold, in the unsafe direction, for exactly the passwords
+    // PAM's own generator produces.
+    const three = entropyBits('std/creature/history')
+    assert(three >= 38 && three <= 42,
+           `three words should score about 40 bits, got ${three}`)
+    const five = entropyBits('vehicle/adverse/make/ours/craft')
+    assert(five >= 64 && five <= 68,
+           `five words should score about 66 bits, got ${five}`)
+  })
+
+  test('a random string is unaffected', () => {
+    // The lower of the two estimates is taken, and for a cryptic password the
+    // word estimate does not apply at all.
+    assert(entropyBits('Zq7-Mvtl%Kdn#WroP2xj') > 100)
+  })
+
+  test('only dictionary words count', () => {
+    // Guessing at concatenated words would understate a password that merely
+    // contains one — a false REJECT teaches people to ignore the tool, which
+    // costs more than the check saves.
+    assert(entropyBits('xyzzy/plugh/frotz') > 60,
+           'non-words fall back to the character estimate')
+    assert(entropyBits('history') > 20,
+           'a single word is not a passphrase')
+  })
+
+  test('the verdict follows', () => {
+    const miss = {status: NOT_FOUND, count: 0, reason: ''}
+    assertEqual(verdictFor('std/creature/history', miss).verdict, REJECT,
+                'three words is below the floor and now says so')
+    assertEqual(verdictFor('vehicle/adverse/make/ours/craft', miss).verdict, ACCEPT)
+  })
+
+  test('PAM no longer generates passwords its own checker rejects', () => {
+    // The point of raising the generator defaults alongside the estimator fix.
+    // Without it, correcting the measurement would have made PAM flag its own
+    // output as weak.
+    const saved = window.prefs
+    window.prefs = getDefaultPrefs()
+    try {
+      const length = window.prefs.passwordRangeLengthDefault
+      for (let i = 0; i < 20; i++) {
+        const memorable = getMemorablePassword(length)
+        assertEqual(structuralWeaknesses(memorable).length, 0,
+                    `generated memorable password rejected: ${memorable} ` +
+                    `(${structuralWeaknesses(memorable).join('; ')})`)
+        const cryptic = getCrypticPassword(length, ALPHABET)
+        assertEqual(structuralWeaknesses(cryptic).length, 0,
+                    `generated cryptic password rejected: ${cryptic}`)
+      }
+    } finally {
+      window.prefs = saved
+    }
+  })
+
+  test('memorablePasswordMinWords is 5', () => {
+    // Five words is 66 bits, which clears the 60-bit floor. Three is 40 and
+    // does not.
+    assertEqual(getDefaultPrefs().memorablePasswordMinWords, 5)
+  })
+}
+
+
+async function runBreachTests15() {
+  suite('prefs — one source of defaults')
+
+  test('initPrefs() produces exactly getDefaultPrefs()', () => {
+    // These were two hardcoded lists and they drifted. By v2.4.0 initPrefs()
+    // was missing searchPasswordFieldValues (the v2.3.0 search oracle fix),
+    // showPasswordReuseWarning and enablePasswordBreachCheck entirely — they
+    // worked only because undefined is falsy — and still had the old password
+    // length and word count after those were raised.
+    //
+    // The consequence was that every preference test asserted a value the
+    // running application never read. initPrefs() now delegates, and this
+    // check keeps it that way.
+    const saved = window.prefs
+    try {
+      initPrefs()
+      const running = window.prefs
+      const expected = getDefaultPrefs()
+      const keys = new Set(Object.keys(expected).concat(Object.keys(running)))
+      const differences = []
+      for (const key of keys) {
+        // filePassCache is legitimately overridden per device from
+        // localStorage (SEC-002), so it is the one key allowed to differ.
+        if (key === 'filePassCache') { continue }
+        if (JSON.stringify(expected[key]) !== JSON.stringify(running[key])) {
+          differences.push(
+            `${key}: model=${JSON.stringify(expected[key])} ` +
+            `app=${JSON.stringify(running[key])}`)
+        }
+      }
+      assertEqual(differences.length, 0,
+                  'initPrefs() and getDefaultPrefs() disagree: ' +
+                  differences.join('; '))
+    } finally {
+      window.prefs = saved
+    }
+  })
+}
+
+async function runBreachTests() {
+  await runBreachTests1()
+  await runBreachTests2()
+  await runBreachTests3()
+  await runBreachTests4()
+  await runBreachTests5()
+  await runBreachTests6()
+  await runBreachTests7()
+  await runBreachTests8()
+  await runBreachTests9()
+  await runBreachTests10()
+  await runBreachTests11()
+  await runBreachTests12()
+  await runBreachTests13()
+  await runBreachTests14()
+  await runBreachTests15()
+}
+
 // Keep `.then(() => { window.__TESTS_COMPLETE__ = true })` as the final link
 // in the chain: it signals the Selenium runner that all async work — the last
 // finalize() included — has completed, so it never reads a sync-only snapshot.
@@ -3119,8 +4361,18 @@ function mkVaultUiItem(title, active, fields) {
 }
 
 function withVaultUiFixture(items, fn) {
-  const real = document.getElementById('records-accordion')
-  if (real) { real.removeAttribute('id') }
+  // Neutralise EVERY element carrying the id, not just the first.
+  //
+  // This used to take document.getElementById(), which returns one match. The
+  // page has three elements that claim `records-accordion` at different
+  // points, and if two were live at once the survivor sat earlier in document
+  // order and won the lookup inside convertInternalDataToJSON() — so the
+  // fixture's records were invisible and getCurrentRecords() returned []. The
+  // symptom was a reuse report with nothing in it and no error anywhere,
+  // because refreshVaultStats() swallows the failure.
+  const displaced = Array.from(document.querySelectorAll('#records-accordion'))
+  displaced.forEach(el => el.removeAttribute('id'))
+
   const fixture = xmk('div').xId('records-accordion')
   items.forEach(i => fixture.appendChild(i))
   document.body.appendChild(fixture)
@@ -3132,7 +4384,7 @@ function withVaultUiFixture(items, fn) {
   } finally {
     fixture.remove()
     badge.remove()
-    if (real) { real.setAttribute('id', 'records-accordion') }
+    displaced.forEach(el => el.setAttribute('id', 'records-accordion'))
   }
 }
 
@@ -3344,6 +4596,125 @@ test('the dialogue says when inactive records were excluded', () => {
   })
 })
 
+import { menuPrefsDlg, initPrefs } from '/js/prefs.js'
+
+// ---------------------------------------------------------------------------
+// breach-ui.js — the dialogue, in both states
+// ---------------------------------------------------------------------------
+import { menuBreachDlg, passwordsToCheck, startBreachCheck, renderBreachResults, BREACH_DLG_ID } from '/js/breach-ui.js'
+
+suite('breach-ui.js — the disabled state')
+test('the dialogue exists whether or not the preference is on', () => {
+  // The menu entry is always present. Hiding it would be the stronger privacy
+  // stance, but then the only route to the feature is reading the README.
+  const saved = window.prefs.enablePasswordBreachCheck
+  window.prefs.enablePasswordBreachCheck = false
+  try {
+    const dlg = menuBreachDlg()
+    assertEqual(dlg.id, BREACH_DLG_ID)
+    assert(dlg.querySelector('.x-fld-record-close'), 'it should have a Close button')
+  } finally {
+    window.prefs.enablePasswordBreachCheck = saved
+  }
+})
+test('the disabled body states that nothing has been sent', () => {
+  const saved = window.prefs.enablePasswordBreachCheck
+  window.prefs.enablePasswordBreachCheck = false
+  try {
+    const text = menuBreachDlg().textContent
+    assert(text.indexOf('Nothing has been sent') > -1,
+           'the first thing it should say is that no request was made')
+    assert(text.indexOf('Enable Password Breach Check') > -1,
+           'it should name where to turn it on')
+    assert(text.indexOf('never leaves this device') > -1,
+           'it should say what is not sent, not only what is')
+  } finally {
+    window.prefs.enablePasswordBreachCheck = saved
+  }
+})
+
+suite('breach-ui.js — what a check would send')
+test('passwords are deduplicated by value', () => {
+  // A password used by three entries costs one request, not three. Every
+  // entry sharing it is still reported.
+  const items = [
+    mkVaultUiItem('one',   true, [['password','password','SHARED']]),
+    mkVaultUiItem('two',   true, [['password','password','SHARED']]),
+    mkVaultUiItem('three', true, [['password','password','OTHER']]),
+  ]
+  withVaultUiFixture(items, () => {
+    const candidates = passwordsToCheck()
+    assertEqual(candidates.length, 2, 'two distinct values, so two requests')
+    const shared = candidates.find(c => c.entries.length === 2)
+    assert(shared, 'the shared password should list both entries')
+  })
+})
+test('inactive records are excluded when the preference is set', () => {
+  const items = [
+    mkVaultUiItem('live',    true,  [['password','password','A']]),
+    mkVaultUiItem('retired', false, [['password','password','B']]),
+  ]
+  withVaultUiFixture(items, () => {
+    window.prefs.hideInactiveRecords = true
+    assertEqual(passwordsToCheck().length, 1,
+                'a retired credential is not something to act on, and costs a request')
+    window.prefs.hideInactiveRecords = false
+    assertEqual(passwordsToCheck().length, 2)
+    window.prefs.hideInactiveRecords = true
+  })
+})
+test('opening the dialogue sends nothing', () => {
+  // The request happens when the user presses Check, not when they look at
+  // the report. A dialogue that phoned home because you opened it would be a
+  // surprise, and the whole point of the preference is that PAM does not
+  // contact anyone without being asked.
+  const saved = window.prefs.enablePasswordBreachCheck
+  window.prefs.enablePasswordBreachCheck = true
+  try {
+    const items = [mkVaultUiItem('one', true, [['password','password','A']])]
+    withVaultUiFixture(items, () => {
+      const text = menuBreachDlg().textContent
+      assert(text.indexOf('Nothing has been sent yet') > -1,
+             'the ready state must say that nothing has gone out yet')
+    })
+  } finally {
+    window.prefs.enablePasswordBreachCheck = saved
+  }
+})
+
+
+suite('prefs — enablePasswordBreachCheck')
+test('defaults to false', () => {
+  // The only preference that causes PAM to contact anything. If this ever
+  // defaults to true, PAM starts talking to a third party for users who never
+  // asked it to.
+  assertEqual(getDefaultPrefs().enablePasswordBreachCheck, false)
+})
+test('appears on the Administration tab', () => {
+  // window.prefs is shared and mutable, and dozens of earlier tests set keys
+  // on it directly. menuPrefsDlg() reads predefinedRecordFields with
+  // Object.entries(), so a missing key throws "Cannot convert undefined or
+  // null to object" — which is what happened the first time this ran. Build
+  // the dialogue from a known-good prefs object and put the old one back.
+  const saved = window.prefs
+  window.prefs = getDefaultPrefs()
+  try {
+    const dlg = menuPrefsDlg()
+    const control = dlg.querySelector('[data-pref-id="enablePasswordBreachCheck"]')
+    assert(control, 'the preference control should exist')
+    assert(control.closest('#prefs-tab-admin'),
+           'it belongs with the other settings that change security posture')
+  } finally {
+    window.prefs = saved
+  }
+})
+// The badge itself is tested in tests/test_chrome.py, not here.
+// updateBreachCheckIndicator() lives in main.js, which this page cannot import
+// — it registers window.onload and pulls in menu.js, raw.js and about.js.
+// The existing indicator suites work around that by replicating the logic
+// inline, which tests the copy rather than the function. An e2e test drives
+// the real one.
+
 suite('prefs — showPasswordReuseWarning')
 test('defaults to true', () => {
   assertEqual(getDefaultPrefs().showPasswordReuseWarning, true,
@@ -3352,9 +4723,25 @@ test('defaults to true', () => {
 
 
 finalize() // update summary with sync results so far
+// Every async runner must be followed by finalize() before __TESTS_COMPLETE__
+// is set, because finalize() is what writes window.__TEST_RESULTS__ — the
+// object the Selenium runner reads to decide pass or fail.
+//
+// Calling it per-runner was fragile: it was called at the end of
+// runCryptTests and runSaveRegressionTests but not the two after them, so
+// runVaultFingerprintTests and runBreachTests rendered their results into the
+// page while the TOTALS still reflected the state before they ran. Their
+// failures would have shown as red lines on the page and passed the build.
+// That was live for the whole of v2.3.0: the vaultFingerprint suite was
+// running and reporting, but not gating.
+//
+// One finalize() at the end of the chain cannot drift the same way — adding a
+// runner cannot leave it uncounted.
 runCryptTests()
   .then(runSaveRegressionTests)
   .then(runVaultFingerprintTests)
+  .then(runBreachTests)
+  .then(finalize)
   .catch((err) => {
     // A throw in an async runner itself (not an individual test — those are
     // caught) would otherwise leave the flag false and strand the Selenium

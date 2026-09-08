@@ -1,16 +1,19 @@
 // preferences stuff
 import { xmk, xget, xgetn, enableFunctionChaining } from './lib.js'
 import { icon, mkPopupModalDlgButton, mkPopupModalDlg, sortDictByKey } from './utils.js'
-import { mkRecordEditField }  from './field.js'
+import { mkRecordEditField, enableBreachCheckButtons }  from './field.js'
 import { refreshAbout } from './about.js'
 import { enablePrinting } from './print.js'
 import { enableSaveFile } from './save.js'
 import { setDarkLightTheme } from './utils.js'
 import { searchRecords } from './search.js'
 import { enableRawJSONEdit } from './raw.js'
-import { updateHtmlRenderingIndicator, updateFilePassCacheIndicator, updatePasswordSearchIndicator } from './main.js'
+import { updateHtmlRenderingIndicator, updateFilePassCacheIndicator, updatePasswordSearchIndicator, updateBreachCheckIndicator } from './main.js'
 import { updateReuseIndicator, scheduleVaultStatsRefresh } from './vault-ui.js'
 import { clearFilePass } from './password.js'
+// The single source of preference defaults. prefs.js used to keep its own
+// copy in initPrefs() and the two drifted; see the note there.
+import { getDefaultPrefs } from './prefs-model.js'
 
 // These are the input types that the tool knows how to handle.
 export const VALID_FIELD_TYPES = {
@@ -57,70 +60,19 @@ export function resetPrefs() {
 }
 
 export function initPrefs() {
-    window.prefs = {
-        // Use the '.txt' extension because the '.pam' extension
-        // does not work on some mobile devices.
-        themeName: 'dark', // choices are dark or light
-        enablePrinting: false,
-        enableSaveFile: true,
-        fileName: 'example.txt',
-        filePass: '',
-        filePassCache: 'session',   // options: none, global, local, session — default session; overridden per-device by pamCacheStrategy in localStorage
-        textareaMinHeight: '5em',
-        editableFieldName: false, // if true, allow field names to be changed
-        searchCaseInsensitive: true,
-        searchRecordTitles: true,
-        searchRecordFieldNames: false,
-        searchRecordFieldValues: false,
-        hideInactiveRecords: true, // hide inactive records if true
-        passwordRangeLengthDefault: 20,
-        passwordRangeMinLength: 12,
-        passwordRangeMaxLength: 32,
-        memorablePasswordWordSeparator: '/',
-        memorablePasswordMinWordLength: 2,
-        memorablePasswordMinWords: 3,
-        memorablePasswordMaxWords: 5,
-        memorablePasswordMaxTries: 10000,
-        clearBeforeLoad: true,
-        customAboutInfo: '',
-        cloneFieldValues: true, // keep field values when cloning a record
-        memorablePasswordPrefix: '', // common prefix for all memorable passwords
-        memorablePasswordSuffix: '', // common suffix for all memorable passwords
-        helpLink: './help/index.html', // link to the help page.
-        projectLink: 'https://github.com/jlinoff/pam', // link to the project page.
-        // valid dup strategies are 'ignore', 'replace', 'allow'
-        loadDupStrategy: 'ignore', // only used if clearBeforeLoad is false
-        logStatusToConsole: false, // tee the status to console.log
-        statusMsgDurationMS: 1500, // status message duration.
-        predefinedRecordFields: { // key=name and value=type
-            'account': 'text',
-            'datetime': 'datetime-local',
-            'email': 'email',
-            'host': 'text',
-            'html': 'html',
-            'key': 'password',
-            'login': 'text',
-            'name': 'text',
-            'note': 'textarea',
-            'number': 'number',
-            'phone': 'phone',
-            'password': 'password',
-            'secret': 'password',
-            'text': 'text',
-            'textarea': 'textarea',
-            'time': 'time',
-            'url': 'url',
-            'username': 'text',
-            'website': 'url',
-        },
-        predefinedRecordFieldsDefault: 'text',
-        requireRecordFields: false,
-        lockPreferencesPassword: '',
-        allowHtmlFieldRendering: false,  // SEC-001: html fields render as escaped text by default
-        defaultRecordFields: 'website,login,password,note',
-        enableRawJSONEdit: false,
-        encryptionFormat: 'v1',  // v1 (default) or v2 — see SECURITY.md SEC-003/SEC-004
-    }
+    // Delegates to getDefaultPrefs() rather than repeating the defaults.
+    //
+    // This used to be its own object literal, and the two drifted. By v2.4.0
+    // initPrefs() was missing searchPasswordFieldValues (the v2.3.0 search
+    // oracle fix), showPasswordReuseWarning and enablePasswordBreachCheck
+    // entirely — they worked only because undefined is falsy — and still had
+    // passwordRangeLengthDefault at 20 and memorablePasswordMinWords at 3
+    // after those were raised.
+    //
+    // The unit tests assert getDefaultPrefs(), which the application was not
+    // using. Every preference test was therefore checking a value the running
+    // app never read.
+    window.prefs = getDefaultPrefs()
     setHelpLinks()
 
     // Per-device cache strategy override (SEC-002).
@@ -190,6 +142,13 @@ export function menuPrefsDlg() {
             mkTabPane('prefs-tab-search', true,
                 prefSearchCaseInsensitive(labelClasses, inputClasses),
                 prefSearchRecordTitles(labelClasses, inputClasses),
+                prefPromptDesc('Turning this <b>off</b> also disables selecting ' +
+                               'records from the reports. Clicking a group in ' +
+                               '<b>Reused Passwords</b>, or an entry in ' +
+                               '<b>Breached Passwords</b>, works by searching for ' +
+                               'the record titles \u2014 which finds nothing when ' +
+                               'titles are not searched. Those entries are shown as ' +
+                               'plain text instead of clickable ones while this is off.'),
                 prefSearchRecordFieldNames(labelClasses, inputClasses),
                 prefSearchRecordFieldValues(labelClasses, inputClasses),
                 prefPromptDesc('Use caution when enabling this option because '+
@@ -317,6 +276,26 @@ export function menuPrefsDlg() {
                                'of them: if any one site is breached, every entry sharing that ' +
                                'password is exposed. No breach corpus can detect this \u2014 it is a ' +
                                'property of your vault, not of the password.'),
+                prefEnablePasswordBreachCheck(labelClasses, inputClasses),
+                prefPromptDesc('Check stored passwords against the ' +
+                               '<a href="https://haveibeenpwned.com/" target="_blank" rel="noopener">' +
+                               'Have I Been Pwned</a> corpus of passwords exposed in known breaches. ' +
+                               '<b>Disabled by default</b>, and the only setting in PAM that causes it ' +
+                               'to contact anything.<br>' +
+                               'When enabled, PAM sends the first five characters of a password\'s ' +
+                               'SHA-1 hash \u2014 twenty bits \u2014 to <code>api.pwnedpasswords.com</code>, ' +
+                               'which returns every hash beginning with that prefix. The comparison ' +
+                               'happens in your browser: the password, its full hash, the record it ' +
+                               'belongs to and the rest of your vault are never transmitted.<br>' +
+                               'That is a real privacy property but not nothing. A request is made, ' +
+                               'an IP address is visible to the other end, and checking a whole vault ' +
+                               'sends one request per password.<br>' +
+                               'Turning this off stops PAM making the request. It does not stop PAM ' +
+                               'being <i>able</i> to: the Content-Security-Policy names that host ' +
+                               'whether the preference is on or off, because a policy is fixed when ' +
+                               'the page is parsed and cannot depend on a setting.<br>' +
+                               'A <b>\u26A0 BREACH CHECK</b> warning badge will appear in the toolbar ' +
+                               'while this is active.'),
                 prefSearchPasswordFieldValues(labelClasses, inputClasses),
                 prefPromptDesc('WARNING: this only applies when <code>Search Record Field Values</code> ' +
                                'is also enabled. It allows the search box to match against the ' +
@@ -547,6 +526,8 @@ function savePrefs(el) {
     updateHtmlRenderingIndicator()  // SEC-001: update toolbar badge
     updateFilePassCacheIndicator()  // SEC-002: update toolbar badge
     updatePasswordSearchIndicator()  // update toolbar badge
+    updateBreachCheckIndicator()     // enablePasswordBreachCheck toggles the badge
+    enableBreachCheckButtons()       // and the per-field buttons on existing rows
     scheduleVaultStatsRefresh()      // hideInactiveRecords changes the reuse scope
     updateReuseIndicator()           // reuse badge follows showPasswordReuseWarning
     searchRecords()  // refresh
@@ -611,6 +592,15 @@ export function prefShowPasswordReuseWarning(labelClasses, inputClasses) {
                            'showPasswordReuseWarning',
                            'Show Password Reuse Warning',
                            'show a toolbar badge when a stored password is used more than once')
+}
+
+export function prefEnablePasswordBreachCheck(labelClasses, inputClasses) {
+    return mkPrefsCheckBox(labelClasses,
+                           inputClasses,
+                           'enablePasswordBreachCheck',
+                           'Enable Password Breach Check',
+                           'check stored passwords against the Have I Been Pwned corpus. ' +
+                           'This is the only setting that causes PAM to contact anything.')
 }
 
 export function prefSearchPasswordFieldValues(labelClasses, inputClasses) {
@@ -857,7 +847,8 @@ function prefSearchRecordTitles(labelClasses, inputClasses) {
                            inputClasses,
                            'searchRecordTitles',
                            'Search Record Titles',
-                           'search record titles')
+                           'search record titles; also required to select ' +
+                           'records from the reports')
 }
 
 function prefSearchRecordFieldNames(labelClasses, inputClasses) {

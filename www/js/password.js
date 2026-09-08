@@ -148,7 +148,16 @@ export function mkGeneratePasswordDlg(event) {
     if (!genSection) {
         // Create the generation section and add it.
         let topdiv = row.xGet('.x-fld-value-div')
-        let len = 20
+        // The preference, not a hardcoded 20.
+        //
+        // This generator ignored passwordRangeLengthDefault entirely, so the
+        // record editor produced 20-character passwords while the standalone
+        // generator produced 30. With memorablePasswordMinWords at 5 that also
+        // forced five words into twenty characters — hence suggestions like
+        // dk/pvc/am/you/nearby — and it is the configuration measured as
+        // failing about 3% of the time, returning "???" plus random hex when
+        // the generator gives up.
+        let len = window.prefs.passwordRangeLengthDefault || 20
         let cp0 = getCrypticPassword(len, ALPHABET)
         let num = 5 // number of memorable passwords
         let mbs = []

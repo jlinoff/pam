@@ -3962,6 +3962,70 @@ async function runBreachTests15() {
   })
 }
 
+
+async function runBreachTests17() {
+  suite('breach.js — pattern checks do not fire on coincidence')
+
+  test('a long random password containing a year is not rejected', () => {
+    // The exact password that failed a build: rejected for containing "2054",
+    // at 185 bits of entropy. The pattern checks look for evidence of human
+    // construction, and a coincidental run inside a random string is not that.
+    const random30 = '#1H20548n1G#z0O%^tQ2VgUwp9.zhn'
+    assertEqual(structuralWeaknesses(random30).length, 0,
+                `rejected: ${structuralWeaknesses(random30).join('; ')}`)
+  })
+
+  test('a passphrase containing a keyboard fragment is not rejected', () => {
+    // The keyboard row qwertyuiop contains "erty", so liberty, poverty and
+    // property all tripped the keyboard-run check — 0.17% of generated
+    // memorable passwords, every one a false positive. A passphrase is a human
+    // choosing words, not characters; its weakness is word count, and the word
+    // entropy estimate already measures that.
+    const passphrase = 'cow/beyond/dutch/serve/poverty'
+    assertEqual(structuralWeaknesses(passphrase).length, 0,
+                `rejected: ${structuralWeaknesses(passphrase).join('; ')}`)
+  })
+
+  test('human patterns are still caught', () => {
+    // The exemptions must not swallow the cases the checks exist for.
+    for (const weak of ['Summer2026', 'qwerty123456', 'password1234',
+                        'aaaaaaaaaaaa', 'abcdefghijkl', 'short',
+                        'Passw0rd2025!']) {
+      assert(structuralWeaknesses(weak).length > 0,
+             `${weak} should still be objected to`)
+    }
+  })
+
+  test('the entropy floor applies regardless of length', () => {
+    // The ceiling exempts pattern checks, never the floor.
+    assert(structuralWeaknesses('aaaaaaaaaaaaaaaaaaaaaaaaaaaaaa').length > 0,
+           'thirty identical characters is still weak')
+  })
+
+  test('nothing the generator produces is rejected', () => {
+    // The property that matters: PAM must not reject its own output. This was
+    // failing about 2.6% of runs for cryptic passwords and 0.17% of the time
+    // for memorable ones.
+    const saved = window.prefs
+    window.prefs = getDefaultPrefs()
+    try {
+      const length = window.prefs.passwordRangeLengthDefault
+      for (let i = 0; i < 60; i++) {
+        const cryptic = getCrypticPassword(length, ALPHABET)
+        assertEqual(structuralWeaknesses(cryptic).length, 0,
+                    `cryptic rejected: ${cryptic} — ` +
+                    structuralWeaknesses(cryptic).join('; '))
+        const memorable = getMemorablePassword(length)
+        assertEqual(structuralWeaknesses(memorable).length, 0,
+                    `memorable rejected: ${memorable} — ` +
+                    structuralWeaknesses(memorable).join('; '))
+      }
+    } finally {
+      window.prefs = saved
+    }
+  })
+}
+
 async function runBreachTests() {
   await runBreachTests1()
   await runBreachTests2()
@@ -3978,6 +4042,7 @@ async function runBreachTests() {
   await runBreachTests13()
   await runBreachTests14()
   await runBreachTests15()
+  await runBreachTests17()
 }
 
 // Keep `.then(() => { window.__TESTS_COMPLETE__ = true })` as the final link

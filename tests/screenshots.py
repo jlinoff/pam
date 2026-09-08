@@ -629,13 +629,15 @@ SEED_RNG_JS = (
     "  Object.defineProperty(window.crypto, 'getRandomValues', {"
     "    configurable: true,"
     "    value: function (array) {"
-    "      for (let i = 0; i < array.length; i++) { array[i] = next() & 0xff; }"
+    "      for (let i = 0; i < array.length; i++) { array[i] = next() >>> 0; }"
     "      return array;"
     "    }"
     "  });"
     "  const probe = new Uint8Array(4);"
     "  window.crypto.getRandomValues(probe);"
-    "  return probe[0] !== 0 || probe[1] !== 0;"
+    "  const wide = new Uint32Array(1);"
+    "  window.crypto.getRandomValues(wide);"
+    "  return (probe[0] !== 0 || probe[1] !== 0) && wide[0] > 0xffff;"
     "})();"
 )
 

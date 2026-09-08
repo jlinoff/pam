@@ -1431,6 +1431,92 @@ list size, the word count, the threat model and the attack times, and never
 asked whether the words were being drawn properly. Every figure in that
 analysis rested on an assumption about a line of code nobody had read.
 
+### The pattern checks fired on coincidence
+
+Switching to a CSPRNG changed which passwords the generator produces, and one
+of them failed a build: `#1H20548n1G#z0O%^tQ2VgUwp9.zhn` was rejected for
+containing the year **2054**. That password carries 185 bits.
+
+Measured over 200,000 random 30-character passwords, **0.13% trip at least one
+pattern check** — a year-like run, a keyboard fragment, an ascending pair, a
+doubled character. That is a 2.6% chance per twenty generated, so it would have
+recurred every few dozen runs, and it would have rejected perfectly good
+passwords for real users.
+
+The error was conceptual rather than a threshold being wrong. These checks look
+for evidence of **human construction**. A coincidental run inside a long random
+string is not that, and treating it as such produces exactly the false
+positives that teach people to ignore the tool.
+
+Two exemptions, both narrow:
+
+- **Above three times the entropy floor**, pattern checks are skipped. Well
+  above anything composed by hand, well below what the generator produces.
+- **Recognised passphrases** are skipped too. The keyboard row `qwertyuiop`
+  contains "erty", so `liberty`, `poverty` and `property` all tripped the
+  keyboard-run check — 0.17% of generated memorable passwords, every one a
+  false positive. A passphrase is a human choosing words, not characters, and
+  its weakness is word count, which the word entropy estimate already measures.
+
+The entropy floor itself is never exempt. Thirty identical characters is still
+rejected.
+
+After: **0 false rejects in 3,000 cryptic and 4,000 memorable passwords**, with
+every human pattern still caught.
+
+### The in-record generator ignored the length preference
+
+Caught by looking at the regenerated screenshots rather than by any test.
+
+`mkGeneratePasswordDlg()` — the generator that opens inside a record's password
+field — had `let len = 20` hardcoded. It never read
+`passwordRangeLengthDefault`. So the standalone generator produced 30-character
+passwords while the one in the record editor produced 20, and nothing anywhere
+compared them.
+
+With `memorablePasswordMinWords` raised to 5, that meant squeezing five words
+into twenty characters: the capture showed `dk/pvc/am/you/nearby` and
+`most/dl/acne/horn/il`. It is also exactly the configuration measured at a ~3%
+failure rate, where the generator gives up and returns `???` plus random hex.
+
+Now `window.prefs.passwordRangeLengthDefault || 20`, and verified through the
+real edit-row path: 30-character cryptic passwords and five-word memorable ones
+such as `model/jump/pour/clinics/silent`.
+
+**Nothing mechanical would have found this.** The unit tests call
+`getMemorablePassword()` with an explicit length. The e2e test added for item 13
+checks the *standalone* generator, which was already correct. `check-images`
+compares filenames. The regenerated capture was the only artefact that showed
+it, and only to someone who read the passwords in it.
+
+That is the argument for looking at the pictures rather than only counting
+them.
+
+### The screenshot seed had to change with it
+
+`SEED_RNG_JS` overrides `crypto.getRandomValues` so generated passwords are
+deterministic in captures. It filled every element with `next() & 0xff`, which
+was correct when every caller used a `Uint8Array`.
+
+`randomInt()` uses a `Uint32Array` and expects a full 32-bit draw. Under the
+old seed it would only ever have seen values 0-255, so `randomInt(9858)` would
+have selected from **the first 256 words of the list** — 2.6% of the
+vocabulary. The captures would not have failed; they would have shown
+passwords drawn from a crippled generator, and nothing would have said so.
+
+Now `array[i] = next() >>> 0`, letting the typed array truncate. `Uint8Array`
+output is byte-identical to before, so no existing capture is affected by this
+change. The probe that verifies the seed took now also checks that a
+`Uint32Array` receives a wide value, so the same mistake cannot pass silently
+again.
+
+**The two generator captures must be regenerated regardless.** Both generators
+now consume the seeded stream differently — `getCrypticPassword()` makes one
+32-bit draw per character instead of one `Uint8Array` for the whole password,
+and `getRandomWord()` draws from the CSPRNG rather than `Math.random()`. The
+passwords in `pam-password-generator-standalone.png` and
+`pam-password-generator.png` will differ.
+
 ### False positive: URL substring sanitization in a test
 
 CodeQL flagged `allowed.includes('https://api.pwnedpasswords.com')` in

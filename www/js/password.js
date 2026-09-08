@@ -12,29 +12,67 @@ export const HEX_DIGITS = "0123456789abcdef"
 export const SPECIAL = "_-+!./#$%^"
 export const ALPHABET = ALPHA_LOWER + ALPHA_UPPER + DEC_DIGITS + SPECIAL
 
+/**
+ * A uniformly distributed integer in [0, bound), from the CSPRNG.
+ *
+ * Two properties matter here, and neither is optional for generating
+ * passwords.
+ *
+ * **Cryptographic source.** Math.random() is not one. V8 implements it with
+ * xorshift128+, whose internal state is recoverable from a small number of
+ * observed outputs — past and future values can then be derived. The password
+ * generator displays several suggestions drawn from the same stream, so this
+ * is not a theoretical concern.
+ *
+ * **No modulo bias.** Taking `random % bound` skews towards the low values
+ * whenever bound does not divide the generator's range evenly. Values are
+ * rejected and redrawn above the largest exact multiple instead. With a
+ * 9,858-word list against a 32-bit range the bias would be tiny, but the
+ * entropy figures in the README are stated on the assumption of a uniform
+ * draw, and a rejection loop costs nothing.
+ *
+ * @param {number} bound - exclusive upper bound, must be positive
+ * @returns {number} an integer in [0, bound)
+ */
+export function randomInt(bound) {
+    if (!Number.isInteger(bound) || bound <= 0) {
+        throw new RangeError(`randomInt bound must be a positive integer: ${bound}`)
+    }
+    const range = 0x100000000            // 2^32, the range of a Uint32
+    const limit = Math.floor(range / bound) * bound
+    const buffer = new Uint32Array(1)
+    let value = limit
+    while (value >= limit) {
+        crypto.getRandomValues(buffer)
+        value = buffer[0]
+    }
+    return value % bound
+}
+
 // generate a cryptic password
 // length - is the length for the resulting password
 // alphabet - is the array of characters to use
 export function getCrypticPassword(length, alphabet) {
-    // Define the array and initially load it with random values.
-    let array = new Uint8Array(length) // length of the desired password
-    // https://developer.mozilla.org/en-US/docs/Web/API/Crypto/getRandomValues
-    crypto.getRandomValues(array) // load with random values.
+    // randomInt() per character rather than one Uint8Array masked with
+    // `% alphabet.length`: 256 is not a multiple of the 72-character
+    // alphabet, so that mapping favoured the first 40 characters slightly.
     let result = ''
-    for (let i=0; i < array.length; i++) {
-        // pick a random character from the alphabet
-        result += alphabet.charAt(array[i] % alphabet.length);
+    for (let i = 0; i < length; i++) {
+        result += alphabet.charAt(randomInt(alphabet.length))
     }
     return result;
 }
 
 export function getRandomWord(minlen, maxlen) {
-    var i = Math.floor(Math.random() * words.length);
+    // randomInt(), not Math.random(). The entropy claimed for a memorable
+    // password — about 13.3 bits per word — assumes each word is an
+    // independent uniform draw. Math.random() provides neither guarantee.
+    var i = randomInt(words.length)
     var tries = 0
     let maxtries = 1000
     var word = words[i]
     while (tries < maxtries && (word.length < minlen || word.length > maxlen)) {
-        i = Math.floor(Math.random() * words.length)
+        i = randomInt(words.length)
         word = words[i]
         tries += 1
     }

@@ -49,6 +49,7 @@ numeric order. A low number means the item was raised early, nothing more.
 | 13. Entropy estimate ignores dictionary words | **done in v2.4.0** — estimator is dictionary-aware; generator defaults raised to match |
 | 14. Loaded files apply security preferences | open — a shared file can silently weaken settings; badges show the result but nothing asks first |
 | 15. Vault merge | idea — extends item 7; needs durable IDs because it writes, and can use inactive records as undo |
+| 16. CodeQL findings | **fixed in v2.4.0** — memorable passwords used Math.random(); now CSPRNG with no modulo bias |
 
 ---
 
@@ -1393,6 +1394,55 @@ non-problem.
 
 Scheduling: this wants durable IDs, so it sits after that lands. Item 7 does
 not, and can precede it.
+
+## 16. CodeQL: memorable passwords used Math.random()
+
+Raised by GitHub Advanced Security on the v2.4.0 pull request. One alert was
+real and important; the other was a false positive worth rewriting anyway.
+
+### Real: insecure randomness in the password generator
+
+`getCrypticPassword()` used `crypto.getRandomValues()`. `getRandomWord()`, which
+selects the words for **memorable** passwords, used `Math.random()`.
+
+That is not a cryptographic generator. V8 implements it with xorshift128+,
+whose internal state is recoverable from a small number of observed outputs,
+after which past and future values can be derived. The generator dialogue
+displays five memorable passwords drawn from the same stream, so an attacker
+who learns any of them learns something about the others.
+
+It also invalidated the entropy analysis done for item 13. "Five words is 66
+bits" assumes each word is an independent uniform draw from the list. It was
+neither independent nor uniform.
+
+**Fixed with `randomInt(bound)`**, used by both generators, which draws from
+`crypto.getRandomValues()` and rejects values above the largest exact multiple
+of the bound. That second part removes a modulo bias that was also present in
+the cryptic path: it mapped a `Uint8Array` byte with `% alphabet.length`, and
+256 is not a multiple of 72, so the first 40 characters of the alphabet were
+slightly favoured. Small, but the entropy figures in the README are stated on
+the assumption of a uniform draw.
+
+Verified over 60,000 draws: within 5% of uniform (1.16% observed), always in
+range, and both generators still produce correct output.
+
+**The lesson is about where the analysis stopped.** Item 13 examined the word
+list size, the word count, the threat model and the attack times, and never
+asked whether the words were being drawn properly. Every figure in that
+analysis rested on an assumption about a line of code nobody had read.
+
+### False positive: URL substring sanitization in a test
+
+CodeQL flagged `allowed.includes('https://api.pwnedpasswords.com')` in
+`tests.html` because that shape, applied to a *string*, would also match
+`https://evil.com/?x=https://api.pwnedpasswords.com`. Here `allowed` is an
+array of CSP directive tokens, so `.includes()` is exact element equality and
+the attack does not apply.
+
+Rewritten as `.indexOf(...) > -1` regardless. The analyser cannot tell arrays
+from strings at that call site, and neither can a reader skimming the file —
+the clearer form costs nothing and removes a recurring alert that would
+otherwise need dismissing on every scan.
 
 ## `make test PORT=8088` never worked
 

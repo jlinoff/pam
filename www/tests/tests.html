@@ -1389,9 +1389,15 @@ test('connect-src permits the breach-check host', async () => {
   const policy = await cspPolicy()
   assert(policy.includes('connect-src'),
     'CSP should declare connect-src explicitly, not inherit default-src')
+  // allowed is an ARRAY of directive tokens, so .includes() is exact element
+  // equality, not substring matching. CodeQL's "incomplete URL substring
+  // sanitization" rule flags this shape because on a *string* it would match
+  // https://evil.com/?x=https://api.pwnedpasswords.com. It cannot here — but
+  // indexOf on the split tokens says so unambiguously, to a reader as well as
+  // to the analyser.
   const allowed = cspDirective(policy, 'connect-src')
-  assert(allowed.includes("'self'"), "connect-src should still include 'self'")
-  assert(allowed.includes('https://api.pwnedpasswords.com'),
+  assert(allowed.indexOf("'self'") > -1, "connect-src should still include 'self'")
+  assert(allowed.indexOf('https://api.pwnedpasswords.com') > -1,
     'connect-src should permit the HIBP range API')
 })
 test('connect-src permits nothing beyond that one host', async () => {

@@ -1464,6 +1464,34 @@ rejected.
 After: **0 false rejects in 3,000 cryptic and 4,000 memorable passwords**, with
 every human pattern still caught.
 
+### The in-record generator ignored the length preference
+
+Caught by looking at the regenerated screenshots rather than by any test.
+
+`mkGeneratePasswordDlg()` — the generator that opens inside a record's password
+field — had `let len = 20` hardcoded. It never read
+`passwordRangeLengthDefault`. So the standalone generator produced 30-character
+passwords while the one in the record editor produced 20, and nothing anywhere
+compared them.
+
+With `memorablePasswordMinWords` raised to 5, that meant squeezing five words
+into twenty characters: the capture showed `dk/pvc/am/you/nearby` and
+`most/dl/acne/horn/il`. It is also exactly the configuration measured at a ~3%
+failure rate, where the generator gives up and returns `???` plus random hex.
+
+Now `window.prefs.passwordRangeLengthDefault || 20`, and verified through the
+real edit-row path: 30-character cryptic passwords and five-word memorable ones
+such as `model/jump/pour/clinics/silent`.
+
+**Nothing mechanical would have found this.** The unit tests call
+`getMemorablePassword()` with an explicit length. The e2e test added for item 13
+checks the *standalone* generator, which was already correct. `check-images`
+compares filenames. The regenerated capture was the only artefact that showed
+it, and only to someone who read the passwords in it.
+
+That is the argument for looking at the pictures rather than only counting
+them.
+
 ### The screenshot seed had to change with it
 
 `SEED_RNG_JS` overrides `crypto.getRandomValues` so generated passwords are

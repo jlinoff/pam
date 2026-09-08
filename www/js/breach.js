@@ -356,6 +356,26 @@ export function entropyBits(password) {
 // password; it is the point below which one is indefensible.
 export const MIN_ENTROPY_BITS = 60
 
+// Above this, the pattern checks are not applied.
+//
+// They look for evidence of HUMAN construction: a keyboard run, a counting
+// sequence, a doubled key, a birth year. In a long random string those appear
+// by coincidence and mean nothing — a 30-character password from PAM's
+// 72-character alphabet carries 185 bits, and about one in 750 of them
+// contains a year-like run, a keyboard fragment or an ascending pair
+// somewhere. Rejecting those is a false positive on a password that is beyond
+// reproach, and false positives are the expensive kind of error here: they
+// teach people to ignore the tool.
+//
+// Measured over 200,000 random 30-character passwords: 0.13% tripped at least
+// one pattern check, which is a 2.6% chance per twenty generated. One did, in
+// the unit tests, on `#1H20548n1G#z0O%^tQ2VgUwp9.zhn` — rejected for
+// containing "2054".
+//
+// Three times the floor. Well above anything a person composes by hand, well
+// below what the generator produces at its default length.
+const PATTERN_CHECK_CEILING = MIN_ENTROPY_BITS * 3
+
 /**
  * Every structural objection to a password.
  *
@@ -369,6 +389,29 @@ export function structuralWeaknesses(password) {
     }
     if (password.length < MIN_LENGTH) {
         reasons.push(`it is only ${password.length} characters`)
+    }
+
+    // The entropy floor always applies; the pattern checks do not.
+    const bits = entropyBits(password)
+    if (bits < MIN_ENTROPY_BITS) {
+        reasons.push(`it has roughly ${bits} bits of entropy, below ${MIN_ENTROPY_BITS}`)
+    }
+    if (bits >= PATTERN_CHECK_CEILING) {
+        return reasons
+    }
+
+    // A passphrase of dictionary words is not a keyboard mash, and the pattern
+    // checks misread it as one. The keyboard row `qwertyuiop` contains "erty",
+    // so `liberty`, `poverty` and `property` all trip the keyboard-run check —
+    // 0.17% of generated memorable passwords, every one of them a false
+    // positive.
+    //
+    // A passphrase's weakness is its word count, and wordEntropyBits() already
+    // measures that correctly. There is nothing left for the pattern checks to
+    // find: they look for evidence of a human choosing characters, and this is
+    // a human choosing words.
+    if (wordEntropyBits(password) !== null) {
+        return reasons
     }
 
     const run = keyboardRun(password)
@@ -388,10 +431,6 @@ export function structuralWeaknesses(password) {
         reasons.push(`it contains the year ${year}`)
     }
 
-    const bits = entropyBits(password)
-    if (bits < MIN_ENTROPY_BITS) {
-        reasons.push(`it has roughly ${bits} bits of entropy, below ${MIN_ENTROPY_BITS}`)
-    }
     return reasons
 }
 

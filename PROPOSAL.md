@@ -57,6 +57,7 @@ numeric order. A low number means the item was raised early, nothing more.
 | 14. Loaded files apply security preferences | open — a shared file can silently weaken settings; badges show the result but nothing asks first |
 | 15. Vault merge | idea — extends item 7; needs durable IDs because it writes, and can use inactive records as undo |
 | 16. CodeQL findings | **v2.4.1** — memorable passwords used Math.random(); now CSPRNG with no modulo bias. Also: pattern checks rejected valid passwords, and the in-record generator ignored the length preference |
+| 17. Describe rather than judge | idea — the expository checks assert a 60-bit floor they cannot justify; and memorable passwords are about typeability, not memorability |
 
 ---
 
@@ -1657,6 +1658,87 @@ Fixed in two layers, because either alone is insufficient:
 The general shape is one worth remembering: a mode flag taken from ambient
 state, with no visible indication of which mode is active, fails silently and
 in the direction of doing nothing.
+
+## 17. What memorable passwords are actually for, and whether to judge at all
+
+A thought experiment rather than a proposed change, recorded because it
+reframes two things v2.4.1 settled by assertion.
+
+### The memorability rationale is weak; the typeability one is not
+
+Raising `memorablePasswordMinWords` to 5 traded memorability for entropy, and
+five words is genuinely harder to hold than three. Two ways to recover the
+difference were considered and both fail:
+
+| Scheme | Bits | Things to remember | Bits per item |
+|---|---|---|---|
+| 5 words | 66.3 | 5 | **13.3** |
+| 3 words + 3 random chars | 58.3 | 6 | 9.7 |
+| 3 words + 4 random chars | 64.5 | 7 | 9.2 |
+
+A word carries 13.3 bits and costs one item of memory; a random character
+carries 6.2 and costs about the same. So an affix scheme asks for **more**
+items and yields **fewer** bits. It loses on both axes at once, which is
+unusual enough to settle it.
+
+Leetspeak is worse. Applied deterministically it adds **exactly zero** bits —
+the attacker applies the same mapping to the same word list. Applied randomly
+it adds about one bit per substitutable position (8 bits on a typical
+three-word password, reaching 48) while requiring the user to remember which
+positions changed; four plain words reach 53 with nothing extra to remember.
+And rule-based cracking applies leet substitutions to dictionary words by
+default, so it is the first transformation tried rather than a clever one.
+
+**The better rationale is that they are easier to type, not easier to
+remember.** Estimated taps on a mobile keyboard, counting layer switches:
+
+| Password | Characters | Taps |
+|---|---|---|
+| cryptic, 30 chars | 30 | 56 |
+| 5 words, `/` separator | 30 | 38 |
+| 5 words, space separator | 30 | 30 |
+
+A third fewer taps, and **the separator accounts for the entire penalty** —
+four separators cost eight extra taps, two each, out to the symbol layer and
+back. The words themselves are free. If typeability is the rationale then
+`memorablePasswordWordSeparator` is the interesting lever, not the word count.
+
+**And typing is sometimes mandatory.** Some sites block paste
+(`onpaste="return false"`), typically older banking and utility portals — the
+ones least likely to change. PAM is a separate PWA, not a browser extension, so
+it has no access to another site's page and cannot work around this. Those
+passwords must be typed by hand, on whatever device is present. That is a
+permanent requirement rather than a fading one, and it is the strongest
+argument for offering typeable passwords at all.
+
+### The 60-bit floor may be the wrong shape
+
+The strength checks are **purely expository**. Nothing is blocked, nothing is
+rejected, no password is refused. Given that, a verdict PAM cannot justify is
+worse than the data behind it.
+
+And it cannot justify this one. The same three-word password holds for
+millennia against a login that rate-limits and falls in 96 seconds against a
+leaked fast hash. Which applies depends on how the far end stores the password
+— something PAM has no way to know. A single threshold cannot express that, so
+it will call good passwords weak for low-value accounts and pass marginal ones
+for high-value accounts.
+
+**Suggested shape, if this is ever built:** keep **BREACHED** as a verdict,
+because it is a fact — the password is published and whoever holds the dump has
+it. Replace **WEAK** with the estimate and its consequence:
+
+> `liberty/dental/govern` — about 40 bits. Ample against a login that rate
+> limits. Falls in about 96 seconds if the site's password hashes leak and are
+> stored badly.
+
+That gives the user what they need to decide, stops PAM pronouncing on a
+question it cannot answer, and dissolves the entropy-floor problem entirely
+since there is no longer a threshold to defend.
+
+The two halves connect: both say PAM should **describe rather than judge**, and
+both follow from noticing that the tool knows less about the user's situation
+than its current output implies.
 
 ## Where claims live
 

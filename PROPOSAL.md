@@ -70,7 +70,7 @@ the item moved.
 | 11. Actionable reports | **released in v2.4.0** — click-through from both reports |
 | 12. Per-field breach button | **released in v2.4.0** — on password fields, edit rows, and the standalone generator (documented under item 5, no separate section) |
 | 13. Entropy estimate ignores dictionary words | **released in v2.4.0** — estimator is dictionary-aware; generator defaults raised to match |
-| 14. Loaded files apply security preferences | open — a shared file can silently weaken settings; badges show the result but nothing asks first |
+| 14. Loaded files apply security preferences | **OPEN**, below 9b — a shared file can silently weaken settings. Not an XSS path: the CSP blocks it. Fix is to confirm only when a file *weakens* the posture, so admin hardening still applies silently. Separately: add `form-action 'self'` |
 | 15. Vault merge | idea — extends item 7; needs durable IDs because it writes, and can use inactive records as undo |
 | 16. CodeQL findings | **RELEASED in v2.4.1** — memorable passwords used Math.random(); now CSPRNG with no modulo bias. Also: pattern checks rejected valid passwords, and the in-record generator ignored the length preference |
 | 17. Describe rather than judge | idea — the expository checks assert a 60-bit floor they cannot justify; and memorable passwords are about typeability, not memorability |
@@ -1440,17 +1440,92 @@ password to `localStorage` across browser sessions, which is the weaker of the
 two strategies and the one SEC-002 deliberately made non-default. Loading the
 examples silently switched the user to it. Now `session` in both files.
 
-The same mechanism could carry `allowHtmlFieldRendering` (XSS on load),
+The same mechanism could carry `allowHtmlFieldRendering`,
 `searchPasswordFieldValues` (the search oracle fixed in v2.3.0), or
 `enablePasswordBreachCheck` (outbound traffic). None is set in the shipped
 examples, and nothing stops a *shared* file setting them.
 
-**Worth considering for a later release:** either do not apply security-relevant
-preferences from a loaded file, or say which ones changed. The toolbar badges
-already make the resulting state visible — ⚠ HTML ON, ⚠ PW SEARCH,
-⚠ BREACH CHECK, and the filepass indicator — which is a real mitigation, but it
-tells you the state afterwards rather than asking first. Recorded rather than
-fixed: it changes established load behaviour and belongs in its own change.
+### How bad is it? Less than it first appears — the CSP does real work
+
+An early reading of this item claimed a file could enable
+`allowHtmlFieldRendering` and reach script execution, since `field.js` renders
+an `html` field's raw value live when that preference is on. **That chain does
+not work**, and it is worth recording why, because the reasoning is what keeps
+the severity honest:
+
+- `script-src 'self' https://cdn.jsdelivr.net` carries **no `'unsafe-inline'`**,
+  so an injected `<img onerror=…>` never fires. Inline event handlers are
+  blocked outright.
+- HTML inserted through `innerHTML` does not execute `<script>` tags at all, by
+  browser rule, so a script tag in a field value is inert regardless.
+- Exfiltration is mostly closed as well: `img-src 'self' data:` stops the
+  classic beacon, `style-src 'self'` stops CSS-based leaks, and `connect-src`
+  permits only PAM's origin and the HIBP API.
+
+So this is **not** a path from a shared file to reading someone's vault. It is a
+**degraded security posture** problem: a file can silently move a user to
+`filePassCache: 'local'` (master password persisted to `localStorage`), turn on
+the search oracle, or enable outbound traffic. Real, worth fixing, not urgent —
+below 9b in priority.
+
+**One genuine gap found while checking this.** `form-action` is unspecified in
+the policy, and unlike most directives it does **not** fall back to
+`default-src`. A form could post anywhere. Adding `form-action 'self'` costs
+nothing and closes the one exfiltration channel still open. That is worth doing
+independently of the rest of this item.
+
+### The fix: confirm only when a file weakens the posture
+
+Refusing to apply preferences from a loaded file would be wrong. An
+administrator distributing a vault to read-only users should be able to set a
+stricter policy and have it hold without each user reconfiguring anything.
+
+The resolution is that each security preference has a **safe direction**, and
+only one direction needs consent:
+
+| Preference | Applied silently | Requires confirmation |
+|---|---|---|
+| `allowHtmlFieldRendering` | → `false` | → `true` |
+| `searchPasswordFieldValues` | → `false` | → `true` |
+| `enablePasswordBreachCheck` | → `false` | → `true` |
+| `filePassCache` | → `none` / `session` | → `local` / `global` |
+
+An administrator hardening a distribution is entirely unaffected: tightening
+applies silently, which is what they want. The prompt appears only when a file
+would leave the user **less safe than they already are**.
+
+Non-security preferences — password length, word counts, search scope, theme —
+continue to apply as they do today. This is a narrow rule over four values, not
+a change to how loading works.
+
+The toolbar badges already show the resulting state — ⚠ HTML ON, ⚠ PW SEARCH,
+⚠ BREACH CHECK, and the filepass indicator — which is a real mitigation, but
+they report afterwards rather than asking first.
+
+### SEC-001 in `SECURITY.md` needs correcting
+
+Found while checking this item. Three problems, all from the section predating
+the v2.4.0 CSP work:
+
+1. **"HTML rendering can only be enabled in Preferences → Security → Allow HTML
+   Field Rendering" is false**, twice over. There is no Security tab — the
+   preference is on **Administration** — and it is not the only route, because
+   a loaded file can set it. SEC-001's own *Residual risk* paragraph says so
+   four lines later, so the document contradicts itself.
+2. **The stated risk overstates what is reachable.** "html fields could contain
+   malicious scripts (XSS)" was accurate when written. Since v2.4.0 the CSP
+   carries no `'unsafe-inline'`, so inline handlers do not fire, and
+   `innerHTML` does not execute script tags. Script execution is not the live
+   risk.
+3. **The real residual is content injection, and it is not described.** Injected
+   markup can still render convincing UI. With `form-action` unspecified, a
+   fake "confirm your master password" form could post to any origin. That is
+   the concrete reason to add `form-action 'self'`, and it belongs in SEC-001
+   rather than being inferred from a CSP directive list.
+
+Overstating a risk is safer than understating one, so this is not urgent. But a
+security document that contradicts itself in adjacent paragraphs and names a
+non-existent tab will not be trusted on the parts that are right.
 
 ## 15. Vault merge — IDEA, an opportunity worth scoping properly
 

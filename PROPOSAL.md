@@ -28,8 +28,15 @@ be the last resort, not the only door.
 
 ## Status
 
-v2.3.0 is released. Everything below targets **v2.4.0** on
-`feat/password-breach-check`.
+**v2.4.0 is released.** Items 5, 6, 10, 11, 12 and 13 shipped in it.
+
+**v2.4.1 is a security release** on top of it, covering item 16 — CodeQL found
+that memorable passwords were generated with `Math.random()`. That work also
+turned up two adjacent defects: the strength checks rejected valid passwords
+about 2.6% of the time, and the in-record generator ignored the length
+preference. Neither was introduced by v2.4.0; both were exposed by it.
+
+Items 7, 8, 9, 14 and 15 remain open or deferred.
 
 Item numbers are stable identifiers, not priorities: an item keeps its number
 for the life of the document so cross-references hold. Sections appear in
@@ -38,18 +45,18 @@ numeric order. A low number means the item was raised early, nothing more.
 | Item | State |
 |---|---|
 | 1–4 | **released in v2.3.0** — see `RELEASE_NOTES_v2.3.0.md` |
-| 5. Password breach check | **done** — implementation, tests and docs complete; screenshots outstanding |
-| 6. README pass | **done** — including SECURITY.md, which claimed "No data is ever sent to a server" |
+| 5. Password breach check | **released in v2.4.0** |
+| 6. README pass | **released in v2.4.0** — including SECURITY.md, which claimed "No data is ever sent to a server" |
 | 7. Vault diff | deferred, **not blocked** — works today without record IDs; they add rename detection |
 | 8. Export tiering | deferred |
 | 9. Vault file integrity | **deferred to v3.0** — ⚠ BREAKING: rewrites data files so older PAM versions cannot open them, with no way back once a vault is re-saved |
-| 10. Test suites ran without gating | **fixed** — finalize() ran per-runner, so two suites reported but did not count |
-| 11. Actionable reports | **done** — click-through from both reports, in v2.4.0 |
-| 12. Per-field breach button | done — on password fields, edit rows, and the standalone generator (documented under item 5, no separate section) |
-| 13. Entropy estimate ignores dictionary words | **done in v2.4.0** — estimator is dictionary-aware; generator defaults raised to match |
+| 10. Test suites ran without gating | **released in v2.4.0** — finalize() ran per-runner, so two suites reported but did not count |
+| 11. Actionable reports | **released in v2.4.0** — click-through from both reports |
+| 12. Per-field breach button | **released in v2.4.0** — on password fields, edit rows, and the standalone generator (documented under item 5, no separate section) |
+| 13. Entropy estimate ignores dictionary words | **released in v2.4.0** — estimator is dictionary-aware; generator defaults raised to match |
 | 14. Loaded files apply security preferences | open — a shared file can silently weaken settings; badges show the result but nothing asks first |
 | 15. Vault merge | idea — extends item 7; needs durable IDs because it writes, and can use inactive records as undo |
-| 16. CodeQL findings | **fixed in v2.4.0** — memorable passwords used Math.random(); now CSPRNG with no modulo bias |
+| 16. CodeQL findings | **v2.4.1** — memorable passwords used Math.random(); now CSPRNG with no modulo bias. Also: pattern checks rejected valid passwords, and the in-record generator ignored the length preference |
 
 ---
 
@@ -1395,10 +1402,15 @@ non-problem.
 Scheduling: this wants durable IDs, so it sits after that lands. Item 7 does
 not, and can precede it.
 
-## 16. CodeQL: memorable passwords used Math.random()
+## 16. CodeQL: memorable passwords used Math.random() — FIXED in v2.4.1
 
-Raised by GitHub Advanced Security on the v2.4.0 pull request. One alert was
-real and important; the other was a false positive worth rewriting anyway.
+Raised by GitHub Advanced Security on the v2.4.0 pull request, and **found
+after v2.4.0 had already been released**. One alert was real and important; the
+other was a false positive worth rewriting anyway.
+
+Everything in this section shipped in **v2.4.1**, not v2.4.0: the CSPRNG fix,
+the pattern-check scoping, the screenshot seed change, and the in-record
+generator length fix.
 
 ### Real: insecure randomness in the password generator
 

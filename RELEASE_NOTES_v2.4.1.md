@@ -67,6 +67,30 @@ a meaningful password for anything rate-limited, and well short of the 66 the
 README promises. Memorable passwords made with the *standalone* generator are
 unaffected.
 
+## Also fixed: the strength checks rejected valid passwords
+
+The **Breached Passwords** report applies local checks alongside the corpus
+lookup — keyboard runs, character sequences, repeated characters, embedded
+years. Those look for evidence that a *person* composed the password. In a long
+random string the same patterns turn up by chance and mean nothing.
+
+Measured over 200,000 random 30-character passwords, **0.13% tripped at least
+one of them**. A password carrying 185 bits was being reported as **WEAK** for
+containing "2054".
+
+Passphrases had a related problem: the keyboard row `qwertyuiop` contains
+`erty`, so `liberty`, `poverty` and `property` were all reported as keyboard
+runs — 0.17% of generated memorable passwords, every one a false positive.
+
+The four pattern checks are now skipped for passwords well above the entropy
+floor, and for passphrases made of dictionary words. The length and entropy
+checks still always apply, so thirty identical characters is still rejected.
+Nothing a person is likely to compose has stopped being caught: `Summer2026`,
+`qwerty123456` and `password1234` are all still reported.
+
+If a password you own was reported as WEAK by v2.4.0 and you could not see why,
+this may be the reason — run the report again.
+
 ## What you should do
 
 - **Regenerate memorable passwords that protect anything valuable**, whichever

@@ -1983,12 +1983,12 @@ memorable passwords for anything that matters, set this to 5.** Four is a
 reasonable compromise; three is suitable for low-value accounts and for places
 where you would notice and could recover from a compromise.
 
-Note that [Breached Passwords](#breached-passwords) will not warn you about
-this. Its local entropy estimate measures length and character variety, not
-dictionary structure, so it scores a three-word password far higher than the
-40 bits above and raises no objection. The corpus check still applies — a
-memorable password that has appeared in a breach is still reported — but the
-structural check cannot see word-based weakness.
+[Breached Passwords](#breached-passwords) applies these figures. Since v2.4.0
+its entropy estimate recognises word-based passwords and scores them by word
+count rather than by length, so a three-word password is reported as roughly
+40 bits and rejected against the 60-bit floor. Before that it measured only
+length and character variety, scored the same password at 118 bits, and raised
+no objection at all.
 
 ##### Why not just use a bigger dictionary?
 
@@ -2302,6 +2302,15 @@ that need no network at all:
 - a character repeated four or more times
 - an embedded year between 1900 and 2099
 - a rough entropy floor of 60 bits, and a minimum length of 12
+
+The length and entropy checks always apply. The four pattern checks above do
+not: they look for evidence that a **person** composed the password, and in a
+long random string those patterns turn up by chance and mean nothing. Since
+v2.4.1 they are skipped for passwords well above the entropy floor, and for
+passphrases made of dictionary words — the keyboard row `qwertyuiop` contains
+`erty`, so `liberty` and `poverty` were being reported as keyboard runs. A
+passphrase's strength is its word count, which the entropy estimate already
+measures.
 
 These run whether or not the corpus is reachable, and the report distinguishes
 them: an entry is labelled **BREACHED** if it was found in the corpus and

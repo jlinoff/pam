@@ -1748,6 +1748,9 @@ field blank in the Save dialogue and the file is written as-is: readable,
 greppable, and editable with `jq` or any text editor. Loading a file with no
 password reads it back the same way.
 
+Since v2.5.1 the Save dialogue says so at the point you decide, rather than
+leaving it to be discovered here.
+
 This is _PAM_'s full-fidelity export. Everything in the vault is present —
 every record, every field, every preference, in plaintext.
 

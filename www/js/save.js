@@ -33,6 +33,19 @@ export function menuSaveDlg() {
     let body = xmk('span')
         .xAppendChild(
             xmk('p').xInnerHTML('Enter a password to encrypt the record contents. You must use the same password to decrypt when loading.'),
+            // Leaving the password blank writes plaintext JSON. That is a
+            // real and useful feature -- it is PAM's full-fidelity export,
+            // meant to be edited with jq and loaded back -- but it writes
+            // every password in the clear, and until v2.5.1 this dialogue
+            // said nothing about it. The moment a user needs to know is
+            // the moment they decide whether to type a password.
+            xmk('p').xClass('text-warning').xInnerHTML(
+                '<b>Leave the password empty and the file is written as ' +
+                'plaintext JSON</b> &mdash; readable by anyone, and by ' +
+                'any program. That is intended: it is how you export ' +
+                'records to edit with other tools. Treat the file as you ' +
+                'would the passwords themselves, and delete it when you ' +
+                'are done.'),
             xmk('p').xInnerHTML('Enter "." as the filename save to the clipboard.'),
             xmk('form').xClass('container').xAppend(
                 // save file name

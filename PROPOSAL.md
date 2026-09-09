@@ -2372,7 +2372,22 @@ is worth remembering the next time a check looks like it already covers
 something.
 
 **One mechanical rule that would have caught the most:** do not pipe an audit
-through `head`. Twenty matches were truncated to eight, and the missing test was
+through `head`. **Nor through `grep -v`.**
+
+The second half was added a day after the first, because the first was not
+enough. While building `check_toc.py` its lint output was checked with
+
+    pylint tests/check_toc.py | grep "^tests" | grep -v "E0401\|R0914\|R0912"
+
+and reported clean. `make all` then failed on exactly those two warnings. The
+filter was written to hide `E0401` — a false positive from the sandbox lacking
+`selenium` — and two real warnings were quietly added to it rather than fixed.
+
+Suppressing a diagnostic is a decision, and making it inside a shell pipeline
+records nothing and survives nothing. If a warning is a genuine false positive
+it belongs in the project's lint configuration where the reason can be written
+down; if it is real, it belongs fixed. `check()` was split into four focused
+functions and the file rates 10.00/10 with nothing filtered. Twenty matches were truncated to eight, and the missing test was
 at number nine. Truncation is right for exploring and wrong for any search whose
 purpose is completeness.
 

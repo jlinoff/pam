@@ -121,71 +121,79 @@ def parent_of(headings, index):
     return None
 
 
-def check(path=README):
-    '''Compare the TOC against the headings. Returns a list of problems.'''
-    with open(path, encoding='utf-8') as handle:
-        lines = handle.read().splitlines()
-
-    headings = read_headings(lines)
-    toc = read_toc(lines)
-    toc_anchors = {}
+def find_duplicates(toc_anchors):
+    """Targets listed more than once."""
     problems = []
-
-    for entry in toc:
-        toc_anchors.setdefault(entry['anchor'], []).append(entry)
-
-    # 3. the same target listed more than once
     for anchor, entries in sorted(toc_anchors.items()):
         if len(entries) > 1:
             where = ', '.join(str(e['line']) for e in entries)
             problems.append(
                 f'DUPLICATE  #{anchor} is listed {len(entries)} times '
                 f'(lines {where})')
+    return problems
 
-    # 4. an entry whose heading no longer exists
+
+def find_stale(toc, headings):
+    """Entries whose heading no longer exists."""
     known = {h['anchor'] for h in headings}
-    for entry in toc:
-        if entry['anchor'] not in known:
-            problems.append(
-                f'STALE      line {entry["line"]}: "{entry["text"]}" points at '
-                f'#{entry["anchor"]}, which no heading produces')
+    return [f'STALE      line {e["line"]}: "{e["text"]}" points at '
+            f'#{e["anchor"]}, which no heading produces'
+            for e in toc if e['anchor'] not in known]
 
-    # the TOC's own headings are not expected to list themselves
+
+def enclosing_entry(toc, entry):
+    """The TOC entry this one is nested under, by indent."""
+    for candidate in reversed([e for e in toc if e['line'] < entry['line']]):
+        if candidate['indent'] < entry['indent']:
+            return candidate
+    return None
+
+
+def find_missing_and_misplaced(headings, toc, toc_anchors):
+    """Headings absent from the TOC, or listed under the wrong section."""
+    problems = []
     toc_lines = {e['line'] for e in toc}
-
     for index, heading in enumerate(headings):
-        if heading['level'] < 2 or heading['level'] > MAX_TOC_DEPTH:
+        if not 2 <= heading['level'] <= MAX_TOC_DEPTH:
             continue
         if heading['line'] in toc_lines:
             continue
         parent = parent_of(headings, index)
         if parent and parent['text'] in UNLISTED_CHILDREN_OK:
             continue
-
-        # 1. nothing points at this heading
         if heading['anchor'] not in toc_anchors:
             problems.append(
                 f'MISSING    line {heading["line"]}: '
                 f'{"#" * heading["level"]} {heading["text"]} '
                 f'(#{heading["anchor"]}) is in no table of contents')
             continue
-
-        # 2. listed, but nested under the wrong section
         if parent is None:
             continue
         entry = toc_anchors[heading['anchor']][0]
-        enclosing = None
-        for candidate in reversed([e for e in toc if e['line'] < entry['line']]):
-            if candidate['indent'] < entry['indent']:
-                enclosing = candidate
-                break
+        enclosing = enclosing_entry(toc, entry)
         if enclosing and enclosing['anchor'] != parent['anchor']:
             problems.append(
                 f'WRONG PARENT line {entry["line"]}: "{entry["text"]}" is '
                 f'listed under "{enclosing["text"]}" but appears in the '
                 f'document under "{parent["text"]}" (line {parent["line"]})')
-
     return problems
+
+
+def check(path=README):
+    """Compare the TOC against the headings. Returns a list of problems."""
+    with open(path, encoding='utf-8') as handle:
+        lines = handle.read().splitlines()
+
+    headings = read_headings(lines)
+    toc = read_toc(lines)
+
+    toc_anchors = {}
+    for entry in toc:
+        toc_anchors.setdefault(entry['anchor'], []).append(entry)
+
+    return (find_duplicates(toc_anchors)
+            + find_stale(toc, headings)
+            + find_missing_and_misplaced(headings, toc, toc_anchors))
 
 
 def main():

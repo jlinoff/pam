@@ -58,6 +58,7 @@ numeric order. A low number means the item was raised early, nothing more.
 | 15. Vault merge | idea — extends item 7; needs durable IDs because it writes, and can use inactive records as undo |
 | 16. CodeQL findings | **v2.4.1** — memorable passwords used Math.random(); now CSPRNG with no modulo bias. Also: pattern checks rejected valid passwords, and the in-record generator ignored the length preference |
 | 17. Describe rather than judge | idea — the expository checks assert a 60-bit floor they cannot justify; and memorable passwords are about typeability, not memorability |
+| 18. FIDO CXF interoperability | idea — `CustomFields` fits PAM's model; salted title hashes give stable `Item.id`s with **no format change**, so this need not wait for v3.0 |
 
 ---
 
@@ -1739,6 +1740,90 @@ since there is no longer a threshold to defend.
 The two halves connect: both say PAM should **describe rather than judge**, and
 both follow from noticing that the tool knows less about the user's situation
 than its current output implies.
+
+## 18. FIDO Credential Exchange Format (CXF), and stable ids without a format change
+
+CXF reached **Proposed Standard** on 14 August 2025, with errata in March 2026.
+It is backed by 1Password, Apple, Bitwarden, Dashlane, Google, NordPass and
+Okta, and Apple shipped export/import using it in iOS/macOS 26. It is the
+credible interoperability target.
+
+### PAM's field model fits
+
+CXF's `CustomFields` credential exists for providers whose items carry
+arbitrary user-defined fields — the spec says a provider with no grouping
+concept should use it without setting `label` or `id`. The mapping is direct:
+
+| PAM | CXF |
+|---|---|
+| record | `Item`, `title` → `title` |
+| field | one `EditableField` inside a `CustomFields` credential |
+| field name | `EditableField.label` |
+| field value | `EditableField.value` |
+| field type | `EditableField.fieldType` |
+
+Four of PAM's ten field types map exactly: `text`→`string`,
+`password`→`concealed-string`, `email`→`email`, `number`→`number`. The other
+six — `url`, `phone`, `html`, `textarea`, `time`, `datetime-local` — have no
+CXF equivalent and degrade to `string`. That is display loss, not data loss,
+and the one that matters most maps exactly.
+
+**A naive all-custom-fields export would be conformant and useless.** A record
+holding `login` + `password` + `url` exported as untyped fields arrives as a bag
+of strings, and the receiving manager cannot autofill it, because autofill keys
+off `BasicAuth` plus `CredentialScope`. A worthwhile exporter pattern-matches
+the common shape, emits `BasicAuth` with the url as scope, and puts the
+remainder in `CustomFields`.
+
+Import is the lossier direction and should be scoped carefully. `Passkey` in
+particular should be **refused, not flattened**: PAM is not a WebAuthn
+authenticator, and holding a private key it cannot use is worse than not
+holding it.
+
+### Stable ids from unique titles, without touching the record schema
+
+`Item.id` is REQUIRED, and the spec says an identifier for an entity SHOULD be
+the same across different creations of a CXF document. PAM has no durable
+record id — the same gap that sits under items 7 and 15.
+
+**But PAM guarantees unique titles.** `loadDupStrategy` enforces it in every
+mode, including `allow`, which appends ` Clone` until the title is free. A
+title change is already treated as a delete plus an add. So a deterministic
+function of the title is a legitimate identifier for PAM's own semantics.
+
+**A bare `SHA-256(title)` is not safe, though.** CXF warns that identifiers
+SHOULD NOT contain personally identifying information because they travel **in
+clear text** during a CXP exchange. A hash of a title is dictionary-attackable:
+an observer hashes a few thousand site names and learns which services the user
+holds accounts with. The more identifying the vault, the worse the leak.
+
+**Salting fixes it, and costs nothing structurally:**
+
+    Item.id = base64url(SHA-256(salt || title))
+
+with `salt` a random value generated once and stored in the vault's `prefs`
+block.
+
+- Stable across exports — same vault, same title, same id.
+- Unique within an account — guaranteed by title uniqueness.
+- Distinct across vaults — two users with a `Chase Bank` record do not collide.
+- Not dictionary-attackable — the observer does not have the salt.
+
+**This is the significant part: it is not a breaking change.** The salt is one
+new key in `prefs`, and unknown preference keys are already ignored by older
+versions. No record schema change, no migration, no window in which one device
+cannot read another's vault. Compare item 9, where the format change is the
+whole difficulty.
+
+**What it does not give you.** `hash(title)` means a rename reads as a delete
+plus an add to any importer. For CXF that is *fidelity* — it is what PAM
+considers to have happened. For vault diff (item 7) it is the limitation
+already recorded there, and for merge (item 15) it is still insufficient,
+because merge needs to survive a rename to avoid overwriting the wrong record.
+
+So this approach solves CXF export cleanly and does not retire the durable-id
+question for items 7 and 15. Those still want a real per-record identifier.
+It does mean CXF export need not wait for v3.0.
 
 ## Where claims live
 

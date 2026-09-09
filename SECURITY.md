@@ -26,19 +26,28 @@ The primary threat vectors are:
 
 PAM supports an `html` field type that allows rich content (formatted notes, links, instructions). This is an intentional feature designed for controlled internal deployments where a security team authors PAM data and distributes it on a read-only volume to a defined cohort.
 
-**Risk:** If a user loads a PAM file from an untrusted source, `html` fields could contain malicious scripts (XSS).
+**Risk:** If a user loads a PAM file from an untrusted source, `html` fields could contain hostile markup. Historically this was described as an XSS risk. Since v2.4.0 the Content-Security-Policy makes script execution the *less* likely outcome; the live risk is content injection. Both are covered below.
 
 **Mitigation:**
 - HTML field rendering is **disabled by default**. Fields of type `html` render as escaped plain text with a `</>` badge.
-- HTML rendering can only be enabled in **Preferences → Security → Allow HTML Field Rendering**, which is accessible only after unlocking preferences with the prefs password.
+- The preference is on the **Administration** tab of Preferences, reachable only after unlocking preferences with the prefs password.
 - When HTML rendering is enabled, a persistent **⚠ HTML ON** warning badge is shown in the toolbar so users always know they are in a mode where HTML fields render live.
+- The `Content-Security-Policy` in `www/index.html` blocks the usual script paths. `script-src` carries no `'unsafe-inline'`, so an injected `<img onerror=…>` or `javascript:` URL does not run, and markup inserted through `innerHTML` never executes `<script>` tags regardless. Exfiltration is constrained too: `img-src 'self' data:` blocks the classic beacon, `style-src 'self'` blocks CSS-based leaks, and `connect-src` permits only PAM's own origin and the HIBP range API.
+
+**The preference is not only reachable through the Preferences dialogue.** A loaded PAM file carries a `prefs` block, and PAM applies it. A file can therefore switch HTML rendering on by itself. The ⚠ HTML ON badge appears when it does, but it reports the new state rather than asking first. See *Residual risk* below.
 
 **When is it safe to enable?**
 - The PAM file was authored by a trusted party (e.g. your own security team).
 - The file is distributed on a read-only volume and cannot be modified by end users.
 - You are not loading PAM files from untrusted URLs.
 
-**Residual risk:** A PAM file distributed with HTML rendering already enabled in its prefs block carries that setting with it. The mitigation protects against *foreign* malicious files, not against the trusted file itself being compromised.
+**Residual risk.** Three items, in decreasing order of concern:
+
+1. **Content injection, not script execution.** Injected markup still renders. It can present convincing interface elements — a plausible "confirm your master password" prompt, for example — inside a page the user already trusts. The CSP does not prevent this, because nothing about it requires script.
+2. **`form-action` is not currently specified in the policy**, and unlike most directives it does **not** fall back to `default-src`. A form in injected markup can therefore submit to any origin. Adding `form-action 'self'` closes this and is recommended.
+3. **A distributed file carries its own setting.** A PAM file shipped with HTML rendering already enabled in its `prefs` block turns it on for whoever loads it. The mitigations above protect against *foreign* malicious files; they do not protect against a trusted file that has been tampered with, nor against a user loading a file whose provenance they have not checked.
+
+**Note on the CSP.** It is a strong mitigation and not a guarantee. `script-src` allows `https://cdn.jsdelivr.net` for the Bootstrap bundle, and that host serves arbitrary npm and GitHub content; the allowance is safe here only because markup inserted via `innerHTML` cannot execute script tags at all. Do not treat the CSP as licence to relax the default.
 
 ---
 

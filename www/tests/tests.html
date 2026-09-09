@@ -1395,6 +1395,14 @@ test('connect-src permits the breach-check host', async () => {
   // https://evil.com/?x=https://api.pwnedpasswords.com. It cannot here — but
   // indexOf on the split tokens says so unambiguously, to a reader as well as
   // to the analyser.
+  // form-action does NOT fall back to default-src — it is one of the few
+  // directives with no fallback at all. Unspecified, a form in injected markup
+  // could post to any origin, which is the one exfiltration channel the rest
+  // of this policy leaves open. See SECURITY.md SEC-001.
+  const formAction = cspDirective(policy, 'form-action')
+  assert(formAction.indexOf("'self'") > -1,
+    "form-action must be 'self': it has no default-src fallback")
+
   const allowed = cspDirective(policy, 'connect-src')
   assert(allowed.indexOf("'self'") > -1, "connect-src should still include 'self'")
   assert(allowed.indexOf('https://api.pwnedpasswords.com') > -1,

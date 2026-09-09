@@ -70,7 +70,7 @@ the item moved.
 | 11. Actionable reports | **released in v2.4.0** — click-through from both reports |
 | 12. Per-field breach button | **released in v2.4.0** — on password fields, edit rows, and the standalone generator (documented under item 5, no separate section) |
 | 13. Entropy estimate ignores dictionary words | **released in v2.4.0** — estimator is dictionary-aware; generator defaults raised to match |
-| 14. Loaded files apply security preferences | **OPEN**, below 9b — a shared file can silently weaken settings. Not an XSS path: the CSP blocks it. Fix is to confirm only when a file *weakens* the posture, so admin hardening still applies silently. Separately: add `form-action 'self'` |
+| 14. Loaded files apply security preferences | **OPEN**, below 9b — a shared file can silently weaken settings. Not an XSS path: the CSP blocks it. Fix is to confirm only when a file *weakens* the posture, so admin hardening still applies silently. Separately: `form-action 'self'` **added**, and SEC-001 corrected |
 | 15. Vault merge | idea — extends item 7; needs durable IDs because it writes, and can use inactive records as undo |
 | 16. CodeQL findings | **RELEASED in v2.4.1** — memorable passwords used Math.random(); now CSPRNG with no modulo bias. Also: pattern checks rejected valid passwords, and the in-record generator ignored the length preference |
 | 17. Describe rather than judge | idea — the expository checks assert a 60-bit floor they cannot justify; and memorable passwords are about typeability, not memorability |
@@ -1502,10 +1502,11 @@ The toolbar badges already show the resulting state — ⚠ HTML ON, ⚠ PW SEAR
 ⚠ BREACH CHECK, and the filepass indicator — which is a real mitigation, but
 they report afterwards rather than asking first.
 
-### SEC-001 in `SECURITY.md` needs correcting
+### SEC-001 in `SECURITY.md` — CORRECTED, and `form-action` added
 
 Found while checking this item. Three problems, all from the section predating
-the v2.4.0 CSP work:
+the v2.4.0 CSP work. **All three are now fixed**, and `form-action 'self'` has
+been added to the policy with a unit test pinning it.
 
 1. **"HTML rendering can only be enabled in Preferences → Security → Allow HTML
    Field Rendering" is false**, twice over. There is no Security tab — the
@@ -1523,9 +1524,22 @@ the v2.4.0 CSP work:
    the concrete reason to add `form-action 'self'`, and it belongs in SEC-001
    rather than being inferred from a CSP directive list.
 
-Overstating a risk is safer than understating one, so this is not urgent. But a
+Overstating a risk is safer than understating one, so this was not urgent. But a
 security document that contradicts itself in adjacent paragraphs and names a
 non-existent tab will not be trusted on the parts that are right.
+
+**What changed.** SEC-001 now names the Administration tab, states plainly that
+a loaded file can enable the setting by itself, describes what the CSP does and
+does not block, and lists the residual risks in order: content injection first,
+the `form-action` gap second, and a distributed file carrying its own setting
+third. It also warns against reading the CSP as licence to relax the default —
+`script-src` allows `cdn.jsdelivr.net`, which serves arbitrary npm content, and
+that is only safe because `innerHTML` cannot execute script tags at all.
+
+**`form-action 'self'` is in the policy**, closing the one exfiltration channel
+the rest of it left open. A unit test asserts it, with a comment recording why
+it needs its own assertion: `form-action` is one of the few directives with no
+`default-src` fallback, so its absence is silent.
 
 ## 15. Vault merge — IDEA, an opportunity worth scoping properly
 

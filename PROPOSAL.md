@@ -42,12 +42,20 @@ cheap non-breaking path that was not obvious when they were raised: **9a**
 salted title hashes). Both exploit the same property — older versions ignore
 keys they do not recognise.
 
-**The one high-priority item is 9b:** a PAM vault has no tamper evidence and no
-reliable wrong-password check, which is a real defect in a security tool. The
-breaking format change it requires has been reviewed and **accepted** — see the
-decision in item 9 — subject to two conditions: the v1 and v2 read paths are
-kept forever, and the migration announces itself. Nothing else on this list is
-urgent.
+**The one high-priority item is 9a:** a PAM vault has no tamper evidence and no
+reliable wrong-password check, which is a real defect in a security tool. 9a
+closes both with a content hash in `meta`, needs no format change, and could
+ship in any release.
+
+**9b is no longer assumed to follow.** The breaking format change was reviewed
+and accepted while this document claimed 9a was a stopgap and AES-GCM the
+correct end state. On reassessment that overstated the gap: 9a detects tampering
+essentially completely, and 9b's remaining advantages are narrow in PAM's threat
+model. The acceptance stands if 9b is built, with its two conditions, but 9b
+should now prove itself necessary **after** 9a exists rather than being
+scheduled ahead of it. See the reassessment in item 9.
+
+Nothing else on this list is urgent.
 
 Item numbers are stable identifiers, not priorities: an item keeps its number
 for the life of the document so cross-references hold. Sections appear in
@@ -65,12 +73,12 @@ the item moved.
 | 6. README pass | **released in v2.4.0** — including SECURITY.md, which claimed "No data is ever sent to a server" |
 | 7. Vault diff | deferred, **not blocked** — works today without record IDs; they add rename detection |
 | 8. Export tiering | deferred |
-| 9. Vault file integrity | **9a OPEN** — tamper-evident hash in `meta`, no format change. **9b DEFERRED to v3.0, breaking change ACCEPTED** — AES-GCM; v1/v2 read paths kept forever and the migration must announce itself |
+| 9. Vault file integrity | **9a OPEN, do this first** — tamper-evident hash in `meta`, no format change; detects tampering essentially completely. **9b DEFERRED to v3.0** — AES-GCM; breaking change accepted *if built*, but reassessed as small marginal benefit over 9a. Neither addresses rollback |
 | 10. Test suites ran without gating | **released in v2.4.0** — finalize() ran per-runner, so two suites reported but did not count |
 | 11. Actionable reports | **released in v2.4.0** — click-through from both reports |
 | 12. Per-field breach button | **released in v2.4.0** — on password fields, edit rows, and the standalone generator (documented under item 5, no separate section) |
 | 13. Entropy estimate ignores dictionary words | **released in v2.4.0** — estimator is dictionary-aware; generator defaults raised to match |
-| 14. Loaded files apply security preferences | **OPEN**, below 9b — a shared file can silently weaken settings. Not an XSS path: the CSP blocks it. Fix is to confirm only when a file *weakens* the posture, so admin hardening still applies silently. Separately: `form-action 'self'` **added**, and SEC-001 corrected |
+| 14. Loaded files apply security preferences | **OPEN**, below 9a — a shared file can silently weaken settings. Not an XSS path: the CSP blocks it. Fix is to confirm only when a file *weakens* the posture, so admin hardening still applies silently. Separately: `form-action 'self'` **added**, and SEC-001 corrected |
 | 15. Vault merge | idea — extends item 7; needs durable IDs because it writes, and can use inactive records as undo |
 | 16. CodeQL findings | **RELEASED in v2.4.1** — memorable passwords used Math.random(); now CSPRNG with no modulo bias. Also: pattern checks rejected valid passwords, and the in-record generator ignored the length preference |
 | 17. Describe rather than judge | idea — the expository checks assert a 60-bit floor they cannot justify; and memorable passwords are about typeability, not memorability |
@@ -631,7 +639,7 @@ and Dashlane are all contributors.
 
 ---
 
-## 9. Vault file integrity — 9a OPEN (no format change), 9b DEFERRED to v3.0
+## 9. Vault file integrity — 9a OPEN (do this first), 9b DEFERRED and reassessed
 
 **Read the split below before the warning.** This item has two halves, and only
 the second one breaks anything:
@@ -639,7 +647,9 @@ the second one breaks anything:
 - **9a — tamper evidence.** A hash inside `meta`. No format change, no
   migration, backward compatible. Could ship in any release.
 - **9b — authenticated encryption.** AES-GCM. Breaks the file format, and the
-  warning below applies to it in full.
+  warning below applies to it in full. **Reassessed:** 9a already detects
+  tampering essentially completely, so 9b is no longer treated as a necessary
+  sequel. See the reassessment below.
 
 > ## ⚠ 9b IS A BREAKING CHANGE TO THE FILE FORMAT
 >
@@ -683,6 +693,13 @@ the second one breaks anything:
 > And this is a security tool. An unauthenticated vault format is a genuine
 > defect, and shipping the fix matters more than sparing users one migration.
 >
+> **Scope note added on reassessment.** This decision removes the *format
+> change* as an objection; it does not by itself establish that 9b is needed.
+> The reassessment below concludes 9a detects tampering essentially completely
+> and that 9b's marginal benefit here is small. So: if 9b is built, the breaking
+> change is accepted on these terms — but build 9a first and let 9b earn its
+> place.
+>
 > **Two conditions attach to that acceptance:**
 >
 > 1. **The v1 and v2 read paths are never removed.** A v3 PAM must open every
@@ -713,11 +730,18 @@ the second one breaks anything:
 > warning. Users upgrade without reading, and the first symptom otherwise is a
 > vault that will not open on the device they happen to be holding.
 >
-> **Carry the durable record identifier in the same migration.** Not because
-> anything here depends on it — it is simply the other outstanding schema
-> change (see Open questions, and item 7), it is equally breaking, and every
-> format migration reopens the lockout window described above. One migration that adds authentication *and* record IDs
-> costs users one disruption; two migrations cost them two.
+> **If 9b is built, carry the durable record identifier in the same migration.**
+> Not because anything here depends on it — it is simply the other outstanding
+> schema change (see Open questions, and item 7), it is equally breaking, and
+> every format migration reopens the lockout window described above. One
+> migration that adds authentication *and* record IDs costs users one
+> disruption; two migrations cost them two.
+>
+> **Note the conditional.** Since the reassessment below, 9b is no longer
+> assumed to happen. If it does not, the record identifier needs its own
+> justification and its own migration — it cannot be scheduled as a passenger
+> on a journey that may never be made. Item 18 shows CXF export does not need
+> it; items 7 and 15 do.
 
 Found while investigating a flaky unit test, and worth recording even though it
 is not part of the breach work.
@@ -765,19 +789,43 @@ parse, recompute, compare. This gives:
 **9b — authenticated encryption, v3.0.** AES-GCM, with the breaking format
 change described above.
 
-**Why 9a is not a substitute for 9b.** It verifies *after* decrypting, so PAM
-would still be processing attacker-controlled data before knowing it is
-authentic — the failure mode that encrypt-then-MAC exists to prevent, and the
-one that makes padding oracles possible. That risk is far smaller here than in
-a network protocol: the attacker who can modify your vault file can also read
-PAM's source, and there is no remote endpoint to query repeatedly for padding
-results. But "smaller in this threat model" is not "sound", and only AEAD
-closes it properly.
+### Reassessment: 9a may be sufficient
 
-**The practical read:** 9a delivers most of the user-visible benefit at a
-fraction of the cost and none of the disruption, and 9b remains the correct
-end state. Doing 9a first does not make 9b harder — the integrity field simply
-becomes redundant once GCM authenticates the whole payload.
+An earlier version of this section called 9a a stopgap and 9b "the correct end
+state". That overstated the gap, and the acceptance of the breaking change was
+argued partly on the overstatement. Corrected here.
+
+**9a detects tampering essentially completely.** Bit-flipping garbles an entire
+CBC block; truncation drops blocks; substitution corrupts the block that
+follows. Every one produces plaintext that fails the hash, and most fail
+`JSON.parse` before reaching it. There is no realistic modification that
+survives a content hash.
+
+What 9b adds, assessed honestly in *this* threat model:
+
+| | What it gives | Worth in PAM |
+|---|---|---|
+| Verify before decrypt | No window where unauthenticated plaintext exists | Narrow. `JSON.parse` is memory-safe in a browser, and if the hash is checked before anything else touches the data that is the entire surface |
+| Padding oracle immunity | Attacker cannot use padding validity as a decryption oracle | **Weak here.** An oracle needs thousands of submitted ciphertexts with distinguishable responses. PAM is a local app where a person opens a file by hand; there is no channel to query |
+| Auditability | A reviewer sees AES-GCM and knows it is right | **Real, but soft.** CBC-plus-inner-hash requires reasoning about ordering and coverage. A cost, not a vulnerability |
+
+**So the marginal security benefit of 9b over 9a is smaller than this document
+previously claimed, and probably does not justify a breaking format change on
+security grounds alone.** The padding-oracle argument is the textbook one and
+the least applicable; auditability is the strongest remaining reason and is not
+an attack.
+
+**Neither 9a nor 9b addresses rollback.** An attacker who replaces the current
+vault with a legitimate older copy passes a content hash *and* a GCM tag, since
+the old file was validly authenticated when it was written. Detecting that needs
+a version counter or state kept outside the file. Worth knowing before treating
+either as complete.
+
+**Recommended sequence:** build 9a, live with it, and let 9b prove itself
+necessary. Nothing about 9a forecloses 9b — the integrity field simply becomes
+redundant once GCM authenticates the payload. Deciding now, before the cheap
+option exists, means deciding with less information than will be available in a
+month.
 
 **Scheduled for v3.0, and the major version is the point.** A file written in
 the new format cannot be read by any earlier release, and there is no downgrade
@@ -1466,7 +1514,7 @@ So this is **not** a path from a shared file to reading someone's vault. It is a
 **degraded security posture** problem: a file can silently move a user to
 `filePassCache: 'local'` (master password persisted to `localStorage`), turn on
 the search oracle, or enable outbound traffic. Real, worth fixing, not urgent —
-below 9b in priority.
+below 9a in priority, and not a reason to schedule 9b.
 
 **One genuine gap found while checking this.** `form-action` is unspecified in
 the policy, and unlike most directives it does **not** fall back to
@@ -2173,8 +2221,11 @@ purpose is completeness.
   a quality-of-result issue for item 7, and a genuine requirement for item 15,
   where a merge must not overwrite a renamed record.
 
-  **It still belongs with item 9 in v3.0** — for migration cost, not because
-  anything depends on it. Both are schema-level and both are breaking. v3.0 already requires a format change with migration for the
+  **If item 9b is built, this belongs in the same migration** — for migration
+  cost, not because anything depends on it. Both are schema-level and both are
+  breaking. But 9b is no longer assumed (see its reassessment), so this cannot
+  simply wait for it: if 9b is not built, the identifier needs its own
+  justification and its own migration. v3.0 already requires a format change with migration for the
   AES-GCM work, and adding a record identifier in the same change costs one
   migration instead of two — which matters more than usual here, because each
   migration is a release where older devices cannot read newly written vaults.

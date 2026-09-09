@@ -2478,6 +2478,10 @@ If you do not, any changes you made will be lost.
 
 ## Security Considerations
 
+_PAM_, like all web applications, has security challenges. By
+fully disclosing them here you can understand the challenges
+and improve your ability to protect your record data.
+
 ### What PAM does
 
 The two mechanisms below are what _PAM_ itself puts in place. They are

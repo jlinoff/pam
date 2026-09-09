@@ -33,6 +33,19 @@ export function menuSaveDlg() {
     let body = xmk('span')
         .xAppendChild(
             xmk('p').xInnerHTML('Enter a password to encrypt the record contents. You must use the same password to decrypt when loading.'),
+            // Leaving the password blank writes plaintext JSON. That is a
+            // real and useful feature -- it is PAM's full-fidelity export,
+            // meant to be edited with jq and loaded back -- but it writes
+            // every password in the clear, and until v2.5.1 this dialogue
+            // said nothing about it. The moment a user needs to know is
+            // the moment they decide whether to type a password.
+            xmk('p').xClass('text-warning').xInnerHTML(
+                '<b>Leave the password empty and the file is written as ' +
+                'plaintext JSON</b> &mdash; readable by anyone, and by ' +
+                'any program. That is intended: it is how you export ' +
+                'records to edit with other tools. Treat the file as you ' +
+                'would the passwords themselves, and delete it when you ' +
+                'are done.'),
             xmk('p').xInnerHTML('Enter "." as the filename save to the clipboard.'),
             xmk('form').xClass('container').xAppend(
                 // save file name
@@ -209,7 +222,24 @@ async function saveFile(filename, password) {
         'records': [],
     }
     convertInternalDataToJSON(contents, now)
-    contents.meta.integrity = await contentDigest(contents.records, contents.prefs)
+
+    // The digest is written only for ENCRYPTED files.
+    //
+    // Saving with an empty password writes plaintext JSON — PAM's de facto
+    // "everything" export, and the reason people reach for it is to edit the
+    // result with jq or an editor and load it back. A digest would make that
+    // fail: the file no longer matches, so PAM would refuse it and report that
+    // it "has been modified since it was saved" — technically true and useless,
+    // because the user modified it on purpose.
+    //
+    // There is a principled reason as well as a practical one. An unencrypted
+    // file is outside the trust boundary already: anyone who can read it can
+    // rewrite it, digest included. Asserting integrity over it claims something
+    // the format cannot back.
+    if (password && password.length > 0) {
+        contents.meta.integrity = await contentDigest(contents.records,
+                                                      contents.prefs)
+    }
     setAboutFileInfo(`Saved ${contents.records.length} records on ${now} to ${filename}.`)
     let text = JSON.stringify(contents, null, 0)
     encryptV2(password, text, filename, saveCallback)

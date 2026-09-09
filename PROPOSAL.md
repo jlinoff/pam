@@ -75,7 +75,7 @@ the item moved.
 | 5. Password breach check | **released in v2.4.0** |
 | 6. README pass | **released in v2.4.0** — including SECURITY.md, which claimed "No data is ever sent to a server" |
 | 7. Vault diff | deferred, **not blocked** — works today without record IDs; they add rename detection |
-| 8. Export tiering | deferred |
+| 8. Export tiering | **DEFERRED**, but reframed — the full-fidelity tier already exists (save with an empty password) and is now documented. What remains is the redacted tiers below it |
 | 9. Vault file integrity | **9a RELEASED in v2.5.0** — SHA-256 of records and prefs in `meta.integrity`, no format change; catches the targeted tampering that `JSON.parse` lets through. **9b DEFERRED to v3.0** — AES-GCM; breaking change accepted *if built*, small marginal benefit over 9a. Neither addresses rollback |
 | 10. Test suites ran without gating | **released in v2.4.0** — finalize() ran per-runner, so two suites reported but did not count |
 | 11. Actionable reports | **released in v2.4.0** — click-through from both reports |
@@ -623,7 +623,45 @@ renames. Less certain than an ID, and considerably better than nothing.
 matching on title but not field set, and vice versa, which is a presentation
 question rather than a blocker.
 
-## 8. Export tiering — DEFERRED
+## 8. Export tiering — DEFERRED, but one tier already exists
+
+**Reframed.** This was recorded as unscoped future work. It is not: PAM already
+has a full-fidelity export tier, it has had one for years, and until v2.5.0 it
+was undocumented.
+
+**Saving with an empty password writes plaintext JSON.** `encryptV2()` returns
+the plaintext unchanged when no password is supplied, and the load path already
+tolerates unencrypted input. So load a vault, save it with the password field
+blank, and the result is readable, greppable, editable with `jq`, and loadable
+back into PAM.
+
+That is the "everything" tier — every record, every field, every preference, in
+the clear. What the proposal actually wants is the tiers *below* it: redacted
+exports that disclose structure without secrets. The existing tier is the
+ceiling, not the absence of a design.
+
+Now documented in the README under **Save File → Plaintext export**, with the
+warning it needs: the file is protected by nothing and should be treated like
+the passwords themselves.
+
+### The v2.5.0 integrity check broke this workflow — fixed in v2.5.1
+
+Found the same day v2.5.0 shipped, and after it was tagged, so the regression is
+in the released v2.5.0. Fixed on `fix/plaintext-vault-load` for v2.5.1. `saveFile()` wrote `meta.integrity`
+unconditionally, including for plaintext saves. So the round trip that makes
+the tier useful — export, edit with `jq`, load back — failed on the load with
+*"this file has been modified since it was saved"*. True, and useless: the user
+modified it on purpose.
+
+**Fixed in v2.5.1: the digest is written only for encrypted saves.** There is a
+principled reason as well as a practical one. An unencrypted file is outside
+the trust boundary already — anyone who can read it can rewrite it, digest
+included — so asserting integrity over it claims something the format cannot
+back.
+
+Encrypted files keep full tamper detection. Verified both paths.
+
+### Original notes
 
 The actual lesson of the origin story. Today the industry offers one export:
 everything, in the clear. Offer three:

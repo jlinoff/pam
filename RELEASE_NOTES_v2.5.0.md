@@ -110,6 +110,22 @@ The README also now documents the test and check targets, including
 `make test-one TEST_NAME=<name>` for running a single test with the server
 started for you.
 
+## Plaintext export is now documented
+
+Saving with an **empty password** writes unencrypted JSON. That has been true
+for years and was never written down. It is PAM's full-fidelity export: every
+record, every field, every preference, readable and editable with `jq` or any
+text editor, and loadable straight back in.
+
+It is now documented under **Save File → Plaintext export**, with the warning it
+needs — the file is protected by nothing, so treat it like the passwords
+themselves and delete it when you are done.
+
+> **Known issue in this release, fixed in v2.5.1.** v2.5.0 writes an integrity
+> digest to plaintext saves as well as encrypted ones, so a plaintext export
+> that you edit will be refused on load. See `RELEASE_NOTES_v2.5.1.md`. The
+> workaround on v2.5.0 is `jq 'del(.meta.integrity)'` before loading.
+
 ## Also in this release
 
 - **`form-action 'self'` added to the Content-Security-Policy.** Unlike most

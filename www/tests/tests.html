@@ -1184,7 +1184,7 @@ test('empty password with JSON ciphertext: callback fires exactly once', () => {
 import { prefMemorablePasswordMaxWords } from '/js/prefs.js'
 import { mkRecordField, mkRecordEditField, enableBreachCheckButtons } from '/js/field.js'
 import { findRecord, findRecordAfter, deleteRecord, insertRecord, clearRecords, mkRecord } from '/js/record.js'
-import { convertInternalDataToJSON } from '/js/save.js'
+import { convertInternalDataToJSON, menuSaveDlg } from '/js/save.js'
 import { isValidLoadUrl, formatTimeElapsed } from '/js/load.js'
 
 suite('SIMP-005 — prefMemorablePasswordMaxWords renders correctly')
@@ -4133,6 +4133,45 @@ async function runIntegrityTests() {
       const result = await verifyIntegrity(v)
       assertEqual(result.status, INTEGRITY_FAILED, `undetected: ${label}`)
     }
+  })
+
+
+
+  test('the Save dialogue warns that an empty password writes plaintext', () => {
+    // The dialogue said "Enter a password to encrypt the record contents" and
+    // nothing about what happens if you do not. Leaving it blank writes every
+    // password in the clear. That behaviour is intended — it is the export
+    // tier — but the warning belongs where the decision is made, not only in
+    // the README.
+    const dlg = menuSaveDlg()
+    const text = dlg.textContent
+    assert(text.indexOf('plaintext JSON') > -1,
+           'the dialogue must say what an empty password produces')
+    assert(text.indexOf('readable by anyone') > -1,
+           'and what that means')
+    assert(text.indexOf('delete it when you are done') > -1,
+           'and what to do about it')
+  })
+
+  await runAsyncTest('a plaintext save carries no digest', async () => {
+    // Saving with an empty password writes plaintext JSON — PAM's de facto
+    // "everything" export tier, and people use it to edit records with jq and
+    // load them back. A digest would make that round trip fail with "this file
+    // has been modified since it was saved", which is true and useless.
+    //
+    // An unencrypted file is outside the trust boundary anyway: anyone who can
+    // read it can rewrite it, digest included.
+    const contents = mkIntegrityVault()
+    delete contents.meta.integrity
+    assertEqual((await verifyIntegrity(contents)).status, INTEGRITY_ABSENT,
+                'a file with no digest must load, not be refused')
+  })
+
+  await runAsyncTest('an edited plaintext export still loads', async () => {
+    const exported = mkIntegrityVault()      // no digest, as saveFile now writes
+    delete exported.meta.integrity
+    exported.records[0].fields[1].value = 'edited-by-hand'
+    assertEqual((await verifyIntegrity(exported)).status, INTEGRITY_ABSENT)
   })
 
   await runAsyncTest('the reason is reported, not just the verdict', async () => {

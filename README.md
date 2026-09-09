@@ -84,6 +84,7 @@ the on-line help is generated.
     * [Clone Record](#clone-record)
     * [Clear Records](#clear-records)
     * [Save File](#save-file)
+      * [Plaintext export](#plaintext-export)
     * [Load File](#load-file)
     * [Reused Passwords](#reused-passwords)
     * [Breached Passwords](#breached-passwords)
@@ -1740,6 +1741,37 @@ understand the consequences. For example, saving the data without a
 password can sometimes be convenient because it allows you to see how
 the _PAM_ data is organized which can aid automation.
 
+#### Plaintext export
+
+**Saving with an empty password writes unencrypted JSON.** Leave the password
+field blank in the Save dialogue and the file is written as-is: readable,
+greppable, and editable with `jq` or any text editor. Loading a file with no
+password reads it back the same way.
+
+Since v2.5.1 the Save dialogue says so at the point you decide, rather than
+leaving it to be discovered here.
+
+This is _PAM_'s full-fidelity export. Everything in the vault is present —
+every record, every field, every preference, in plaintext.
+
+```bash
+# adjust every record with jq, then load the result back into PAM
+jq '.records[].fields[] |= (select(.name == "login") .value |= ascii_downcase)' \
+   vault-plaintext.json > vault-edited.json
+```
+
+**Treat the resulting file as you would the passwords themselves.** It is not
+protected by anything. Do not leave it in a sync folder, a downloads directory
+or a shell history. Delete it when you are done.
+
+Files written this way carry no integrity digest, so an edited file loads
+without complaint. See [File Integrity Check](#file-integrity-check).
+
+> Plaintext files saved by **v2.5.0 specifically** do carry a digest, which was
+> a bug — an edited copy of one is refused on load. Either re-save it from
+> v2.5.1, or strip the field once with
+> `jq 'del(.meta.integrity)'`.
+
 ### Load File
 To load records and preferences from a file by choose the
 "<img src="www/icons/blue/file-arrow-up-fill.svg" height='32' width='32' />&nbsp;Load File"
@@ -2555,6 +2587,14 @@ If the check itself cannot run, _PAM_ says so and still does not load the file
 **Older files still work.** A file saved before v2.5.0 has no digest. _PAM_
 notes that in the console and loads it normally; a missing digest is not
 treated as tampering.
+
+**Plaintext saves carry no digest, deliberately.** Saving with an empty
+password writes unencrypted JSON — see
+[Plaintext export](#plaintext-export) — and the reason to do that is usually to
+edit the result and load it back. A digest would make that fail, reporting a
+file you edited on purpose as modified. An unencrypted file is outside the
+trust boundary in any case: anyone who can read it can rewrite it, digest
+included.
 
 **What it does not do.** The digest is stored inside the file, so anyone able
 to rewrite the file could remove it. And neither this nor any authentication

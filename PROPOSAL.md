@@ -46,6 +46,11 @@ Item numbers are stable identifiers, not priorities: an item keeps its number
 for the life of the document so cross-references hold. Sections appear in
 numeric order. A low number means the item was raised early, nothing more.
 
+Every section heading ends with its state, using the same vocabulary as the
+table above — `RELEASED in vX`, `OPEN`, `DEFERRED` or `IDEA`. The heading and
+the table row must agree; if they disagree, one of them was not updated when
+the item moved.
+
 | Item | State |
 |---|---|
 | 1–4 | **released in v2.3.0** — see `RELEASE_NOTES_v2.3.0.md` |
@@ -53,14 +58,14 @@ numeric order. A low number means the item was raised early, nothing more.
 | 6. README pass | **released in v2.4.0** — including SECURITY.md, which claimed "No data is ever sent to a server" |
 | 7. Vault diff | deferred, **not blocked** — works today without record IDs; they add rename detection |
 | 8. Export tiering | deferred |
-| 9. Vault file integrity | **split** — 9a: tamper-evident hash in `meta`, no format change, could ship any time. 9b: AES-GCM, v3.0, ⚠ BREAKING — older versions cannot open re-saved vaults, with no way back |
+| 9. Vault file integrity | **9a OPEN** — tamper-evident hash in `meta`, no format change, could ship any time. **9b DEFERRED to v3.0** — AES-GCM, ⚠ BREAKING: older versions cannot open re-saved vaults, with no way back |
 | 10. Test suites ran without gating | **released in v2.4.0** — finalize() ran per-runner, so two suites reported but did not count |
 | 11. Actionable reports | **released in v2.4.0** — click-through from both reports |
 | 12. Per-field breach button | **released in v2.4.0** — on password fields, edit rows, and the standalone generator (documented under item 5, no separate section) |
 | 13. Entropy estimate ignores dictionary words | **released in v2.4.0** — estimator is dictionary-aware; generator defaults raised to match |
 | 14. Loaded files apply security preferences | open — a shared file can silently weaken settings; badges show the result but nothing asks first |
 | 15. Vault merge | idea — extends item 7; needs durable IDs because it writes, and can use inactive records as undo |
-| 16. CodeQL findings | **v2.4.1** — memorable passwords used Math.random(); now CSPRNG with no modulo bias. Also: pattern checks rejected valid passwords, and the in-record generator ignored the length preference |
+| 16. CodeQL findings | **RELEASED in v2.4.1** — memorable passwords used Math.random(); now CSPRNG with no modulo bias. Also: pattern checks rejected valid passwords, and the in-record generator ignored the length preference |
 | 17. Describe rather than judge | idea — the expository checks assert a 60-bit floor they cannot justify; and memorable passwords are about typeability, not memorability |
 | 18. FIDO CXF interoperability | idea — `CustomFields` fits PAM's model; salted title hashes give stable `Item.id`s with **no format change**, so this need not wait for v3.0 |
 
@@ -84,7 +89,7 @@ this document still reads in order:
    `make screenshots`, with `make check-images` verifying that the README and
    the harness agree, wired into `lint`.
 
-## 5. Password breach check
+## 5. Password breach check — RELEASED in v2.4.0
 
 Checks stored passwords against the Have I Been Pwned corpus using the
 k-anonymity range API: a 20-bit prefix of the SHA-1 goes over the network and
@@ -379,7 +384,7 @@ structural grounds and the test passed without exercising what it named. It now
 uses two structurally clean passwords, checked as such, so the corpus is the
 only variable.
 
-## 6. README pass
+## 6. README pass — RELEASED in v2.4.0
 
 Large, and it covers everything above. The README is the in-app help, so this
 is a user-facing defect until done.
@@ -554,7 +559,7 @@ off, and the button is hidden in that state.
 
 ---
 
-## 7. Vault diff — deferred
+## 7. Vault diff — DEFERRED, not blocked
 
 **Question:** "What differs between these two vaults?"
 **Discloses:** titles and field names of differing entries. Never secrets.
@@ -598,7 +603,7 @@ renames. Less certain than an ID, and considerably better than nothing.
 matching on title but not field set, and vice versa, which is a presentation
 question rather than a blocker.
 
-## 8. Export tiering — deferred
+## 8. Export tiering — DEFERRED
 
 The actual lesson of the origin story. Today the industry offers one export:
 everything, in the clear. Offer three:
@@ -619,7 +624,7 @@ and Dashlane are all contributors.
 
 ---
 
-## 9. Vault file integrity — 9a any time, 9b deferred to v3.0
+## 9. Vault file integrity — 9a OPEN (no format change), 9b DEFERRED to v3.0
 
 **Read the split below before the warning.** This item has two halves, and only
 the second one breaks anything:
@@ -751,7 +756,7 @@ Meanwhile the unit test asserts the property that actually holds — that a wron
 password never recovers the plaintext — rather than that decryption fails,
 which is only true 255 times in 256.
 
-## 10. Fixed: two suites ran without gating the build
+## 10. Two suites ran without gating the build — RELEASED in v2.4.0
 
 Found because 16 new breach tests were added and the reported total did not
 move: still 308.
@@ -776,7 +781,7 @@ Two changes:
 The failure mode is the one this project keeps producing: not a wrong answer,
 but a right-looking answer that was never actually computed.
 
-## 11. Reports should be actionable, not just informative
+## 11. Reports should be actionable, not just informative — RELEASED in v2.4.0
 
 Both reports currently tell you there is a problem and leave you to find the
 records yourself. In a vault of a few hundred entries that is most of the work.
@@ -882,7 +887,7 @@ dialogue" — rather than two implementations. It belongs somewhere both
 Neither is required for the breach feature to ship. If v2.4.0 gets long, 11a
 stands alone and could land in a smaller release of its own.
 
-## 13. The entropy estimate is blind to dictionary words — FIXED in v2.4.0
+## 13. The entropy estimate is blind to dictionary words — RELEASED in v2.4.0
 
 **Implemented.** `entropyBits()` now computes both a character estimate and a
 word estimate and returns the **lower** of the two. A passphrase is both a
@@ -1375,7 +1380,7 @@ building `pwcheck`, and each time the program looked like it worked.
 
 ---
 
-## 14. Loading a file applies its preferences — including security settings
+## 14. Loading a file applies its preferences, including security settings — OPEN
 
 The stale `pam-password-generator-standalone.png` capture looked like a
 screenshot problem and was not. It showed Length 20 and three-word passwords
@@ -1407,7 +1412,7 @@ already make the resulting state visible — ⚠ HTML ON, ⚠ PW SEARCH,
 tells you the state afterwards rather than asking first. Recorded rather than
 fixed: it changes established load behaviour and belongs in its own change.
 
-## 15. Vault merge — an opportunity worth scoping properly
+## 15. Vault merge — IDEA, an opportunity worth scoping properly
 
 Raised as a natural extension of item 7: once you can see what differs between
 two vaults, the obvious next question is whether you can reconcile them.
@@ -1455,7 +1460,7 @@ non-problem.
 Scheduling: this wants durable IDs, so it sits after that lands. Item 7 does
 not, and can precede it.
 
-## 16. CodeQL: memorable passwords used Math.random() — FIXED in v2.4.1
+## 16. CodeQL: memorable passwords used Math.random() — RELEASED in v2.4.1
 
 Raised by GitHub Advanced Security on the v2.4.0 pull request, and **found
 after v2.4.0 had already been released**. One alert was real and important; the
@@ -1711,7 +1716,7 @@ The general shape is one worth remembering: a mode flag taken from ambient
 state, with no visible indication of which mode is active, fails silently and
 in the direction of doing nothing.
 
-## 17. What memorable passwords are actually for, and whether to judge at all
+## 17. What memorable passwords are for, and whether to judge at all — IDEA
 
 A thought experiment rather than a proposed change, recorded because it
 reframes two things v2.4.1 settled by assertion.
@@ -1792,7 +1797,7 @@ The two halves connect: both say PAM should **describe rather than judge**, and
 both follow from noticing that the tool knows less about the user's situation
 than its current output implies.
 
-## 18. FIDO Credential Exchange Format (CXF), and stable ids without a format change
+## 18. FIDO Credential Exchange Format (CXF), and stable ids — IDEA
 
 CXF reached **Proposed Standard** on 14 August 2025, with errata in March 2026.
 It is backed by 1Password, Apple, Bitwarden, Dashlane, Google, NordPass and

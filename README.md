@@ -93,9 +93,7 @@ the on-line help is generated.
       * [Case Insensitive Searches](#case-insensitive-searches)
       * [Search Record Titles](#search-record-titles)
       * [Search Record Field Names](#search-record-field-names)
-      * [Search Record Field Names](#search-record-field-names)
       * [Search Record Field Values](#search-record-field-values)
-      * [Hide Inactive Records](#hide-inactive-records)
     * [Password Preferences](#password-preferences)
       * [Minimum Password Length](#minimum-password-length)
       * [Maximum Password Length](#maximum-password-length)
@@ -108,15 +106,35 @@ the on-line help is generated.
     * [Miscellaneous Preferences](#miscellaneous-preferences)
       * [Log Status to the Console](#log-status-to-the-console)
       * [Clear Records On Load](#clear-records-on-load)
-      * [Enable Printing](#enable-printing)
       * [Load Duplicate Record Strategy](#load-duplicate-record-strategy)
       * [Clone Field Values when Cloning Records](#clone-field-values-when-cloning-records)
       * [Require Record Fields](#require-record-fields)
       * [Enable Editable Field Name](#enable-editable-field-name)
-      * [filePass Cache Strategy](#filepass-cache-strategy)
+      * [Textarea Minimum Height](#textarea-minimum-height)
+    * [Administration Preferences](#administration-preferences)
+      * [Lock Preferences Password](#lock-preferences-password)
+      * [Default Record Fields](#default-record-fields)
+      * [Enable Printing](#enable-printing)
+      * [Enable Save File](#enable-save-file)
+      * [Hide Inactive Records](#hide-inactive-records-1)
       * [Custom About](#custom-about)
-    * [Record Fields](#record-fields-preferences)
+      * [Allow HTML Field Rendering](#allow-html-field-rendering)
+      * [Show Password Reuse Warning](#show-password-reuse-warning)
+      * [Enable Password Breach Check](#enable-password-breach-check)
+      * [Search Password Field Values](#search-password-field-values)
+      * [filePass Cache Strategy](#filepass-cache-strategy)
+      * [Enable Raw JSON Editing](#enable-raw-json-editing)
+    * [Record Fields Preferences](#record-fields-preferences)
     * [Saving Preferences](#saving-preferences)
+      * [Create Record File](#create-record-file)
+      * [Use Record Data to Log into a Site](#use-record-data-to-log-into-a-site)
+      * [Edit an Existing Record](#edit-an-existing-record)
+      * [Delete an Existing Record](#delete-an-existing-record)
+      * [Clone an Existing Record](#clone-an-existing-record)
+      * [Decrypt a PAM v2 file](#decrypt-a-pam-v2-file)
+      * [Encrypt a file to PAM v2 format](#encrypt-a-file-to-pam-v2-format)
+      * [Interactive unit testing in the browser](#interactive-unit-testing-in-the-browser)
+  * [File Integrity Check](#file-integrity-check)
   * [Content-Security-Policy](#content-security-policy)
 * [Security Considerations](#security-considerations)
     * [MITM](#mitm)
@@ -2378,35 +2396,6 @@ preference is off — the ⚠ BREACH CHECK badge in the toolbar tells you at a
 glance. Note also that loading a records file applies that file's preferences,
 so opening a shared vault can switch breach checking off.
 
-### File Integrity Check
-
-Since v2.5.0 every saved file carries a SHA-256 digest of its records and
-preferences, stored inside the encrypted payload as `meta.integrity`. On load
-_PAM_ recomputes it and compares before applying anything.
-
-**Why it is needed.** _PAM_ encrypts with AES-CBC, which protects
-confidentiality and nothing else — there is no authentication tag, so a
-modified file decrypts to modified content and nothing says so. In practice
-most damage is caught anyway, because garbled data fails to parse as JSON. The
-gap is the case that matters: altering a byte inside a long text value changes
-a character without disturbing the structure around it, so the file still
-parses and loads. The digest closes that.
-
-**What you will see.** Nothing, normally. If a file fails the check, _PAM_
-reports that it has been modified since it was saved and **does not load it**.
-If the check itself cannot run, _PAM_ says so and still does not load the file
-— an unverified vault is not applied silently.
-
-**Older files still work.** A file saved before v2.5.0 has no digest. _PAM_
-notes that in the console and loads it normally; a missing digest is not
-treated as tampering.
-
-**What it does not do.** The digest is stored inside the file, so anyone able
-to rewrite the file could remove it. And neither this nor any authentication
-scheme detects a *rollback* — replacing your current file with a genuine older
-copy of it, which was correctly signed when it was written. Keep backups
-somewhere an attacker cannot reach.
-
 #### Search Password Field Values
 
 WARNING: this only applies when Search Record Field Values is also
@@ -2491,6 +2480,35 @@ interface.
 You _must_ scroll to the bottom of the dialogue and
 click on the `"Save"` button at the end to save changes.
 If you do not, any changes you made will be lost.
+
+## File Integrity Check
+
+Since v2.5.0 every saved file carries a SHA-256 digest of its records and
+preferences, stored inside the encrypted payload as `meta.integrity`. On load
+_PAM_ recomputes it and compares before applying anything.
+
+**Why it is needed.** _PAM_ encrypts with AES-CBC, which protects
+confidentiality and nothing else — there is no authentication tag, so a
+modified file decrypts to modified content and nothing says so. In practice
+most damage is caught anyway, because garbled data fails to parse as JSON. The
+gap is the case that matters: altering a byte inside a long text value changes
+a character without disturbing the structure around it, so the file still
+parses and loads. The digest closes that.
+
+**What you will see.** Nothing, normally. If a file fails the check, _PAM_
+reports that it has been modified since it was saved and **does not load it**.
+If the check itself cannot run, _PAM_ says so and still does not load the file
+— an unverified vault is not applied silently.
+
+**Older files still work.** A file saved before v2.5.0 has no digest. _PAM_
+notes that in the console and loads it normally; a missing digest is not
+treated as tampering.
+
+**What it does not do.** The digest is stored inside the file, so anyone able
+to rewrite the file could remove it. And neither this nor any authentication
+scheme detects a *rollback* — replacing your current file with a genuine older
+copy of it, which was correctly signed when it was written. Keep backups
+somewhere an attacker cannot reach.
 
 ## Content-Security-Policy
 

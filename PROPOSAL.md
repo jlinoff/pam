@@ -2235,6 +2235,38 @@ When an item moves to done, search for its **subject**, not its number:
 - Any version number written while the release was still unreleased. "Fixed in
   vX" is a prediction until the tag exists.
 
+**The README's table of contents drifts, and nothing checks it.**
+
+Adding one section exposed how far. Found in v2.5.0:
+
+- The new **File Integrity Check** section was inserted as a `###` inside
+  *Breached Passwords*, so it read as part of breach checking and appeared in
+  no table of contents at all. Moved to a top-level section beside
+  *Content-Security-Policy*, where it belongs.
+- **Nine Administration preferences were missing from the TOC entirely**,
+  including `Allow HTML Field Rendering`, `Search Password Field Values` and
+  `Enable Password Breach Check` — the three security-relevant ones.
+- **Three more were filed under the wrong parent**: `Enable Printing`,
+  `filePass Cache Strategy` and `Custom About` were listed under
+  *Miscellaneous* when they live under *Administration*.
+- **`Administration Preferences` had no TOC entry** even though its five
+  sibling sections all did.
+- **`Search Record Field Names` was listed twice**, and `Hide Inactive Records`
+  was listed under *Search Preferences* when it is an Administration
+  preference.
+
+None of that is catchable by the existing link check, which verifies that every
+link resolves — a link to the wrong section resolves perfectly. The gap is
+*structural*: whether the TOC reflects the document's actual hierarchy.
+
+Fixed by generating the preferences block from the document rather than editing
+it by hand, including anchor suffixing the way GitHub assigns it (there are two
+`Hide Inactive Records` headings, so the second is `#hide-inactive-records-1`).
+
+**Worth building:** a `check-toc` that rebuilds the expected TOC from the
+headings and diffs it against what is there. It would have caught every item
+above. Until then, regenerate rather than hand-edit.
+
 **One mechanical rule that would have caught the most:** do not pipe an audit
 through `head`. Twenty matches were truncated to eight, and the missing test was
 at number nine. Truncation is right for exploring and wrong for any search whose

@@ -42,6 +42,13 @@ cheap non-breaking path that was not obvious when they were raised: **9a**
 salted title hashes). Both exploit the same property — older versions ignore
 keys they do not recognise.
 
+**The one high-priority item is 9b:** a PAM vault has no tamper evidence and no
+reliable wrong-password check, which is a real defect in a security tool. The
+breaking format change it requires has been reviewed and **accepted** — see the
+decision in item 9 — subject to two conditions: the v1 and v2 read paths are
+kept forever, and the migration announces itself. Nothing else on this list is
+urgent.
+
 Item numbers are stable identifiers, not priorities: an item keeps its number
 for the life of the document so cross-references hold. Sections appear in
 numeric order. A low number means the item was raised early, nothing more.
@@ -58,7 +65,7 @@ the item moved.
 | 6. README pass | **released in v2.4.0** — including SECURITY.md, which claimed "No data is ever sent to a server" |
 | 7. Vault diff | deferred, **not blocked** — works today without record IDs; they add rename detection |
 | 8. Export tiering | deferred |
-| 9. Vault file integrity | **9a OPEN** — tamper-evident hash in `meta`, no format change, could ship any time. **9b DEFERRED to v3.0** — AES-GCM, ⚠ BREAKING: older versions cannot open re-saved vaults, with no way back |
+| 9. Vault file integrity | **9a OPEN** — tamper-evident hash in `meta`, no format change. **9b DEFERRED to v3.0, breaking change ACCEPTED** — AES-GCM; v1/v2 read paths kept forever and the migration must announce itself |
 | 10. Test suites ran without gating | **released in v2.4.0** — finalize() ran per-runner, so two suites reported but did not count |
 | 11. Actionable reports | **released in v2.4.0** — click-through from both reports |
 | 12. Per-field breach button | **released in v2.4.0** — on password fields, edit rows, and the standalone generator (documented under item 5, no separate section) |
@@ -656,6 +663,39 @@ the second one breaks anything:
 >   update too.
 > - A backup taken after the upgrade cannot be restored on an older install.
 >
+> ### Decision: the breaking change is accepted
+>
+> Reviewed and agreed. The caution above was argued from the general case —
+> native apps, store review, users waiting to update. PAM is not that, and two
+> properties change the calculus:
+>
+> - **`v1` to `v2` was already a forced migration and caused no disruption.**
+>   `save.js` calls `encryptV2()` unconditionally; there is no v1 write path.
+>   Every existing vault was rewritten on its next save. The precedent is
+>   direct, not analogous.
+> - **A PWA updates itself.** Served from a URL, an installed PAM picks up the
+>   new version on next load. The window in which one device lags is short and
+>   self-closing, unlike a native app waiting on store review.
+> - **`git clone <tag>` is a real fallback here**, because PAM has no build
+>   step. Clone the v2.4.1 tag, open `index.html`, read the file. That covers
+>   the isolated-environment case properly.
+>
+> And this is a security tool. An unauthenticated vault format is a genuine
+> defect, and shipping the fix matters more than sparing users one migration.
+>
+> **Two conditions attach to that acceptance:**
+>
+> 1. **The v1 and v2 read paths are never removed.** A v3 PAM must open every
+>    file PAM has ever written. This is what makes a forced write-format change
+>    safe, it costs almost nothing to keep, and it is exactly the sort of thing
+>    a later cleanup deletes because "nobody uses v1 any more". They do.
+> 2. **The migration must announce itself.** With the writer unconditional, a
+>    v2 vault becomes v3 on the next save with no notice. A one-time message —
+>    *"this vault has been upgraded to the v3 format; older versions of PAM can
+>    no longer open it"* — costs nothing and turns a silent one-way door into an
+>    informed one. The v1 to v2 migration went smoothly; that should be
+>    repeatable rather than fortunate.
+>
 > **Requirements before 9b ships, not optional extras:**
 >
 > - The release notes must lead with this, not mention it.
@@ -664,10 +704,10 @@ the second one breaks anything:
 > - Update every device before saving from any of them.
 > - Keep a copy of the vault in the old format, outside the sync folder, until
 >   every device is confirmed working.
-> - Prefer a staged migration: one release that **reads** the new format
->   without writing it, then a later one that writes it. That way readers are
->   deployed everywhere before any file changes, and the lockout window never
->   opens.
+> - A staged migration — one release that **reads** the new format before a
+>   later one writes it — remains the most conservative option, but is not
+>   required given the decision above. If it is skipped, conditions 1 and 2
+>   carry the weight instead.
 >
 > The major version number is the signal, but a version number is not a
 > warning. Users upgrade without reading, and the first symptom otherwise is a
@@ -740,17 +780,17 @@ end state. Doing 9a first does not make 9b harder — the integrity field simply
 becomes redundant once GCM authenticates the whole payload.
 
 **Scheduled for v3.0, and the major version is the point.** A file written in
-the new format cannot be read by any earlier release. PAM is explicitly
-multi-device — the README recommends syncing through iCloud, Dropbox or Drive,
-and a typical user runs it on a laptop, a tablet and a phone — so the moment
-one device writes the new format, every device still on an older version is
-locked out of its own vault. There is also no downgrade path: a user who has
-re-saved cannot go back, even for a problem unrelated to crypto.
+the new format cannot be read by any earlier release, and there is no downgrade
+path: a user who has re-saved cannot go back, even for a problem unrelated to
+crypto. That is what major versions exist to signal.
 
-A staged migration would soften that — read the new format in one release,
-write it in the next, so readers are deployed everywhere before any file
-changes. Either way it is a breaking change to the data format, which is what
-major versions exist to signal.
+The exposure is real but bounded, and the decision above accepts it. PAM is
+multi-device — the README recommends syncing through iCloud, Dropbox or Drive —
+so a device still on an older version cannot open a newly written vault. But
+PAM is served from a URL and installs as a PWA, so devices update themselves on
+next load rather than waiting on a store review or a user tapping Update. The
+lag is short and self-closing. The genuinely stranded case is a pinned local
+copy, and `git clone <tag>` covers it because PAM has no build step.
 
 Meanwhile the unit test asserts the property that actually holds — that a wrong
 password never recovers the plaintext — rather than that decryption fails,

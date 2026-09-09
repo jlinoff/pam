@@ -14,7 +14,12 @@ What it reports:
   MOVED     a redirect to a different URL. Not a failure — the link works —
             but the target has moved, and following a chain of redirects is
             how a link eventually rots. Worth updating.
-  BROKEN    4xx or 5xx
+  BLOCKED   403 or 429. Almost always the site refusing an automated client
+            rather than a dead link: Stack Exchange, Cloudflare and others
+            reject anything that does not look like a browser. Reported so it
+            is visible, but does NOT fail the run — a checker that cries wolf
+            about working links is worse than no checker.
+  BROKEN    any other 4xx or 5xx
   ERROR     DNS failure, timeout, TLS problem
 
 The MOVED case is the one this exists for. In v2.5.0 six MDN links pointed at
@@ -98,6 +103,9 @@ def check_one(url):
                 return ('MOVED', response.status, final)
             return ('OK', response.status, None)
     except urllib.error.HTTPError as exc:
+        if exc.code in (403, 429):
+            return ('BLOCKED', exc.code, 'site refuses automated clients; '
+                                         'check by hand')
         return ('BROKEN', exc.code, None)
     except (urllib.error.URLError, TimeoutError, OSError) as exc:
         return ('ERROR', 0, str(exc)[:70])
@@ -127,7 +135,7 @@ def fetch_all(urls):
 
 def report(results, checked):
     '''Print everything that is not plain OK. Returns the failure count.'''
-    order = {'BROKEN': 0, 'ERROR': 1, 'MOVED': 2, 'OK': 3}
+    order = {'BROKEN': 0, 'ERROR': 1, 'BLOCKED': 2, 'MOVED': 3, 'OK': 4}
     bad = 0
     for url in sorted(results, key=lambda u: (order[results[u][0]], u)):
         state, code, detail = results[url]
@@ -158,8 +166,10 @@ def main():
 
     ok = sum(1 for s, _, _ in results.values() if s == 'OK')
     moved = sum(1 for s, _, _ in results.values() if s == 'MOVED')
+    blocked = sum(1 for s, _, _ in results.values() if s == 'BLOCKED')
     print()
-    print(f'{ok} OK, {moved} moved, {bad} broken or errored')
+    print(f'{ok} OK, {moved} moved, {blocked} blocked, '
+          f'{bad} broken or errored')
     if skipped:
         print()
         print('skipped:')

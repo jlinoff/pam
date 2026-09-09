@@ -87,6 +87,7 @@ the item moved.
 | 17. Describe rather than judge | idea — the expository checks assert a 60-bit floor they cannot justify; and memorable passwords are about typeability, not memorability |
 | 18. FIDO CXF interoperability | idea — `CustomFields` fits PAM's model; salted title hashes give stable `Item.id`s with **no format change**, so this need not wait for v3.0 |
 | 19. `make check-toc` | **RELEASED in v2.5.0** — verifies the contents page against the document's headings; found 22 problems on first run, including nine security-relevant preferences missing entirely |
+| 20. `make check-links` | **RELEASED in v2.5.0** — checks the 31 external URLs; found 8 stale on first run, all of them still working via redirects. Not in `lint`: needs network |
 
 ---
 
@@ -2247,6 +2248,42 @@ section that had existed in two places with different wording.
 It has since caught a regression in a heading added minutes earlier, which is
 the strongest evidence it earns its place in `lint`.
 
+## 20. `make check-links` — external links are now checkable — RELEASED in v2.5.0
+
+Nothing had ever verified the 31 external URLs in the documentation. Written in
+v2.5.0 after `check-toc` prompted the question "do the *other* links work?"
+
+**Eight were stale on the first run**, and every one of them still worked:
+
+| Was | Now |
+|---|---|
+| 5 MDN paths | MDN restructured `Learn/`, `Web/HTML/Element/`, `Web/Security/` and the PWA guides |
+| `draw.io` | `app.diagrams.net` |
+| `pytest.org` | `docs.pytest.org/en/stable/` |
+| `auditboard.com/blog/nist-password-guidelines` | **a different company** — `optro.ai` |
+
+**`MOVED` is the finding this tool exists for.** A redirect works, so nothing
+reports it, and the link rots silently until the redirect is retired years
+later — long after anyone remembers writing it. All eight would have been
+invisible to any check that only asks "does this 200?".
+
+**The last row is the interesting one.** That was not a path change, it was a
+domain changing hands: a corporate blog post cited for NIST password guidance
+now resolves to an unrelated company. Replaced with NIST's own SP 800-63B at
+`pages.nist.gov`, which is both the primary source and far more likely to
+survive. The lesson is that a redirect crossing a domain boundary deserves
+judgement, not a mechanical update.
+
+**403 is not a broken link.** The first run reported Stack Exchange as BROKEN,
+which was the checker's fault: Stack Exchange rejects non-browser user agents.
+403 and 429 are now reported as `BLOCKED` and do not fail the run. A checker
+that cries wolf about working links gets switched off, and then reports nothing
+at all.
+
+**Not part of `make lint`**, deliberately: it needs network access, and a build
+that fails because a third-party blog is having a bad afternoon teaches people
+to ignore build failures.
+
 ## Where claims live
 
 Every stale-documentation miss this session came from searching a scope defined
@@ -2398,6 +2435,33 @@ where readers actually look for security information, but it is not nothing.
 Anchors are unaffected — they follow heading text, not depth — so every existing
 cross-reference still resolves. `check-toc` reported all thirteen TOC
 disagreements the move created, and confirmed the result.
+
+### The restructure corrupted a section, and no check noticed
+
+The script that moved the two mechanism sections did this:
+
+    mechanisms = ''.join(lines[fic_start:csp_end])   # a STRING
+    fic = mechanisms[:fic_end - fic_start]           # sliced by a LINE COUNT
+
+`fic_end - fic_start` is a number of lines. Used as a character offset it cut
+29 lines of text after 29 characters, leaving the *File Integrity Check*
+section reading:
+
+    #### File Integrity Check
+
+    Sinc
+
+with its body orphaned above the Content-Security-Policy heading, its first
+four characters gone.
+
+**`check-toc` passed.** So did the anchor check, and `make all`. Every heading
+was present, correctly nested and correctly linked — the structure was
+flawless and the content was mangled. That is precisely the boundary of what a
+structural check can see, and worth remembering before trusting a green
+`check-toc` as evidence that a document edit went well.
+
+**It was found by reading the file.** No tool substitutes for that, and the two
+built this release make it easy to believe otherwise.
 
 **The general point.** `check_images.py` verifies that links resolve, and every
 one of these links resolved. Structure needs its own question. That distinction

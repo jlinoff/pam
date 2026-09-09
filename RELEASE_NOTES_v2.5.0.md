@@ -99,6 +99,13 @@ existing link still resolves, since anchors follow heading text rather than
 depth. It needs no browser and takes about
 a second.
 
+**`make check-links` is new too**, and checks the 31 external URLs in the
+documentation. Eight were stale — five MDN paths, `draw.io`, `pytest.org`, and
+a NIST guidance link whose domain had changed hands entirely. Every one still
+worked through a redirect, which is why nothing had ever reported them. All are
+now updated, and the NIST citation points at NIST rather than at a corporate
+blog. It is not part of `make lint`, since it needs network access.
+
 The README also now documents the test and check targets, including
 `make test-one TEST_NAME=<name>` for running a single test with the server
 started for you.

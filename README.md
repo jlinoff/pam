@@ -192,7 +192,7 @@ localhost) or from the public
 [github.io server](https://jlinoff.github.io/pam/www/index.html).
 In either case, once the application is loaded into your browser
 or run as a local web app
-([PWA](https://developer.mozilla.org/en-US/docs/Web/Progressive_web_apps/Installing))
+([PWA](https://developer.mozilla.org/en-US/docs/Web/Progressive_web_apps/Guides/Installing))
 _there is no other communication_ with the web server which you can
 verify by monitoring outbound network traffic.
 
@@ -563,8 +563,10 @@ to protect you from hackers if a site you use to is attacked and your
 password is stolen.
 
 I recommend reading
-[NIST Password Guidelines](https://www.auditboard.com/blog/nist-password-guidelines/)
-for more information about how to create strong passwords.
+[NIST SP 800-63B, Digital Identity Guidelines](https://pages.nist.gov/800-63-4/sp800-63b.html)
+for more information about how to create strong passwords. Section 3.1.1 covers
+passwords specifically — including why length matters more than composition
+rules, and why forced periodic rotation is discouraged.
 
 As an interesting aside, note that `AES-256-CBC` algorithm is
 considered to be reasonably resistant to quantum attacks as discussed
@@ -582,7 +584,7 @@ seriously by the internet standards organization and the organizations
 that develop the major browsers.
 
 You can read more about secure contexts
-[here](https://developer.mozilla.org/en-US/docs/Web/Security/Secure_Contexts).
+[here](https://developer.mozilla.org/en-US/docs/Web/Security/Defenses/Secure_Contexts).
 
 #### Reason 7: Hiding Passwords from Casual Observers
 
@@ -613,7 +615,7 @@ What makes _PAM_ mobile friendly is that it is implemented using the
 [bootstrap-5](https://getbootstrap.com/docs/5.0/getting-started/introduction/)
 library to make the interface work better in the browsers present on
 mobile devices. PAM also supports installation as a
-[Progressive Web App (PWA)](https://developer.mozilla.org/en-US/docs/Web/Progressive_web_apps/Installing),
+[Progressive Web App (PWA)](https://developer.mozilla.org/en-US/docs/Web/Progressive_web_apps/Guides/Installing),
 which means you can add it to your home screen and use it like a
 native app without going through an app store.
 
@@ -909,7 +911,7 @@ These are the default field definitions.
 The table below presents a brief overview of the default record
 fields and their associated built in types and when to use them. You
 can search the web for more details about
-[HTML input types](https://developer.mozilla.org/en-US/docs/Learn/Forms/HTML5_input_types).
+[HTML input types](https://developer.mozilla.org/en-US/docs/Learn_web_development/Extensions/Forms/HTML5_input_types).
 
 | Type | Usage |
 | ---- | ----- |
@@ -926,7 +928,7 @@ can search the web for more details about
 
 Remember that the types were not made up by me, they were
 taken directly from input element description
-[here](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/input),
+[here](https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Elements/input),
 the separate textarea element is described
 [here](https://developer.mozilla.org/en-US/docs/Web/API/HTMLTextAreaElement).
 
@@ -1152,7 +1154,7 @@ would use this regular expression search term instead: `"^g"`.
 which would result in only two records found.
 
 For more information about regular expression syntax see the documentation
-for [Javascript Regular Expressions](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_Expressions).
+for [Javascript Regular Expressions](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_expressions).
 
 For more information about how you control the all of
 the available search options see the
@@ -2482,33 +2484,6 @@ The two mechanisms below are what _PAM_ itself puts in place. They are
 verifiable from the source: one is a line in `www/index.html`, the other a
 digest written into every file you save.
 
-e v2.5.0 every saved file carries a SHA-256 digest of its records and
-preferences, stored inside the encrypted payload as `meta.integrity`. On load
-_PAM_ recomputes it and compares before applying anything.
-
-**Why it is needed.** _PAM_ encrypts with AES-CBC, which protects
-confidentiality and nothing else — there is no authentication tag, so a
-modified file decrypts to modified content and nothing says so. In practice
-most damage is caught anyway, because garbled data fails to parse as JSON. The
-gap is the case that matters: altering a byte inside a long text value changes
-a character without disturbing the structure around it, so the file still
-parses and loads. The digest closes that.
-
-**What you will see.** Nothing, normally. If a file fails the check, _PAM_
-reports that it has been modified since it was saved and **does not load it**.
-If the check itself cannot run, _PAM_ says so and still does not load the file
-— an unverified vault is not applied silently.
-
-**Older files still work.** A file saved before v2.5.0 has no digest. _PAM_
-notes that in the console and loads it normally; a missing digest is not
-treated as tampering.
-
-**What it does not do.** The digest is stored inside the file, so anyone able
-to rewrite the file could remove it. And neither this nor any authentication
-scheme detects a *rollback* — replacing your current file with a genuine older
-copy of it, which was correctly signed when it was written. Keep backups
-somewhere an attacker cannot reach.
-
 #### Content-Security-Policy
 
 `www/index.html` carries a Content-Security-Policy meta tag that constrains
@@ -2556,7 +2531,33 @@ a time, each addition reasonable on its own.
 
 #### File Integrity Check
 
-Sinc
+Since v2.5.0 every saved file carries a SHA-256 digest of its records and
+preferences, stored inside the encrypted payload as `meta.integrity`. On load
+_PAM_ recomputes it and compares before applying anything.
+
+**Why it is needed.** _PAM_ encrypts with AES-CBC, which protects
+confidentiality and nothing else — there is no authentication tag, so a
+modified file decrypts to modified content and nothing says so. In practice
+most damage is caught anyway, because garbled data fails to parse as JSON. The
+gap is the case that matters: altering a byte inside a long text value changes
+a character without disturbing the structure around it, so the file still
+parses and loads. The digest closes that.
+
+**What you will see.** Nothing, normally. If a file fails the check, _PAM_
+reports that it has been modified since it was saved and **does not load it**.
+If the check itself cannot run, _PAM_ says so and still does not load the file
+— an unverified vault is not applied silently.
+
+**Older files still work.** A file saved before v2.5.0 has no digest. _PAM_
+notes that in the console and loads it normally; a missing digest is not
+treated as tampering.
+
+**What it does not do.** The digest is stored inside the file, so anyone able
+to rewrite the file could remove it. And neither this nor any authentication
+scheme detects a *rollback* — replacing your current file with a genuine older
+copy of it, which was correctly signed when it was written. Keep backups
+somewhere an attacker cannot reach.
+
 ### Threats to be aware of
 
 The rest of this section is different in kind. These are threats in the
@@ -2627,7 +2628,7 @@ seriously by the internet standards organization and the organizations
 that develop the major browsers.
 
 You can read more about secure contexts
-[here](https://developer.mozilla.org/en-US/docs/Web/Security/Secure_Contexts)
+[here](https://developer.mozilla.org/en-US/docs/Web/Security/Defenses/Secure_Contexts)
 and in [Reason 6: Secure Context Encryption](#reason-6-secure-context-encryption).
 
 #### Site Reliability
@@ -3070,7 +3071,7 @@ It uses
 [bootstrap-5](https://getbootstrap.com/docs/5.0/getting-started/introduction/)
 to make it work better in mobile browsers.
 
-It uses [Selenium](https://www.selenium.dev/) with [pytest](https://pytest.org/)
+It uses [Selenium](https://www.selenium.dev/) with [pytest](https://docs.pytest.org/en/stable/)
 to test the web app. The github actions file
 [main.yml](https://github.com/jlinoff/pam/blob/main/.github/workflows/main.yml)
 demonstrates how to build a complete web test environment using Python on an
@@ -3111,7 +3112,7 @@ Here are the steps to build PAM.
 ### Create Favicon
 I could not automate this process because I used a web service.
 
-1. Created an image using [draw.io](https://draw.io).
+1. Created an image using [draw.io](https://app.diagrams.net/).
 2. Uploaded the image to [https://favicon.io/favicon-converter/](https://favicon.io/favicon-converter/). It converted the image automatically when the "Download" button was clicked.
 3. Per the instructions on the site, then downloaded the following files into `pam/www`
    * android-chrome-192x192.png

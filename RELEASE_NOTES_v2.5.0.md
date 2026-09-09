@@ -5,6 +5,10 @@ contents, verified on load. Nothing about the file format changes: older
 versions of PAM read v2.5.0 files normally, and v2.5.0 reads older files
 normally.
 
+Also adds `make check-toc`, which verifies the README's contents page against
+its actual headings — and found nine security-relevant preferences that were
+documented but unreachable from it.
+
 ## Why
 
 PAM encrypts with AES-CBC, which protects confidentiality and nothing else.
@@ -61,6 +65,35 @@ cannot be told apart.
 
 To be precise about what changed: a wrong password was already *detected*
 almost every time. What was wrong was the diagnosis.
+
+## The documentation is now structurally checked
+
+`make check-toc` is new, and runs as part of `make lint`.
+
+PAM already verified that every link in the README **resolves**. That cannot
+catch a link to the *wrong* section, because it resolves perfectly well. Adding
+one section for the integrity check exposed how far the contents page had
+drifted, and the new check found **twenty-two problems** on its first run:
+
+- **Nine Administration preferences were missing from the contents page
+  entirely** — including `Allow HTML Field Rendering`, `Search Password Field
+  Values` and `Enable Password Breach Check`, which are the three that change
+  PAM's security posture.
+- **Three more were filed under the wrong section**, and `Administration
+  Preferences` had no entry at all despite its five siblings having one.
+- **Two headings were written at the wrong level**, which silently *terminated*
+  the Administration Preferences section and left the three preferences after
+  them structurally attached to a breach-check subsection.
+- **`Hide Inactive Records` was documented twice**, in two places, with
+  different wording.
+
+All fixed, and the check reports MISSING, WRONG PARENT, DUPLICATE and STALE
+entries so it cannot drift again unnoticed. It needs no browser and takes about
+a second.
+
+The README also now documents the test and check targets, including
+`make test-one TEST_NAME=<name>` for running a single test with the server
+started for you.
 
 ## Also in this release
 

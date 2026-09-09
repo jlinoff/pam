@@ -86,6 +86,7 @@ the item moved.
 | 16. CodeQL findings | **RELEASED in v2.4.1** — memorable passwords used Math.random(); now CSPRNG with no modulo bias. Also: pattern checks rejected valid passwords, and the in-record generator ignored the length preference |
 | 17. Describe rather than judge | idea — the expository checks assert a 60-bit floor they cannot justify; and memorable passwords are about typeability, not memorability |
 | 18. FIDO CXF interoperability | idea — `CustomFields` fits PAM's model; salted title hashes give stable `Item.id`s with **no format change**, so this need not wait for v3.0 |
+| 19. `make check-toc` | **RELEASED in v2.5.0** — verifies the contents page against the document's headings; found 22 problems on first run, including nine security-relevant preferences missing entirely |
 
 ---
 
@@ -2218,6 +2219,33 @@ preference row, where any real change is obvious at a glance. It was identical.
 defers it to the next run, by which time the batch is larger and the connection
 to a browser update is harder to see. Taking it immediately keeps the captures
 matching the browser that is actually installed.
+
+## 19. `make check-toc` — the table of contents is now verified — RELEASED in v2.5.0
+
+Built in v2.5.0 after adding one README section exposed how far the contents
+page had drifted. Full detail is under *Where claims live* below; the summary:
+
+`check_images.py` verifies that every link **resolves**. That cannot catch a
+link to the *wrong* section, which resolves perfectly. `tests/check_toc.py`
+asks the structural question instead — does the contents page reflect the
+document's hierarchy? — and reports four kinds of disagreement: **MISSING**,
+**WRONG PARENT**, **DUPLICATE** and **STALE**.
+
+It runs in `make lint`, needs no browser, and takes about a second. Anchors
+follow GitHub's rules including the `-1` suffixes for repeated heading text,
+because a checker that got those wrong would false-positive on every run and be
+switched off within a week.
+
+**Twenty-two problems on first run**, including nine Administration preferences
+missing from the contents page entirely — among them `Allow HTML Field
+Rendering`, `Search Password Field Values` and `Enable Password Breach Check`,
+the three security-relevant ones. It also found two headings written at `###`
+that silently **terminated the Administration Preferences section**, orphaning
+the three preferences after them, and a duplicated *Hide Inactive Records*
+section that had existed in two places with different wording.
+
+It has since caught a regression in a heading added minutes earlier, which is
+the strongest evidence it earns its place in `lint`.
 
 ## Where claims live
 

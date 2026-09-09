@@ -158,6 +158,7 @@ the on-line help is generated.
     * [Build PAM](#build-pam)
     * [Create Favicon](#create-favicon)
     * [Test PAM](#test-pam)
+      * [Test and check targets](#test-and-check-targets)
       * [Interactive unit testing in the browser](#interactive-unit-testing-in-the-browser)
     * [Release PAM](#release-pam)
     * [History](#history)
@@ -2512,8 +2513,15 @@ script-src  'self' https://cdn.jsdelivr.net;
 style-src   'self';
 img-src     'self' data:;
 font-src    'self';
-connect-src 'self' https://api.pwnedpasswords.com
+connect-src 'self' https://api.pwnedpasswords.com;
+form-action 'self'
 ```
+
+`form-action 'self'` was added in v2.5.0. It is worth calling out because,
+unlike most directives, `form-action` does **not** fall back to `default-src` —
+so while it was absent, a form could submit to any origin. That was the one
+outbound channel the rest of the policy left open, and its absence was
+completely silent. A unit test now asserts it is present.
 
 The one entry worth understanding is `connect-src`, which lists every host the
 page may open a network connection to. It permits PAM's own origin and exactly
@@ -3141,6 +3149,38 @@ The test infrastructure uses Python, pytest, and Selenium (ChromeDriver) to
 automate user interactions. Unit tests run in the browser via a vanilla JS
 test runner in `www/tests/tests.html`. E2E tests drive the full app in
 headless Chrome via `tests/test_chrome.py`.
+
+#### Test and check targets
+
+| Target | What it does |
+|---|---|
+| `make test` | everything below that gates a release: lint, unit tests, E2E tests |
+| `make unit-test` | the browser unit tests only |
+| `make e2e-test` | the Selenium E2E tests only |
+| `make test-one TEST_NAME=<name>` | one test, with the server started for you |
+| `make lint` | source linting plus the documentation checks |
+| `make check-images` | every referenced screenshot exists, and none is orphaned |
+| `make check-toc` | the table of contents matches the document's headings |
+| `make screenshots` | regenerate the README captures |
+| `make screenshots-check` | report what would change, writing nothing |
+
+`TEST_NAME` is passed to pytest's `-k`, so it matches substrings and
+expressions:
+
+```bash
+make test-one TEST_NAME=test_password_generator
+make test-one TEST_NAME=print
+make test-one TEST_NAME='load or save'
+```
+
+Both documentation checks run as part of `make lint`, because a documentation
+defect is invisible in a Markdown preview: a broken anchor simply does nothing,
+and a link to the *wrong* section works perfectly. `check-images` verifies that
+every screenshot referenced exists and every screenshot captured is referenced.
+`check-toc` asks a different question — whether the contents page reflects the
+document's actual structure — and reports headings that are missing from it,
+listed under the wrong parent, listed twice, or pointing at a heading that no
+longer exists. Neither needs a browser; together they take about a second.
 
 #### Interactive unit testing in the browser
 

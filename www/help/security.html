@@ -48,6 +48,15 @@ user.</p>
 <p>Your records are never sent to a server. There is exactly one feature
 that contacts anything at all, it is off by default, and it does not
 transmit your data:</p>
+<p>As of v2.5.0 each saved file also carries a SHA-256 digest of its
+records and preferences (<code>meta.integrity</code>), inside the
+encrypted payload. It is verified on load before any content or
+preference is applied, and a file that fails is refused. This is tamper
+<em>evidence</em>, not authenticated encryption: it is checked after
+decryption rather than before, the digest is unkeyed and could be
+stripped by anyone able to rewrite the file, and it does not detect
+rollback to a genuine older copy. AES-GCM remains the correct fix and
+requires a format change.</p>
 <ul>
 <li><strong>Password breach checking</strong> (v2.4.0,
 <code>enablePasswordBreachCheck</code>, disabled by default) sends the

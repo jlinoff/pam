@@ -42,7 +42,10 @@ cheap non-breaking path that was not obvious when they were raised: **9a**
 salted title hashes). Both exploit the same property — older versions ignore
 keys they do not recognise.
 
-**The one high-priority item is 9a:** a PAM vault has no tamper evidence and no
+**9a is done** — see item 9. What follows was written before that and is kept
+because the reasoning still applies to what remains.
+
+**The one high-priority item was 9a:** a PAM vault has no tamper evidence and no
 reliable wrong-password check, which is a real defect in a security tool. 9a
 closes both with a content hash in `meta`, needs no format change, and could
 ship in any release.
@@ -73,7 +76,7 @@ the item moved.
 | 6. README pass | **released in v2.4.0** — including SECURITY.md, which claimed "No data is ever sent to a server" |
 | 7. Vault diff | deferred, **not blocked** — works today without record IDs; they add rename detection |
 | 8. Export tiering | deferred |
-| 9. Vault file integrity | **9a OPEN, do this first** — tamper-evident hash in `meta`, no format change; detects tampering essentially completely. **9b DEFERRED to v3.0** — AES-GCM; breaking change accepted *if built*, but reassessed as small marginal benefit over 9a. Neither addresses rollback |
+| 9. Vault file integrity | **9a RELEASED in v2.5.0** — SHA-256 of records and prefs in `meta.integrity`, no format change; catches the targeted tampering that `JSON.parse` lets through. **9b DEFERRED to v3.0** — AES-GCM; breaking change accepted *if built*, small marginal benefit over 9a. Neither addresses rollback |
 | 10. Test suites ran without gating | **released in v2.4.0** — finalize() ran per-runner, so two suites reported but did not count |
 | 11. Actionable reports | **released in v2.4.0** — click-through from both reports |
 | 12. Per-field breach button | **released in v2.4.0** — on password fields, edit rows, and the standalone generator (documented under item 5, no separate section) |
@@ -639,13 +642,14 @@ and Dashlane are all contributors.
 
 ---
 
-## 9. Vault file integrity — 9a OPEN (do this first), 9b DEFERRED and reassessed
+## 9. Vault file integrity — 9a RELEASED in v2.5.0, 9b DEFERRED and reassessed
 
 **Read the split below before the warning.** This item has two halves, and only
 the second one breaks anything:
 
 - **9a — tamper evidence.** A hash inside `meta`. No format change, no
-  migration, backward compatible. Could ship in any release.
+  migration, backward compatible. **Implemented in v2.5.0** on
+  `feat/vault-file-integrity`.
 - **9b — authenticated encryption.** AES-GCM. Breaks the file format, and the
   warning below applies to it in full. **Reassessed:** 9a already detects
   tampering essentially completely, so 9b is no longer treated as a necessary
@@ -774,17 +778,76 @@ format, because unknown `prefs` keys are ignored by older versions. The same
 applies here. `loadFileContent()` reads only `meta['date-saved']`, `prefs` and
 `records`; every other key is ignored.
 
-**9a — tamper evidence, no format change.** Write a hash of the canonical
-records and prefs into `meta.integrity` before encrypting. On load, decrypt,
-parse, recompute, compare. This gives:
+**9a — tamper evidence, no format change. IMPLEMENTED in v2.5.0.** A SHA-256
+digest of records and prefs is written to `meta.integrity` before encrypting.
+On load, PAM decrypts, parses, recomputes and compares before applying
+anything.
 
-- **Tamper evidence.** Flipped ciphertext bits produce plaintext that either
-  fails to parse as JSON or fails the hash. Today a PAM file has none.
-- **A reliable wrong-password check.** v2 currently detects a wrong password
-  only when PKCS#7 padding happens to be invalid — it passes about 1 time in
-  256, which is the flaky unit test found during v2.3.0.
-- **Backward compatibility.** Older versions ignore `meta.integrity` and read
-  the file normally. No migration, no lockout window.
+**Two claims in the original write-up were wrong, and implementing it exposed
+both.**
+
+**Wrong claim 1: "a reliable wrong-password check".** A wrong password was
+already detected almost always. PKCS#7 padding rejects it about 255 times in
+256, and the once it passes, `JSON.parse` rejects the garbage — measured at
+40/40 across trials. What was actually broken was the **message**: that last
+case reported *"invalid record format"*, blaming the file rather than the
+password. 9a improves the diagnosis, not the detection. The load path now says
+both causes are possible, since from that point they are indistinguishable.
+
+**Wrong claim 2: "flipped ciphertext bits fail the hash".** Mostly they fail
+`JSON.parse` first. Measured over 400 random bit-flips:
+
+| Caught by | Count |
+|---|---|
+| AES-CBC padding | 33 |
+| `JSON.parse` | 357 |
+| **the digest alone** | **10** |
+| undetected | 0 |
+
+On that figure 9a looks close to redundant, and an honest write-up has to
+report it.
+
+**But random flips are the wrong model.** An attacker does not flip bits at
+random; they flip inside a *value*, where corruption stays syntactically valid.
+A trial confined to the final blocks of a vault holding a 600-character note
+produced **15 tampered files that decrypted and parsed as valid JSON**. The
+digest caught all 15. Without it, every one would have loaded silently as a
+valid vault with corrupted content.
+
+That is the case 9a exists for, and it is invisible in the random-flip number.
+
+**Backward compatibility.** Older versions ignore `meta.integrity` and read the
+file normally. A file *without* a digest reports `INTEGRITY_ABSENT` and loads
+without complaint — treating a missing digest as tampering would reject every
+vault written before v2.5.0.
+
+**Two bugs found by the e2e suite, one of them mine.**
+
+*Mine:* the verification was written as
+`verifyIntegrity(json).then(result => { …; applyLoadedContent(json) }).catch(…)`.
+That puts `applyLoadedContent` inside the same catch, so **any** error raised
+while loading is reported as an integrity failure. It surfaced as a date-parsing
+`RangeError` announced to the user as *"this file has been modified since it was
+saved"* — wrong, and alarming in the worst way for a security feature. Fixed by
+using the two-argument `.then(onOk, onErr)` so the rejection handler covers
+verification only, and applying the content in a separate link of the chain.
+
+*Pre-existing:* `meta['date-saved']` is not guaranteed — it is absent from
+hand-written files and fixtures. `new Date(undefined)` gives an Invalid Date,
+and `thenDate.toISOString()` throws `RangeError: Invalid time value`. **That
+threw before this release too.** It went unnoticed because it happens after the
+records are inserted, so the load looks successful and the browser swallows the
+exception. Only wrapping the call in a catch made it visible. Both the date
+handling and the About line are now guarded.
+
+Worth noting the shape: a defensive `catch` that is too broad does not just fail
+to help, it actively misattributes. The second bug had been live for an unknown
+number of releases and was found only because the first one exposed it.
+
+**The honest limit.** The digest is unkeyed and lives inside the plaintext, so
+anyone able to rewrite the file could omit the field to silence the check.
+Nothing within a non-breaking change prevents that. It is a real argument for
+9b, and a smaller one than the reassessment below already allows.
 
 **9b — authenticated encryption, v3.0.** AES-GCM, with the breaking format
 change described above.

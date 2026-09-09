@@ -221,6 +221,34 @@ e2e-test: init lint ## Run Selenium E2E tests in tests/test_chrome.py
 	PORT=$(PORT) pipenv run python3 -m pytest -v tests/test_chrome.py
 	$(KILL_SERVER)
 
+# Run a single test by name, with the server handled for you.
+#
+# The obvious version of this — just `pytest -k NAME` — fails with sixty lines
+# of chromedriver stack because nothing is listening on $(PORT). This starts
+# the server, runs the test, and stops the server, exactly as e2e-test does.
+#
+#   make test-one TEST_NAME=test_print_empty_fields_skipped
+#
+# TEST_NAME is passed to pytest's -k, so it matches substrings and expressions:
+#
+#   make test-one TEST_NAME=print              # every test with 'print' in it
+#   make test-one TEST_NAME='load or save'     # pytest -k expression syntax
+#
+# Both test files are searched, so a unit-test name works too. -x stops at the
+# first failure and -s lets print() and JS console output through, which is the
+# point of running one test at a time.
+TEST_NAME ?= test_basic_setup
+.PHONY: test-one
+test-one: init  ## Run a single test: make test-one TEST_NAME=<name or -k expression>
+	$(call hdr,"$@ - $(TEST_NAME)")
+	-$(KILL_SERVER)
+	( cd www && pipenv run python -m http.server $(PORT) > /dev/null 2>&1 ) &
+	sleep 2
+	lsof -i :$(PORT)
+	PORT=$(PORT) pipenv run python3 -m pytest -v -s -x -k "$(TEST_NAME)" \
+		tests/test_chrome.py tests/test_unit.py
+	$(KILL_SERVER)
+
 # Verifies the README against the harness: every screenshot is either captured
 # by tests/screenshots.py or on its HAND_MADE list, no image is orphaned or
 # duplicated, and every in-page link points at a real heading.

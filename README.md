@@ -2378,6 +2378,35 @@ preference is off — the ⚠ BREACH CHECK badge in the toolbar tells you at a
 glance. Note also that loading a records file applies that file's preferences,
 so opening a shared vault can switch breach checking off.
 
+### File Integrity Check
+
+Since v2.5.0 every saved file carries a SHA-256 digest of its records and
+preferences, stored inside the encrypted payload as `meta.integrity`. On load
+_PAM_ recomputes it and compares before applying anything.
+
+**Why it is needed.** _PAM_ encrypts with AES-CBC, which protects
+confidentiality and nothing else — there is no authentication tag, so a
+modified file decrypts to modified content and nothing says so. In practice
+most damage is caught anyway, because garbled data fails to parse as JSON. The
+gap is the case that matters: altering a byte inside a long text value changes
+a character without disturbing the structure around it, so the file still
+parses and loads. The digest closes that.
+
+**What you will see.** Nothing, normally. If a file fails the check, _PAM_
+reports that it has been modified since it was saved and **does not load it**.
+If the check itself cannot run, _PAM_ says so and still does not load the file
+— an unverified vault is not applied silently.
+
+**Older files still work.** A file saved before v2.5.0 has no digest. _PAM_
+notes that in the console and loads it normally; a missing digest is not
+treated as tampering.
+
+**What it does not do.** The digest is stored inside the file, so anyone able
+to rewrite the file could remove it. And neither this nor any authentication
+scheme detects a *rollback* — replacing your current file with a genuine older
+copy of it, which was correctly signed when it was written. Keep backups
+somewhere an attacker cannot reach.
+
 #### Search Password Field Values
 
 WARNING: this only applies when Search Record Field Values is also

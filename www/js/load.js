@@ -6,6 +6,7 @@ import { clearRecords, deleteRecord, findRecord, insertRecord, mkRecord } from '
 import { mkRecordField, enableBreachCheckButtons } from './field.js'
 import { menuPrefsDlg, resetPrefs, addDefaultRecordFields } from './prefs.js'
 import { decrypt } from './crypt.js'
+import { verifyIntegrity, INTEGRITY_FAILED, INTEGRITY_ABSENT } from './integrity.js'
 import { mkLoadSavePassword, setFilePass } from './password.js'
 import { enablePrinting } from './print.js'
 import { enableSaveFile } from './save.js'
@@ -266,9 +267,74 @@ export function loadCallback(text) {
     try {
         json = JSON.parse(text)
     } catch(exc) {
-        alert(`invalid record format!\n${exc}`)
+        // A wrong password lands here, not on the decryption error path.
+        //
+        // AES-CBC has no authentication tag, so a wrong key produces random
+        // bytes. PKCS#7 padding rejects them about 255 times in 256; the once
+        // it does not, TextDecoder passes the garbage through and JSON.parse
+        // fails here. The old message blamed the file. Say both, since from
+        // this point the two are genuinely indistinguishable.
+        alert('Could not read this file.\n\n' +
+              'The password may be wrong, or the file may be damaged.\n\n' +
+              `${exc}`)
         return
     }
+
+    // Content integrity (item 9a). Verified before any of it is applied:
+    // prefs are applied a few lines below, and applying preferences from a
+    // file that has been tampered with is the one thing worth avoiding here.
+    // Note the two-argument .then(): the rejection handler covers
+    // verifyIntegrity() ONLY.
+    //
+    // The obvious shape — .then(result => { ...; applyLoadedContent(json) })
+    // .catch(...) — puts applyLoadedContent inside the same catch, so any
+    // error raised while LOADING is reported as an integrity failure. That
+    // shipped briefly and reported a date-parsing RangeError as "this file has
+    // been modified since it was saved", which is both wrong and alarming.
+    // Applying the content is a separate step and gets its own link.
+    verifyIntegrity(json).then(
+        (result) => {
+            if (result.status === INTEGRITY_FAILED) {
+                clog(`integrity: expected ${result.expected}, computed ${result.actual}`)
+                alert('WARNING: this file has been modified since it was saved.\n\n' +
+                      'Its contents do not match the integrity digest recorded ' +
+                      'inside it. The file may have been tampered with, or ' +
+                      'damaged in storage or transfer.\n\n' +
+                      'It was NOT loaded.')
+                return false
+            }
+            if (result.status === INTEGRITY_ABSENT) {
+                // Files written before v2.5.0 carry no digest. That is normal
+                // and must stay silent in the UI, or every older vault nags.
+                clog('integrity: no digest in this file (written before v2.5.0)')
+            }
+            return true
+        },
+        (exc) => {
+            // A failure to CHECK is not a failure of the check. Say so rather
+            // than implying the file is bad, and do not load: an unverified
+            // vault should not be applied silently.
+            clog(`integrity check failed to run: ${exc}`)
+            alert(`Could not verify this file's integrity.\n\n${exc}\n\n` +
+                  'It was NOT loaded.')
+            return false
+        }
+    ).then((verified) => {
+        if (verified) {
+            applyLoadedContent(json)
+        }
+    })
+}
+
+/**
+ * Apply a vault that has passed its integrity check.
+ *
+ * Split out of loadCallback() so the check can gate it. Everything below this
+ * point is the original body, unchanged.
+ *
+ * @param {Object} json - the parsed, verified vault
+ */
+function applyLoadedContent(json) {
     if (window.prefs.clearBeforeLoad) {
         clearRecords()
         resetPrefs()
@@ -381,10 +447,18 @@ export function loadCallback(text) {
     enableSaveFile()
     enableRawJSONEdit()
     let now = new Date()
-    let thenDateString = json.meta['date-saved']
-    let thenDate = new Date(thenDateString)
-    let elapsed = now.getTime() - thenDate.getTime() // ms
-    let fet = formatTimeElapsed(elapsed)
+    // date-saved is not guaranteed. It is absent from hand-written files and
+    // from fixtures, and `new Date(undefined)` yields an Invalid Date whose
+    // getTime() is NaN — which then propagates into date formatting and throws
+    // RangeError: Invalid time value. That threw before this guard existed;
+    // it went unnoticed because it happens after the records are inserted, so
+    // the load appears to have worked and the exception is swallowed by the
+    // event handler.
+    let thenDateString = json.meta ? json.meta['date-saved'] : null
+    let thenDate = thenDateString ? new Date(thenDateString) : null
+    let haveThen = thenDate !== null && !isNaN(thenDate.getTime())
+    let elapsed = haveThen ? now.getTime() - thenDate.getTime() : null
+    let fet = haveThen ? formatTimeElapsed(elapsed) : 'unknown'
     window.prefs.lastUpdated = now.toISOString()  // for use in reporting
     setDarkLightTheme(window.prefs.themeName)
     updateHtmlRenderingIndicator()   // SEC-001: reflect loaded prefs in toolbar
@@ -393,8 +467,17 @@ export function loadCallback(text) {
     updateBreachCheckIndicator()     // a loaded file carries this preference too
     enableBreachCheckButtons()       // and the per-field buttons on existing rows
     scheduleVaultStatsRefresh()      // recompute reuse and fingerprint for the new vault
-    setAboutFileInfo(`Loaded ${numActive} active and ${numInactive} inactive records on ${now.toISOString()}.<br>` +
-                     `Records were last updated on ${thenDate.toISOString()} (${fet}).`)
+    // toISOString() on an Invalid Date throws RangeError, which is what the
+    // missing date-saved above actually tripped. Only report the line when
+    // there is a date to report.
+    let lastUpdatedLine = ''
+    if (haveThen) {
+        lastUpdatedLine = `<br>Records were last updated on ` +
+                          `${thenDate.toISOString()} (${fet}).`
+    }
+    setAboutFileInfo(
+        `Loaded ${numActive} active and ${numInactive} inactive records ` +
+        `on ${now.toISOString()}.${lastUpdatedLine}`)
     searchRecords('.')
 }
 

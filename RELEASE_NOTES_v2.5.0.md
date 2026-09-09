@@ -1,0 +1,76 @@
+# PAM v2.5.0 Release Notes
+
+Adds a **file integrity check**. Every saved file now carries a digest of its
+contents, verified on load. Nothing about the file format changes: older
+versions of PAM read v2.5.0 files normally, and v2.5.0 reads older files
+normally.
+
+## Why
+
+PAM encrypts with AES-CBC, which protects confidentiality and nothing else.
+There is no authentication tag, so a modified file decrypts to modified content
+and nothing reports it.
+
+In practice most damage was caught anyway, because garbled data fails to parse
+as JSON. Measured over 400 random bit-flips in a real encrypted vault: 33 were
+caught by padding, 357 by the JSON parser, none got through.
+
+**Random flips are not the threat.** An attacker does not corrupt bytes at
+random; they corrupt a *value*, where the change stays syntactically valid. In
+a trial confined to the end of a vault holding a long note field, **15 tampered
+files decrypted and parsed as valid JSON** — and would have loaded silently as
+a valid vault with altered content. The digest caught every one.
+
+That is the gap this closes.
+
+## What it does
+
+A SHA-256 digest of the records and preferences is written into the encrypted
+payload as `meta.integrity`. On load, PAM recomputes it and compares **before
+applying anything** — content or preferences.
+
+- **A file that fails the check is not loaded.** PAM reports that it has been
+  modified since it was saved.
+- **If the check cannot run**, PAM says so and still does not load the file. A
+  failure to verify is not a verification, and an unverified vault should not
+  be applied silently.
+- **Files saved before v2.5.0 have no digest.** That is noted in the console
+  and the file loads normally. A missing digest is not treated as tampering.
+
+## What it does not do
+
+- **It is not authenticated encryption.** The digest is checked after
+  decrypting, not before. AES-GCM remains the correct fix and needs a format
+  change; it is tracked as item 9b in `PROPOSAL.md`.
+- **It is unkeyed and stored inside the file**, so anyone able to rewrite the
+  file could remove the field to silence the check.
+- **It does not detect rollback.** Replacing your vault with a genuine older
+  copy passes, because that copy's digest was correct when written. No
+  authentication scheme in the file detects this — it needs state kept
+  outside. Keep backups somewhere an attacker cannot reach.
+
+## A wrong password now says so
+
+Previously, entering the wrong password had a roughly 1-in-256 chance of
+reporting **"invalid record format"** — blaming the file rather than the
+password. That happened when PKCS#7 padding accidentally validated and the
+resulting garbage reached the JSON parser.
+
+The message now names both possibilities, because at that point they genuinely
+cannot be told apart.
+
+To be precise about what changed: a wrong password was already *detected*
+almost every time. What was wrong was the diagnosis.
+
+## Also in this release
+
+- **`form-action 'self'` added to the Content-Security-Policy.** Unlike most
+  directives, `form-action` does not fall back to `default-src`, so its absence
+  was silent. Without it, a form in injected markup could post to any origin —
+  the one exfiltration channel the rest of the policy left open. A unit test
+  now pins it.
+- **SEC-001 in `SECURITY.md` corrected.** It named a Preferences tab that does
+  not exist, claimed the HTML rendering preference could only be set through
+  the Preferences dialogue when a loaded file can also set it, and described a
+  script-execution risk that the v2.4.0 CSP had already made unreachable. It
+  now describes the live risk, which is content injection.

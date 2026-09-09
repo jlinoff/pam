@@ -525,6 +525,10 @@ test('mkMainPasswordGeneratorDlg title contains Password Generator', () => {
 // search.js — searchRecords (needs minimal DOM fixture)
 // ---------------------------------------------------------------------------
 import { searchRecords, clearSearch, escapeRegExp, selectRecordsByTitle, canSelectRecords } from '/js/search.js'
+import {
+  stableStringify, contentDigest, verifyIntegrity,
+  INTEGRITY_OK, INTEGRITY_ABSENT, INTEGRITY_FAILED, DIGEST_PREFIX
+} from '/js/integrity.js'
 import { hashPrefsPassword } from '/js/prefs.js'
 import { getDefaultPrefs, VALID_FIELD_TYPES, VALID_CACHE_STRATEGIES } from '/js/prefs-model.js'
 
@@ -4034,6 +4038,114 @@ async function runBreachTests17() {
   })
 }
 
+
+function mkIntegrityVault() {
+  return {
+    meta: {'date-saved': '2026-09-08T00:00:00.000Z', 'format-version': '2.5.0'},
+    prefs: {clearBeforeLoad: true, filePassCache: 'session'},
+    records: [
+      {title: 'Amazon', fields: [
+        {name: 'login', type: 'text', value: 'joe'},
+        {name: 'password', type: 'password', value: 'sekret'}]},
+      {title: 'Facebook', fields: [
+        {name: 'password', type: 'password', value: 'other'}]},
+    ],
+  }
+}
+
+async function runIntegrityTests() {
+  suite('integrity.js — stableStringify')
+
+  test('object keys are sorted, arrays keep their order', () => {
+    assertEqual(stableStringify({b: 1, a: 2}), '{"a":2,"b":1}')
+    assertEqual(stableStringify([3, 1, 2]), '[3,1,2]',
+                'array order is content, not presentation')
+    assertEqual(stableStringify({a: {d: 1, c: 2}}), '{"a":{"c":2,"d":1}}',
+                'sorting is recursive')
+  })
+
+  test('primitives and null round-trip', () => {
+    assertEqual(stableStringify(null), 'null')
+    assertEqual(stableStringify('x'), '"x"')
+    assertEqual(stableStringify(7), '7')
+  })
+
+  suite('integrity.js — contentDigest')
+
+  await runAsyncTest('is prefixed hex and is deterministic', async () => {
+    const a = await contentDigest(mkIntegrityVault().records, mkIntegrityVault().prefs)
+    const b = await contentDigest(mkIntegrityVault().records, mkIntegrityVault().prefs)
+    assert(a.indexOf(DIGEST_PREFIX) === 0, `missing prefix: ${a}`)
+    assert(/^sha256:[0-9a-f]{64}$/.test(a), `unexpected shape: ${a}`)
+    assertEqual(a, b, 'identical content must digest identically')
+  })
+
+  await runAsyncTest('depends on content, not on key order', async () => {
+    const v = mkIntegrityVault()
+    const swapped = mkIntegrityVault()
+    swapped.prefs = {filePassCache: 'session', clearBeforeLoad: true}
+    assertEqual(await contentDigest(v.records, v.prefs),
+                await contentDigest(swapped.records, swapped.prefs),
+                'reordering prefs keys must not change the digest')
+  })
+
+  suite('integrity.js — verifyIntegrity')
+
+  await runAsyncTest('a clean vault verifies', async () => {
+    const v = mkIntegrityVault()
+    v.meta.integrity = await contentDigest(v.records, v.prefs)
+    assertEqual((await verifyIntegrity(v)).status, INTEGRITY_OK)
+  })
+
+  await runAsyncTest('a file with no digest is ABSENT, never FAILED', async () => {
+    // Vaults written before v2.5.0 carry no digest. Reporting them as
+    // tampered would reject every older file the user owns.
+    assertEqual((await verifyIntegrity(mkIntegrityVault())).status, INTEGRITY_ABSENT)
+  })
+
+  await runAsyncTest('date-saved is excluded from the digest', async () => {
+    // meta holds the digest itself, and date-saved changes on every save
+    // without the content changing. Including either would make the check
+    // fire on ordinary re-saves.
+    const v = mkIntegrityVault()
+    v.meta.integrity = await contentDigest(v.records, v.prefs)
+    v.meta['date-saved'] = '2030-01-01T00:00:00.000Z'
+    assertEqual((await verifyIntegrity(v)).status, INTEGRITY_OK)
+  })
+
+  await runAsyncTest('every kind of modification is detected', async () => {
+    const mutations = [
+      ['a changed password value', (v) => { v.records[0].fields[1].value = 'HACKED' }],
+      ['a changed title',          (v) => { v.records[0].title = 'Amaz0n' }],
+      ['a changed field name',     (v) => { v.records[0].fields[0].name = 'user' }],
+      ['an added record',          (v) => { v.records.push({title: 'Evil', fields: []}) }],
+      ['a removed record',         (v) => { v.records.pop() }],
+      ['reordered records',        (v) => { v.records.reverse() }],
+      ['a weakened security pref', (v) => { v.prefs.filePassCache = 'local' }],
+      ['an added pref',            (v) => { v.prefs.allowHtmlFieldRendering = true }],
+    ]
+    const digest = await contentDigest(mkIntegrityVault().records,
+                                       mkIntegrityVault().prefs)
+    for (const [label, mutate] of mutations) {
+      const v = mkIntegrityVault()
+      v.meta.integrity = digest
+      mutate(v)
+      const result = await verifyIntegrity(v)
+      assertEqual(result.status, INTEGRITY_FAILED, `undetected: ${label}`)
+    }
+  })
+
+  await runAsyncTest('the reason is reported, not just the verdict', async () => {
+    const v = mkIntegrityVault()
+    v.meta.integrity = await contentDigest(v.records, v.prefs)
+    v.records[0].fields[1].value = 'HACKED'
+    const result = await verifyIntegrity(v)
+    assert(result.expected && result.actual,
+           'both digests should be returned so the log can show the mismatch')
+    assert(result.expected !== result.actual)
+  })
+}
+
 async function runBreachTests() {
   await runBreachTests1()
   await runBreachTests2()
@@ -4051,6 +4163,7 @@ async function runBreachTests() {
   await runBreachTests14()
   await runBreachTests15()
   await runBreachTests17()
+  await runIntegrityTests()
 }
 
 // Keep `.then(() => { window.__TESTS_COMPLETE__ = true })` as the final link

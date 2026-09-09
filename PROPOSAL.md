@@ -2174,6 +2174,51 @@ So this approach solves CXF export cleanly and does not retire the durable-id
 question for items 7 and 15. Those still want a real per-record identifier.
 It does mean CXF export need not wait for v3.0.
 
+## A Chrome update churns the screenshots, and looks like a regression
+
+The harness header warns that rendering is not reproducible **across
+machines**. It is also not reproducible across **browser versions on the same
+machine**, which is not obvious and produces a result that reads as a content
+change.
+
+Seen in v2.5.0. Between the e2e run on 7 September (`chrome=152.0.7977.83`) and
+the one on 9 September (`chrome=153.0.8010.37`), Chrome updated. The next
+screenshot run reported **4 of 51 changed** and none of the four had anything
+to do with the release.
+
+**The signature, which is what makes it diagnosable:**
+
+| | Normal run | After a browser update |
+|---|---|---|
+| Tolerated-noise entries | 1 | **7** |
+| Pixel deviation | ~12–16 | **33–108** |
+| Dimensions of changed files | usually differ | **identical** |
+| Changed files relate to the work | yes | **no** |
+
+Subpixel text rendering shifts very slightly everywhere. Most captures stay
+under `difference_is_noise()`'s threshold and appear as `same~`; a few cross it
+and are written. So the tolerated-noise list growing from one entry to seven,
+with the deviations several times larger than usual, is the reliable tell —
+more so than the changed count itself.
+
+**The two confirmations worth doing** before accepting the churn:
+
+1. **Are the changed files plausibly related to the release?** In this case the
+   Administration tab, the Custom About preference row and two new-record field
+   dialogues, against a release that touched saving, loading and one CSP
+   directive. No connection.
+2. **Did any dimensions change?** A real content change usually moves a
+   boundary. Identical sizes with different pixels is what re-rendered text
+   looks like. All four were identical.
+
+Then open one and look at it. `pam-about-custom-pref.png` is 790x112 — a single
+preference row, where any real change is obvious at a glance. It was identical.
+
+**Accept the churn rather than reverting.** `git checkout` on those files only
+defers it to the next run, by which time the batch is larger and the connection
+to a browser update is harder to see. Taking it immediately keeps the captures
+matching the browser that is actually installed.
+
 ## Where claims live
 
 Every stale-documentation miss this session came from searching a scope defined

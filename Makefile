@@ -304,8 +304,10 @@ check-images: ## Verify README screenshots and internal links. No browser needed
 .PHONY: screenshots
 screenshots: init ## Capture README screenshots. SHOT=<substr> limits the set.
 	$(call hdr,"$@")
-	@echo "NOTE: rendering is not reproducible across machines. Regenerate on"
-	@echo "      one machine only, or the images churn with no content change."
+	@echo "NOTE: rendering is not reproducible across machines, nor across Chrome"
+	@echo "      versions on one machine. After a browser update expect a few"
+	@echo "      captures to change with no content change; the tell is the"
+	@echo "      tolerated-noise list growing and its pixel counts rising."
 	-$(KILL_SERVER)
 	( cd www && pipenv run python -m http.server $(PORT) > /dev/null 2>&1 ) &
 	sleep 2

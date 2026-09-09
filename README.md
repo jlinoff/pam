@@ -126,20 +126,22 @@ the on-line help is generated.
       * [Enable Raw JSON Editing](#enable-raw-json-editing)
     * [Record Fields Preferences](#record-fields-preferences)
     * [Saving Preferences](#saving-preferences)
-  * [File Integrity Check](#file-integrity-check)
-  * [Content-Security-Policy](#content-security-policy)
   * [Security Considerations](#security-considerations)
-    * [MITM](#mitm)
-    * [Third Party Web Site Security](#third-party-web-site-security)
-    * [Site Reliability](#site-reliability)
-    * [Over the Shoulder Surfing Attack](#over-the-shoulder-surfing-attack)
-    * [Malware: Key Logging and Screen Recording](#malware-key-logging-and-screen-recording)
-    * [Malware: Clipboard Attack](#malware-clipboard-attack)
-    * [Unattended Browser](#unattended-browser)
-    * [Website Spoofing](#website-spoofing)
-    * [Dictionary and Brute Force Password Attacks](#dictionary-and-brute-force-password-attacks)
-    * [Protecting Yourself](#protecting-yourself)
-    * [Multi-Factor Authentication](#multi-factor-authentication)
+    * [What PAM does](#what-pam-does)
+      * [Content-Security-Policy](#content-security-policy)
+      * [File Integrity Check](#file-integrity-check)
+    * [Threats to be aware of](#threats-to-be-aware-of)
+      * [MITM](#mitm)
+      * [Third Party Web Site Security](#third-party-web-site-security)
+      * [Site Reliability](#site-reliability)
+      * [Over the Shoulder Surfing Attack](#over-the-shoulder-surfing-attack)
+      * [Malware: Key Logging and Screen Recording](#malware-key-logging-and-screen-recording)
+      * [Malware: Clipboard Attack](#malware-clipboard-attack)
+      * [Unattended Browser](#unattended-browser)
+      * [Website Spoofing](#website-spoofing)
+      * [Dictionary and Brute Force Password Attacks](#dictionary-and-brute-force-password-attacks)
+      * [Protecting Yourself](#protecting-yourself)
+      * [Multi-Factor Authentication](#multi-factor-authentication)
   * [Usage Examples](#usage-examples)
     * [Personal Account Records](#personal-account-records)
       * [Create Record File](#create-record-file)
@@ -2472,9 +2474,15 @@ You _must_ scroll to the bottom of the dialogue and
 click on the `"Save"` button at the end to save changes.
 If you do not, any changes you made will be lost.
 
-## File Integrity Check
+## Security Considerations
 
-Since v2.5.0 every saved file carries a SHA-256 digest of its records and
+### What PAM does
+
+The two mechanisms below are what _PAM_ itself puts in place. They are
+verifiable from the source: one is a line in `www/index.html`, the other a
+digest written into every file you save.
+
+e v2.5.0 every saved file carries a SHA-256 digest of its records and
 preferences, stored inside the encrypted payload as `meta.integrity`. On load
 _PAM_ recomputes it and compares before applying anything.
 
@@ -2501,7 +2509,7 @@ scheme detects a *rollback* — replacing your current file with a genuine older
 copy of it, which was correctly signed when it was written. Keep backups
 somewhere an attacker cannot reach.
 
-## Content-Security-Policy
+#### Content-Security-Policy
 
 `www/index.html` carries a Content-Security-Policy meta tag that constrains
 what the page is permitted to do, enforced by the browser rather than by PAM's
@@ -2546,12 +2554,17 @@ requires deliberately changing a test that says why not. That is the point:
 widening this policy is how a local-only application stops being one, a host at
 a time, each addition reasonable on its own.
 
-## Security Considerations
-_PAM_, like all web applications, has security challenges. By
-fully disclosing them here you can understand the challenges
-and improve your ability to protect your record data.
+#### File Integrity Check
 
-### MITM
+Sinc
+### Threats to be aware of
+
+The rest of this section is different in kind. These are threats in the
+environment _PAM_ runs in — the browser, the operating system, the network,
+the sites you use it with. Most of them _PAM_ cannot fully prevent, so they
+are described here so you can decide what to do about them.
+
+#### MITM
 MITM refers to "Monster In The Middle" attacks or, historically, "Man
 In The Middle" attacks. It an attack where a hostile eavesdropper
 inserts themselves in the communications stream between a client and a
@@ -2564,7 +2577,7 @@ application that is downloaded and run within your browser. All data
 is local. Nothing is ever transferred over the internet for an
 eavesdropper to capture.
 
-### Third Party Web Site Security
+#### Third Party Web Site Security
 Third party web site security can be a major source of cybersecurity
 vulnerabilities because clients cannot know how well such
 cybersecurity vulnerabilities are mitigated unless that site publishes
@@ -2617,7 +2630,7 @@ You can read more about secure contexts
 [here](https://developer.mozilla.org/en-US/docs/Web/Security/Secure_Contexts)
 and in [Reason 6: Secure Context Encryption](#reason-6-secure-context-encryption).
 
-### Site Reliability
+#### Site Reliability
 Although it is not an attack vector _per se_, site reliability is
 another consideration when choosing a web application because a
 distributed denial of service (DDoS) attack on the site or a power
@@ -2650,7 +2663,7 @@ that might restrict access to it from other devices (like mobile
 phones or tables) and you would have to be very diligent about keeping
 it backed up.
 
-### Over the Shoulder Surfing Attack
+#### Over the Shoulder Surfing Attack
 The user enters the record data in decrypted form, so it may be
 vulnerable to over the shoulder surfing attacks where someone or
 something (like a camera) watches or films the user typing or opening
@@ -2664,7 +2677,7 @@ surroundings to make sure you are not being watched or filmed.
 > This is different and easier to mitigate than "key-logging and screen
 > recording" as discussed in the next subsection.
 
-### Malware: Key Logging and Screen Recording
+#### Malware: Key Logging and Screen Recording
 If malware that takes screenshots or does key logging has been
 installed on your computer, phone or tablet, you are in trouble for a
 variety of reasons. It means that an attacker can see what you are
@@ -2675,7 +2688,7 @@ up to date by installing security patches and by using some sort of
 security tool or tools to protect your system or, at the very least,
 recognize the infection.
 
-### Malware: Clipboard Attack
+#### Malware: Clipboard Attack
 Yet another type of vulnerability is the "clipboard attack" if/when
 data is copied to the clipboard for cut and paste operations. This
 vulnerability exists because the clipboard is a global resource that
@@ -2697,7 +2710,7 @@ using an HTTP POST operation but that is not currently available.
 > Note that I say _might_ here, because I do not know how
 > secure POST operations are.
 
-### Unattended Browser
+#### Unattended Browser
 If you leave the browser unattended without locking your screen after
 you have loaded your record data, someone can sit down and see the
 records because they are impersonating you _after you have logged in_.
@@ -2705,7 +2718,7 @@ records because they are impersonating you _after you have logged in_.
 The best way to mitigate this attack is to always lock your screen when
 you leave the computer unattended.
 
-### Website Spoofing
+#### Website Spoofing
 Web site spoofing could be used to direct you to a website
 that could be used to steal your information using a look alike
 web application.
@@ -2716,7 +2729,7 @@ trusted site.
 If you are concerned about this, you can always download, build and
 run _PAM_ from your own trusted site.
 
-### Dictionary and Brute Force Password Attacks
+#### Dictionary and Brute Force Password Attacks
 In general a brute force attack is any attack that uses trial and error
 to crack passwords.
 
@@ -2761,7 +2774,7 @@ On the other hand if you use a simple, six character password like
 Ideas for generating strong password are discussed in the next
 section.
 
-### Protecting Yourself
+#### Protecting Yourself
 In summary, security can never be fully guaranteed, the best way to
 protect your data is to follow commonly recommended security
 practices:
@@ -2781,7 +2794,7 @@ practices:
       '`A1/jeans/chosen/since/tuition?!!`' (do NOT use this specific password!).
 1. Make sure that the website URL is what you expect.
 
-### Multi-Factor Authentication
+#### Multi-Factor Authentication
 Several folks have asked me why Multi-Factor Authentication (MFA) was
 not included in _PAM_ to provide and additional layer of security.
 

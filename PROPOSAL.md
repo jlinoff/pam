@@ -2314,8 +2314,9 @@ Adding one section exposed how far. Found in v2.5.0:
 
 - The new **File Integrity Check** section was inserted as a `###` inside
   *Breached Passwords*, so it read as part of breach checking and appeared in
-  no table of contents at all. Moved to a top-level section beside
-  *Content-Security-Policy*, where it belongs.
+  no table of contents at all. It went first to a top-level section beside
+  *Content-Security-Policy* — and that turned out to be the wrong home too, for
+  a reason worth recording separately below.
 - **Nine Administration preferences were missing from the TOC entirely**,
   including `Allow HTML Field Rendering`, `Search Password Field Values` and
   `Enable Password Breach Check` — the three security-relevant ones.
@@ -2365,6 +2366,38 @@ structural rather than clerical:
 
 Now clean at 127 entries against 127 headings, and verified to fail on an
 induced regression.
+
+### Security content was organised by accident, not decision
+
+`File Integrity Check` was placed at the top level beside
+`Content-Security-Policy` because that is where `Content-Security-Policy`
+already was. Nobody had examined why *it* was there either. "Where the last one
+went" is not a rationale, and it produced a document where the two things PAM
+actually does about security sat outside the section called *Security
+Considerations*.
+
+That section held eleven subsections and **every one was a threat PAM cannot
+control** — MITM, third-party compromise, malware, shoulder surfing, spoofing —
+plus advice. Nothing in it described PAM's own defences. A reader asking "is
+this safe?" went there and found only a list of ways they might be attacked.
+
+Restructured so the section answers both questions, with the split named
+explicitly because it is now answering two:
+
+    ## Security Considerations
+       ### What PAM does
+           #### Content-Security-Policy
+           #### File Integrity Check
+       ### Threats to be aware of
+           #### MITM ... (the existing eleven)
+
+The cost, stated because it is real: the two mechanisms lose top-level
+visibility in a scan of the document. That is worth less than being findable
+where readers actually look for security information, but it is not nothing.
+
+Anchors are unaffected — they follow heading text, not depth — so every existing
+cross-reference still resolves. `check-toc` reported all thirteen TOC
+disagreements the move created, and confirmed the result.
 
 **The general point.** `check_images.py` verifies that links resolve, and every
 one of these links resolved. Structure needs its own question. That distinction

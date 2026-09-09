@@ -88,7 +88,15 @@ drifted, and the new check found **twenty-two problems** on its first run:
   different wording.
 
 All fixed, and the check reports MISSING, WRONG PARENT, DUPLICATE and STALE
-entries so it cannot drift again unnoticed. It needs no browser and takes about
+entries so it cannot drift again unnoticed.
+
+**The security content is also reorganised.** *Security Considerations* held
+eleven subsections and every one was a threat PAM cannot control. The two
+things PAM actually does — the Content-Security-Policy and the new file
+integrity check — sat outside it at the top level. They are now inside it,
+under *What PAM does*, with the threats under *Threats to be aware of*. Every
+existing link still resolves, since anchors follow heading text rather than
+depth. It needs no browser and takes about
 a second.
 
 The README also now documents the test and check targets, including

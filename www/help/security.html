@@ -137,11 +137,14 @@ markup still renders. It can present convincing interface elements — a
 plausible <q>confirm your master password</q> prompt, for example —
 inside a page the user already trusts. The CSP does not prevent this,
 because nothing about it requires script.</li>
-<li><strong><code>form-action</code> is not currently specified in the
-policy</strong>, and unlike most directives it does <strong>not</strong>
-fall back to <code>default-src</code>. A form in injected markup can
-therefore submit to any origin. Adding <code>form-action 'self'</code>
-closes this and is recommended.</li>
+<li><strong>Form submission is constrained as of v2.5.0.</strong>
+<code>form-action 'self'</code> is now in the policy. It was previously
+absent, and unlike most directives <code>form-action</code> does
+<strong>not</strong> fall back to <code>default-src</code> — so a form
+in injected markup could submit to any origin. That was the one
+exfiltration channel the rest of the policy left open. A unit test now
+asserts the directive is present, because its absence is otherwise
+completely silent.</li>
 <li><strong>A distributed file carries its own setting.</strong> A PAM
 file shipped with HTML rendering already enabled in its
 <code>prefs</code> block turns it on for whoever loads it. The

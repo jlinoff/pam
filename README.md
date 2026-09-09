@@ -3174,6 +3174,7 @@ headless Chrome via `tests/test_chrome.py`.
 | `make lint` | source linting plus the documentation checks |
 | `make check-images` | every referenced screenshot exists, and none is orphaned |
 | `make check-toc` | the table of contents matches the document's headings |
+| `make check-links` | external links still resolve (needs network; not in `lint`) |
 | `make screenshots` | regenerate the README captures |
 | `make screenshots-check` | report what would change, writing nothing |
 
@@ -3194,6 +3195,12 @@ every screenshot referenced exists and every screenshot captured is referenced.
 document's actual structure — and reports headings that are missing from it,
 listed under the wrong parent, listed twice, or pointing at a heading that no
 longer exists. Neither needs a browser; together they take about a second.
+
+`check-links` is separate and **not** part of `lint`, because it needs network
+access and third-party sites go down for reasons unrelated to this repository.
+Its most useful output is `MOVED`: a link that redirects still works, so
+nothing ever reports it, and it quietly rots until the redirect is retired
+years later.
 
 #### Interactive unit testing in the browser
 

@@ -100,7 +100,7 @@ lint:  ## lint the source code
 	@if rg '\s$$' www/js/*js ; then printf '\033[31;1mERROR: trailing whitespace found\033[0m\n'; exit 1 ; fi
 	jshint --config jshint.json www
 	diff <(ls -1 www/icons/black/) <(ls -1 www/icons/blue)
-	pipenv run pylint tests/test_chrome.py tests/screenshots.py tests/check_images.py tests/check_toc.py tests/diag_churn.py
+	pipenv run pylint tests/test_chrome.py tests/screenshots.py tests/check_images.py tests/check_toc.py tests/check_links.py tests/diag_churn.py
 	# Documentation is part of the build. A broken anchor or a stale image
 	# reference is invisible in a Markdown preview and in the rendered help
 	# page — the link simply does nothing — so nothing else would ever notice.
@@ -252,6 +252,21 @@ test-one: init  ## Run a single test: make test-one TEST_NAME=<name or -k expres
 	PORT=$(PORT) pipenv run python3 -m pytest -v -s -x -k "$(TEST_NAME)" \
 		tests/test_chrome.py tests/test_unit.py
 	$(KILL_SERVER)
+
+# Check the external links in the documentation.
+#
+# NOT part of lint, deliberately. It needs network access, and third-party
+# sites go down for reasons that have nothing to do with this repository. A
+# build that fails because someone else's blog is having a bad afternoon
+# teaches people to ignore build failures.
+#
+# The useful output is MOVED rather than BROKEN: a redirect still works, so
+# nothing reports it, and the link quietly rots until the redirect is retired
+# years later. Run it when adding links, and occasionally otherwise.
+.PHONY: check-links
+check-links:  ## Check external links in README, SECURITY and PROPOSAL. Needs network.
+	$(call hdr,"$@")
+	pipenv run python3 tests/check_links.py
 
 # Verifies the README's table of contents against its actual headings.
 #

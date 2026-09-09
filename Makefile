@@ -100,12 +100,16 @@ lint:  ## lint the source code
 	@if rg '\s$$' www/js/*js ; then printf '\033[31;1mERROR: trailing whitespace found\033[0m\n'; exit 1 ; fi
 	jshint --config jshint.json www
 	diff <(ls -1 www/icons/black/) <(ls -1 www/icons/blue)
-	pipenv run pylint tests/test_chrome.py tests/screenshots.py tests/check_images.py tests/diag_churn.py
+	pipenv run pylint tests/test_chrome.py tests/screenshots.py tests/check_images.py tests/check_toc.py tests/check_links.py tests/diag_churn.py
 	# Documentation is part of the build. A broken anchor or a stale image
 	# reference is invisible in a Markdown preview and in the rendered help
 	# page — the link simply does nothing — so nothing else would ever notice.
 	# Pure text comparison: no browser, no server, about a second.
 	pipenv run python3 tests/check_images.py
+	# Same reasoning applies to the table of contents, and the structural
+	# question is one check_images.py cannot ask: a link to the WRONG section
+	# resolves perfectly.
+	pipenv run python3 tests/check_toc.py
 	@printf '\033[35;1m$@: PASSED\033[0m\n'
 
 # Make sure that the icons in www/icons/black and icons/blue/blue are the same.
@@ -221,6 +225,61 @@ e2e-test: init lint ## Run Selenium E2E tests in tests/test_chrome.py
 	PORT=$(PORT) pipenv run python3 -m pytest -v tests/test_chrome.py
 	$(KILL_SERVER)
 
+# Run a single test by name, with the server handled for you.
+#
+# The obvious version of this — just `pytest -k NAME` — fails with sixty lines
+# of chromedriver stack because nothing is listening on $(PORT). This starts
+# the server, runs the test, and stops the server, exactly as e2e-test does.
+#
+#   make test-one TEST_NAME=test_print_empty_fields_skipped
+#
+# TEST_NAME is passed to pytest's -k, so it matches substrings and expressions:
+#
+#   make test-one TEST_NAME=print              # every test with 'print' in it
+#   make test-one TEST_NAME='load or save'     # pytest -k expression syntax
+#
+# Both test files are searched, so a unit-test name works too. -x stops at the
+# first failure and -s lets print() and JS console output through, which is the
+# point of running one test at a time.
+TEST_NAME ?= test_basic_setup
+.PHONY: test-one
+test-one: init  ## Run a single test: make test-one TEST_NAME=<name or -k expression>
+	$(call hdr,"$@ - $(TEST_NAME)")
+	-$(KILL_SERVER)
+	( cd www && pipenv run python -m http.server $(PORT) > /dev/null 2>&1 ) &
+	sleep 2
+	lsof -i :$(PORT)
+	PORT=$(PORT) pipenv run python3 -m pytest -v -s -x -k "$(TEST_NAME)" \
+		tests/test_chrome.py tests/test_unit.py
+	$(KILL_SERVER)
+
+# Check the external links in the documentation.
+#
+# NOT part of lint, deliberately. It needs network access, and third-party
+# sites go down for reasons that have nothing to do with this repository. A
+# build that fails because someone else's blog is having a bad afternoon
+# teaches people to ignore build failures.
+#
+# The useful output is MOVED rather than BROKEN: a redirect still works, so
+# nothing reports it, and the link quietly rots until the redirect is retired
+# years later. Run it when adding links, and occasionally otherwise.
+.PHONY: check-links
+check-links:  ## Check external links in README, SECURITY and PROPOSAL. Needs network.
+	$(call hdr,"$@")
+	pipenv run python3 tests/check_links.py
+
+# Verifies the README's table of contents against its actual headings.
+#
+# Distinct from check-images, which verifies that every link RESOLVES. A link
+# to the wrong section resolves perfectly, which is how the preferences block
+# came to list nine Administration preferences under Miscellaneous, omit nine
+# more entirely, and file Hide Inactive Records under Search. This asks the
+# structural question instead: does the contents page match the document?
+.PHONY: check-toc
+check-toc: init  ## Verify the README table of contents against its headings.
+	$(call hdr,"$@")
+	pipenv run python3 tests/check_toc.py
+
 # Verifies the README against the harness: every screenshot is either captured
 # by tests/screenshots.py or on its HAND_MADE list, no image is orphaned or
 # duplicated, and every in-page link points at a real heading.
@@ -260,8 +319,10 @@ check-images: ## Verify README screenshots and internal links. No browser needed
 .PHONY: screenshots
 screenshots: init ## Capture README screenshots. SHOT=<substr> limits the set.
 	$(call hdr,"$@")
-	@echo "NOTE: rendering is not reproducible across machines. Regenerate on"
-	@echo "      one machine only, or the images churn with no content change."
+	@echo "NOTE: rendering is not reproducible across machines, nor across Chrome"
+	@echo "      versions on one machine. After a browser update expect a few"
+	@echo "      captures to change with no content change; the tell is the"
+	@echo "      tolerated-noise list growing and its pixel counts rising."
 	-$(KILL_SERVER)
 	( cd www && pipenv run python -m http.server $(PORT) > /dev/null 2>&1 ) &
 	sleep 2

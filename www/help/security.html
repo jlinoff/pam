@@ -48,6 +48,15 @@ user.</p>
 <p>Your records are never sent to a server. There is exactly one feature
 that contacts anything at all, it is off by default, and it does not
 transmit your data:</p>
+<p>As of v2.5.0 each saved file also carries a SHA-256 digest of its
+records and preferences (<code>meta.integrity</code>), inside the
+encrypted payload. It is verified on load before any content or
+preference is applied, and a file that fails is refused. This is tamper
+<em>evidence</em>, not authenticated encryption: it is checked after
+decryption rather than before, the digest is unkeyed and could be
+stripped by anyone able to rewrite the file, and it does not detect
+rollback to a genuine older copy. AES-GCM remains the correct fix and
+requires a format change.</p>
 <ul>
 <li><strong>Password breach checking</strong> (v2.4.0,
 <code>enablePasswordBreachCheck</code>, disabled by default) sends the
@@ -128,11 +137,14 @@ markup still renders. It can present convincing interface elements — a
 plausible <q>confirm your master password</q> prompt, for example —
 inside a page the user already trusts. The CSP does not prevent this,
 because nothing about it requires script.</li>
-<li><strong><code>form-action</code> is not currently specified in the
-policy</strong>, and unlike most directives it does <strong>not</strong>
-fall back to <code>default-src</code>. A form in injected markup can
-therefore submit to any origin. Adding <code>form-action 'self'</code>
-closes this and is recommended.</li>
+<li><strong>Form submission is constrained as of v2.5.0.</strong>
+<code>form-action 'self'</code> is now in the policy. It was previously
+absent, and unlike most directives <code>form-action</code> does
+<strong>not</strong> fall back to <code>default-src</code> — so a form
+in injected markup could submit to any origin. That was the one
+exfiltration channel the rest of the policy left open. A unit test now
+asserts the directive is present, because its absence is otherwise
+completely silent.</li>
 <li><strong>A distributed file carries its own setting.</strong> A PAM
 file shipped with HTML rendering already enabled in its
 <code>prefs</code> block turns it on for whoever loads it. The

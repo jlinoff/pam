@@ -6,6 +6,7 @@ import { icon, clog, hide, show, mkPopupModalDlgButton, mkPopupModalDlg } from '
 import { findRecord } from './record.js'
 import { mkGeneratePasswordDlg, mkLoadSavePassword, setFilePass } from './password.js'
 import { encryptV2 } from './crypt.js'
+import { contentDigest } from './integrity.js'
 import { setAboutFileInfo } from './about.js'
 
 /**
@@ -103,7 +104,18 @@ export function menuSaveDlg() {
                                      window.prefs.fileName = fn
                                      setFilePass(fp)
                                      statusBlip(`saving to ${fn}...`)
-                                     saveFile(fn, fp)
+                                     // saveFile() is async (the integrity
+                                     // digest uses SubtleCrypto) and the modal
+                                     // callback must return synchronously to
+                                     // close the dialogue. Catch explicitly:
+                                     // an unawaited promise that rejects would
+                                     // otherwise fail silently, and a save
+                                     // that did not happen must never look
+                                     // like one that did.
+                                     saveFile(fn, fp).catch((exc) => {
+                                         statusBlip(`save failed: ${exc}`)
+                                         alert(`Save failed!\n${exc}`)
+                                     })
                                      return true
                                 })
     let e = mkPopupModalDlg('menuSaveDlg', 'Save Records To File', body, b1, b2)
@@ -181,7 +193,12 @@ export function convertInternalDataToJSON(contents, now) {
 }
 
 // Save the file.
-function saveFile(filename, password) {
+//
+// async because the integrity digest uses SubtleCrypto, which is
+// promise-based. The digest is computed after convertInternalDataToJSON() has
+// populated records and prefs, and covers exactly those two — see
+// integrity.js for why meta is excluded.
+async function saveFile(filename, password) {
     let now = new Date().toISOString()
     let contents = {
         'meta': {
@@ -192,6 +209,7 @@ function saveFile(filename, password) {
         'records': [],
     }
     convertInternalDataToJSON(contents, now)
+    contents.meta.integrity = await contentDigest(contents.records, contents.prefs)
     setAboutFileInfo(`Saved ${contents.records.length} records on ${now} to ${filename}.`)
     let text = JSON.stringify(contents, null, 0)
     encryptV2(password, text, filename, saveCallback)

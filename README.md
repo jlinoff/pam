@@ -93,9 +93,7 @@ the on-line help is generated.
       * [Case Insensitive Searches](#case-insensitive-searches)
       * [Search Record Titles](#search-record-titles)
       * [Search Record Field Names](#search-record-field-names)
-      * [Search Record Field Names](#search-record-field-names)
       * [Search Record Field Values](#search-record-field-values)
-      * [Hide Inactive Records](#hide-inactive-records)
     * [Password Preferences](#password-preferences)
       * [Minimum Password Length](#minimum-password-length)
       * [Maximum Password Length](#maximum-password-length)
@@ -108,28 +106,42 @@ the on-line help is generated.
     * [Miscellaneous Preferences](#miscellaneous-preferences)
       * [Log Status to the Console](#log-status-to-the-console)
       * [Clear Records On Load](#clear-records-on-load)
-      * [Enable Printing](#enable-printing)
       * [Load Duplicate Record Strategy](#load-duplicate-record-strategy)
       * [Clone Field Values when Cloning Records](#clone-field-values-when-cloning-records)
       * [Require Record Fields](#require-record-fields)
       * [Enable Editable Field Name](#enable-editable-field-name)
-      * [filePass Cache Strategy](#filepass-cache-strategy)
+      * [Textarea Minimum Height](#textarea-minimum-height)
+    * [Administration Preferences](#administration-preferences)
+      * [Lock Preferences Password](#lock-preferences-password)
+      * [Default Record Fields](#default-record-fields)
+      * [Enable Printing](#enable-printing)
+      * [Enable Save File](#enable-save-file)
+      * [Hide Inactive Records](#hide-inactive-records)
       * [Custom About](#custom-about)
-    * [Record Fields](#record-fields-preferences)
+      * [Allow HTML Field Rendering](#allow-html-field-rendering)
+      * [Show Password Reuse Warning](#show-password-reuse-warning)
+      * [Enable Password Breach Check](#enable-password-breach-check)
+      * [Search Password Field Values](#search-password-field-values)
+      * [filePass Cache Strategy](#filepass-cache-strategy)
+      * [Enable Raw JSON Editing](#enable-raw-json-editing)
+    * [Record Fields Preferences](#record-fields-preferences)
     * [Saving Preferences](#saving-preferences)
-  * [Content-Security-Policy](#content-security-policy)
-* [Security Considerations](#security-considerations)
-    * [MITM](#mitm)
-    * [Third Party Web Site Security](#third-party-web-site-security)
-    * [Site Reliability](#site-reliability)
-    * [Over the Shoulder Surfing Attack](#over-the-shoulder-surfing-attack)
-    * [Malware: Key Logging and Screen Recording](#malware-key-logging-and-screen-recording)
-    * [Malware: Clipboard Attack](#malware-clipboard-attack)
-    * [Unattended Browser](#unattended-browser)
-    * [Website Spoofing](#website-spoofing)
-    * [Dictionary and Brute Force Password Attacks](#dictionary-and-brute-force-password-attacks)
-    * [Protecting Yourself](#protecting-yourself)
-    * [Multi-Factor Authentication](#multi-factor-authentication)
+  * [Security Considerations](#security-considerations)
+    * [What PAM does](#what-pam-does)
+      * [Content-Security-Policy](#content-security-policy)
+      * [File Integrity Check](#file-integrity-check)
+    * [Threats to be aware of](#threats-to-be-aware-of)
+      * [MITM](#mitm)
+      * [Third Party Web Site Security](#third-party-web-site-security)
+      * [Site Reliability](#site-reliability)
+      * [Over the Shoulder Surfing Attack](#over-the-shoulder-surfing-attack)
+      * [Malware: Key Logging and Screen Recording](#malware-key-logging-and-screen-recording)
+      * [Malware: Clipboard Attack](#malware-clipboard-attack)
+      * [Unattended Browser](#unattended-browser)
+      * [Website Spoofing](#website-spoofing)
+      * [Dictionary and Brute Force Password Attacks](#dictionary-and-brute-force-password-attacks)
+      * [Protecting Yourself](#protecting-yourself)
+      * [Multi-Factor Authentication](#multi-factor-authentication)
   * [Usage Examples](#usage-examples)
     * [Personal Account Records](#personal-account-records)
       * [Create Record File](#create-record-file)
@@ -141,11 +153,14 @@ the on-line help is generated.
     * [Recipes](#recipes)
     * [Books](#books)
     * [Decrypting and encrypting PAM files from the command line](#decrypting-and-encrypting-pam-files-from-the-command-line)
+      * [Decrypt a PAM v2 file](#decrypt-a-pam-v2-file)
+      * [Encrypt a file to PAM v2 format](#encrypt-a-file-to-pam-v2-format)
   * [Developer Notes](#developer-notes)
     * [License](#license)
     * [Build PAM](#build-pam)
     * [Create Favicon](#create-favicon)
     * [Test PAM](#test-pam)
+      * [Test and check targets](#test-and-check-targets)
       * [Interactive unit testing in the browser](#interactive-unit-testing-in-the-browser)
     * [Release PAM](#release-pam)
     * [History](#history)
@@ -177,7 +192,7 @@ localhost) or from the public
 [github.io server](https://jlinoff.github.io/pam/www/index.html).
 In either case, once the application is loaded into your browser
 or run as a local web app
-([PWA](https://developer.mozilla.org/en-US/docs/Web/Progressive_web_apps/Installing))
+([PWA](https://developer.mozilla.org/en-US/docs/Web/Progressive_web_apps/Guides/Installing))
 _there is no other communication_ with the web server which you can
 verify by monitoring outbound network traffic.
 
@@ -548,8 +563,10 @@ to protect you from hackers if a site you use to is attacked and your
 password is stolen.
 
 I recommend reading
-[NIST Password Guidelines](https://www.auditboard.com/blog/nist-password-guidelines/)
-for more information about how to create strong passwords.
+[NIST SP 800-63B, Digital Identity Guidelines](https://pages.nist.gov/800-63-4/sp800-63b.html)
+for more information about how to create strong passwords. Section 3.1.1 covers
+passwords specifically — including why length matters more than composition
+rules, and why forced periodic rotation is discouraged.
 
 As an interesting aside, note that `AES-256-CBC` algorithm is
 considered to be reasonably resistant to quantum attacks as discussed
@@ -567,7 +584,7 @@ seriously by the internet standards organization and the organizations
 that develop the major browsers.
 
 You can read more about secure contexts
-[here](https://developer.mozilla.org/en-US/docs/Web/Security/Secure_Contexts).
+[here](https://developer.mozilla.org/en-US/docs/Web/Security/Defenses/Secure_Contexts).
 
 #### Reason 7: Hiding Passwords from Casual Observers
 
@@ -598,7 +615,7 @@ What makes _PAM_ mobile friendly is that it is implemented using the
 [bootstrap-5](https://getbootstrap.com/docs/5.0/getting-started/introduction/)
 library to make the interface work better in the browsers present on
 mobile devices. PAM also supports installation as a
-[Progressive Web App (PWA)](https://developer.mozilla.org/en-US/docs/Web/Progressive_web_apps/Installing),
+[Progressive Web App (PWA)](https://developer.mozilla.org/en-US/docs/Web/Progressive_web_apps/Guides/Installing),
 which means you can add it to your home screen and use it like a
 native app without going through an app store.
 
@@ -894,7 +911,7 @@ These are the default field definitions.
 The table below presents a brief overview of the default record
 fields and their associated built in types and when to use them. You
 can search the web for more details about
-[HTML input types](https://developer.mozilla.org/en-US/docs/Learn/Forms/HTML5_input_types).
+[HTML input types](https://developer.mozilla.org/en-US/docs/Learn_web_development/Extensions/Forms/HTML5_input_types).
 
 | Type | Usage |
 | ---- | ----- |
@@ -911,7 +928,7 @@ can search the web for more details about
 
 Remember that the types were not made up by me, they were
 taken directly from input element description
-[here](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/input),
+[here](https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Elements/input),
 the separate textarea element is described
 [here](https://developer.mozilla.org/en-US/docs/Web/API/HTMLTextAreaElement).
 
@@ -1137,7 +1154,7 @@ would use this regular expression search term instead: `"^g"`.
 which would result in only two records found.
 
 For more information about regular expression syntax see the documentation
-for [Javascript Regular Expressions](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_Expressions).
+for [Javascript Regular Expressions](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_expressions).
 
 For more information about how you control the all of
 the available search options see the
@@ -1892,16 +1909,6 @@ The default is not enabled.
 You would want to enable this you wanted to see records that contained a specific field
 value like an obsolete email or really old password.
 
-### Hide Inactive Records
-Each record in PAM allows you to set it as Active or Inactive.
-Inactive records are also called deactivate.
-
-If this checkbox is set those inactive records invisible.
-
-When disabled this checkbox allows you to view all of the inactive records.
-
-Note that each inactive record will have a <small>*INACTIVE*</small> prefix.
-
 ### Password Preferences
 <img src="www/help/pam-prefs-password.png" width="400" alt="pam-prefs-password">
 
@@ -2225,9 +2232,15 @@ users share the same PAM file data.
 
 #### Hide Inactive Records
 
-Making records inactive is very much like deleting them. The only
-difference is that even though they are no longer visible a historical
-record of them is kept if this preference is enabled.
+Each record can be set Active or Inactive. An inactive record is also
+described as deactivated.
+
+When this preference is enabled, inactive records are hidden from view.
+Disable it to see them again.
+
+Making a record inactive is much like deleting it, with one difference: the
+record is kept, so a historical copy remains even though it is no longer
+shown.
 
 #### Custom About
 
@@ -2291,7 +2304,7 @@ request, not three.
 the requests begin when you press **Check** and stop when you press **Cancel**
 or close the dialogue.
 
-### What it checks besides the corpus
+##### What it checks besides the corpus
 
 Being absent from a breach corpus is a low bar. `Summer2026` appears in no
 corpus worth the name and is still a bad password, so PAM also applies checks
@@ -2318,7 +2331,7 @@ them: an entry is labelled **BREACHED** if it was found in the corpus and
 The distinction matters because the urgency differs — a password in the corpus
 is published, and whoever holds the dump has it.
 
-### When the check cannot be made
+##### When the check cannot be made
 
 _PAM_ is a progressive web app; being offline is a normal state, not an error.
 A lookup that fails is reported as **could not check**, never as a clean
@@ -2463,7 +2476,19 @@ You _must_ scroll to the bottom of the dialogue and
 click on the `"Save"` button at the end to save changes.
 If you do not, any changes you made will be lost.
 
-## Content-Security-Policy
+## Security Considerations
+
+_PAM_, like all web applications, has security challenges. By
+fully disclosing them here you can understand the challenges
+and improve your ability to protect your record data.
+
+### What PAM does
+
+The two mechanisms below are what _PAM_ itself puts in place. They are
+verifiable from the source: one is a line in `www/index.html`, the other a
+digest written into every file you save.
+
+#### Content-Security-Policy
 
 `www/index.html` carries a Content-Security-Policy meta tag that constrains
 what the page is permitted to do, enforced by the browser rather than by PAM's
@@ -2475,8 +2500,15 @@ script-src  'self' https://cdn.jsdelivr.net;
 style-src   'self';
 img-src     'self' data:;
 font-src    'self';
-connect-src 'self' https://api.pwnedpasswords.com
+connect-src 'self' https://api.pwnedpasswords.com;
+form-action 'self'
 ```
+
+`form-action 'self'` was added in v2.5.0. It is worth calling out because,
+unlike most directives, `form-action` does **not** fall back to `default-src` —
+so while it was absent, a form could submit to any origin. That was the one
+outbound channel the rest of the policy left open, and its absence was
+completely silent. A unit test now asserts it is present.
 
 The one entry worth understanding is `connect-src`, which lists every host the
 page may open a network connection to. It permits PAM's own origin and exactly
@@ -2501,12 +2533,43 @@ requires deliberately changing a test that says why not. That is the point:
 widening this policy is how a local-only application stops being one, a host at
 a time, each addition reasonable on its own.
 
-## Security Considerations
-_PAM_, like all web applications, has security challenges. By
-fully disclosing them here you can understand the challenges
-and improve your ability to protect your record data.
+#### File Integrity Check
 
-### MITM
+Since v2.5.0 every saved file carries a SHA-256 digest of its records and
+preferences, stored inside the encrypted payload as `meta.integrity`. On load
+_PAM_ recomputes it and compares before applying anything.
+
+**Why it is needed.** _PAM_ encrypts with AES-CBC, which protects
+confidentiality and nothing else — there is no authentication tag, so a
+modified file decrypts to modified content and nothing says so. In practice
+most damage is caught anyway, because garbled data fails to parse as JSON. The
+gap is the case that matters: altering a byte inside a long text value changes
+a character without disturbing the structure around it, so the file still
+parses and loads. The digest closes that.
+
+**What you will see.** Nothing, normally. If a file fails the check, _PAM_
+reports that it has been modified since it was saved and **does not load it**.
+If the check itself cannot run, _PAM_ says so and still does not load the file
+— an unverified vault is not applied silently.
+
+**Older files still work.** A file saved before v2.5.0 has no digest. _PAM_
+notes that in the console and loads it normally; a missing digest is not
+treated as tampering.
+
+**What it does not do.** The digest is stored inside the file, so anyone able
+to rewrite the file could remove it. And neither this nor any authentication
+scheme detects a *rollback* — replacing your current file with a genuine older
+copy of it, which was correctly signed when it was written. Keep backups
+somewhere an attacker cannot reach.
+
+### Threats to be aware of
+
+The rest of this section is different in kind. These are threats in the
+environment _PAM_ runs in — the browser, the operating system, the network,
+the sites you use it with. Most of them _PAM_ cannot fully prevent, so they
+are described here so you can decide what to do about them.
+
+#### MITM
 MITM refers to "Monster In The Middle" attacks or, historically, "Man
 In The Middle" attacks. It an attack where a hostile eavesdropper
 inserts themselves in the communications stream between a client and a
@@ -2519,7 +2582,7 @@ application that is downloaded and run within your browser. All data
 is local. Nothing is ever transferred over the internet for an
 eavesdropper to capture.
 
-### Third Party Web Site Security
+#### Third Party Web Site Security
 Third party web site security can be a major source of cybersecurity
 vulnerabilities because clients cannot know how well such
 cybersecurity vulnerabilities are mitigated unless that site publishes
@@ -2569,10 +2632,10 @@ seriously by the internet standards organization and the organizations
 that develop the major browsers.
 
 You can read more about secure contexts
-[here](https://developer.mozilla.org/en-US/docs/Web/Security/Secure_Contexts)
+[here](https://developer.mozilla.org/en-US/docs/Web/Security/Defenses/Secure_Contexts)
 and in [Reason 6: Secure Context Encryption](#reason-6-secure-context-encryption).
 
-### Site Reliability
+#### Site Reliability
 Although it is not an attack vector _per se_, site reliability is
 another consideration when choosing a web application because a
 distributed denial of service (DDoS) attack on the site or a power
@@ -2605,7 +2668,7 @@ that might restrict access to it from other devices (like mobile
 phones or tables) and you would have to be very diligent about keeping
 it backed up.
 
-### Over the Shoulder Surfing Attack
+#### Over the Shoulder Surfing Attack
 The user enters the record data in decrypted form, so it may be
 vulnerable to over the shoulder surfing attacks where someone or
 something (like a camera) watches or films the user typing or opening
@@ -2619,7 +2682,7 @@ surroundings to make sure you are not being watched or filmed.
 > This is different and easier to mitigate than "key-logging and screen
 > recording" as discussed in the next subsection.
 
-### Malware: Key Logging and Screen Recording
+#### Malware: Key Logging and Screen Recording
 If malware that takes screenshots or does key logging has been
 installed on your computer, phone or tablet, you are in trouble for a
 variety of reasons. It means that an attacker can see what you are
@@ -2630,7 +2693,7 @@ up to date by installing security patches and by using some sort of
 security tool or tools to protect your system or, at the very least,
 recognize the infection.
 
-### Malware: Clipboard Attack
+#### Malware: Clipboard Attack
 Yet another type of vulnerability is the "clipboard attack" if/when
 data is copied to the clipboard for cut and paste operations. This
 vulnerability exists because the clipboard is a global resource that
@@ -2652,7 +2715,7 @@ using an HTTP POST operation but that is not currently available.
 > Note that I say _might_ here, because I do not know how
 > secure POST operations are.
 
-### Unattended Browser
+#### Unattended Browser
 If you leave the browser unattended without locking your screen after
 you have loaded your record data, someone can sit down and see the
 records because they are impersonating you _after you have logged in_.
@@ -2660,7 +2723,7 @@ records because they are impersonating you _after you have logged in_.
 The best way to mitigate this attack is to always lock your screen when
 you leave the computer unattended.
 
-### Website Spoofing
+#### Website Spoofing
 Web site spoofing could be used to direct you to a website
 that could be used to steal your information using a look alike
 web application.
@@ -2671,7 +2734,7 @@ trusted site.
 If you are concerned about this, you can always download, build and
 run _PAM_ from your own trusted site.
 
-### Dictionary and Brute Force Password Attacks
+#### Dictionary and Brute Force Password Attacks
 In general a brute force attack is any attack that uses trial and error
 to crack passwords.
 
@@ -2716,7 +2779,7 @@ On the other hand if you use a simple, six character password like
 Ideas for generating strong password are discussed in the next
 section.
 
-### Protecting Yourself
+#### Protecting Yourself
 In summary, security can never be fully guaranteed, the best way to
 protect your data is to follow commonly recommended security
 practices:
@@ -2736,7 +2799,7 @@ practices:
       '`A1/jeans/chosen/since/tuition?!!`' (do NOT use this specific password!).
 1. Make sure that the website URL is what you expect.
 
-### Multi-Factor Authentication
+#### Multi-Factor Authentication
 Several folks have asked me why Multi-Factor Authentication (MFA) was
 not included in _PAM_ to provide and additional layer of security.
 
@@ -3012,7 +3075,7 @@ It uses
 [bootstrap-5](https://getbootstrap.com/docs/5.0/getting-started/introduction/)
 to make it work better in mobile browsers.
 
-It uses [Selenium](https://www.selenium.dev/) with [pytest](https://pytest.org/)
+It uses [Selenium](https://www.selenium.dev/) with [pytest](https://docs.pytest.org/en/stable/)
 to test the web app. The github actions file
 [main.yml](https://github.com/jlinoff/pam/blob/main/.github/workflows/main.yml)
 demonstrates how to build a complete web test environment using Python on an
@@ -3053,7 +3116,7 @@ Here are the steps to build PAM.
 ### Create Favicon
 I could not automate this process because I used a web service.
 
-1. Created an image using [draw.io](https://draw.io).
+1. Created an image using [draw.io](https://app.diagrams.net/).
 2. Uploaded the image to [https://favicon.io/favicon-converter/](https://favicon.io/favicon-converter/). It converted the image automatically when the "Download" button was clicked.
 3. Per the instructions on the site, then downloaded the following files into `pam/www`
    * android-chrome-192x192.png
@@ -3104,6 +3167,45 @@ The test infrastructure uses Python, pytest, and Selenium (ChromeDriver) to
 automate user interactions. Unit tests run in the browser via a vanilla JS
 test runner in `www/tests/tests.html`. E2E tests drive the full app in
 headless Chrome via `tests/test_chrome.py`.
+
+#### Test and check targets
+
+| Target | What it does |
+|---|---|
+| `make test` | everything below that gates a release: lint, unit tests, E2E tests |
+| `make unit-test` | the browser unit tests only |
+| `make e2e-test` | the Selenium E2E tests only |
+| `make test-one TEST_NAME=<name>` | one test, with the server started for you |
+| `make lint` | source linting plus the documentation checks |
+| `make check-images` | every referenced screenshot exists, and none is orphaned |
+| `make check-toc` | the table of contents matches the document's headings |
+| `make check-links` | external links still resolve (needs network; not in `lint`) |
+| `make screenshots` | regenerate the README captures |
+| `make screenshots-check` | report what would change, writing nothing |
+
+`TEST_NAME` is passed to pytest's `-k`, so it matches substrings and
+expressions:
+
+```bash
+make test-one TEST_NAME=test_password_generator
+make test-one TEST_NAME=print
+make test-one TEST_NAME='load or save'
+```
+
+Both documentation checks run as part of `make lint`, because a documentation
+defect is invisible in a Markdown preview: a broken anchor simply does nothing,
+and a link to the *wrong* section works perfectly. `check-images` verifies that
+every screenshot referenced exists and every screenshot captured is referenced.
+`check-toc` asks a different question — whether the contents page reflects the
+document's actual structure — and reports headings that are missing from it,
+listed under the wrong parent, listed twice, or pointing at a heading that no
+longer exists. Neither needs a browser; together they take about a second.
+
+`check-links` is separate and **not** part of `lint`, because it needs network
+access and third-party sites go down for reasons unrelated to this repository.
+Its most useful output is `MOVED`: a link that redirects still works, so
+nothing ever reports it, and it quietly rots until the redirect is retired
+years later.
 
 #### Interactive unit testing in the browser
 

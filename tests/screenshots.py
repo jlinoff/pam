@@ -14,7 +14,14 @@ date every time a setting is added, which is the recurring cost.
 
 DETERMINISM
 -----------
-Rendering is not reproducible across machines: font hinting, DPI and the Chrome
+Rendering is not reproducible across machines OR across Chrome versions on one
+machine. A browser update shifts subpixel text rendering everywhere: most
+captures stay under difference_is_noise() and report as `same~`, a few cross it
+and are written. The tell is the tolerated-noise list growing from about one
+entry to several, with pixel counts several times larger than usual, while the
+changed files have nothing to do with the release. See PROPOSAL.md.
+
+Font hinting, DPI and the Chrome
 version all affect the bytes. Regenerating on a different machine produces
 different PNGs with identical content. So:
 

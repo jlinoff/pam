@@ -42,7 +42,10 @@ cheap non-breaking path that was not obvious when they were raised: **9a**
 salted title hashes). Both exploit the same property — older versions ignore
 keys they do not recognise.
 
-**The one high-priority item is 9a:** a PAM vault has no tamper evidence and no
+**9a is done** — see item 9. What follows was written before that and is kept
+because the reasoning still applies to what remains.
+
+**The one high-priority item was 9a:** a PAM vault has no tamper evidence and no
 reliable wrong-password check, which is a real defect in a security tool. 9a
 closes both with a content hash in `meta`, needs no format change, and could
 ship in any release.
@@ -73,7 +76,7 @@ the item moved.
 | 6. README pass | **released in v2.4.0** — including SECURITY.md, which claimed "No data is ever sent to a server" |
 | 7. Vault diff | deferred, **not blocked** — works today without record IDs; they add rename detection |
 | 8. Export tiering | deferred |
-| 9. Vault file integrity | **9a OPEN, do this first** — tamper-evident hash in `meta`, no format change; detects tampering essentially completely. **9b DEFERRED to v3.0** — AES-GCM; breaking change accepted *if built*, but reassessed as small marginal benefit over 9a. Neither addresses rollback |
+| 9. Vault file integrity | **9a RELEASED in v2.5.0** — SHA-256 of records and prefs in `meta.integrity`, no format change; catches the targeted tampering that `JSON.parse` lets through. **9b DEFERRED to v3.0** — AES-GCM; breaking change accepted *if built*, small marginal benefit over 9a. Neither addresses rollback |
 | 10. Test suites ran without gating | **released in v2.4.0** — finalize() ran per-runner, so two suites reported but did not count |
 | 11. Actionable reports | **released in v2.4.0** — click-through from both reports |
 | 12. Per-field breach button | **released in v2.4.0** — on password fields, edit rows, and the standalone generator (documented under item 5, no separate section) |
@@ -83,6 +86,8 @@ the item moved.
 | 16. CodeQL findings | **RELEASED in v2.4.1** — memorable passwords used Math.random(); now CSPRNG with no modulo bias. Also: pattern checks rejected valid passwords, and the in-record generator ignored the length preference |
 | 17. Describe rather than judge | idea — the expository checks assert a 60-bit floor they cannot justify; and memorable passwords are about typeability, not memorability |
 | 18. FIDO CXF interoperability | idea — `CustomFields` fits PAM's model; salted title hashes give stable `Item.id`s with **no format change**, so this need not wait for v3.0 |
+| 19. `make check-toc` | **RELEASED in v2.5.0** — verifies the contents page against the document's headings; found 22 problems on first run, including nine security-relevant preferences missing entirely |
+| 20. `make check-links` | **RELEASED in v2.5.0** — checks the 31 external URLs; found 8 stale on first run, all of them still working via redirects. Not in `lint`: needs network |
 
 ---
 
@@ -639,13 +644,14 @@ and Dashlane are all contributors.
 
 ---
 
-## 9. Vault file integrity — 9a OPEN (do this first), 9b DEFERRED and reassessed
+## 9. Vault file integrity — 9a RELEASED in v2.5.0, 9b DEFERRED and reassessed
 
 **Read the split below before the warning.** This item has two halves, and only
 the second one breaks anything:
 
 - **9a — tamper evidence.** A hash inside `meta`. No format change, no
-  migration, backward compatible. Could ship in any release.
+  migration, backward compatible. **Implemented in v2.5.0** on
+  `feat/vault-file-integrity`.
 - **9b — authenticated encryption.** AES-GCM. Breaks the file format, and the
   warning below applies to it in full. **Reassessed:** 9a already detects
   tampering essentially completely, so 9b is no longer treated as a necessary
@@ -774,17 +780,76 @@ format, because unknown `prefs` keys are ignored by older versions. The same
 applies here. `loadFileContent()` reads only `meta['date-saved']`, `prefs` and
 `records`; every other key is ignored.
 
-**9a — tamper evidence, no format change.** Write a hash of the canonical
-records and prefs into `meta.integrity` before encrypting. On load, decrypt,
-parse, recompute, compare. This gives:
+**9a — tamper evidence, no format change. IMPLEMENTED in v2.5.0.** A SHA-256
+digest of records and prefs is written to `meta.integrity` before encrypting.
+On load, PAM decrypts, parses, recomputes and compares before applying
+anything.
 
-- **Tamper evidence.** Flipped ciphertext bits produce plaintext that either
-  fails to parse as JSON or fails the hash. Today a PAM file has none.
-- **A reliable wrong-password check.** v2 currently detects a wrong password
-  only when PKCS#7 padding happens to be invalid — it passes about 1 time in
-  256, which is the flaky unit test found during v2.3.0.
-- **Backward compatibility.** Older versions ignore `meta.integrity` and read
-  the file normally. No migration, no lockout window.
+**Two claims in the original write-up were wrong, and implementing it exposed
+both.**
+
+**Wrong claim 1: "a reliable wrong-password check".** A wrong password was
+already detected almost always. PKCS#7 padding rejects it about 255 times in
+256, and the once it passes, `JSON.parse` rejects the garbage — measured at
+40/40 across trials. What was actually broken was the **message**: that last
+case reported *"invalid record format"*, blaming the file rather than the
+password. 9a improves the diagnosis, not the detection. The load path now says
+both causes are possible, since from that point they are indistinguishable.
+
+**Wrong claim 2: "flipped ciphertext bits fail the hash".** Mostly they fail
+`JSON.parse` first. Measured over 400 random bit-flips:
+
+| Caught by | Count |
+|---|---|
+| AES-CBC padding | 33 |
+| `JSON.parse` | 357 |
+| **the digest alone** | **10** |
+| undetected | 0 |
+
+On that figure 9a looks close to redundant, and an honest write-up has to
+report it.
+
+**But random flips are the wrong model.** An attacker does not flip bits at
+random; they flip inside a *value*, where corruption stays syntactically valid.
+A trial confined to the final blocks of a vault holding a 600-character note
+produced **15 tampered files that decrypted and parsed as valid JSON**. The
+digest caught all 15. Without it, every one would have loaded silently as a
+valid vault with corrupted content.
+
+That is the case 9a exists for, and it is invisible in the random-flip number.
+
+**Backward compatibility.** Older versions ignore `meta.integrity` and read the
+file normally. A file *without* a digest reports `INTEGRITY_ABSENT` and loads
+without complaint — treating a missing digest as tampering would reject every
+vault written before v2.5.0.
+
+**Two bugs found by the e2e suite, one of them mine.**
+
+*Mine:* the verification was written as
+`verifyIntegrity(json).then(result => { …; applyLoadedContent(json) }).catch(…)`.
+That puts `applyLoadedContent` inside the same catch, so **any** error raised
+while loading is reported as an integrity failure. It surfaced as a date-parsing
+`RangeError` announced to the user as *"this file has been modified since it was
+saved"* — wrong, and alarming in the worst way for a security feature. Fixed by
+using the two-argument `.then(onOk, onErr)` so the rejection handler covers
+verification only, and applying the content in a separate link of the chain.
+
+*Pre-existing:* `meta['date-saved']` is not guaranteed — it is absent from
+hand-written files and fixtures. `new Date(undefined)` gives an Invalid Date,
+and `thenDate.toISOString()` throws `RangeError: Invalid time value`. **That
+threw before this release too.** It went unnoticed because it happens after the
+records are inserted, so the load looks successful and the browser swallows the
+exception. Only wrapping the call in a catch made it visible. Both the date
+handling and the About line are now guarded.
+
+Worth noting the shape: a defensive `catch` that is too broad does not just fail
+to help, it actively misattributes. The second bug had been live for an unknown
+number of releases and was found only because the first one exposed it.
+
+**The honest limit.** The digest is unkeyed and lives inside the plaintext, so
+anyone able to rewrite the file could omit the field to silence the check.
+Nothing within a non-breaking change prevents that. It is a real argument for
+9b, and a smaller one than the reassessment below already allows.
 
 **9b — authenticated encryption, v3.0.** AES-GCM, with the breaking format
 change described above.
@@ -2111,6 +2176,114 @@ So this approach solves CXF export cleanly and does not retire the durable-id
 question for items 7 and 15. Those still want a real per-record identifier.
 It does mean CXF export need not wait for v3.0.
 
+## A Chrome update churns the screenshots, and looks like a regression
+
+The harness header warns that rendering is not reproducible **across
+machines**. It is also not reproducible across **browser versions on the same
+machine**, which is not obvious and produces a result that reads as a content
+change.
+
+Seen in v2.5.0. Between the e2e run on 7 September (`chrome=152.0.7977.83`) and
+the one on 9 September (`chrome=153.0.8010.37`), Chrome updated. The next
+screenshot run reported **4 of 51 changed** and none of the four had anything
+to do with the release.
+
+**The signature, which is what makes it diagnosable:**
+
+| | Normal run | After a browser update |
+|---|---|---|
+| Tolerated-noise entries | 1 | **7** |
+| Pixel deviation | ~12–16 | **33–108** |
+| Dimensions of changed files | usually differ | **identical** |
+| Changed files relate to the work | yes | **no** |
+
+Subpixel text rendering shifts very slightly everywhere. Most captures stay
+under `difference_is_noise()`'s threshold and appear as `same~`; a few cross it
+and are written. So the tolerated-noise list growing from one entry to seven,
+with the deviations several times larger than usual, is the reliable tell —
+more so than the changed count itself.
+
+**The two confirmations worth doing** before accepting the churn:
+
+1. **Are the changed files plausibly related to the release?** In this case the
+   Administration tab, the Custom About preference row and two new-record field
+   dialogues, against a release that touched saving, loading and one CSP
+   directive. No connection.
+2. **Did any dimensions change?** A real content change usually moves a
+   boundary. Identical sizes with different pixels is what re-rendered text
+   looks like. All four were identical.
+
+Then open one and look at it. `pam-about-custom-pref.png` is 790x112 — a single
+preference row, where any real change is obvious at a glance. It was identical.
+
+**Accept the churn rather than reverting.** `git checkout` on those files only
+defers it to the next run, by which time the batch is larger and the connection
+to a browser update is harder to see. Taking it immediately keeps the captures
+matching the browser that is actually installed.
+
+## 19. `make check-toc` — the table of contents is now verified — RELEASED in v2.5.0
+
+Built in v2.5.0 after adding one README section exposed how far the contents
+page had drifted. Full detail is under *Where claims live* below; the summary:
+
+`check_images.py` verifies that every link **resolves**. That cannot catch a
+link to the *wrong* section, which resolves perfectly. `tests/check_toc.py`
+asks the structural question instead — does the contents page reflect the
+document's hierarchy? — and reports four kinds of disagreement: **MISSING**,
+**WRONG PARENT**, **DUPLICATE** and **STALE**.
+
+It runs in `make lint`, needs no browser, and takes about a second. Anchors
+follow GitHub's rules including the `-1` suffixes for repeated heading text,
+because a checker that got those wrong would false-positive on every run and be
+switched off within a week.
+
+**Twenty-two problems on first run**, including nine Administration preferences
+missing from the contents page entirely — among them `Allow HTML Field
+Rendering`, `Search Password Field Values` and `Enable Password Breach Check`,
+the three security-relevant ones. It also found two headings written at `###`
+that silently **terminated the Administration Preferences section**, orphaning
+the three preferences after them, and a duplicated *Hide Inactive Records*
+section that had existed in two places with different wording.
+
+It has since caught a regression in a heading added minutes earlier, which is
+the strongest evidence it earns its place in `lint`.
+
+## 20. `make check-links` — external links are now checkable — RELEASED in v2.5.0
+
+Nothing had ever verified the 31 external URLs in the documentation. Written in
+v2.5.0 after `check-toc` prompted the question "do the *other* links work?"
+
+**Eight were stale on the first run**, and every one of them still worked:
+
+| Was | Now |
+|---|---|
+| 5 MDN paths | MDN restructured `Learn/`, `Web/HTML/Element/`, `Web/Security/` and the PWA guides |
+| `draw.io` | `app.diagrams.net` |
+| `pytest.org` | `docs.pytest.org/en/stable/` |
+| `auditboard.com/blog/nist-password-guidelines` | **a different company** — `optro.ai` |
+
+**`MOVED` is the finding this tool exists for.** A redirect works, so nothing
+reports it, and the link rots silently until the redirect is retired years
+later — long after anyone remembers writing it. All eight would have been
+invisible to any check that only asks "does this 200?".
+
+**The last row is the interesting one.** That was not a path change, it was a
+domain changing hands: a corporate blog post cited for NIST password guidance
+now resolves to an unrelated company. Replaced with NIST's own SP 800-63B at
+`pages.nist.gov`, which is both the primary source and far more likely to
+survive. The lesson is that a redirect crossing a domain boundary deserves
+judgement, not a mechanical update.
+
+**403 is not a broken link.** The first run reported Stack Exchange as BROKEN,
+which was the checker's fault: Stack Exchange rejects non-browser user agents.
+403 and 429 are now reported as `BLOCKED` and do not fail the run. A checker
+that cries wolf about working links gets switched off, and then reports nothing
+at all.
+
+**Not part of `make lint`**, deliberately: it needs network access, and a build
+that fails because a third-party blog is having a bad afternoon teaches people
+to ignore build failures.
+
 ## Where claims live
 
 Every stale-documentation miss this session came from searching a scope defined
@@ -2172,8 +2345,146 @@ When an item moves to done, search for its **subject**, not its number:
 - Any version number written while the release was still unreleased. "Fixed in
   vX" is a prediction until the tag exists.
 
+**The README's table of contents drifts, and nothing checks it.**
+
+Adding one section exposed how far. Found in v2.5.0:
+
+- The new **File Integrity Check** section was inserted as a `###` inside
+  *Breached Passwords*, so it read as part of breach checking and appeared in
+  no table of contents at all. It went first to a top-level section beside
+  *Content-Security-Policy* — and that turned out to be the wrong home too, for
+  a reason worth recording separately below.
+- **Nine Administration preferences were missing from the TOC entirely**,
+  including `Allow HTML Field Rendering`, `Search Password Field Values` and
+  `Enable Password Breach Check` — the three security-relevant ones.
+- **Three more were filed under the wrong parent**: `Enable Printing`,
+  `filePass Cache Strategy` and `Custom About` were listed under
+  *Miscellaneous* when they live under *Administration*.
+- **`Administration Preferences` had no TOC entry** even though its five
+  sibling sections all did.
+- **`Search Record Field Names` was listed twice**, and `Hide Inactive Records`
+  was listed under *Search Preferences* when it is an Administration
+  preference.
+
+None of that is catchable by the existing link check, which verifies that every
+link resolves — a link to the wrong section resolves perfectly. The gap is
+*structural*: whether the TOC reflects the document's actual hierarchy.
+
+Fixed by generating the preferences block from the document rather than editing
+it by hand, including anchor suffixing the way GitHub assigns it (there are two
+`Hide Inactive Records` headings, so the second is `#hide-inactive-records-1`).
+
+**Built: `make check-toc`** (`tests/check_toc.py`), and part of `make lint`.
+
+It reports four kinds of disagreement — MISSING, WRONG PARENT, DUPLICATE and
+STALE — using GitHub's anchor rules including the `-1` suffixes for repeated
+heading text, since a checker that got those wrong would false-positive on
+every run and be switched off within a week.
+
+**On first run it found twenty-two problems**, and three of them were
+structural rather than clerical:
+
+1. **A regression introduced twenty minutes earlier.** The script that
+   regenerated the preferences block never reset its parent when it left the
+   preferences area, so every `####` heading in the rest of the document was
+   attached to *Saving Preferences* — eight duplicated entries. Caught
+   immediately.
+2. **Two headings at the wrong level, predating all of this.** *What it checks
+   besides the corpus* and *When the check cannot be made* were written at
+   `###`, which **terminated the Administration Preferences section** and left
+   `Search Password Field Values`, `filePass Cache Strategy` and `Enable Raw
+   JSON Editing` as structural children of a breach-check subsection. Demoted
+   to `#####`, where they belong as elaborations of the preference they
+   describe.
+3. **A duplicated section.** *Hide Inactive Records* existed twice — once at
+   `###` inside *Search Preferences* and once at `####` under *Administration*,
+   with different wording. The preference is on the Administration tab, so the
+   stray copy was removed and its clearer explanation folded into the survivor.
+
+Now clean at 127 entries against 127 headings, and verified to fail on an
+induced regression.
+
+### Security content was organised by accident, not decision
+
+`File Integrity Check` was placed at the top level beside
+`Content-Security-Policy` because that is where `Content-Security-Policy`
+already was. Nobody had examined why *it* was there either. "Where the last one
+went" is not a rationale, and it produced a document where the two things PAM
+actually does about security sat outside the section called *Security
+Considerations*.
+
+That section held eleven subsections and **every one was a threat PAM cannot
+control** — MITM, third-party compromise, malware, shoulder surfing, spoofing —
+plus advice. Nothing in it described PAM's own defences. A reader asking "is
+this safe?" went there and found only a list of ways they might be attacked.
+
+Restructured so the section answers both questions, with the split named
+explicitly because it is now answering two:
+
+    ## Security Considerations
+       ### What PAM does
+           #### Content-Security-Policy
+           #### File Integrity Check
+       ### Threats to be aware of
+           #### MITM ... (the existing eleven)
+
+The cost, stated because it is real: the two mechanisms lose top-level
+visibility in a scan of the document. That is worth less than being findable
+where readers actually look for security information, but it is not nothing.
+
+Anchors are unaffected — they follow heading text, not depth — so every existing
+cross-reference still resolves. `check-toc` reported all thirteen TOC
+disagreements the move created, and confirmed the result.
+
+### The restructure corrupted a section, and no check noticed
+
+The script that moved the two mechanism sections did this:
+
+    mechanisms = ''.join(lines[fic_start:csp_end])   # a STRING
+    fic = mechanisms[:fic_end - fic_start]           # sliced by a LINE COUNT
+
+`fic_end - fic_start` is a number of lines. Used as a character offset it cut
+29 lines of text after 29 characters, leaving the *File Integrity Check*
+section reading:
+
+    #### File Integrity Check
+
+    Sinc
+
+with its body orphaned above the Content-Security-Policy heading, its first
+four characters gone.
+
+**`check-toc` passed.** So did the anchor check, and `make all`. Every heading
+was present, correctly nested and correctly linked — the structure was
+flawless and the content was mangled. That is precisely the boundary of what a
+structural check can see, and worth remembering before trusting a green
+`check-toc` as evidence that a document edit went well.
+
+**It was found by reading the file.** No tool substitutes for that, and the two
+built this release make it easy to believe otherwise.
+
+**The general point.** `check_images.py` verifies that links resolve, and every
+one of these links resolved. Structure needs its own question. That distinction
+is worth remembering the next time a check looks like it already covers
+something.
+
 **One mechanical rule that would have caught the most:** do not pipe an audit
-through `head`. Twenty matches were truncated to eight, and the missing test was
+through `head`. **Nor through `grep -v`.**
+
+The second half was added a day after the first, because the first was not
+enough. While building `check_toc.py` its lint output was checked with
+
+    pylint tests/check_toc.py | grep "^tests" | grep -v "E0401\|R0914\|R0912"
+
+and reported clean. `make all` then failed on exactly those two warnings. The
+filter was written to hide `E0401` — a false positive from the sandbox lacking
+`selenium` — and two real warnings were quietly added to it rather than fixed.
+
+Suppressing a diagnostic is a decision, and making it inside a shell pipeline
+records nothing and survives nothing. If a warning is a genuine false positive
+it belongs in the project's lint configuration where the reason can be written
+down; if it is real, it belongs fixed. `check()` was split into four focused
+functions and the file rates 10.00/10 with nothing filtered. Twenty matches were truncated to eight, and the missing test was
 at number nine. Truncation is right for exploring and wrong for any search whose
 purpose is completeness.
 

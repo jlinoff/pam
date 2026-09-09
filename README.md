@@ -116,7 +116,7 @@ the on-line help is generated.
       * [Default Record Fields](#default-record-fields)
       * [Enable Printing](#enable-printing)
       * [Enable Save File](#enable-save-file)
-      * [Hide Inactive Records](#hide-inactive-records-1)
+      * [Hide Inactive Records](#hide-inactive-records)
       * [Custom About](#custom-about)
       * [Allow HTML Field Rendering](#allow-html-field-rendering)
       * [Show Password Reuse Warning](#show-password-reuse-warning)
@@ -126,17 +126,9 @@ the on-line help is generated.
       * [Enable Raw JSON Editing](#enable-raw-json-editing)
     * [Record Fields Preferences](#record-fields-preferences)
     * [Saving Preferences](#saving-preferences)
-      * [Create Record File](#create-record-file)
-      * [Use Record Data to Log into a Site](#use-record-data-to-log-into-a-site)
-      * [Edit an Existing Record](#edit-an-existing-record)
-      * [Delete an Existing Record](#delete-an-existing-record)
-      * [Clone an Existing Record](#clone-an-existing-record)
-      * [Decrypt a PAM v2 file](#decrypt-a-pam-v2-file)
-      * [Encrypt a file to PAM v2 format](#encrypt-a-file-to-pam-v2-format)
-      * [Interactive unit testing in the browser](#interactive-unit-testing-in-the-browser)
   * [File Integrity Check](#file-integrity-check)
   * [Content-Security-Policy](#content-security-policy)
-* [Security Considerations](#security-considerations)
+  * [Security Considerations](#security-considerations)
     * [MITM](#mitm)
     * [Third Party Web Site Security](#third-party-web-site-security)
     * [Site Reliability](#site-reliability)
@@ -159,6 +151,8 @@ the on-line help is generated.
     * [Recipes](#recipes)
     * [Books](#books)
     * [Decrypting and encrypting PAM files from the command line](#decrypting-and-encrypting-pam-files-from-the-command-line)
+      * [Decrypt a PAM v2 file](#decrypt-a-pam-v2-file)
+      * [Encrypt a file to PAM v2 format](#encrypt-a-file-to-pam-v2-format)
   * [Developer Notes](#developer-notes)
     * [License](#license)
     * [Build PAM](#build-pam)
@@ -1910,16 +1904,6 @@ The default is not enabled.
 You would want to enable this you wanted to see records that contained a specific field
 value like an obsolete email or really old password.
 
-### Hide Inactive Records
-Each record in PAM allows you to set it as Active or Inactive.
-Inactive records are also called deactivate.
-
-If this checkbox is set those inactive records invisible.
-
-When disabled this checkbox allows you to view all of the inactive records.
-
-Note that each inactive record will have a <small>*INACTIVE*</small> prefix.
-
 ### Password Preferences
 <img src="www/help/pam-prefs-password.png" width="400" alt="pam-prefs-password">
 
@@ -2243,9 +2227,15 @@ users share the same PAM file data.
 
 #### Hide Inactive Records
 
-Making records inactive is very much like deleting them. The only
-difference is that even though they are no longer visible a historical
-record of them is kept if this preference is enabled.
+Each record can be set Active or Inactive. An inactive record is also
+described as deactivated.
+
+When this preference is enabled, inactive records are hidden from view.
+Disable it to see them again.
+
+Making a record inactive is much like deleting it, with one difference: the
+record is kept, so a historical copy remains even though it is no longer
+shown.
 
 #### Custom About
 
@@ -2309,7 +2299,7 @@ request, not three.
 the requests begin when you press **Check** and stop when you press **Cancel**
 or close the dialogue.
 
-### What it checks besides the corpus
+##### What it checks besides the corpus
 
 Being absent from a breach corpus is a low bar. `Summer2026` appears in no
 corpus worth the name and is still a bad password, so PAM also applies checks
@@ -2336,7 +2326,7 @@ them: an entry is labelled **BREACHED** if it was found in the corpus and
 The distinction matters because the urgency differs — a password in the corpus
 is published, and whoever holds the dump has it.
 
-### When the check cannot be made
+##### When the check cannot be made
 
 _PAM_ is a progressive web app; being offline is a normal state, not an error.
 A lookup that fails is reported as **could not check**, never as a clean

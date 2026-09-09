@@ -2263,9 +2263,40 @@ Fixed by generating the preferences block from the document rather than editing
 it by hand, including anchor suffixing the way GitHub assigns it (there are two
 `Hide Inactive Records` headings, so the second is `#hide-inactive-records-1`).
 
-**Worth building:** a `check-toc` that rebuilds the expected TOC from the
-headings and diffs it against what is there. It would have caught every item
-above. Until then, regenerate rather than hand-edit.
+**Built: `make check-toc`** (`tests/check_toc.py`), and part of `make lint`.
+
+It reports four kinds of disagreement — MISSING, WRONG PARENT, DUPLICATE and
+STALE — using GitHub's anchor rules including the `-1` suffixes for repeated
+heading text, since a checker that got those wrong would false-positive on
+every run and be switched off within a week.
+
+**On first run it found twenty-two problems**, and three of them were
+structural rather than clerical:
+
+1. **A regression introduced twenty minutes earlier.** The script that
+   regenerated the preferences block never reset its parent when it left the
+   preferences area, so every `####` heading in the rest of the document was
+   attached to *Saving Preferences* — eight duplicated entries. Caught
+   immediately.
+2. **Two headings at the wrong level, predating all of this.** *What it checks
+   besides the corpus* and *When the check cannot be made* were written at
+   `###`, which **terminated the Administration Preferences section** and left
+   `Search Password Field Values`, `filePass Cache Strategy` and `Enable Raw
+   JSON Editing` as structural children of a breach-check subsection. Demoted
+   to `#####`, where they belong as elaborations of the preference they
+   describe.
+3. **A duplicated section.** *Hide Inactive Records* existed twice — once at
+   `###` inside *Search Preferences* and once at `####` under *Administration*,
+   with different wording. The preference is on the Administration tab, so the
+   stray copy was removed and its clearer explanation folded into the survivor.
+
+Now clean at 127 entries against 127 headings, and verified to fail on an
+induced regression.
+
+**The general point.** `check_images.py` verifies that links resolve, and every
+one of these links resolved. Structure needs its own question. That distinction
+is worth remembering the next time a check looks like it already covers
+something.
 
 **One mechanical rule that would have caught the most:** do not pipe an audit
 through `head`. Twenty matches were truncated to eight, and the missing test was

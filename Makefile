@@ -100,12 +100,16 @@ lint:  ## lint the source code
 	@if rg '\s$$' www/js/*js ; then printf '\033[31;1mERROR: trailing whitespace found\033[0m\n'; exit 1 ; fi
 	jshint --config jshint.json www
 	diff <(ls -1 www/icons/black/) <(ls -1 www/icons/blue)
-	pipenv run pylint tests/test_chrome.py tests/screenshots.py tests/check_images.py tests/diag_churn.py
+	pipenv run pylint tests/test_chrome.py tests/screenshots.py tests/check_images.py tests/check_toc.py tests/diag_churn.py
 	# Documentation is part of the build. A broken anchor or a stale image
 	# reference is invisible in a Markdown preview and in the rendered help
 	# page — the link simply does nothing — so nothing else would ever notice.
 	# Pure text comparison: no browser, no server, about a second.
 	pipenv run python3 tests/check_images.py
+	# Same reasoning applies to the table of contents, and the structural
+	# question is one check_images.py cannot ask: a link to the WRONG section
+	# resolves perfectly.
+	pipenv run python3 tests/check_toc.py
 	@printf '\033[35;1m$@: PASSED\033[0m\n'
 
 # Make sure that the icons in www/icons/black and icons/blue/blue are the same.
@@ -248,6 +252,18 @@ test-one: init  ## Run a single test: make test-one TEST_NAME=<name or -k expres
 	PORT=$(PORT) pipenv run python3 -m pytest -v -s -x -k "$(TEST_NAME)" \
 		tests/test_chrome.py tests/test_unit.py
 	$(KILL_SERVER)
+
+# Verifies the README's table of contents against its actual headings.
+#
+# Distinct from check-images, which verifies that every link RESOLVES. A link
+# to the wrong section resolves perfectly, which is how the preferences block
+# came to list nine Administration preferences under Miscellaneous, omit nine
+# more entirely, and file Hide Inactive Records under Search. This asks the
+# structural question instead: does the contents page match the document?
+.PHONY: check-toc
+check-toc: init  ## Verify the README table of contents against its headings.
+	$(call hdr,"$@")
+	pipenv run python3 tests/check_toc.py
 
 # Verifies the README against the harness: every screenshot is either captured
 # by tests/screenshots.py or on its HAND_MADE list, no image is orphaned or

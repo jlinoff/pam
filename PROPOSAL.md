@@ -1686,6 +1686,39 @@ the list that would have prevented them.
   not from the fifth argument of `mkPrefsCheckBox()`, which is a `title`
   attribute and therefore unreachable on a phone.
 
+**When an item's status changes, re-read everywhere it is mentioned.**
+
+This is the case that produced the most stale text, and it is not the same as
+the checklist above. Changing a default breaks statements of *fact*. Closing an
+item breaks statements of *limitation*, and those are written in more places
+and in more discursive language, so a grep for the identifier will not find
+them.
+
+Worse, **text describing a shortcoming has a short half-life by construction.**
+Writing "PAM cannot do X" is often what makes the gap visible enough to fix, so
+the most carefully written explanations of limitations are the most likely to
+become false. "This feature does X" is stable. "This feature cannot do X" is a
+countdown.
+
+Three examples from v2.4.0 and v2.4.1, all the same shape:
+
+| Written | Made false by |
+|---|---|
+| README: "the structural check cannot see word-based weakness" | item 13, about an hour later |
+| `PROPOSAL.md`: item 16 "fixed in v2.4.0" | v2.4.0 shipping without it |
+| Release notes: "Known limitation — the entropy estimate..." | the fix for that limitation |
+
+When an item moves to done, search for its **subject**, not its number:
+
+- The README section describing the feature, *and* any passage explaining what
+  it cannot do. These are usually in different sections.
+- `RELEASE_NOTES_*.md` for the release in flight — check for a "known
+  limitation" paragraph about the thing just fixed.
+- This document's status table **and** the prose of the item's own section,
+  which often opens with a statement of the problem in the present tense.
+- Any version number written while the release was still unreleased. "Fixed in
+  vX" is a prediction until the tag exists.
+
 **One mechanical rule that would have caught the most:** do not pipe an audit
 through `head`. Twenty matches were truncated to eight, and the missing test was
 at number nine. Truncation is right for exploring and wrong for any search whose

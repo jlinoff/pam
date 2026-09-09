@@ -36,7 +36,11 @@ turned up two adjacent defects: the strength checks rejected valid passwords
 about 2.6% of the time, and the in-record generator ignored the length
 preference. Neither was introduced by v2.4.0; both were exposed by it.
 
-Items 7, 8, 9, 14 and 15 remain open or deferred.
+Items 7, 8, 9, 14, 15, 17 and 18 remain open or deferred. Two of them have a
+cheap non-breaking path that was not obvious when they were raised: **9a**
+(tamper evidence via a hash in `meta`) and **18** (stable CXF identifiers via
+salted title hashes). Both exploit the same property — older versions ignore
+keys they do not recognise.
 
 Item numbers are stable identifiers, not priorities: an item keeps its number
 for the life of the document so cross-references hold. Sections appear in
@@ -792,7 +796,7 @@ shared by them, so the escaping and the guard exist once.
   it one record at a time.
 
 **The escaping is the part that could have gone wrong quietly.** Titles are
-arbitrary user text and are not unique. A title containing `(`, `|` or `.`
+arbitrary user text — unique, but arbitrary. A title containing `(`, `|` or `.`
 would otherwise alter the meaning of the pattern built from it and match the
 wrong records — silently, in a feature whose entire purpose is finding the
 right ones. `escapeRegExp()` handles it and four tests cover the cases,
@@ -844,9 +848,9 @@ settle:
 
   This also means the existing clear-search control is the undo, so nothing new
   is needed for that.
-- Titles are not unique and are not escaped for regex. A title containing
-  `(` or `|` would break the alternation or, worse, match the wrong records.
-  Escape before building the pattern.
+- Titles are unique but are arbitrary user text, and are not escaped for
+  regex. A title containing `(` or `|` would break the alternation or, worse,
+  match the wrong records. Escape before building the pattern.
 - `searchPasswordFieldValues` must stay out of this. Building a filter from
   password *values* would put a secret in the search box — the exact oracle
   fixed in v2.3.0.
@@ -1884,9 +1888,10 @@ and keeps PAM a page you can read.
 the same across different creations of a CXF document. PAM has no durable
 record id — the same gap that sits under items 7 and 15.
 
-**But PAM guarantees unique titles.** `loadDupStrategy` enforces it in every
-mode, including `allow`, which appends ` Clone` until the title is free. A
-title change is already treated as a delete plus an add. So a deterministic
+**But PAM guarantees unique titles.** `checkRecordEditDlg()` refuses a
+duplicate title on create and edit, and `loadDupStrategy` enforces it on load
+in every mode, including `allow`, which appends ` Clone` until the title is
+free. A title change is already treated as a delete plus an add. So a deterministic
 function of the title is a legitimate identifier for PAM's own semantics.
 
 **A bare `SHA-256(title)` is not safe, though.** CXF warns that identifiers
@@ -1910,8 +1915,9 @@ block.
 **This is the significant part: it is not a breaking change.** The salt is one
 new key in `prefs`, and unknown preference keys are already ignored by older
 versions. No record schema change, no migration, no window in which one device
-cannot read another's vault. Compare item 9, where the format change is the
-whole difficulty.
+cannot read another's vault. The same reasoning splits item 9: see **9a**,
+where a tamper-evidence hash in `meta` needs no format change either. Only
+item 9b, authenticated encryption, genuinely requires one.
 
 **What it does not give you.** `hash(title)` means a rename reads as a delete
 plus an add to any importer. For CXF that is *fidelity* — it is what PAM
@@ -2015,14 +2021,23 @@ purpose is completeness.
   changed that. Records are still identified by title plus field names, which
   breaks as soon as either is edited.
 
-  **It improves two things; it blocks neither.** Item 7 (vault diff) was
-  recorded as blocked on this and is not: a title-based diff works today, and
-  an ID adds rename detection rather than making the feature possible. It also
-  underpins the report click-throughs added in v2.4.0, which match on an
-  escaped title pattern because there is nothing better to match on — and
-  titles are not unique, so clicking a group can select a record that merely
-  shares a name with the one intended. That is a real if minor defect shipping
-  in v2.4.0, and it cannot be fixed at the UI layer.
+  **It improves things; it blocks nothing.** Item 7 (vault diff) was recorded
+  as blocked on this and is not: a title-based diff works today, and an ID adds
+  rename detection rather than making the feature possible.
+
+  **Correction.** An earlier version of this entry claimed the v2.4.0 report
+  click-throughs could select the wrong record because "titles are not unique".
+  That is false. **PAM enforces unique titles**: `checkRecordEditDlg()` refuses
+  a duplicate on create and edit, and `loadDupStrategy` enforces uniqueness on
+  load in all three modes — `allow` appends " Clone" until the title is free.
+  Selecting by an escaped title pattern is therefore exact, and there is no
+  defect to fix. See item 18, where the same guarantee yields stable CXF
+  identifiers.
+
+  What a durable ID would still add is rename survival: a retitled record reads
+  as a delete plus an add. That is correct behaviour for PAM's own semantics,
+  a quality-of-result issue for item 7, and a genuine requirement for item 15,
+  where a merge must not overwrite a renamed record.
 
   **It still belongs with item 9 in v3.0** — for migration cost, not because
   anything depends on it. Both are schema-level and both are breaking. v3.0 already requires a format change with migration for the

@@ -49,7 +49,7 @@ numeric order. A low number means the item was raised early, nothing more.
 | 6. README pass | **released in v2.4.0** — including SECURITY.md, which claimed "No data is ever sent to a server" |
 | 7. Vault diff | deferred, **not blocked** — works today without record IDs; they add rename detection |
 | 8. Export tiering | deferred |
-| 9. Vault file integrity | **deferred to v3.0** — ⚠ BREAKING: rewrites data files so older PAM versions cannot open them, with no way back once a vault is re-saved |
+| 9. Vault file integrity | **split** — 9a: tamper-evident hash in `meta`, no format change, could ship any time. 9b: AES-GCM, v3.0, ⚠ BREAKING — older versions cannot open re-saved vaults, with no way back |
 | 10. Test suites ran without gating | **released in v2.4.0** — finalize() ran per-runner, so two suites reported but did not count |
 | 11. Actionable reports | **released in v2.4.0** — click-through from both reports |
 | 12. Per-field breach button | **released in v2.4.0** — on password fields, edit rows, and the standalone generator (documented under item 5, no separate section) |
@@ -615,11 +615,22 @@ and Dashlane are all contributors.
 
 ---
 
-## 9. Vault file integrity — deferred to v3.0
+## 9. Vault file integrity — 9a any time, 9b deferred to v3.0
 
-> ## ⚠ BREAKING CHANGE TO THE FILE FORMAT
+**Read the split below before the warning.** This item has two halves, and only
+the second one breaks anything:
+
+- **9a — tamper evidence.** A hash inside `meta`. No format change, no
+  migration, backward compatible. Could ship in any release.
+- **9b — authenticated encryption.** AES-GCM. Breaks the file format, and the
+  warning below applies to it in full.
+
+> ## ⚠ 9b IS A BREAKING CHANGE TO THE FILE FORMAT
 >
-> **This change rewrites PAM data files in a format that no earlier version of
+> This warning applies to **9b only**. 9a changes nothing about the envelope
+> and older versions read those files normally.
+>
+> **9b rewrites PAM data files in a format that no earlier version of
 > PAM can open.** It is not a code change with a compatibility note attached;
 > it changes the user's own data.
 >
@@ -636,7 +647,7 @@ and Dashlane are all contributors.
 >   update too.
 > - A backup taken after the upgrade cannot be restored on an older install.
 >
-> **Requirements before this ships, not optional extras:**
+> **Requirements before 9b ships, not optional extras:**
 >
 > - The release notes must lead with this, not mention it.
 > - _PAM_ should warn in the application at the moment it is about to write the
@@ -682,6 +693,42 @@ Confidentiality holds; tamper-evidence does not.
 
 The fix is AES-GCM, which authenticates as it decrypts, so a wrong password or
 a modified file fails cleanly every time.
+
+### The split in detail
+
+Item 18 showed that a stable identifier could be had without touching the file
+format, because unknown `prefs` keys are ignored by older versions. The same
+applies here. `loadFileContent()` reads only `meta['date-saved']`, `prefs` and
+`records`; every other key is ignored.
+
+**9a — tamper evidence, no format change.** Write a hash of the canonical
+records and prefs into `meta.integrity` before encrypting. On load, decrypt,
+parse, recompute, compare. This gives:
+
+- **Tamper evidence.** Flipped ciphertext bits produce plaintext that either
+  fails to parse as JSON or fails the hash. Today a PAM file has none.
+- **A reliable wrong-password check.** v2 currently detects a wrong password
+  only when PKCS#7 padding happens to be invalid — it passes about 1 time in
+  256, which is the flaky unit test found during v2.3.0.
+- **Backward compatibility.** Older versions ignore `meta.integrity` and read
+  the file normally. No migration, no lockout window.
+
+**9b — authenticated encryption, v3.0.** AES-GCM, with the breaking format
+change described above.
+
+**Why 9a is not a substitute for 9b.** It verifies *after* decrypting, so PAM
+would still be processing attacker-controlled data before knowing it is
+authentic — the failure mode that encrypt-then-MAC exists to prevent, and the
+one that makes padding oracles possible. That risk is far smaller here than in
+a network protocol: the attacker who can modify your vault file can also read
+PAM's source, and there is no remote endpoint to query repeatedly for padding
+results. But "smaller in this threat model" is not "sound", and only AEAD
+closes it properly.
+
+**The practical read:** 9a delivers most of the user-visible benefit at a
+fraction of the cost and none of the disruption, and 9b remains the correct
+end state. Doing 9a first does not make 9b harder — the integrity field simply
+becomes redundant once GCM authenticates the whole payload.
 
 **Scheduled for v3.0, and the major version is the point.** A file written in
 the new format cannot be read by any earlier release. PAM is explicitly
@@ -1775,10 +1822,61 @@ off `BasicAuth` plus `CredentialScope`. A worthwhile exporter pattern-matches
 the common shape, emits `BasicAuth` with the url as scope, and puts the
 remainder in `CustomFields`.
 
-Import is the lossier direction and should be scoped carefully. `Passkey` in
-particular should be **refused, not flattened**: PAM is not a WebAuthn
-authenticator, and holding a private key it cannot use is worse than not
-holding it.
+### Passkeys: refuse the import, and do not build the feature
+
+Import is the lossier direction, and `Passkey` is the case that needs an
+explicit decision rather than a default.
+
+**Why it arises at all.** Nobody would type a passkey into PAM. But a CXF file
+exported from 1Password or Apple *will contain them*, because carrying passkeys
+across providers is the specification's whole purpose. So PAM's importer cannot
+avoid having a policy.
+
+**Why storing one is worse than refusing.** A passkey is not a secret you
+transmit — it is an asymmetric key pair whose private half never leaves the
+device. Authenticating means signing a challenge from the relying party, which
+the browser routes through the operating system to registered credential
+providers. PAM is a web page. It can hold the key material perfectly well and
+still never be asked to sign anything, with no manual workaround: a signature
+cannot be copied from the clipboard.
+
+The danger is what the user then believes. They migrate, see their passkeys
+listed in PAM, delete the originals from Apple's keychain, and have permanently
+lost those accounts — the only usable copies are gone and PAM's cannot
+authenticate. Silently dropping them produces the same ending with no warning.
+So: refuse explicitly. *"This file contains 12 passkeys. PAM cannot store or
+use passkeys, so they were not imported. Keep them where they are."*
+
+Contrast an SSH private key, which CXF also carries and which PAM could store
+sensibly: storage is the entire expected function and copying it back out to
+`~/.ssh` is a real workflow. Passkeys have no equivalent.
+
+**Should PAM add passkey support?** It is not architecturally impossible, which
+is worth stating precisely: `chrome.webAuthenticationProxy` has existed since
+Chrome 115, and extension-based passkey providers are real — Bitwarden has been
+pressed to adopt exactly that API. But every route is a change of product:
+
+- A **Chrome extension** — that API, Chrome only, plus store review.
+- **Apple platforms** — a native app with an AutoFill Credential Provider
+  extension. Swift, Xcode, App Store review, signing.
+- **Android** — a native app registered with Credential Manager.
+
+Each ends PAM being *"open this HTML file"*, and that property is not
+incidental — it is the whole argument for trusting it. A suspicious user can
+today read every line in an afternoon and confirm there is no server, no
+telemetry and no exfiltration path. Route the passkey path through a signed
+native extension talking to OS APIs and that verification is gone.
+
+There is a niche argument too. **Passkeys are the case the platforms already
+handle well**: where a site supports them, the OS keychain does the job for
+free and phishing-resistantly. PAM's value is the long tail — sites that do not
+support passkeys, will not for years, and sometimes will not even permit paste
+(see item 17). Adding passkey support means competing where Apple and Google
+are strong, at the cost of the thing PAM alone does.
+
+**Recommendation: CXF export, and CXF import of everything except passkeys,
+with an explicit refusal.** That buys interoperability, respects the standard,
+and keeps PAM a page you can read.
 
 ### Stable ids from unique titles, without touching the record schema
 

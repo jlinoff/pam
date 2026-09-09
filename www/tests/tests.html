@@ -4135,6 +4135,28 @@ async function runIntegrityTests() {
     }
   })
 
+
+  await runAsyncTest('a plaintext save carries no digest', async () => {
+    // Saving with an empty password writes plaintext JSON — PAM's de facto
+    // "everything" export tier, and people use it to edit records with jq and
+    // load them back. A digest would make that round trip fail with "this file
+    // has been modified since it was saved", which is true and useless.
+    //
+    // An unencrypted file is outside the trust boundary anyway: anyone who can
+    // read it can rewrite it, digest included.
+    const contents = mkIntegrityVault()
+    delete contents.meta.integrity
+    assertEqual((await verifyIntegrity(contents)).status, INTEGRITY_ABSENT,
+                'a file with no digest must load, not be refused')
+  })
+
+  await runAsyncTest('an edited plaintext export still loads', async () => {
+    const exported = mkIntegrityVault()      // no digest, as saveFile now writes
+    delete exported.meta.integrity
+    exported.records[0].fields[1].value = 'edited-by-hand'
+    assertEqual((await verifyIntegrity(exported)).status, INTEGRITY_ABSENT)
+  })
+
   await runAsyncTest('the reason is reported, not just the verdict', async () => {
     const v = mkIntegrityVault()
     v.meta.integrity = await contentDigest(v.records, v.prefs)

@@ -209,7 +209,24 @@ async function saveFile(filename, password) {
         'records': [],
     }
     convertInternalDataToJSON(contents, now)
-    contents.meta.integrity = await contentDigest(contents.records, contents.prefs)
+
+    // The digest is written only for ENCRYPTED files.
+    //
+    // Saving with an empty password writes plaintext JSON — PAM's de facto
+    // "everything" export, and the reason people reach for it is to edit the
+    // result with jq or an editor and load it back. A digest would make that
+    // fail: the file no longer matches, so PAM would refuse it and report that
+    // it "has been modified since it was saved" — technically true and useless,
+    // because the user modified it on purpose.
+    //
+    // There is a principled reason as well as a practical one. An unencrypted
+    // file is outside the trust boundary already: anyone who can read it can
+    // rewrite it, digest included. Asserting integrity over it claims something
+    // the format cannot back.
+    if (password && password.length > 0) {
+        contents.meta.integrity = await contentDigest(contents.records,
+                                                      contents.prefs)
+    }
     setAboutFileInfo(`Saved ${contents.records.length} records on ${now} to ${filename}.`)
     let text = JSON.stringify(contents, null, 0)
     encryptV2(password, text, filename, saveCallback)

@@ -509,7 +509,7 @@ help:  ## this help message
 		sort -f | \
 		sed -e 's@^@   @'
 	@printf "\n\033[35;1m%s\n" "Variables"
-	@printf '    BOOTSTRAP : %s\n' $(BS_DIST)
-	@printf '    DST       : %s\n' $(DST)
-	@printf '    PORT      : %s\n' $(PORT)
+	@printf '   BOOTSTRAP : %s\n' $(BS_DIST)
+	@printf '   DST       : %s\n' $(DST)
+	@printf '   PORT      : %s\n' $(PORT)
 	@printf "\033[0m\n"

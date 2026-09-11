@@ -74,7 +74,7 @@ the item moved.
 | 1–4 | **released in v2.3.0** — see `RELEASE_NOTES_v2.3.0.md` |
 | 5. Password breach check | **released in v2.4.0** |
 | 6. README pass | **released in v2.4.0** — including SECURITY.md, which claimed "No data is ever sent to a server" |
-| 7. Vault diff | deferred, **not blocked** — works today without record IDs; they add rename detection |
+| 7. Vault diff | **DEFERRED** — already solved outside PAM by [pam-crypt](https://github.com/jlinoff/pam-crypt) + `meld`, and better solved there. Remaining value is mobile, and diffing without disclosing values |
 | 8. Export tiering | **DEFERRED**, but reframed — the full-fidelity tier already exists (save with an empty password) and is now documented. What remains is the redacted tiers below it |
 | 9. Vault file integrity | **9a RELEASED in v2.5.0** — SHA-256 of records and prefs in `meta.integrity`, no format change; catches the targeted tampering that `JSON.parse` lets through. **9b DEFERRED to v3.0** — AES-GCM; breaking change accepted *if built*, small marginal benefit over 9a. Neither addresses rollback |
 | 10. Test suites ran without gating | **released in v2.4.0** — finalize() ran per-runner, so two suites reported but did not count |
@@ -579,7 +579,49 @@ off, and the button is hidden in that state.
 
 ---
 
-## 7. Vault diff — DEFERRED, not blocked
+## 7. Vault diff — DEFERRED; already solved outside PAM
+
+**Reframed, the same way item 8 was.** This is not unbuilt work waiting for a
+design. It is already done, in
+[pam-crypt](https://github.com/jlinoff/pam-crypt), and has been for a while:
+
+    meld <(PAM_PASSWORD=a ./pam_decode.py vault-a.txt) \
+         <(PAM_PASSWORD=b ./pam_decode.py vault-b.txt)
+
+**That approach is better than an in-PAM diff in most respects**, which is
+worth admitting plainly:
+
+- `meld`, `diff` and `git diff` are mature. An in-browser diff would be
+  reimplementing them worse.
+- `jq` answers questions a fixed diff view cannot anticipate.
+- Process substitution keeps the decrypted JSON in a pipe. It never touches
+  the filesystem, so no backup, indexer or `.bash_history` picks it up — a
+  stronger position than PAM's own plaintext export, which writes to disk.
+- No secrets are rendered into a browser DOM.
+
+**What it does not cover**, and therefore what an in-PAM diff would still be
+for:
+
+1. **Mobile.** There is no shell on an iPad. PAM runs there and this does not.
+2. **Non-disclosure.** `pam_decode.py` hands the entire vault to the terminal
+   in the clear. The in-PAM design specified reporting *that* two passwords
+   differ and never the values. For comparing a vault you half-trust — a copy
+   from a colleague, an old backup of unclear provenance — that difference is
+   the whole point.
+
+So the honest status is not "deferred pending design" but **"solved for a
+technical user at a desktop; unsolved on mobile, and unsolved for anyone who
+does not want the whole vault decrypted to look at two fields."** That is a
+much smaller item than originally written, and a clearer one.
+
+**PAM did not mention pam-crypt anywhere.** The README taught readers to do
+this by hand with `openssl` and `dd` while a working tool existed in a sibling
+repository. Now referenced from *Decrypting and encrypting PAM files from the
+command line*, with the pipe-based diff as the recommended recipe.
+
+### Original notes
+
+
 
 **Question:** "What differs between these two vaults?"
 **Discloses:** titles and field names of differing entries. Never secrets.

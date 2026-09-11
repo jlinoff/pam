@@ -3049,6 +3049,29 @@ or encrypted using `openssl` on any Unix-like system (macOS, Linux, WSL).
 This is useful for automation, backup verification, or simply confirming
 that your data is not locked into a proprietary format.
 
+**There are ready-made tools for this.**
+[pam-crypt](https://github.com/jlinoff/pam-crypt) provides `pam_decode.py` and
+`pam_encode.py`, which handle the v2 format directly. The manual `openssl`
+recipe below is kept because it demonstrates that nothing proprietary is
+involved — you can verify the format yourself — but for day-to-day use the
+tools are easier and less error-prone.
+
+```bash
+# report the password for every record
+PAM_PASSWORD='...' ./pam_decode.py vault.txt |
+  jq -r '.records[] | . as $r | .fields[]
+         | select(.name=="password") | "\($r.title): \(.value)"'
+
+# compare two vaults side by side, without either ever touching disk
+meld <(PAM_PASSWORD=a ./pam_decode.py vault-a.txt) \
+     <(PAM_PASSWORD=b ./pam_decode.py vault-b.txt)
+```
+
+That second example is worth knowing: process substitution keeps the decrypted
+JSON in a pipe rather than writing it to the filesystem, so it never lands
+anywhere a backup or an indexer will find it. It is a better habit than saving
+a plaintext export when all you want is to look.
+
 > **v1 files:** If you have files saved before PAM v2 (April 2026),
 > load them in PAM and re-save them before attempting command-line
 > operations. v1 files used a different key derivation that is both

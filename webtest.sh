@@ -1,15 +1,23 @@
 #!/usr/bin/env bash
 #
-# Serve PAM locally and open it, so that the server and the browser window
-# live and die together.
+# Serve PAM locally and open it in a browser, so the two stop together.
 #
-#   ./serve.sh                          # port 9002, www/index.html
-#   PORT=8100 ./serve.sh                # another port
-#   PAGE=vault-diff.html ./serve.sh     # another page
-#   ./serve.sh vault-diff.html          # same thing, positionally
+#   ./webtest.sh                          # port 9002, www/index.html
+#   PORT=8100 ./webtest.sh                # another port
+#   PAGE=vault-diff.html ./webtest.sh     # another page
+#   ./webtest.sh vault-diff.html          # same thing, positionally
 #
-# Ctrl-C closes the browser window and stops the server.
-# Closing the browser window stops the server.
+# TWO WAYS TO STOP, and only two:
+#
+#   Ctrl-C here      quits the browser and stops the server
+#   Command-Q there  quits the browser, which stops the server
+#
+# CLOSING THE WINDOW DOES NOT STOP ANYTHING. That is macOS, not an oversight:
+# an application does not quit when its last window closes, it stays running
+# with just the menu bar. So the browser process outlives the window and this
+# script keeps waiting on a PID that is still perfectly alive. Command-Q is the
+# event that actually ends the application, so Command-Q is what this watches
+# for.
 #
 # HOW, because the obvious approach does not work.
 #
@@ -21,10 +29,22 @@
 # after its window closes leaves `-W` waiting forever.
 #
 # So this launches a Chromium-family browser directly, with a throwaway
-# profile, and keeps its PID. Owning the process is what makes both directions
-# work. If no such browser is found it falls back to `open -W`, which is
-# better than nothing but carries the caveats above.
+# profile, and keeps its PID. Owning the process is what lets Ctrl-C close the
+# browser and lets Command-Q stop the script. If no such browser is found it
+# falls back to `open -W`, which is better than nothing but carries the caveats
+# above.
 set -euo pipefail
+
+# Colour only when stdout is a terminal. Piped to a file or a pager, escape
+# codes are noise; and if the script is interrupted between setting a colour
+# and resetting it, a terminal is left tinted.
+if [ -t 1 ] ; then
+    HL=$'\033[1;35m'
+    NC=$'\033[0m'
+else
+    HL=""
+    NC=""
+fi
 
 PORT="${PORT:-9002}"
 PAGE="${1:-${PAGE:-www/index.html}}"
@@ -111,19 +131,21 @@ find_browser() {
     return 1
 }
 
-printf '\033[1;35m'
+printf "%s" "$HL"
 echo "serving  : $(pwd)"
 echo "url      : ${URL}"
 echo "server   : pid ${SERVER}"
-printf '\033[0m'
+printf "%s" "$NC"
 
 if BROWSER_BIN="$(find_browser)" ; then
     PROFILE="$(mktemp -d "${TMPDIR:-/tmp}/pam-serve.XXXXXXXX")"
-##    "$BROWSER_BIN" \
-##        --user-data-dir="$PROFILE" \
-##        --no-first-run \
-##        --no-default-browser-check \
-##        --new-window "$URL" >/dev/null 2>&1 &
+    # --app rather than --new-window, and --disable-background-mode with it.
+    #
+    # --app opens a plain window with no tabs or toolbar, which suits a tool
+    # page and makes Command-Q the obvious way to leave. --disable-background-
+    # mode stops Chrome lingering as a background agent after it quits, which
+    # would otherwise keep this script waiting on a process that has no
+    # windows and no intention of exiting.
     "$BROWSER_BIN" \
         --user-data-dir="$PROFILE" \
         --no-first-run \
@@ -131,10 +153,10 @@ if BROWSER_BIN="$(find_browser)" ; then
         --disable-background-mode \
         --app="$URL" >/dev/null 2>&1 &
     BROWSER=$!
-    printf '\033[1;35m'
+    printf "%s" "$HL"
     echo "browser  : pid ${BROWSER} ($(basename "$BROWSER_BIN"))"
     echo "press Ctrl-C, or quit the browser with Command-Q to stop"
-    printf '\033[0m'
+    printf "%s" "$NC"
 
     # Poll rather than `wait -n`: macOS ships bash 3.2, where `wait -n` does
     # not exist. Whichever process exits first ends the loop, and cleanup
@@ -143,10 +165,10 @@ if BROWSER_BIN="$(find_browser)" ; then
         sleep 0.5
     done
 else
-    printf '\033[1;35m'
+    printf "%s" "$HL"
     echo "note     : no Chromium-family browser found, falling back to 'open -W'"
     echo "           Ctrl-C will stop the server but cannot close the window"
     echo "press Ctrl-C, or quit the browser with Command-Q to stop"
-    printf '\033[0m'
+    printf "%s" "$NC"
     open -W "$URL" || true
 fi

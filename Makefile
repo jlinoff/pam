@@ -489,6 +489,10 @@ GIT_SRC_FILES := $(shell git ls-files)
 project.zip: $(GIT_SRC_FILES)
 	zip "$@" $(GIT_SRC_FILES)
 
+.PHONY: webtest
+webtest:  ## Serve the pam-vault-diff.html web tool on localhost.
+	./webtest.sh www/index.html
+
 # could replace
 #   awk -F'##' '{printf("%-16s %s\n",$1,$2)}'
 # with

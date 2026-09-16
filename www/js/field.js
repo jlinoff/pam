@@ -386,7 +386,10 @@ export function mkRecordEditField(name, type, container, value) {
         passwordGenerate = xmk('button')
             .xAttrs({'type': 'button'})
             .xClass('btn', 'btn-lg', 'px-0', 'ms-3')
-            .xAppend(icon('bi-gear', 'generate a password'))
+            // The tooltip says "show or hide" because the button toggles.
+            // "generate a password" described only half of what it does and
+            // gave no hint that pressing it again closes the section.
+            .xAppend(icon('bi-gear', 'show or hide the password generator'))
             .xAddEventListener('click', (event) => {
                 mkGeneratePasswordDlg(event)
             })

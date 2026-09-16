@@ -179,7 +179,13 @@ export function mkGeneratePasswordDlg(event) {
             xmk('div').xClass('col-12', 'x-fld-pw-gen', 'mt-1').xAppend(
                 xmk('hr'),
                 xmk('button')
-                    .xClass('btn', 'border-dark', 'btn-small', 'w-100')
+                    // btn-secondary and btn-sm, not btn-small.
+                    //
+                    // btn-small is Bootstrap 2; it does nothing in Bootstrap 5,
+                    // and with no variant class this rendered as unstyled text
+                    // on a dark background — a control that reads as a caption
+                    // is a control users cannot find.
+                    .xClass('btn', 'btn-secondary', 'btn-sm', 'border-dark', 'w-100')
                     .xAppend(
                         icon('bi-x-circle', 'close the section'),
                         xmk('span').xInnerHTML('&nbsp;Close Password Generator'))
@@ -256,6 +262,27 @@ export function mkGeneratePasswordDlg(event) {
     } else {
         // password dialogue already exists
         let row = button.xGetParentWithClass('row')
+        let cols = row.xGetN('.x-fld-pw-gen')
+
+        // The gear toggles. It used to only open.
+        //
+        // The old code was commented "toggle visibility" but read
+        //     if (hidden) { show }
+        // with no else, so a second click on the gear did nothing. That left
+        // the Close button as the only way out, and the Close button did not
+        // look like a button (see its classes below), so the section appeared
+        // impossible to dismiss.
+        //
+        // Closing returns early: regenerating passwords for a section about to
+        // be hidden is wasted work, and it would also throw away a suggestion
+        // the user might have been reading.
+        if (!cols[0].classList.contains('d-none')) {
+            cols.forEach((col) => {
+                col.classList.add('d-none')
+            })
+            return
+        }
+
         let range = row.xGet('.x-fld-pw-range-len')
         let len = parseInt(range.innerHTML)
         let cp0Value = getCrypticPassword(len, ALPHABET)
@@ -264,14 +291,9 @@ export function mkGeneratePasswordDlg(event) {
         row.xGetN('.x-fld-pw-mp').forEach( (e) => {
             e.innerHTML = getMemorablePassword(len)
         })
-
-        // toggle visibility
-        let cols = row.xGetN('.x-fld-pw-gen')
-        if (cols[0].classList.contains('d-none')) {
-            cols.forEach((col) => {
-                col.classList.remove('d-none')
-            })
-        }
+        cols.forEach((col) => {
+            col.classList.remove('d-none')
+        })
     }
     setDarkLightTheme(window.prefs.themeName) // fix the new DOM elements
 }

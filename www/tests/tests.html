@@ -4185,6 +4185,82 @@ async function runIntegrityTests() {
   })
 }
 
+
+async function runGeneratorToggleTests() {
+  suite('password.js — the in-record generator can be dismissed')
+
+  function withEditRow(fn) {
+    const container = xmk('div')
+    document.body.appendChild(container)
+    try {
+      const row = mkRecordEditField('password', 'password', container, '')
+      container.appendChild(row)
+      return fn(row)
+    } finally {
+      container.remove()
+    }
+  }
+
+  const gearOf = (row) => [...row.querySelectorAll('button')]
+        .find((b) => b.querySelector('.bi-gear'))
+  const isOpen = (row) => [...row.querySelectorAll('.x-fld-pw-gen')]
+        .filter((c) => !c.classList.contains('d-none')).length > 0
+
+  test('the gear toggles, it does not only open', () => {
+    // It used to read `if (hidden) { show }` with no else, so a second press
+    // did nothing. Combined with a Close control that did not look like a
+    // control, the section appeared impossible to dismiss.
+    withEditRow((row) => {
+      const gear = gearOf(row)
+      assert(!isOpen(row), 'starts closed')
+      gear.click()
+      assert(isOpen(row), 'first press opens')
+      gear.click()
+      assert(!isOpen(row), 'second press must close it')
+      gear.click()
+      assert(isOpen(row), 'and it opens again')
+    })
+  })
+
+  test('the Close button closes it', () => {
+    withEditRow((row) => {
+      gearOf(row).click()
+      const close = [...row.querySelectorAll('.x-fld-pw-gen button')]
+            .find((b) => (b.textContent || '').indexOf('Close Password Generator') > -1)
+      assert(close, 'there should be a Close control')
+      close.click()
+      assert(!isOpen(row), 'Close must close it')
+    })
+  })
+
+  test('the Close control is styled as a button', () => {
+    // btn-small is Bootstrap 2 and does nothing in Bootstrap 5. Without a
+    // variant class the control rendered as plain text on a dark background,
+    // which is why it could not be found.
+    withEditRow((row) => {
+      gearOf(row).click()
+      const close = [...row.querySelectorAll('.x-fld-pw-gen button')]
+            .find((b) => (b.textContent || '').indexOf('Close Password Generator') > -1)
+      assert(close.classList.contains('btn-secondary'),
+             `needs a variant class, has: ${close.className}`)
+      assert(close.classList.contains('btn-sm'), 'btn-sm is the Bootstrap 5 name')
+      assert(!close.classList.contains('btn-small'), 'btn-small does nothing')
+    })
+  })
+
+  test('reopening generates fresh passwords', () => {
+    withEditRow((row) => {
+      const gear = gearOf(row)
+      gear.click()
+      gear.click()                                    // close
+      const before = row.querySelector('.x-fld-pw-cp0').innerHTML
+      gear.click()                                    // reopen
+      assert(row.querySelector('.x-fld-pw-cp0').innerHTML !== before,
+             'opening should regenerate, so a stale suggestion is not reused')
+    })
+  })
+}
+
 async function runBreachTests() {
   await runBreachTests1()
   await runBreachTests2()
@@ -4202,6 +4278,7 @@ async function runBreachTests() {
   await runBreachTests14()
   await runBreachTests15()
   await runBreachTests17()
+  await runGeneratorToggleTests()
   await runIntegrityTests()
 }
 
